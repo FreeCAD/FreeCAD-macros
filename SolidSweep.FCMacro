@@ -1,0 +1,24 @@
+import Part, FreeCAD, math, PartGui, FreeCADGui
+from FreeCAD import Base
+
+# get the selected objects, with first selection for the trajectory and second for the section
+s = FreeCADGui.Selection.getSelection()
+try:
+     shape1=s[0].Shape
+     shape2=s[1].Shape
+except:
+     print "Wrong selection"
+
+traj = Part.Wire([shape1])
+section = Part.Wire([shape2])
+
+# create Part objec in the current document
+myObject=App.ActiveDocument.addObject("Part::Feature","Sweep")
+
+# variable makeSolid = 1 to create solid, 0 to create surfaces
+makeSolid = True #1
+isFrenet = True #1
+
+# create a 3D shape and assigh it to the current document
+Sweep = Part.Wire(traj).makePipeShell([section],makeSolid,isFrenet)
+myObject.Shape = Sweep
