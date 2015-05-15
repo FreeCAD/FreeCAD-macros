@@ -1,0 +1,59 @@
+# -*- coding: utf-8 -*-
+# (c) microelly 2015
+
+#
+# creates a realsized 300 dpi foto of the selected part
+# from top view
+#
+
+
+import FreeCAD
+import FreeCADGui
+
+def foto(fn='/tmp/fc_camera_out.jpg',width=150,height=100,x=0,y=0,res=300):
+	hi=height
+	dpi=300
+	dpmm=11.8110
+	if res <> 300:
+			dpmm *= res/300
+	ppy=int(dpmm*height)
+	ppx=int(dpmm*width)
+	y+= -1
+	cam='''#Inventor V2.1 ascii
+	OrthographicCamera {
+	  viewportMapping ADJUST_CAMERA
+	  orientation 1 0 0  0.001
+	  nearDistance 0
+	  farDistance 1000
+	  aspectRatio 100
+	  focalDistance 1
+	'''
+	
+	cam += '\nposition ' +str(x) + ' ' + str(y) + ' 999\n '
+	cam += '\nheight ' + str(height) + '\n}\n\n'
+	FreeCADGui.activeDocument().activeView().setCamera(cam)
+	print(FreeCADGui.activeDocument().activeView().getCamera())
+	
+	print ppx
+	print ppy 
+	
+	FreeCADGui.ActiveDocument.update()
+	FreeCADGui.activeDocument().activeView().saveImage(fn,ppx,ppy,'#ffffff')			
+
+import os
+
+fn="/tmp/fc_foto6.jpg"
+res=300
+
+s=FreeCADGui.Selection.getSelection()
+s0=s[0]
+s0.ViewObject.LineWidth=1
+b=s[0].Shape.BoundBox
+px=0.5*(b.XMin+b.XMax)
+py=0.5*(b.YMin+b.YMax)
+width=b.XMax-b.XMin
+height=b.YMax-b.YMin
+
+foto(fn,width,height,px,py,res)
+FreeCADGui.ActiveDocument.update()
+os.system("eog "+ fn + "&")
