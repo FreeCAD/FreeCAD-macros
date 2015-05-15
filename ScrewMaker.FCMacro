@@ -101,9 +101,9 @@ iso4017head={
    'M3':  (0.5,  0.2, 4.6,  6.1,   2.0, 0.1,  5.5),
    'M4':  (0.7,  0.2, 5.9,  7.7,   3.5, 0.2,  7.0), 
    'M5':  (0.8,  0.2, 6.9,  8.9,   3.5, 0.2,  8.0),
-	'M6':  (1.0,  0.2, 8.9,  11.05, 4.0, 0.25, 10.0),
-	'M8':  (1.25, 0.3, 11.7, 14.5,  5.3, 0.25, 13.0),
-	'M10': (1.50, 0.3, 14.7, 17.9,  6.4, 0.4,  16.0),
+   'M6':  (1.0,  0.2, 8.9,  11.05, 4.0, 0.25, 10.0),
+   'M8':  (1.25, 0.3, 11.7, 14.5,  5.3, 0.25, 13.0),
+   'M10': (1.50, 0.3, 14.7, 17.9,  6.4, 0.4,  16.0),
    'M12': (1.75, 0.3, 16.7, 20.1,  7.5, 0.6,  18.0),
    'M14': (2.00, 0.3, 20.5, 24.5,  8.8, 0.6,  22.0),
    'M16': (2.00, 0.4, 22.4, 26.9, 10.0, 0.6,  24.0),
@@ -1397,7 +1397,6 @@ class Ui_ScrewMaker(object):
 
 
     def createScrew(self):
-       FreeCAD.Console.PrintMessage("aa")
        if self.ScrewAvailable:
           try:
               # first we check if valid numbers have been entered
@@ -1406,7 +1405,6 @@ class Ui_ScrewMaker(object):
               FreeCAD.Console.PrintMessage("SimpleThread: " + str(self.SimpleScrew.isChecked()) + "\n")
               FreeCAD.Console.PrintMessage("SymbolThread: " + str(self.SymbolThread.isChecked()) + "\n")
               FreeCAD.Console.PrintMessage("RealThread: " + str(self.RealThread.isChecked()) + "\n")
-              
               ND_text = str(self.NominalDiameter.currentText())
               NL_text = str(self.NominalLength.currentText())
               ST_text = str(self.ScrewType.currentText())
@@ -1414,6 +1412,7 @@ class Ui_ScrewMaker(object):
               dia = float(ND_text.lstrip('M'))
               l = float(NL_text)
               if ST_text == 'ISO4017':
+                 #FreeCAD.Console.PrintMessage(str(iso4017head.keys()))
                  table = iso4017head
               if ST_text == 'ISO4014':
                  table = iso4014head
@@ -1455,7 +1454,6 @@ class Ui_ScrewMaker(object):
                  FreeCAD.Console.PrintMessage("Combination of type "+ST_text \
                     + " and diameter " + ND_text +" not available!" + "\n")
               #self.MessageLabel.setText(QtGui.QApplication.translate("ScrewMaker", "not implemented", None, QtGui.QApplication.UnicodeUTF8))
-              
           except ValueError:
               FreeCAD.Console.PrintMessage("Error! nom_dia and length values must be valid numbers!")
           else:
@@ -1552,7 +1550,6 @@ class Ui_ScrewMaker(object):
                  label = ST_text + '-' + ND_text +'x'+ NL_text +'_'
               else:
                  label = ST_text + '-' + ND_text.lstrip('M') +'_'
-              
               ScrewObj = doc.addObject("Part::Feature",label)
               #ScrewObj = doc.addObject("Part::Feature","Screw")
               ScrewObj.Shape=screw
@@ -2898,3 +2895,6 @@ d.ui.setupUi(d)
 ss.setWidget(d)
 master=FreeCAD.Gui.getMainWindow()
 master.addDockWidget(QtCore.Qt.RightDockWidgetArea, ss)
+
+for tab in [iso4017head, iso4014head]:
+	FreeCAD.Console.PrintMessage(str(tab.keys()))
