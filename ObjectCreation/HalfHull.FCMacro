@@ -13,6 +13,9 @@ from os.path import expanduser		# default input directory
 from PySide import QtGui, QtCore
 
 # UI Class definitions
+global ConfigParams
+global GetConfigParams
+global OrderedDict
 
 class ConfigParams:
 	"""carrier for the user selection parameters"""
