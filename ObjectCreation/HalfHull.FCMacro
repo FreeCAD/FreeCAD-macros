@@ -1,0 +1,1194 @@
+#
+#
+#			Half Hull
+# (c) piffpoof 2015
+#
+################################
+
+import FreeCAD
+from FreeCAD import Base, Draft
+import Part, PartGui, sys, math, collections
+from collections import OrderedDict
+from os.path import expanduser		# default input directory
+from PySide import QtGui, QtCore
+
+# UI Class definitions
+
+class ConfigParams:
+	"""carrier for the user selection parameters"""
+	def __init__(self):
+		self.result				= None
+		self.cb1a				= None
+		self.cb1b				= None
+		self.cb1c				= None
+		self.cb2a				= None
+		self.cb2b				= None
+		self.cb2c				= None
+		self.cb3a				= None
+		self.cb3b				= None
+		self.cb3c				= None
+		self.cb4a				= None
+		self.rb4b				= None
+		self.rb5b				= None
+		self.skipAtBow			= None
+		self.skipAtStern		= None
+		self.deckWidth			= None
+		self.deckThrow			= None
+		self.coachhouseRise		= None
+		self.coachhouseIncline	= None
+		self.documentFileName	= None
+
+class GetConfigParams(QtGui.QDialog):
+	""""""
+	def __init__(self):
+		super(GetConfigParams, self).__init__()
+		self.initUI()
+	def initUI(self):
+		self.configParams			= ConfigParams()
+		# set default return value
+		self.configParams.result 	= userCancelled
+		# set default values
+		skipAtBowDefault			= str(2)
+		skipAtSternDefault			= str(2)
+		deckWidthDefault			= str(50)
+		deckThrowDefault			= str(2)
+		coachhouseRiseDefault		= str(50)
+		coachhouseInclineDefault	= str(8)
+		# field descriptors
+		self.promptLbl = QtGui.QLabel("Please Choose Options:", self)
+		self.promptLbl.move(20, 20)
+		# checkboxes - define first so  signals can be set up
+		self.cb1a = QtGui.QCheckBox("Starboard half-hull", self)
+		self.cb1b = QtGui.QCheckBox("Mounting plaque", self)
+		self.cb1c = QtGui.QCheckBox("Allow space for keel", self)
+		self.cb2a = QtGui.QCheckBox("Port half-hull", self)
+		self.cb2b = QtGui.QCheckBox("Mounting plaque", self)
+		self.cb2c = QtGui.QCheckBox("Allow space for keel", self)
+		self.cb3a = QtGui.QCheckBox("Complete hull", self)
+		self.cb3b = QtGui.QCheckBox("Bottle for complete hull", self)
+		self.cb3c = QtGui.QCheckBox("Allow space for keel", self)
+		self.rb4b = QtGui.QRadioButton("Bulkheads for flush deck",self)
+		self.rb5b = QtGui.QRadioButton("Bulkheads for coachhouse",self)
+		#
+		self.cb1a.clicked.connect(self.onCb1a)
+		self.cb1a.toggle() # set default value
+		self.cb1c.setEnabled(False)
+		#self.cb1a.stateChanged.connect(self.onCb1a)
+		self.cb1a.move(20,50)
+		#
+		self.cb1b.clicked.connect(self.onCb1b)
+		self.cb1b.move(250,50)
+		#
+		self.cb1c.clicked.connect(self.onCb1c)
+		self.cb1c.move(450,50)
+		#
+		self.cb2a.clicked.connect(self.onCb2a)
+		self.cb2b.setEnabled(False)
+		self.cb2c.setEnabled(False)
+		self.cb2a.move(20,80)
+		#
+		self.cb2b.clicked.connect(self.onCb2b)
+		self.cb2b.move(250,80)
+		#
+		self.cb2c.clicked.connect(self.onCb2c)
+		self.cb2c.move(450,80)
+		#
+		self.cb3a.clicked.connect(self.onCb3a)
+		self.cb3b.setEnabled(False)
+		self.cb3c.setEnabled(False)
+		self.cb3a.move(20,110)
+		#
+		self.cb3b.clicked.connect(self.onCb3b)
+		self.cb3b.move(250,110)
+		#
+		self.cb3c.clicked.connect(self.onCb3c)
+		self.cb3c.move(450,110)
+		#
+		self.cb4a = QtGui.QCheckBox("Bulkheads for complete hull", self)
+		self.cb4a.clicked.connect(self.onCb4a)
+		self.rb4b.setEnabled(False)
+		self.rb5b.setEnabled(False)
+		#self.hideCoachhouseFields(True) # grey out coachhouse fields
+		self.cb4a.move(20,140)
+		# radio buttons
+		self.rb4b.move(250,140)
+		self.rb4b.clicked.connect(self.onRb4b)
+		#
+		self.rb5b.move(250,170)
+		self.rb5b.clicked.connect(self.onRb5b)
+		#
+		self.skipAtBowLabel = QtGui.QLabel("Cross-sections to skip at bow:", self)
+		self.skipAtBowLabel.move(270, 200)
+		self.skipAtBow = 0
+		#
+		self.skipAtSternLabel = QtGui.QLabel("Cross-sections to skip at stern:", self)
+		self.skipAtSternLabel.move(270, 230)
+		self.skipAtStern = 0
+		#
+		self.deckWidthLabel = QtGui.QLabel("Deck Width:", self)
+		self.deckWidthLabel.move(270, 260)
+		self.deckWidth = QtGui.QLineEdit(self)
+		self.deckWidth.setInputMask("999")
+		self.deckWidth.setText(deckWidthDefault)
+		self.deckWidth.setFixedWidth(35)
+		self.deckWidth.move(493, 260)
+		#
+		self.deckThrowLabel = QtGui.QLabel("Deck throw:", self)
+		self.deckThrowLabel.move(270, 290)
+		self.deckThrow = QtGui.QLineEdit(self)
+		self.deckThrow.setInputMask("999")
+		self.deckThrow.setText(deckThrowDefault)
+		self.deckThrow.setFixedWidth(35)
+		self.deckThrow.move(493, 290)
+		#
+		self.coachhouseRiseLabel = QtGui.QLabel("Coachhouse Rise:", self)
+		self.coachhouseRiseLabel.move(270, 320)
+		self.coachhouseRise = QtGui.QLineEdit(self)
+		self.coachhouseRise.setInputMask("999")
+		self.coachhouseRise.setText(coachhouseRiseDefault)
+		self.coachhouseRise.setFixedWidth(35)
+		self.coachhouseRise.move(493, 320)
+		#
+		self.coachhouseInclineLabel = QtGui.QLabel("Coachhouse Incline:", self)
+		self.coachhouseInclineLabel.move(270, 350)
+		self.coachhouseIncline = QtGui.QLineEdit(self)
+		self.coachhouseIncline.setInputMask("999")
+		self.coachhouseIncline.setText(coachhouseInclineDefault)
+		self.coachhouseIncline.setFixedWidth(35)
+		self.coachhouseIncline.move(493, 350)
+		# set up lists for pop-ups
+		self.popupItemsB = OrderedDict([("2",""),("3",""),("4",""),("5",""),("6",""),("7",""),("8",""),("9",""),("10","")])
+		self.popupItemsS = OrderedDict([("1",""),("2",""),("3",""),("4",""),("5",""),("6",""),("7",""),("8",""),("9",""),("10","")])
+		# set up pop-up menu of bulkheads to skip bulkheads at bow
+		self.skipAtBowPop = QtGui.QComboBox(self)
+		self.skipAtBowPop.addItems(self.popupItemsB.keys())
+		self.skipAtBowPop.setCurrentIndex(self.popupItemsB.keys().index(skipAtBowDefault))
+		self.skipAtBow = skipAtBowDefault
+		self.skipAtBowPop.move(490, 200)
+		self.skipAtBowPop.activated[str].connect(self.onSkipBowActivated)
+		# set up pop-up menu of bulkheads to skip bulkheads at stern
+		self.skipAtSternPop = QtGui.QComboBox(self)
+		self.skipAtSternPop.addItems(self.popupItemsS.keys())
+		self.skipAtSternPop.setCurrentIndex(self.popupItemsS.keys().index(skipAtSternDefault))
+		self.skipAtStern = skipAtSternDefault
+		self.skipAtSternPop.move(490, 230)
+		self.skipAtSternPop.activated[str].connect(self.onSkipSternActivated)
+		# cancel button
+		cancelButton = QtGui.QPushButton('Cancel', self)
+		cancelButton.clicked.connect(self.onCancel)
+		cancelButton.move(260, 390)
+		# last used button
+		lastFileButton = QtGui.QPushButton('Re-use last file', self)
+		lastFileButton.clicked.connect(self.onLastFile)
+		lastFileButton.move(345, 390)
+		# OK button
+		sfButton = QtGui.QPushButton('Select File', self)
+		sfButton.clicked.connect(self.onSf)
+		sfButton.move(480, 390)
+		# define window		xLoc,yLoc,xDim,yDim
+		self.setGeometry(	250, 250, 630, 445)
+		self.setWindowTitle("Macro Configuration")
+		self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+		self.disableCoachhouseFields(True) # grey out coachhouse fields
+		self.show()
+		#
+	def onCb1a(self):
+		if self.cb1a.isChecked():
+			self.cb1b.setEnabled(True)
+		else:
+			self.cb1b.setEnabled(False)
+			self.cb1b.setChecked(False)
+			self.cb1c.setEnabled(False)
+			self.cb1c.setChecked(False)
+	def onCb1b(self):
+		if self.cb1b.isChecked():
+			self.cb1c.setEnabled(True)
+		else:
+			self.cb1c.setEnabled(False)
+			self.cb1c.setChecked(False)
+	def onCb1c(self):
+		pass
+	def onCb2a(self):
+		if self.cb2a.isChecked():
+			self.cb2b.setEnabled(True)
+		else:
+			self.cb2b.setEnabled(False)
+			self.cb2b.setChecked(False)
+			self.cb2c.setEnabled(False)
+			self.cb2c.setChecked(False)
+	def onCb2b(self):
+		if self.cb2b.isChecked():
+			self.cb2c.setEnabled(True)
+		else:
+			self.cb2c.setEnabled(False)
+			self.cb2c.setChecked(False)
+	def onCb2c(self):
+		pass
+	def onCb3a(self):
+		if self.cb3a.isChecked():
+			self.cb3b.setEnabled(True)
+		else:
+			self.cb3b.setEnabled(False)
+			self.cb3b.setChecked(False)
+			self.cb3c.setEnabled(False)
+			self.cb3c.setChecked(False)
+	def onCb3b(self):
+		if self.cb3b.isChecked():
+			self.cb3c.setEnabled(True)
+		else:
+			self.cb3c.setEnabled(False)
+			self.cb3c.setChecked(False)
+	def onCb3c(self):
+		pass
+	def onCb4a(self):
+		if self.cb4a.isChecked():
+			self.rb4b.setEnabled(True)
+			self.rb4b.setChecked(True)
+			self.rb5b.setEnabled(True)
+			self.rb5b.setChecked(False)
+		else:
+			self.rb4b.setChecked(False)
+			self.rb4b.setEnabled(False)
+			self.rb5b.setChecked(False)
+			self.rb5b.setEnabled(False)
+			self.disableCoachhouseFields(True)
+	def onRb4b(self):
+		if self.rb4b.isChecked():
+			self.disableCoachhouseFields(True)
+		else:
+			self.disableCoachhouseFields(False)
+	def onRb5b(self):
+		if self.rb5b.isChecked():
+			self.disableCoachhouseFields(False)
+		else:
+			self.disableCoachhouseFields(True)
+	def onSkipBowActivated(self, text):
+		self.skipAtBow = text
+	def onSkipSternActivated(self, text):
+		self.skipAtStern = text
+	def disableCoachhouseFields(self, aFlag):
+		# enable or disable coachhouse parameter fields
+		if aFlag:
+			self.skipAtBowLabel.setEnabled(False)
+			self.skipAtBowPop.setEnabled(False)
+			self.skipAtSternLabel.setEnabled(False)
+			self.skipAtSternPop.setEnabled(False)
+			self.deckWidthLabel.setEnabled(False)
+			self.deckWidth.setEnabled(False)
+			self.deckThrowLabel.setEnabled(False)
+			self.deckThrow.setEnabled(False)
+			self.coachhouseRiseLabel.setEnabled(False)
+			self.coachhouseRise.setEnabled(False)
+			self.coachhouseInclineLabel.setEnabled(False)
+			self.coachhouseIncline.setEnabled(False)
+		else:
+			self.skipAtBowLabel.setEnabled(True)
+			self.skipAtBowPop.setEnabled(True)
+			self.skipAtSternLabel.setEnabled(True)
+			self.skipAtSternPop.setEnabled(True)
+			self.deckWidthLabel.setEnabled(True)
+			self.deckWidth.setEnabled(True)
+			self.deckThrowLabel.setEnabled(True)
+			self.deckThrow.setEnabled(True)
+			self.coachhouseRiseLabel.setEnabled(True)
+			self.coachhouseRise.setEnabled(True)
+			self.coachhouseInclineLabel.setEnabled(True)
+			self.coachhouseIncline.setEnabled(True)
+	def onCancel(self):
+		self.configParams.result			= userCancelled
+		self.close()
+	def transferConfigParams(self):
+		self.configParams.cb1a				= self.cb1a.isChecked()
+		self.configParams.cb1b				= self.cb1b.isChecked()
+		self.configParams.cb1c				= self.cb1c.isChecked()
+		self.configParams.cb2a				= self.cb2a.isChecked()
+		self.configParams.cb2b				= self.cb2b.isChecked()
+		self.configParams.cb2c				= self.cb2c.isChecked()
+		self.configParams.cb3a				= self.cb3a.isChecked()
+		self.configParams.cb3b				= self.cb3b.isChecked()
+		self.configParams.cb3c				= self.cb3c.isChecked()
+		self.configParams.cb4a				= self.cb4a.isChecked()
+		self.configParams.rb5b				= self.rb5b.isChecked()
+		self.configParams.skipAtBow			= self.skipAtBow
+		self.configParams.skipAtStern		= self.skipAtStern
+		self.configParams.deckWidth			= self.deckWidth
+		self.configParams.deckThrow			= self.deckThrow
+		self.configParams.coachhouseRise	= self.coachhouseRise
+		self.configParams.coachhouseIncline	= self.coachhouseIncline
+	def onLastFile(self):
+		self.configParams.result			= userLastFile
+		self.transferConfigParams()
+		self.close()
+	def onSf(self):
+		self.configParams.result			= userOK
+		self.transferConfigParams()
+		self.close()
+
+# Class definitions
+
+class HullCrossSection:
+	"Holder of information pertaining to a cross section profile"
+	#persistentInstance = ""
+	#import copy
+	def __init__(self,aSketch):
+		self.sketch =		aSketch
+		self.geometryCount = aSketch.GeometryCount
+		self.geometryS =	None # geometry for starboard side
+		self.geometryP =	None # geometry for port side
+		self.geometryC =	None # geometry for complete hull (i.e. both halves as one)
+		self.label =		aSketch.Label
+		# next 2 lines due to mysterious label morphing routine of FreeCAD
+		self.altLabel =		self.label.replace(" ", "_")
+		self.altLabel =		self.altLabel.replace("-", "_")
+		#
+		self.xPos =			0.0 # normalise sketch to axis
+		self.yPos =			aSketch.Placement.Base.y
+		self.zPos =			aSketch.Placement.Base.z
+		self.xMin =			infinity # will hold min X value in Sketch
+		self.yMin =			infinity # will hold min Y value in Sketch
+		self.xMax =			infinityNegative # will hold max X value in Sketch
+		self.yMax =			infinityNegative # will hold max Y value in Sketch
+		self.endPoint =		None # will be the 'top' point on the polyline
+		self.key =			int(self.yPos)
+		self.rotation =		aSketch.Placement.Rotation
+		self.rotAngle =		aSketch.Placement.Rotation.Angle
+		self.rotAxis =		aSketch.Placement.Rotation.Axis
+		self.rotQ =			aSketch.Placement.Rotation.Q
+		# following 4 statements seem necessary to pass the Rotation quad-value
+		self.rotQ1 =		aSketch.Placement.Rotation.Q[0]
+		self.rotQ2 =		aSketch.Placement.Rotation.Q[1]
+		self.rotQ3 =		aSketch.Placement.Rotation.Q[2]
+		self.rotQ4 =		aSketch.Placement.Rotation.Q[3]
+		# set flags for either stemline or transom or suspected transom cross-section
+		if eqRotation(self.rotation,yzPlane):
+			# if we have the stemline then wait to give it the foremost placement
+			FreeCAD.Console.PrintMessage("Stemline identified '" + self.label + "'\n")
+			self.stemlineFlag = True
+		else:
+			self.stemlineFlag = False
+		if eqRotation(self.rotation,xyPlane):
+			# if we have the transom then wait to give it the aftmost placement
+			FreeCAD.Console.PrintMessage("Transom identified '" + self.label + "'\n")
+			self.transomFlag = True
+		else:
+			self.transomFlag = False
+		if eqRotation(self.rotation,xzPlane):
+			# the most numerous sketches will be the cross-sections, so don't flag it
+			self.possibleTransomCS = False
+		else:
+			# it's not lying in any of the 3 planes so it's either an error
+			# or it could be an inclined cross-section for the transom
+			# (although there should only be one or none of these)
+			# flag it as such and sort it out later once all the other
+			# cross-sections are placed
+			if not (self.stemlineFlag or self.transomFlag):
+				FreeCAD.Console.PrintMessage("Possible Transom cross-section identified '" + self.label + "'\n")
+				self.possibleTransomCS = True
+		self.defineGeometries() # make S & P & C geometries from the geometry of the supplied Sketch
+				
+	def defineGeometries(self):
+		# the supplied geometry is for the starboard side and is part of the user supplied Sketch
+		# - make a direct copy for the starboard half-hull
+		# - negate the X coordinates for the Port side
+		# - append a negated reversed copy to each starboard piece for the complete hull
+		self.geometryS =	list()
+		self.geometryP =	list()
+		self.geometryC =	list()
+		#grab the endPoint which will be used for covering the half-hull model
+		epX = max(self.sketch.Geometry[-1].StartPoint.x, self.sketch.Geometry[-1].EndPoint.x)
+		epY = self.yPos
+		epZ = max(self.sketch.Geometry[-1].StartPoint.y, self.sketch.Geometry[-1].EndPoint.y)
+		self.endPoint = Base.Vector(epX,epY,epZ)
+		# first pass through segment of sketch is to determine the min and max X & Y values
+		for seg in self.sketch.Geometry:
+			# determine the minimum X & Y values
+			self.xMin = min(self.xMin, seg.StartPoint.x, seg.EndPoint.x)	
+			self.yMin = min(self.yMin, seg.StartPoint.y, seg.EndPoint.y)
+			self.xMax = max(self.xMax, seg.StartPoint.x, seg.EndPoint.x)	
+			self.yMax = max(self.yMax, seg.StartPoint.y, seg.EndPoint.y)
+		# second pass is to create the S, P and starboard side of the C geometries
+		for seg in self.sketch.Geometry:
+			# extract the X,Y,Z for start and end
+			segStartX = seg.StartPoint.x
+			segStartY = seg.StartPoint.y
+			segStartZ = seg.StartPoint.z
+			segEndX   = seg.EndPoint.x
+			segEndY   = seg.EndPoint.y
+			segEndZ   = seg.EndPoint.z
+			absMinX   = abs(self.xMin)
+			# normalise segments within drawing to X axis if not stemline
+			if not self.stemlineFlag:
+				if abs(segStartX) == absMinX:
+					if 0<absMinX<1:
+						segStartX = 0
+					elif absMinX >= 1:
+						FreeCAD.Console.PrintMessage("Move to Y axis of '" + self.label + "'\n")
+						if segStartX<0:
+							segStartX = segStartX + absMinX
+						elif segEndX>0:
+							segStartX = segStartX - absMinX
+				if abs(segEndX) == absMinX:
+					if 0<absMinX<1:
+						segEndX = 0
+					elif absMinX >= 1:
+						FreeCAD.Console.PrintMessage("Move to Y axis of '" + self.label + "'\n")
+						if segEndX<0:
+							segEndX = segEndX + absMinX
+						elif segEndX>0:
+							segEndX = segEndX - absMinX
+			# now create starboard, port, complete geometries
+			self.geometryS.append(Part.Line(
+				Base.Vector(segStartX, segStartY, segStartZ),
+				Base.Vector(segEndX, segEndY, segEndZ)))
+			if self.stemlineFlag:
+				# stemline is on the YZ axis and is common to both half-hulls
+				# so don't flip it's X coordinates
+				multiplicand = 1
+			else:
+				multiplicand = -1
+			self.geometryP.append(Part.Line(
+				Base.Vector(segStartX*multiplicand, segStartY, segStartZ),
+				Base.Vector(segEndX*multiplicand, segEndY, segEndZ)))
+			# starboard geometry is first half of complete hull geometry
+			self.geometryC.append(self.geometryS[-1])
+		# third pass is to create the Complete geometry so the segments have
+		# constant direction from starboard to port:
+		# 1) reverse segment order of starboard side
+		# 2 copy port side geometry
+		segCnt = len(self.sketch.Geometry)
+		completeGeometry = list()
+		for i in range(segCnt):
+			completeGeometry.append(self.reverseLineDirection(self.geometryS[segCnt-1-i]))	
+		for i in range(segCnt):
+			completeGeometry.append(self.reverseLineDirection(self.geometryP[i]))	
+		self.geometryC = completeGeometry
+		
+	def reverseLineDirection(self,aLine):
+		return Part.Line(aLine.EndPoint, aLine.StartPoint)
+
+# Function definitions
+
+def createBottle(aKeelFlag):
+	# create a bottle around the hull
+	bottleRadius = 250
+	neckRadius = 75
+	bottleBottom = -1000
+	bottleTop = 400
+	neckBottom = 800
+	neckTop = 1150
+	corkHeight = 100
+	# get some dimensions for the plaque based on the size of the hull or half-hull
+	minusX = crossSections[-2].yPos * 1.1
+	plusX = (crossSections[0].yPos + crossSections[0].yMax) * 1.1
+	minusY = 0; plusY = 0
+	for cs in crossSections:
+		#minusY = max(minusY, abs(cs.yMin))
+		plusY = max(plusY, cs.yMax)
+	minusY = plusY * -0.75
+	plusY = plusY * 1.1
+	#print minusX, " ", plusX, " ", minusY, " ", plusY
+	
+	bs0 = FreeCAD.ActiveDocument.addObject("Part::Vertex","Ring0")
+	bs0.Label='Ring0'
+	bs0.X=0.00
+	bs0.Y=bottleBottom*0.97
+	bs0.Z=0.00
+	bs0.Placement = Base.Placement(	Base.Vector(0.00,0.00,0.00),
+									Base.Rotation(0.00,0.00,0.00,1.00))
+	bs0.ViewObject.Visibility=False
+	#
+	bs1 = FreeCAD.activeDocument().addObject('Sketcher::SketchObject','Ring1')
+	bs1.addGeometry(Part.Circle(Base.Vector(0,0,0), Base.Vector(0,0,1), bottleRadius))
+	bs1.Placement = FreeCAD.Placement(FreeCAD.Vector(0.0,bottleBottom,0.0),
+									FreeCAD.Rotation(-0.707107,0.0,0.0,-0.707107))
+	#
+	bs2 = FreeCAD.activeDocument().addObject('Sketcher::SketchObject','Ring2')
+	bs2.addGeometry(Part.Circle(Base.Vector(0,0,0), Base.Vector(0,0,1), bottleRadius))
+	bs2.Placement = FreeCAD.Placement(FreeCAD.Vector(0.0,bottleTop,0.0),
+									FreeCAD.Rotation(-0.707107,0.0,0.0,-0.707107))
+	#
+	bs3 = FreeCAD.activeDocument().addObject('Sketcher::SketchObject','Ring3')
+	bs3.addGeometry(Part.Circle(Base.Vector(0,0,0), Base.Vector(0,0,1), neckRadius))
+	bs3.Placement = FreeCAD.Placement(FreeCAD.Vector(0.0,neckBottom,0.0),
+									FreeCAD.Rotation(-0.707107,0.0,0.0,-0.707107))
+	#
+	bs4 = FreeCAD.activeDocument().addObject('Sketcher::SketchObject','Ring4')
+	bs4.addGeometry(Part.Circle(Base.Vector(0,0,0), Base.Vector(0,0,1), neckRadius))
+	bs4.Placement = FreeCAD.Placement(FreeCAD.Vector(0.0,neckTop,0.0),
+									FreeCAD.Rotation(-0.707107,0.0,0.0,-0.707107))
+	#
+	bot0 = FreeCAD.getDocument('hull_complete').addObject('Part::Loft','Loft0')
+	bot0.Sections=[bs0, bs1,]
+	bot0.Solid=False; bot0.Ruled=False; bot0.Closed=False
+	#
+	bot1 = FreeCAD.getDocument('hull_complete').addObject('Part::Loft','Loft1')
+	bot1.Sections=[bs1, bs2,]
+	bot1.Solid=False; bot1.Ruled=False; bot1.Closed=False
+	#
+	bot2 = FreeCAD.getDocument('hull_complete').addObject('Part::Loft','Loft2')
+	bot2.Sections=[bs2, bs3,]
+	bot2.Solid=False; bot2.Ruled=False; bot2.Closed=False
+	#
+	bot3 = FreeCAD.getDocument('hull_complete').addObject('Part::Loft','Loft3')
+	bot3.Sections=[bs3,bs4,]
+	bot3.Solid=False; bot3.Ruled=False; bot3.Closed=False
+	#
+	bottle = FreeCAD.activeDocument().addObject("Part::MultiFuse","Bottle")
+	bottle.Shapes = [bot0,bot1,bot2,bot3,]
+	bot1.ViewObject.Visibility=False
+	bot2.ViewObject.Visibility=False
+	bot3.ViewObject.Visibility=False
+	#bottle.ViewObject.ShapeColor=Gui.ActiveDocument.Loft1.ShapeColor
+	bottle.ViewObject.DisplayMode="Shaded"
+	bottle.ViewObject.Transparency=80
+	bottle.ViewObject.ShapeColor=(0.4, 0.8, 0.5, 0.0)
+	FreeCAD.ActiveDocument.recompute()
+	#
+	cork = FreeCAD.ActiveDocument.addObject("Part::Cylinder","Cylinder")
+	cork.Label = "Cork"
+	cork.Radius = neckRadius-1
+	cork.Height = corkHeight
+	cork.Placement = FreeCAD.Placement(	FreeCAD.Vector(0.0,neckTop-(corkHeight/2),0.0),
+										FreeCAD.Rotation(FreeCAD.Vector(1,0,0),-90))
+	cork.ViewObject.ShapeColor=(0.78, 0.65, 0.35, 0.0)
+	cork.ViewObject.DisplayMode = "Shaded"
+	#
+	FreeCADGui.activeDocument().activeView().viewAxometric()
+	FreeCADGui.SendMsgToActiveView("ViewFit")
+	FreeCAD.ActiveDocument.recompute()
+
+def createBulkheads(aDictionary):
+	userAction = None
+
+	docKey = findOpenDocumentName(outputWorkspaceB)
+	print docKey
+	if docKey!=None:
+		reply = QtGui.QMessageBox.question(None, "",
+			"The previous 'Bulkheads' output file is still open, close it",
+			QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+		if reply == QtGui.QMessageBox.Yes:
+			FreeCAD.closeDocument(outputWorkspaceB)
+		else:
+			userAction = userCancelled
+
+	if userAction!=userCancelled:
+		# bring in values from user dialogue
+		coachhouseFlag			= aDictionary["coachhouseDeckBulkheadsFlag"]
+		forwardBulkheadsToSkip	= aDictionary["forwardBulkheadsToSkip"]
+		aftBulkheadsToSkip		= aDictionary["aftBulkheadsToSkip"]
+		deckWidth				= aDictionary["deckWidth"]
+		deckThrow				= aDictionary["deckThrow"]
+		coachhouseRise			= aDictionary["coachhouseRise"]
+		coachhouseIncline		= aDictionary["coachhouseIncline"]
+		# set up output workspaces
+		doc = FreeCAD.newDocument(outputWorkspaceB)
+		FreeCAD.setActiveDocument(outputWorkspaceB)
+		FreeCAD.ActiveDocument = FreeCAD.getDocument(outputWorkspaceB)
+		FreeCADGui.ActiveDocument = FreeCADGui.getDocument(outputWorkspaceB)
+	
+		for i in range(forwardBulkheadsToSkip,len(crossSections)-aftBulkheadsToSkip):
+			# add new bulkhead
+			cs = crossSections[i]
+			newSketch = FreeCAD.activeDocument().addObject('Sketcher::SketchObject',cs.label)
+			#place bulkhead along keel
+			newSketch.Placement = FreeCAD.Placement(
+				FreeCAD.Vector(cs.xPos,cs.yPos,cs.zPos),
+				FreeCAD.Rotation(cs.rotQ1,cs.rotQ2,cs.rotQ3,cs.rotQ4))
+			# insert geometry segments from both half-hulls plus bulkhead into new Sketch
+			for seg in cs.geometryC:
+				newSketch.addGeometry(
+					Part.Line(FreeCAD.Vector(seg.StartPoint.x,
+						seg.StartPoint.y,	0),
+					FreeCAD.Vector(seg.EndPoint.x,
+						seg.EndPoint.y,0)))
+				FreeCAD.ActiveDocument.recompute()
+			xMin = cs.xMax * -1
+			if coachhouseFlag:
+				# user wants a coachhouse bulkhead
+				newSketch.addGeometry(
+					Part.Line(	FreeCAD.Vector(xMin, cs.yMax, 0),
+								FreeCAD.Vector(xMin+deckWidth, cs.yMax+deckThrow, 0)))
+				FreeCAD.ActiveDocument.recompute()
+				newSketch.addGeometry(
+					Part.Line(	FreeCAD.Vector(xMin+deckWidth, cs.yMax+deckThrow, 0),
+								FreeCAD.Vector(xMin+deckWidth+coachhouseIncline, cs.yMax+deckThrow+coachhouseRise, 0)))
+				FreeCAD.ActiveDocument.recompute()
+				#
+				newSketch.addGeometry(
+					Part.Line(	FreeCAD.Vector(xMin+deckWidth+coachhouseIncline, cs.yMax+deckThrow+coachhouseRise, 0),
+								FreeCAD.Vector(cs.xMax-deckWidth-coachhouseIncline, cs.yMax+deckThrow+coachhouseRise, 0)))
+				FreeCAD.ActiveDocument.recompute()
+				# focus at about -800
+				#newSketch.addGeometry(
+				#	Part.ArcOfCircle(Part.Circle(App.Vector(0.0,-190,0),App.Vector(0,0,1),240.0),1.078868,2.064096))
+				newSketch.addGeometry(
+					Part.Line(	FreeCAD.Vector(cs.xMax-deckWidth-coachhouseIncline, cs.yMax+deckThrow+coachhouseRise, 0),
+								FreeCAD.Vector(cs.xMax-deckWidth, cs.yMax+deckThrow, 0)))
+				FreeCAD.ActiveDocument.recompute()
+				newSketch.addGeometry(
+					Part.Line(	FreeCAD.Vector(cs.xMax-deckWidth, cs.yMax+deckThrow, 0),
+								FreeCAD.Vector(cs.xMax, cs.yMax, 0)))
+			else:
+				# generate bulkheads for flush deck
+				newSketch.addGeometry(
+					Part.Line(	FreeCAD.Vector(xMin, cs.yMax, 0),
+								FreeCAD.Vector(cs.xMax, cs.yMax, 0)))
+				FreeCAD.ActiveDocument.recompute()
+	
+			newPad = App.activeDocument().addObject("PartDesign::Pad","Bulkhead")
+			newPad.Sketch = newSketch
+			newPad.Length = 1.0
+			newPad.Sketch.ViewObject.hide()
+			FreeCAD.ActiveDocument.recompute()
+			
+		FreeCADGui.SendMsgToActiveView("ViewFit")
+		FreeCADGui.activeDocument().activeView().viewAxometric()
+
+def createPlaque(aSideFlag, aKeelFlag):
+	# create plaque to mount half-hull on
+	# get some dimensions for the plaque based on the size of the hull or half-hull
+	# note: the X & Y in this routine are to do with the XY of the plaque, not the Sketches
+	woodColour = (0.53, 0.42, 0.23, 0.0)
+	# find the overall max & min for X & Y
+	minusY = crossSections[1].yMin; plusY = crossSections[1].yMin
+	# get the plaque's Y min & max for the cross-sections (not the stemline or transom)
+	for i in range(1,len(crossSections)-1):
+		minusY = min(minusY, crossSections[i].yMin)
+		plusY = max(plusY, crossSections[i].yMax)
+	# now allow for the extent of the stemline
+	minusY = min(minusY, crossSections[0].yMin)
+	plusY = max(plusY, crossSections[0].yMax)
+	# get extent of aftmost cross-section and add what the transom sticks out
+	minusX = crossSections[-2].yPos + crossSections[-1].yMin - crossSections[-1].yMax
+	# get the placement of the stemline and add what the stemline extends forward
+	plusX = crossSections[0].yPos + crossSections[0].xMax
+	# some scaling factors to provide margin space around the half-hull
+	minusX = minusX * 1.1
+	plusX = plusX * 1.1
+	minusY = minusY * 1.5
+	plusY = plusY * 1.25
+
+	ps = FreeCAD.activeDocument().addObject('Sketcher::SketchObject','PlainPlaqueSketch')
+	ps.Placement = FreeCAD.Placement(FreeCAD.Vector(0.0,0.0,0.0),
+									FreeCAD.Rotation(0.5,0.5,0.5,0.5))		
+	if aSideFlag==starboardSideFlag: ps.Placement.Base.x = -10
+	ps.addGeometry(Part.Line(FreeCAD.Vector(minusX,plusY,0),FreeCAD.Vector(plusX,plusY,0)))
+	ps.addGeometry(Part.Line(FreeCAD.Vector(plusX,plusY,0),FreeCAD.Vector(plusX,minusY,0)))
+	ps.addGeometry(Part.Line(FreeCAD.Vector(plusX,minusY,0),FreeCAD.Vector(minusX,minusY,0)))
+	ps.addGeometry(Part.Line(FreeCAD.Vector(minusX,minusY,0),FreeCAD.Vector(minusX,plusY,0)))
+	#
+	ps.addConstraint(Sketcher.Constraint('Coincident',0,2,1,1)) 
+	ps.addConstraint(Sketcher.Constraint('Coincident',1,2,2,1)) 
+	ps.addConstraint(Sketcher.Constraint('Coincident',2,2,3,1)) 
+	ps.addConstraint(Sketcher.Constraint('Coincident',3,2,0,1)) 
+	ps.addConstraint(Sketcher.Constraint('Horizontal',0)) 
+	ps.addConstraint(Sketcher.Constraint('Horizontal',2)) 
+	ps.addConstraint(Sketcher.Constraint('Vertical',1)) 
+	ps.addConstraint(Sketcher.Constraint('Vertical',3)) 
+	FreeCAD.ActiveDocument.recompute()
+	#
+	pad = FreeCAD.activeDocument().addObject("PartDesign::Pad","PlainPlaquePad")
+	pad.Sketch = ps
+	pad.Length = 10.0
+	pad.Sketch.ViewObject.hide()
+	pad.ViewObject.ShapeColor = woodColour
+	FreeCAD.ActiveDocument.recompute()
+	#
+	cyl1 = FreeCAD.ActiveDocument.addObject("Part::Cylinder","Cylinder1")
+	cyl1.Label = "Cylinder1"
+	cyl1.Radius = plusY/5
+	cyl1.Placement =	FreeCAD.Placement(FreeCAD.Vector(0,plusX,plusY),
+						FreeCAD.Rotation(FreeCAD.Vector(0,1,0),90))
+	if aSideFlag==starboardSideFlag: cyl1.Placement.Base.x = -10
+	cut1 = FreeCAD.activeDocument().addObject("Part::Cut","Cut1")
+	cut1.Base = App.activeDocument().PlainPlaquePad
+	cut1.Tool = App.activeDocument().Cylinder1
+	cut1.ViewObject.ShapeColor = woodColour
+	FreeCAD.ActiveDocument.recompute()
+	#
+	cyl2 = FreeCAD.ActiveDocument.addObject("Part::Cylinder","Cylinder2")
+	cyl2.Label = "Cylinder2"
+	cyl2.Radius = plusY/5
+	cyl2.Placement =	FreeCAD.Placement(FreeCAD.Vector(0,plusX,minusY),
+						FreeCAD.Rotation(FreeCAD.Vector(0,1,0),90))
+	if aSideFlag==starboardSideFlag: cyl2.Placement.Base.x = -10
+	cut2 = FreeCAD.activeDocument().addObject("Part::Cut","Cut2")
+	cut2.Base = App.activeDocument().Cut1
+	cut2.Tool = App.activeDocument().Cylinder2
+	cut2.ViewObject.ShapeColor = woodColour
+	FreeCAD.ActiveDocument.recompute()
+	#
+	cyl3 = FreeCAD.ActiveDocument.addObject("Part::Cylinder","Cylinder3")
+	cyl3.Label = "Cylinder3"
+	cyl3.Radius = plusY/5
+	cyl3.Placement =	FreeCAD.Placement(FreeCAD.Vector(0,minusX,minusY),
+						FreeCAD.Rotation(FreeCAD.Vector(0,1,0),90))
+	if aSideFlag==starboardSideFlag: cyl3.Placement.Base.x = -10
+	cut3 = FreeCAD.activeDocument().addObject("Part::Cut","Cut3")
+	cut3.Base = App.activeDocument().Cut2
+	cut3.Tool = App.activeDocument().Cylinder3
+	cut3.ViewObject.ShapeColor = woodColour
+	FreeCAD.ActiveDocument.recompute()
+	#
+	cyl4 = FreeCAD.ActiveDocument.addObject("Part::Cylinder","Cylinder4")
+	cyl4.Label = "Cylinder4"
+	cyl4.Radius = plusY/5
+	cyl4.Placement =	FreeCAD.Placement(FreeCAD.Vector(0,minusX,plusY),
+						FreeCAD.Rotation(FreeCAD.Vector(0,1,0),90))
+	if aSideFlag==starboardSideFlag: cyl4.Placement.Base.x = -10
+	cut4 = FreeCAD.activeDocument().addObject("Part::Cut","Cut4")
+	cut4.Base = App.activeDocument().Cut3
+	cut4.Tool = App.activeDocument().Cylinder4
+	cut4.ViewObject.ShapeColor = woodColour
+	FreeCAD.ActiveDocument.recompute()
+	#
+	cham = FreeCAD.ActiveDocument.addObject("Part::Chamfer","Plaque")
+	cham.Base = FreeCAD.ActiveDocument.Cut4
+	edges = []
+	if aSideFlag == starboardSideFlag:
+		edges.append((3,3.00,3.00)); edges.append((13,3.00,3.00)); edges.append((14,3.00,3.00)); edges.append((15,3.00,3.00))
+		edges.append((16,3.00,3.00)); edges.append((17,3.00,3.00)); edges.append((18,3.00,3.00)); edges.append((19,3.00,3.00))
+	else:
+		edges.append((1,3.00,3.00)); edges.append((5,3.00,3.00)); edges.append((6,3.00,3.00)); edges.append((7,3.00,3.00))
+		edges.append((8,3.00,3.00)); edges.append((9,3.00,3.00)); edges.append((10,3.00,3.00)); edges.append((11,3.00,3.00))
+	cham.Edges = edges
+	cham.Base.ViewObject.Visibility = False
+	cham.ViewObject.ShapeColor = woodColour
+
+	createPlaqueCover()
+	
+	if aSideFlag == starboardSideFlag:
+		FreeCADGui.activeDocument().activeView().viewRight()
+	else:
+		FreeCADGui.activeDocument().activeView().viewLeft()
+	FreeCADGui.SendMsgToActiveView("ViewFit")
+	FreeCAD.ActiveDocument.recompute()
+
+def createPlaqueCover():
+	# get upper bow point UBP
+	# get upper stern point USP
+	# get number of sections NS
+	# divide the line UBP-USP into NS pieces
+	#---
+	# for each sketch, get the top point TP
+	# make segments between each consecutive points
+	#---
+	# make RuledSurface between corresponding segments
+
+	if len(crossSections)<5:
+		FreeCAD.Console.PrintMessage("Insufficient cross-sections for plaque cover")
+	else:
+		# the number of cross-section and therefore chines determines how many
+		# segments will be in the cover for the half-hull model
+		segmentCount = len(crossSections)-2
+		# determine endpoints for the line segments along the plaque
+		bowPoint = Base.Vector(0,
+			max(crossSections[0].geometryS[-1].StartPoint.x, crossSections[0].geometryS[-1].EndPoint.x),
+			max(crossSections[0].geometryS[-1].StartPoint.y, crossSections[0].geometryS[-1].EndPoint.y))
+		sternPoint = Base.Vector(0,
+			crossSections[-2].yPos,
+			max(crossSections[-2].geometryS[-1].StartPoint.y, crossSections[-2].geometryS[-1].EndPoint.y))
+		plaquePoints = [bowPoint, sternPoint]
+		lineAlongPlaqueToSplit = Part.Line(bowPoint,sternPoint)
+		lapSection = lineAlongPlaqueToSplit.length()/segmentCount
+
+		# build a list of the points that start/end the segments
+		pointList = []
+		pointList.append(lineAlongPlaqueToSplit.StartPoint)
+		print lineAlongPlaqueToSplit.StartPoint
+		for i in range(1, segmentCount):
+			pointList.append(lineAlongPlaqueToSplit.value((i)*lapSection))
+			print lineAlongPlaqueToSplit.value((i)*lapSection)
+		pointList.append(lineAlongPlaqueToSplit.EndPoint)
+		print lineAlongPlaqueToSplit.EndPoint
+		print
+		# iterate the list of points from the first segment to the last
+		# do stemline first as it is in the YZ plane (cross-sections are in the XZ plane)
+		a=FreeCAD.ActiveDocument.addObject('Part::Line', 'cs1k')
+		a.X1=0; a.Y1=pointList[0].y; a.Z1=pointList[0].z
+		a.X2=0; a.Y2=pointList[1].y; a.Z2=pointList[1].z
+		b=FreeCAD.ActiveDocument.addObject('Part::Line', 'cs1h')
+		# B1 wrong
+		b.X1=0; b.Y1=crossSections[0].endPoint.x; b.Z1=crossSections[0].endPoint.z
+		b.X2=crossSections[1].endPoint.x; b.Y2=crossSections[1].endPoint.y; b.Z2=crossSections[1].endPoint.z
+		FreeCAD.ActiveDocument.addObject('Part::RuledSurface', 'coverSeg1')
+		FreeCAD.ActiveDocument.ActiveObject.Curve1=(a,[''])
+		FreeCAD.ActiveDocument.ActiveObject.Curve2=(b,[''])
+		FreeCAD.ActiveDocument.recompute()
+		# now do cross=sections
+		for i in range(1, segmentCount):
+			a=FreeCAD.ActiveDocument.addObject('Part::Line', 'cs'+str(i+1)+'k')
+			a.X1=0; a.Y1=pointList[i].y; a.Z1=pointList[i].z
+			a.X2=0; a.Y2=pointList[i+1].y;   a.Z2=pointList[i+1].z
+			b=FreeCAD.ActiveDocument.addObject('Part::Line', 'cs'+str(i+1)+'h')
+			b.X1=crossSections[i].endPoint.x;   b.Y1=crossSections[i].endPoint.y;   b.Z1=crossSections[i-1].endPoint.z
+			b.X2=crossSections[i+1].endPoint.x; b.Y2=crossSections[i+1].endPoint.y; b.Z2=crossSections[i].endPoint.z
+			FreeCAD.ActiveDocument.addObject('Part::RuledSurface', 'coverSeg'+str(i+1))
+			FreeCAD.ActiveDocument.ActiveObject.Curve1=(a,[''])
+			FreeCAD.ActiveDocument.ActiveObject.Curve2=(b,[''])
+			FreeCAD.ActiveDocument.recompute()
+				
+		FreeCAD.ActiveDocument.recompute()
+
+def displayChinePanels(crossSectionLabelA, crossSectionLabelB, aSideFlag):
+	# accept 2 sketch labels and generate a ruled surface between them
+	#print sketchLabelA
+	placeholder = "_"
+	csA = FreeCAD.ActiveDocument.getObjectsByLabel(crossSectionLabelA)[0]
+	csB = FreeCAD.ActiveDocument.getObjectsByLabel(crossSectionLabelB)[0]
+	labelA = csA.Label
+	labelB = csB.Label
+	lblA = labelA.split('_', 1)[0]
+	lblB = labelB.split('_', 1)[0]
+	if aSideFlag == portSideFlag:
+		sideText = " Port"
+	elif aSideFlag == starboardSideFlag:
+		sideText = " Starboard"
+	else:
+		sideText = ""
+	#print str(sketchLabelA) + " " + str(sketchLabelB)
+	FreeCAD.ActiveDocument.addObject('Part::RuledSurface', placeholder+lblA+placeholder+lblB+sideText)
+	csObjectA = FreeCAD.ActiveDocument.getObjectsByLabel(crossSectionLabelA)[0]
+	csObjectB = FreeCAD.ActiveDocument.getObjectsByLabel(crossSectionLabelB)[0]
+	#print "> " + str(sketchObjectA) + " " + str(sketchObjectB)
+	FreeCAD.ActiveDocument.ActiveObject.Curve1=(csObjectA,[''])
+	FreeCAD.ActiveDocument.ActiveObject.Curve2=(csObjectB,[''])
+
+def displayCompleteHull():
+	userAction = None
+
+	docKey = findOpenDocumentName(outputWorkspaceC)
+	if docKey!=None:
+		reply = QtGui.QMessageBox.question(None, "",
+			"The previous 'Complete Hull' output file is still open, close it",
+			QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+		if reply == QtGui.QMessageBox.Yes:
+			FreeCAD.closeDocument(outputWorkspaceC)
+		else:
+			userAction = userCancelled
+
+	if userAction!=userCancelled:
+		doc = App.newDocument(outputWorkspaceC)
+		App.setActiveDocument(outputWorkspaceC)
+		App.ActiveDocument=App.getDocument(outputWorkspaceC)
+		docComplete = App.ActiveDocument
+		Gui.ActiveDocument=Gui.getDocument(outputWorkspaceC)
+	
+		for cs in crossSections:
+			# add new Sketch object
+			newSketch = FreeCAD.activeDocument().addObject('Sketcher::SketchObject',cs.label)
+			newSketch.Placement = FreeCAD.Placement(
+				FreeCAD.Vector(cs.xPos,cs.yPos,cs.zPos),
+				FreeCAD.Rotation(cs.rotQ1,cs.rotQ2,cs.rotQ3,cs.rotQ4))
+			Gui.activeDocument().setEdit(cs.altLabel)
+			# insert geometry segments from both half-hulls into new Sketch
+			for seg in cs.geometryC:
+				newSketch.addGeometry(
+					Part.Line(FreeCAD.Vector(seg.StartPoint.x,
+						seg.StartPoint.y,	0),
+					FreeCAD.Vector(seg.EndPoint.x,
+						seg.EndPoint.y,0)))
+			Gui.getDocument(doc.Label).resetEdit()
+			#print obj.Name + " " + obj.Label
+	
+		FreeCAD.cs = crossSections # debug statement
+		for i in range(0, len(crossSections)-1):
+			displayChinePanels(crossSections[i].altLabel,crossSections[i+1].altLabel, "C")
+		# now draw the bow sections going to the stemline
+		#displayChinePanels(crossSections[].altLabel,crossSections[i+1].altLabel, "C")
+		FreeCAD.activeDocument().recompute()
+		FreeCADGui.SendMsgToActiveView("ViewFit")
+		FreeCADGui.activeDocument().activeView().viewAxometric()
+
+def displayHalfHull(aSideFlag):
+	userAction = None
+	# create output workspace for one side
+	if aSideFlag == starboardSideFlag:
+		query = "The previous 'Port Half-Hull' output file is still open, close it"
+		selectedOutputWorkspace = outputWorkspaceS
+		outputWorkspace = outputWorkspaceS
+		sideFlag = starboardSideFlag
+	else:
+		query = "The previous 'Starboard Half-Hull' output file is still open, close it"
+		selectedOutputWorkspace = outputWorkspaceP
+		outputWorkspace = outputWorkspaceP
+		sideFlag = portSideFlag
+
+	docKey = findOpenDocumentName(selectedOutputWorkspace)
+	if docKey==None:
+		doc = FreeCAD.newDocument(selectedOutputWorkspace)
+	else:
+		reply = QtGui.QMessageBox.question(None, "",
+			query,
+			QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+		if reply == QtGui.QMessageBox.Yes:
+			FreeCAD.closeDocument(selectedOutputWorkspace)
+			doc = FreeCAD.newDocument(selectedOutputWorkspace)
+		else:
+			userAction = userCancelled
+
+	if userAction!=userCancelled:
+		FreeCAD.setActiveDocument(outputWorkspace)
+		FreeCAD.ActiveDocument=FreeCAD.getDocument(outputWorkspace)
+		FreeCADGui.ActiveDocument=FreeCADGui.getDocument(outputWorkspace)
+		
+		# place the segments in the document
+		for cs in crossSections:
+			# add new Sketch object
+			FreeCAD.activeDocument().addObject('Sketcher::SketchObject',cs.label)
+			newSketch = FreeCAD.ActiveDocument.getObject(cs.altLabel)
+			newSketch.Placement = FreeCAD.Placement(
+				FreeCAD.Vector(cs.xPos,cs.yPos,cs.zPos),
+				FreeCAD.Rotation(cs.rotQ1,cs.rotQ2,cs.rotQ3,cs.rotQ4))
+			Gui.activeDocument().setEdit(cs.altLabel)
+			# insert geometry segments into new Sketch
+			if sideFlag == "S":
+				geom = cs.geometryS
+			else:
+				geom = cs.geometryP
+			for seg in geom:
+				newSketch.addGeometry(
+					Part.Line(FreeCAD.Vector(seg.StartPoint.x,
+						seg.StartPoint.y,	0),
+					FreeCAD.Vector(seg.EndPoint.x,
+						seg.EndPoint.y,0)))
+			Gui.getDocument(doc.Label).resetEdit()
+		
+		for i in range(0, len(crossSections)-1):
+			displayChinePanels(crossSections[i].altLabel,crossSections[i+1].altLabel, sideFlag)
+	
+		FreeCAD.activeDocument().recompute()
+		FreeCADGui.SendMsgToActiveView("ViewFit")
+		FreeCADGui.activeDocument().activeView().viewAxometric()
+
+def eqRotation(rotationA, rotationB, eps=0.0001):
+	"takes 2 Rotations and compares for equality"
+	eqFlag = True
+	for i in range(0, 4):
+		#print str(rotationA.Q[i]) + "#" + str(rotationB.Q[i])
+		if rotationA.Q[i] == 0:
+			if rotationB.Q[i] <> 0:
+				eqFlag = False
+		elif abs(abs(rotationA.Q[i])-abs(rotationB.Q[i]))/abs(rotationA.Q[i]) > eps:
+			eqFlag = False
+	return eqFlag
+
+def resetSketchesVisibility():
+	# set Visibility on all Sketches to False
+	openWindows = list()
+	if starboardHHFlag:
+		openWindows.append(outputWorkspaceS)
+	if portHHFlag:
+		openWindows.append(outputWorkspaceP)
+	if completeHullFlag:
+		openWindows.append(outputWorkspaceC)
+	#if fullHullBulkheadsFlag:
+		#openWindows.append(outputWorkspaceB)
+
+	for ws in openWindows:
+		FreeCAD.setActiveDocument(ws)
+		FreeCAD.ActiveDocument=FreeCAD.getDocument(ws)
+		FreeCADGui.ActiveDocument=FreeCADGui.getDocument(ws)
+		for obj in FreeCAD.ActiveDocument.Objects:
+			if obj.TypeId == 'Sketcher::SketchObject':
+				vo = FreeCADGui.ActiveDocument.getObject(obj.Name)
+				vo.Visibility=False
+
+def sortOutFilesAndDocuments():
+	global keepSourceOpenFlag
+	# this routine uses the following variables from the main handler:
+	# docSrc (returns)
+	# fileName (reads)
+	# keepSourceOpenFlag (global, writes)
+	# it determines if the 'user selected input document' is already open,
+	# if it is then is is made the ActiveDocument, otherwise it is
+	# Opened which also sets it to the ActiveDocument
+	if len(FreeCAD.listDocuments())==0:
+		# no documents open
+		return FreeCAD.open(fileName)
+	else:
+		# some document(s) open so check if 'user selected input document' is already open
+		"""docKey = None
+		for key in FreeCAD.listDocuments():
+			if FreeCAD.listDocuments()[key].FileName==fileName:
+				docKey = key"""
+		docKey = findOpenDocumentFileSpec(fileName)
+		if docKey==None:
+			# 'user selected input document' is not open
+			return FreeCAD.open(fileName)
+		else:
+			# 'user selected input document' is among open documents
+			# set the 'user selected input document' to the active document (in case it isn't)
+			FreeCAD.setActiveDocument(docKey)
+			# user started with 'user selected input document' open, so this flag will allow
+			# us to leave it open when we finish
+			keepSourceOpenFlag = True
+			return FreeCAD.ActiveDocument
+
+def findOpenDocumentFileSpec(aDocumentFileSpec):
+	# check if supplied document is already open
+	# return document name or None
+	docKey = None
+	for key in FreeCAD.listDocuments():
+		if FreeCAD.listDocuments()[key].FileName==aDocumentFileSpec:
+			docKey = key
+	return docKey
+	
+def findOpenDocumentName(aDocumentName):
+	# check if supplied document is already open
+	# return document name or None
+	docKey = None
+	for key in FreeCAD.listDocuments():
+		if FreeCAD.listDocuments()[key].Name==aDocumentName:
+			docKey = key
+	return docKey
+	
+# Constant definitions
+outputWorkspaceS	= "hull_starboard"
+outputWorkspaceP	= "hull_port"
+outputWorkspaceC	= "hull_complete"
+outputWorkspaceB	= "bulkheads"
+xyPlane				= Base.Rotation(0.0, 0.0, 0.0, 1.0) # transom
+xzPlane				= Base.Rotation(0.7071067811865475, 0.0, 0.0, 0.7071067811865476) # cross section profile
+yzPlane				= Base.Rotation(0.5,0.5,0.5,0.5) # stemline
+infinity			= +99999999999999.9 # will hold min Y value in Sketch
+infinityNegative	= -99999999999999.9 # will hold max X value in Sketch
+global starboardSideFlag, portSideFlag, userCancelled, userLastFile, userOK
+starboardSideFlag	= "S"
+portSideFlag		= "F"
+completeSidesFlag	= "C"
+userCancelled		= "Cancelled"
+userLastFile		= "Last File"
+userOK				= "OK"
+defaultDir = FreeCAD.ConfigGet("UserHomePath")
+
+# code ***********************************************************************************
+allCrossSections	= {}
+crossSections		= list()
+docSrc				= None
+global keepSourceOpenFlag
+keepSourceOpenFlag	= False
+starboardHHFlag		= False; starboardHHPlaqueFlag	= False; starboardHHPKeelFlag		= False
+portHHFlag			= False; portHHPlaqueFlag		= False; portHHPKeelFlag			= False
+completeHullFlag	= False; completeHullBottleFlag	= False; completeHullKeelFlag		= False
+bulkheadsFlag		= False; flushDeckBulkheadsFlag	= True; coachhouseDeckBulkheadsFlag	= True
+
+form = GetConfigParams()
+form.exec_()
+configParams = form.configParams
+
+if configParams.result==userLastFile:
+	if hasattr(FreeCAD,"MacroHalfHullConfigParams"):
+		# global in FreeCAD exists so use the parameters stored there
+		#if type(FreeCAD.MacroHalfHullConfigParams)=='GetConfigParams':
+		configParams = FreeCAD.MacroHalfHullConfigParams
+		configParams.result = userLastFile
+	else:
+		# user requested to re-use last file but there isn't one
+		# so reset the choice to pick a file
+		configParams.result = userOK
+			
+if configParams.result != userCancelled:
+	# transfer results to control flags
+	starboardHHFlag				= configParams.cb1a
+	starboardHHPlaqueFlag		= configParams.cb1b
+	starboardHHPKeelFlag		= configParams.cb1c
+	portHHFlag					= configParams.cb2a
+	portHHPlaqueFlag			= configParams.cb2b
+	portHHPKeelFlag				= configParams.cb2c
+	completeHullFlag			= configParams.cb3a
+	completeHullBottleFlag		= configParams.cb3b
+	completeHullKeelFlag		= configParams.cb3c
+	bulkheadsFlag				= configParams.cb4a
+	# transfer bulkhead parameters
+	bulkheadParams = {}
+	bulkheadParams["coachhouseDeckBulkheadsFlag"]	= configParams.rb5b
+	bulkheadParams["forwardBulkheadsToSkip"]		= int(configParams.skipAtBow)
+	bulkheadParams["aftBulkheadsToSkip"]			= int(configParams.skipAtStern)
+	bulkheadParams["deckWidth"]						= float(configParams.deckWidth.text())
+	bulkheadParams["deckThrow"]						= float(configParams.deckThrow.text())
+	bulkheadParams["coachhouseRise"]				= float(configParams.coachhouseRise.text())
+	bulkheadParams["coachhouseIncline"]				= float(configParams.coachhouseIncline.text())
+		
+	defaultDir = expanduser("~")
+	defaultDir = "/Data Pool/Coding/FreeCAD/work items/hull mirroring/half-hull/"
+	if configParams.result==userOK:
+		# user wants to select file
+		fileName = QtGui.QFileDialog.getOpenFileName(dir=defaultDir, caption = "Select a 'Hull Profile' to Load", filter="*.FCStd")[0]
+		configParams.documentFileName = fileName
+	else:
+		# file is coming out of FreeCAD global
+		fileName = FreeCAD.MacroHalfHullConfigParams.documentFileName
+
+	if len(fileName) != 0:
+		docSrc = sortOutFilesAndDocuments()
+		# read all the objects, saving the Sketcher objects
+		for obj in FreeCAD.ActiveDocument.Objects:
+			if obj.TypeId == 'Sketcher::SketchObject':
+				# ignore anything except Sketches
+				newObj = HullCrossSection(obj)
+				if newObj.transomFlag:
+					# if we have the transom sketch then wait to give
+					# it a placement further aft than anything else
+					transomObject = newObj
+				elif newObj.stemlineFlag:
+					# if we have the stemline sketch then wait
+					# to give it the first placement
+					stemlineObject = newObj
+					stemlineSegmentCount = stemlineObject.sketch.GeometryCount
+				else:
+					# must be a regular cross section profile
+					# so add object to our collection
+					allCrossSections[newObj.key] = newObj
+					#maxY = max(maxY, newObj.yPos)
+
+		# discard sketches with wrong number of points
+		# i.e. cross-sections that have a different number
+		# of points than the stemline
+		for key, cs in allCrossSections.items():
+			if cs.geometryCount <> stemlineSegmentCount:
+				FreeCAD.Console.PrintMessage("Discard for wrong number of segments for '" + str(allCrossSections[key].label) + "'\n")
+				del allCrossSections[key]
+		
+		# construct a list with cross sections in order from stemline to transom
+		crossSections.append(stemlineObject)
+		for sk in sorted(allCrossSections.keys(), reverse=True):
+			crossSections.append(allCrossSections[sk])
+		transomObject.zPos = crossSections[-1].zPos+crossSections[-1].yMax
+		crossSections.append(transomObject)
+
+		FreeCAD.cs = crossSections # debug statement
+		
+		# now set the transom elevation at the top of the last cross-section
+		crossSections[-1].zPos = crossSections[-2].zPos + crossSections[-2].yMax
+		
+		FreeCAD.cs = crossSections # debug statement
+
+		# depending on user flags, invoke appropriate modules
+		if starboardHHFlag:			displayHalfHull(starboardSideFlag)
+		if starboardHHPlaqueFlag:	createPlaque(starboardSideFlag, starboardHHPKeelFlag)
+		if portHHFlag:				displayHalfHull(portSideFlag)
+		if portHHPlaqueFlag:		createPlaque(portSideFlag, portHHPKeelFlag)
+		if completeHullFlag:		displayCompleteHull()
+		if completeHullBottleFlag:	createBottle(completeHullKeelFlag)
+		if bulkheadsFlag:			createBulkheads(bulkheadParams)
+
+		# save Config Params to FreeCAD global in case user wants to use it next run
+		FreeCAD.MacroHalfHullConfigParams = configParams
+		
+		if not keepSourceOpenFlag:
+			FreeCAD.closeDocument(docSrc.Name)
+		resetSketchesVisibility()
+#
+#OS: Mac OS X
+#Word size: 64-bit
+#Version: 0.14.3703 (Git)
+#Branch: releases/FreeCAD-0-14
+#Hash: c6edd47334a3e6f209e493773093db2b9b4f0e40
+#Python version: 2.7.5
+#Qt version: 4.8.6
+#Coin version: 3.1.3
+#SoQt version: 1.5.0
+#OCC version: 6.7.0
+#
+#and so the macro ends...
