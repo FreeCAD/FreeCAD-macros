@@ -1,0 +1,64 @@
+# -*- coding: utf-8 -*-
+# créer un cercle à partir de 3 points sélectionnés sur le plan X,Y
+# 04/03/2013
+# la formule provient de
+# http://www-obs.univ-lyon1.fr/labo/fc/Ateliers_archives/ateliers_2005-06/cercle_3pts.pdf
+# lire la note dans le pdf, sur l'ordre de sélection des points,
+# si la formule renvoie une erreur (exemple les 3 points dans le même alignement)
+#
+import Draft, Part, FreeCAD, math, PartGui, FreeCADGui
+from math import sqrt, pi, sin, cos
+from FreeCAD import Base
+
+# prendre les objets sélectionnés
+sel = FreeCADGui.Selection.getSelection()
+i=0
+centreX=0
+centreY=0
+rayon=0
+# S'il y a 3 points sélectionnés alors..
+if len(sel)==3 :
+	i=0
+	ta=[0,0,0,0,0,0,0,0,0]
+	for obj in sel:
+		x=(obj.Shape.BoundBox.Center)
+		ta[i+0]=(x.x)
+		ta[i+1]=(x.y)
+		ta[i+2]=(x.z)
+		i=i+3
+# Affectation des variables
+	x_point_1=ta[0]
+	y_point_1=ta[1]
+	z_point_1=ta[2]
+	
+	x_point_2=ta[3]
+	y_point_2=ta[4]
+	z_point_2=ta[5]
+	
+	x_point_3=ta[6]
+	y_point_3=ta[7]
+	z_point_3=ta[8]
+# Calcul des coordonnées du centre du cercle	
+	centreX =((x_point_3**2-x_point_2**2+y_point_3**2-y_point_2**2)/(2*(y_point_3-y_point_2))-(x_point_2**2-x_point_1**2+y_point_2**2-y_point_1**2)/(2*(y_point_2-y_point_1)))/((x_point_3-x_point_2)/(y_point_3-y_point_2)-(x_point_2-x_point_1)/(y_point_2-y_point_1))
+	centreY =-(x_point_2-x_point_1)/(y_point_2-y_point_1)*centreX+(x_point_2**2-x_point_1**2+y_point_2**2-y_point_1**2)/(2*(y_point_2-y_point_1))
+	rayon =sqrt((x_point_1-centreX)**2+(y_point_1-centreY)**2)
+# Définition de la coordonnée Z
+# Si toutes les coordonnées Z sont égales le centreZ s'aligne à la coordonnée Z
+	if z_point_1==z_point_2 and z_point_2==z_point_3:
+		centreZ=z_point_1
+	else:
+# Si une coordonnée est différente alors Z=0
+		centreZ=0
+# Création du cercle
+	pl=FreeCAD.Placement()
+	pl.Rotation.Q=(0.0,-0.0,-0.0,1.0)
+	pl.Base=FreeCAD.Vector(centreX,centreY,centreZ)
+	Draft.makeCircle((rayon),placement=pl,face=False,support=None)
+# Affiche le résultat dans la Vue rapport de FreeCAD
+	FreeCAD.Console.PrintMessage("Coordonnée X : "+str(centreX)+"\r\n")
+	FreeCAD.Console.PrintMessage("Coordonnée Y : "+str(centreY)+"\r\n")
+	FreeCAD.Console.PrintMessage("Coordonnée Z : "+str(centreZ)+"\r\n")
+	FreeCAD.Console.PrintMessage("Rayon        : "+str(rayon  )+"\r\n")
+else:
+# Si la condition n'est pas remplie, recommencer
+	FreeCAD.Console.PrintError("Sélectionnez 3 points et recommencez\r\n")
