@@ -14,6 +14,8 @@ from math import sqrt, pi, sin, cos
 from FreeCAD import Base
 from PyQt4 import QtCore, QtGui
 
+global pl
+
 def errorDialog(msg):
     # Create a simple dialog QMessageBox
     # The first argument indicates the icon used: one of QtGui.QMessageBox.{NoIcon, Information, Warning, Critical, Question} 

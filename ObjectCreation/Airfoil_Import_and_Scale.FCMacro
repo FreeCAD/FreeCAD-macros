@@ -81,8 +81,8 @@ class p():
  
         # Add radio buttons to select between DWire and BSpline
  
-        self.radio1 = QRadioButton("Make DWire")
-        self.radio2 = QRadioButton("Make BSpline")
+        self.radio1 = QtGui.QRadioButton("Make DWire")
+        self.radio2 = QtGui.QRadioButton("Make BSpline")
  
             # set default to DWire & make radio buttons - Change self.radio1.setChecked(True) to
             # self.radio2.setChecked(True) to set BSpline as default
