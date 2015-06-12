@@ -9,7 +9,17 @@
 # Works best with OCC/OCE = or > 6.7
 # (c) quick61
 # # # #
- 
+
+__Comment__ = 'Imports and scales an Airfoil in the form of a Draft Wire (DWire) or Basic Spline (BSpline)'
+__Web__ = "http://forum.freecadweb.org/viewtopic.php?f=22&t=5554"
+__Wiki__ = "http://www.freecadweb.org/wiki/index.php?title=Macro_Airfoil_Import_%26_Scale"
+__Icon__  = "/usr/lib/freecad/Mod/plugins/icons/airfoil.png"
+__Help__ = ""
+__Author__ = "quick61"
+__Version__ = '2.1'
+__Status__ = 'stable'
+__Requires__ = 'freecad 0.14.3706'
+
  
 from PySide import QtCore, QtGui
 from PySide.QtGui import QLineEdit, QRadioButton
