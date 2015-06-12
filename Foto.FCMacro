@@ -1,10 +1,17 @@
 # -*- coding: utf-8 -*-
 # (c) microelly 2015
 
-#
-# creates a realsized 300 dpi foto of the selected part
-# from top view
-#
+		
+__Comment__ = ' creates a realsized 300 dpi foto of the selected part from top view'
+__Web__ = ""
+__Wiki__ = ""
+__Icon__  = "AppHomePath/Mod/plugins/icons/camera-photo.png"
+__Help__ = "select an object"
+__Author__ = "microelly"
+__Version__ = 0.1
+__Status__ = 'alpha'
+__Requires__ = ''
+
 
 
 import FreeCAD
