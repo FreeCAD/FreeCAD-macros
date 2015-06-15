@@ -1,0 +1,1464 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+"""
+***************************************************************************
+*   Copyright (c) 2014 2015 <mario52>                                     *
+*                                                                         *
+*   This file is a supplement to the FreeCAD CAx development system.      *
+*                                                                         *
+*   This program is free software; you can redistribute it and/or modify  *
+*   it under the terms of the GNU Lesser General Public License (LGPL)    *
+*   as published by the Free Software Foundation; either version 2 of     *
+*   the License, or (at your option) any later version.                   *
+*   for detail see the LICENCE text file.                                 *
+*                                                                         *
+*   This software is distributed in the hope that it will be useful,      *
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+*   GNU Library General Public License for more details.                  *
+*                                                                         *
+*   You should have received a copy of the GNU Library General Public     *
+*   License along with this macro; if not, write to the Free Software     *
+*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
+*   USA                                                                   *
+***************************************************************************
+*   http://www.freecadweb.org/wiki/index.php?title=Macro_FCCircularText   *
+*           WARNING! All changes in this file will be lost and            *  
+*                  may cause malfunction of the program                   *
+***************************************************************************
+"""
+# FCCircularText.FCMacro
+# ver 0.10 #
+##################################################################################################
+# OS: Ubuntu 14.04.1 LTS                          # OS: Ubuntu 14.04.2 LTS
+# Platform: 32-bit                                # Word size of OS: 32-bit
+# Version: 0.14.2935 (Git)                        # Word size of FreeCAD: 32-bit
+# Branch: master                                  # Version: 0.16.4928 (Git)
+# Hash: eab159b6ee675012bf79de838c206a311e911d85  # Branch: master
+# Python version: 2.7.6                           # Hash: d8f63bcfd10301f3d1e141cced4370f0782238d0
+# Qt version: 4.8.6                               # Python version: 2.7.6
+# Coin version: 4.0.0a                            # Qt version: 4.8.6
+# SoQt version: 1.6.0a                            # Coin version: 4.0.0a
+# OCC version: 6.7.0                              # OCC version: 6.8.0.oce-0.17
+##################################################################################################
+# OS: Windows Vista                               # OS: Windows Vista
+# Word size of OS: 32-bit                         # Word size of OS: 32-bit
+# Word size of FreeCAD: 32-bit                    # Word size of FreeCAD: 32-bit
+# Version: 0.15.4527 (Git)                        # Version: 0.15.4671 (Git)
+# Branch: master                                  # Branch: releases/FreeCAD-0-15
+# Hash: 0da2e4c45a9a259c26abd54c2a35393e1c15696f  # Hash: 244b3aef360841646cbfe80a1b225c8b39c8380c
+# Python version: 2.7.8                           # Python version: 2.7.8
+# Qt version: 4.8.6                               # Qt version: 4.8.6
+# Coin version: 4.0.0a                            # Coin version: 4.0.0a
+# OCC version: 6.7.1                              # OCC version: 6.8.0.oce-0.17
+##################################################################################################
+
+__Title__="FCCircularText"
+__Author__ = "Mario52"
+__Version__ = "00.11"
+__Date__    = "12/06/2015"
+
+__Comment__ = "This macro creates a text around a cylinder"
+__Web__ = "http://forum.freecadweb.org/viewtopic.php?f=3&t=7384"
+__Wiki__ = "http://www.freecadweb.org/wiki/index.php?title=Macro_FCCircularText"
+__Icon__  = "/usr/lib/freecad/Mod/plugins/icons/FCCircularTextButtom.png"
+__IconW__  = "C:/Documents and Settings/YourUserName/Application Data/FreeCAD"
+__Help__ = "start the macro and follow the instructions"
+__Status__ = "stable"
+__Requires__ = "freecad 0.14.3706"
+__Communication__ = "http://www.freecadweb.org/wiki/index.php?title=User:Mario52"
+
+
+try:
+    import PyQt4
+    from PyQt4 import QtGui ,QtCore
+    from PyQt4.QtGui import *
+    from PyQt4.QtCore import *
+except Exception:
+    import PySide
+    from PySide import QtGui ,QtCore
+    from PySide.QtGui import *
+    from PySide.QtCore import *
+ 
+import Draft, Part, FreeCAD, math, PartGui, FreeCADGui
+from math import sqrt, pi, sin, cos, asin, degrees, radians, tan
+from FreeCAD import Base
+import os, time, sys
+
+App=FreeCAD
+Gui=FreeCADGui
+
+import sys,traceback
+def sayexc(mess=''):
+	exc_type, exc_value, exc_traceback = sys.exc_info()
+	ttt=repr(traceback.format_exception(exc_type, exc_value,exc_traceback))
+	lls=eval(ttt)
+	l=len(lls)
+	l2=lls[(l-3):]
+	FreeCAD.Console.PrintError(mess + "\n" +"-->  ".join(l2))
+
+import platform
+
+class ConfigManager():
+
+	def __init__(self,name):
+		self.name="Plugins/"+name
+
+	def get(self,param,default,defaultWindows=None,defaultMac=None):
+			os=platform.system()
+			#os='Linux'
+			#os='Windows'
+			#os='Darwin'
+			v=False
+			if not defaultWindows:
+				defaultWindows=default
+			if not defaultMac:
+				defaultMac=default
+			if os =='Windows' :
+				default= defaultWindows
+			if os =='Darwin' :
+				default= defaultMac
+			if default.__class__ == unicode:
+				default=str(default)
+			if default.__class__ == int:
+				v=FreeCAD.ParamGet('User parameter:'+self.name).GetInt(param)
+				if not v:
+					FreeCAD.ParamGet('User parameter:'+self.name).SetInt(param,default)
+			if default.__class__ == float:
+				v=FreeCAD.ParamGet('User parameter:'+self.name).GetFloat(param)
+				if not v:
+					FreeCAD.ParamGet('User parameter:'+self.name).SetFloat(param,default)
+			if default.__class__ == str:
+				v=FreeCAD.ParamGet('User parameter:'+self.name).GetString(param)
+				if not v:
+					FreeCAD.ParamGet('User parameter:'+self.name).SetString(param,default)
+			if default.__class__ == bool:
+				v=FreeCAD.ParamGet('User parameter:'+self.name).GetBool(param)
+				if not v:
+					FreeCAD.ParamGet('User parameter:'+self.name).SetBool(param,default)
+			if not v:
+				v=default
+			return v
+
+global points           ;points   = 0.0
+global coor_X           ;coor_X   = 0.0
+global coor_Y           ;coor_Y   = 0.0
+global coor_Z           ;coor_Z   = 0.0
+global vec              ;vec      = 0
+
+global PolicePath
+
+cm=ConfigManager("circular text")
+PolicePath=cm.get("PolicePath","/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-M.ttf","C:/Windows/Fonts/ARIAL.TTF",".../macfontdir/macfont.ttf")
+
+global rayon            ;rayon           = 10.0               # radius
+global texte            ;texte           = "FreeCAD the best" #FreeCad The Best your text
+global debut            ;debut           = 0                  # begin text
+global rotation         ;rotation        = 360                # must exceed the number of characters of text
+global SizeCaractere    ;SizeCaractere   = 2.0                # size font
+
+global precision        ;precision       = 0.0
+global correctionAngle  ;correctionAngle = 10.0
+global correctionRayon  ;correctionRayon = 0.15
+global debout           ;debout          = 1                  # 1=stand   0=flat
+global exterieur        ;exterieur       = 1                  # 1=exteral 0=internal
+global baseHelix        ;baseHelix       = 0.0                # base of helix
+global endHelix         ;endHelix        = 0.0                # end of helix (heigth)
+global pasHelix         ;pasHelix        = 2.0                # Pas of helix
+global nombreCarParTour ;nombreCarParTour= 10                 # number char by Pas
+
+global PlacementX       ;PlacementX      = 0.0                # Placement character axis X
+global PlacementY       ;PlacementY      = 0.0                # Placement characher axis Y
+global PlacementZ       ;PlacementZ      = 0.0                # Placement characher axis Z
+
+global inclinaisonX     ;inclinaisonX    = 0                  # inclination character axis X
+global inclinaisonY     ;inclinaisonY    = 0                  # inclination character axis Y
+global inclinaisonZ     ;inclinaisonZ    = 0                  # inclination character axis Z + correctionAngle
+
+global cercleClock      ;cercleClock     = rayon              # diameter support clock
+global nombreFaces      ;nombreFaces     = 0                  # number Faces of support 0=none 1=circle 2=rectangle 3=triangle 4,5 ... polygon
+global romain           ;romain          = 0                  # number roman or arabic
+global redressement     ;redressement    = 0                  # character V or circular
+
+global comP             ;comP            = ""                 # contener 
+global nameL            ;nameL           = ""                 # contener 
+global epaisseur        ;epaisseur       = 0.0                # epaisseur extrusion chacacter
+global epaisSupp        ;epaisSupp       = 0.0                # epaisseur extrusion support
+global extrusion        ;extrusion       = 0.0                # epaisseur extrusion
+
+global compount1        ;compount1       = 0                  # cree un compose des carachteres
+
+# pointColor
+global red              ;red   = 1.0  # 1 = 255 [ color num x = (1/255)*x ]
+global green            ;green = 0.0  #
+global blue             ;blue  = 0.0  #
+
+try:
+    _fromUtf8 = QtCore.QString.fromUtf8
+except AttributeError:
+    def _fromUtf8(s):
+        return s
+
+try:
+    _encoding = QtGui.QApplication.UnicodeUTF8
+    def _translate(context, text, disambig):
+        return QtGui.QApplication.translate(context, text, disambig, _encoding)
+except AttributeError:
+    def _translate(context, text, disambig):
+        return QtGui.QApplication.translate(context, text, disambig)
+
+class Ui_MainWindow(object):
+
+    def setupUi(self, MainWindow):
+        self.window = MainWindow
+
+        path = FreeCAD.ConfigGet("AppHomePath")
+        #path = FreeCAD.ConfigGet("UserAppData")
+
+        global PolicePath
+        global rayon
+        global texte
+        global rotation
+        global SizeCaractere
+        global debout
+        global exterieur
+
+        global precision
+        global correctionAngle
+        global correctionRayon
+        global baseHelix
+        global endHelix
+        global nombreCarParTour
+
+        global epaisseur
+        global epaisSupp
+
+        MainWindow.setObjectName(_fromUtf8("MainWindow"))
+        MainWindow.resize(370, 638)
+        MainWindow.setMaximumSize(QtCore.QSize(370, 638))
+        MainWindow.setMinimumSize(QtCore.QSize(370, 638))
+        self.centralWidget = QtGui.QWidget(MainWindow)
+        self.centralWidget.setObjectName(_fromUtf8("centralWidget"))
+        self.groupBox_02 = QtGui.QGroupBox(self.centralWidget)
+        self.groupBox_02.setGeometry(QtCore.QRect(10, 100, 351, 301))
+        self.groupBox_02.setAccessibleDescription(_fromUtf8(""))
+        self.groupBox_02.setObjectName(_fromUtf8("groupBox_02"))
+
+        self.DS_Size_Character = QtGui.QDoubleSpinBox(self.groupBox_02)
+        self.DS_Size_Character.setGeometry(QtCore.QRect(140, 60, 81, 22))
+        self.DS_Size_Character.setAccessibleDescription(_fromUtf8(""))
+        self.DS_Size_Character.setMinimum(0.0)
+        self.DS_Size_Character.setMaximum(99999999.0)
+        self.DS_Size_Character.setSingleStep(1.0)
+        self.DS_Size_Character.setValue(SizeCaractere)
+        self.DS_Size_Character.setObjectName(_fromUtf8("DS_Size_Character"))
+        self.DS_Size_Character.setToolTip(_fromUtf8("Size of the font"))
+        self.DS_Size_Character.valueChanged.connect(self.on_DS_Size_Character) #connection doubleSpinBox
+
+        self.label_4 = QtGui.QLabel(self.groupBox_02)
+        self.label_4.setGeometry(QtCore.QRect(230, 60, 91, 16))
+        self.label_4.setAccessibleDescription(_fromUtf8(""))
+        self.label_4.setText(_fromUtf8("Size character"))
+        self.label_4.setObjectName(_fromUtf8("label_4"))
+
+        self.DS_Extrude = QtGui.QDoubleSpinBox(self.groupBox_02)
+        self.DS_Extrude.setEnabled(False)
+        self.DS_Extrude.setGeometry(QtCore.QRect(140, 210, 81, 22))
+        self.DS_Extrude.setToolTip(_fromUtf8("Thickness of the extrude of character. If thickness = 0 then not extrude"))
+        self.DS_Extrude.setAccessibleDescription(_fromUtf8(""))
+        self.DS_Extrude.setMinimum(-99999999.0)
+        self.DS_Extrude.setMaximum(99999999.0)
+        self.DS_Extrude.setValue(epaisseur)
+        self.DS_Extrude.setObjectName(_fromUtf8("DS_Extrude"))
+        self.DS_Extrude.valueChanged.connect(self.on_DS_Extrude) #connection doubleSpinBox
+
+        self.label_7 = QtGui.QLabel(self.groupBox_02)
+        self.label_7.setGeometry(QtCore.QRect(230, 150, 101, 20))
+        self.label_7.setAccessibleDescription(_fromUtf8(""))
+        self.label_7.setText(_fromUtf8("Correction Angle"))
+        self.label_7.setObjectName(_fromUtf8("label_7"))
+
+        self.DS_Correction_Angle = QtGui.QDoubleSpinBox(self.groupBox_02)
+        self.DS_Correction_Angle.setGeometry(QtCore.QRect(140, 150, 81, 22))
+        self.DS_Correction_Angle.setToolTip(_fromUtf8("Correct angle for tangent the text of thr circle or give a tilt angle "))
+        self.DS_Correction_Angle.setAccessibleDescription(_fromUtf8(""))
+        self.DS_Correction_Angle.setMinimum(-359.00)
+        self.DS_Correction_Angle.setMaximum(359.00)
+        self.DS_Correction_Angle.setValue(correctionAngle)
+        self.DS_Correction_Angle.setObjectName(_fromUtf8("DS_Correction_Angle"))
+        self.DS_Correction_Angle.valueChanged.connect(self.on_DS_Correction_Angle) #connection doubleSpinBox
+
+        self.label_8 = QtGui.QLabel(self.groupBox_02)
+        self.label_8.setGeometry(QtCore.QRect(230, 180, 111, 16))
+        self.label_8.setAccessibleDescription(_fromUtf8(""))
+        self.label_8.setText(_fromUtf8("Correction Radius"))
+        self.label_8.setObjectName(_fromUtf8("label_8"))
+
+        self.DS_Correction_Radius = QtGui.QDoubleSpinBox(self.groupBox_02)
+        self.DS_Correction_Radius.setGeometry(QtCore.QRect(140, 180, 81, 22))
+        self.DS_Correction_Radius.setToolTip(_fromUtf8("Correct of the radius (depend of correction angle)"))
+        self.DS_Correction_Radius.setAccessibleDescription(_fromUtf8(""))
+        self.DS_Correction_Radius.setMinimum(-99999999.0)
+        self.DS_Correction_Radius.setMaximum(99999999.0)
+        self.DS_Correction_Radius.setValue(correctionRayon)
+        self.DS_Correction_Radius.setObjectName(_fromUtf8("DS_Correction_Radius"))
+        self.DS_Correction_Radius.valueChanged.connect(self.on_DS_Correction_Radius) #connection doubleSpinBox
+
+        self.DS_Radius_Circle = QtGui.QDoubleSpinBox(self.groupBox_02)
+        self.DS_Radius_Circle.setGeometry(QtCore.QRect(140, 30, 81, 22))
+        self.DS_Radius_Circle.setToolTip(_fromUtf8("Give the radius of circle"))
+        self.DS_Radius_Circle.setAccessibleDescription(_fromUtf8(""))
+        self.DS_Radius_Circle.setMinimum(-99999999.0)
+        self.DS_Radius_Circle.setMaximum(99999999.0)
+        self.DS_Radius_Circle.setValue(rayon)
+        self.DS_Radius_Circle.setObjectName(_fromUtf8("DS_Radius_Circle"))
+        self.DS_Radius_Circle.valueChanged.connect(self.on_DS_Radius_Circle) #connection doubleSpinBox
+
+        self.label_10 = QtGui.QLabel(self.groupBox_02)
+        self.label_10.setGeometry(QtCore.QRect(230, 30, 101, 16))
+        self.label_10.setAccessibleDescription(_fromUtf8(""))
+        self.label_10.setObjectName(_fromUtf8("label_10"))
+
+        self.groupBox_03 = QtGui.QGroupBox(self.groupBox_02)
+        self.groupBox_03.setGeometry(QtCore.QRect(10, 20, 101, 211))
+        self.groupBox_03.setAccessibleDescription(_fromUtf8(""))
+        self.groupBox_03.setObjectName(_fromUtf8("groupBox_03"))
+
+        self.RA_Choice_Outdoor = QtGui.QRadioButton(self.groupBox_03)
+        self.RA_Choice_Outdoor.setGeometry(QtCore.QRect(10, 20, 71, 20))
+        self.RA_Choice_Outdoor.setAccessibleDescription(_fromUtf8(""))
+        self.RA_Choice_Outdoor.setChecked(True)
+        self.RA_Choice_Outdoor.setObjectName(_fromUtf8("RA_Choice_Outdoor"))
+        self.RA_Choice_Outdoor.clicked.connect(self.on_RA_Choice_Outdoor) #connection radioButton
+
+        self.RA_Choice_Indoor = QtGui.QRadioButton(self.groupBox_03)
+        self.RA_Choice_Indoor.setGeometry(QtCore.QRect(10, 40, 71, 20))
+        self.RA_Choice_Indoor.setAccessibleDescription(_fromUtf8(""))
+        self.RA_Choice_Indoor.setObjectName(_fromUtf8("RA_Choice_Indoor"))
+        self.RA_Choice_Indoor.clicked.connect(self.on_RA_Choice_Indoor) #connection radioButton
+
+        self.RA_Choice_Helix = QtGui.QRadioButton(self.groupBox_03)
+        self.RA_Choice_Helix.setGeometry(QtCore.QRect(10, 60, 61, 20))
+        self.RA_Choice_Helix.setAccessibleDescription(_fromUtf8(""))
+        self.RA_Choice_Helix.setObjectName(_fromUtf8("RA_Choice_Helix"))
+        self.RA_Choice_Helix.clicked.connect(self.on_RA_Choice_Helix) #connection radioButton
+
+        self.RA_Choice_Clock = QtGui.QRadioButton(self.groupBox_03)
+        self.RA_Choice_Clock.setGeometry(QtCore.QRect(10, 80, 61, 20))
+        self.RA_Choice_Clock.setAccessibleDescription(_fromUtf8(""))
+        self.RA_Choice_Clock.setObjectName(_fromUtf8("RA_Choice_Clock"))
+        self.RA_Choice_Clock.clicked.connect(self.on_RA_Choice_Clock) #connection radioButton
+
+        self.PU_Flat = QtGui.QPushButton(self.groupBox_03)
+        self.PU_Flat.setEnabled(True)
+        self.PU_Flat.setGeometry(QtCore.QRect(10, 105, 81, 28))
+        self.PU_Flat.setAccessibleDescription(_fromUtf8(""))
+        self.PU_Flat.setText(_fromUtf8("Mode Stand"))
+        self.PU_Flat.setToolTip(_fromUtf8("Click for create the text Flat"))
+        self.PU_Flat.setObjectName(_fromUtf8("PU_Flat"))
+        self.PU_Flat.clicked.connect(self.on_PU_Flat)
+
+        self.graphicsView = QtGui.QGraphicsView(self.groupBox_03)
+        self.graphicsView.setGeometry(QtCore.QRect(10, 140, 81, 61))
+        self.graphicsView.setObjectName(_fromUtf8("graphicsView"))
+
+        self.label_13 = QtGui.QLabel(self.groupBox_02)
+        self.label_13.setGeometry(QtCore.QRect(230, 90, 71, 16))
+        self.label_13.setAccessibleDescription(_fromUtf8(""))
+        self.label_13.setObjectName(_fromUtf8("label_13"))
+
+        self.label_14 = QtGui.QLabel(self.groupBox_02)
+        self.label_14.setGeometry(QtCore.QRect(230, 120, 71, 16))
+        self.label_14.setAccessibleDescription(_fromUtf8(""))
+        self.label_14.setObjectName(_fromUtf8("label_14"))
+
+        self.CH_Extrude = QtGui.QCheckBox(self.groupBox_02)
+        self.CH_Extrude.setGeometry(QtCore.QRect(230, 210, 105, 20))
+        self.CH_Extrude.setToolTip(_fromUtf8("Choice extrude character or not"))
+        self.CH_Extrude.setAccessibleDescription(_fromUtf8(""))
+        self.CH_Extrude.setObjectName(_fromUtf8("CH_Extrude"))
+        self.CH_Extrude.clicked.connect(self.on_CH_Extrude) #connection checkBox
+
+        self.DS_InclinaisonX = QtGui.QSpinBox(self.groupBox_02)
+        self.DS_InclinaisonX.setEnabled(False)
+        self.DS_InclinaisonX.setGeometry(QtCore.QRect(10, 270, 61, 22))
+        self.DS_InclinaisonX.setToolTip(_fromUtf8("Inclination character in axis X"))
+        self.DS_InclinaisonX.setMinimum(-360)
+        self.DS_InclinaisonX.setMaximum(360)
+        self.DS_InclinaisonX.setValue(inclinaisonX)
+        self.DS_InclinaisonX.setObjectName(_fromUtf8("DS_InclinaisonX"))
+        self.DS_InclinaisonX.valueChanged.connect(self.on_DS_InclinaisonX) #connection doubleSpinBox
+
+        self.DS_InclinaisonY = QtGui.QSpinBox(self.groupBox_02)
+        self.DS_InclinaisonY.setEnabled(False)
+        self.DS_InclinaisonY.setGeometry(QtCore.QRect(85, 270, 61, 22))
+        self.DS_InclinaisonY.setToolTip(_fromUtf8("Inclination character axis Y"))
+        self.DS_InclinaisonY.setMinimum(-360)
+        self.DS_InclinaisonY.setMaximum(360)
+        self.DS_InclinaisonY.setValue(inclinaisonY)
+        self.DS_InclinaisonY.setObjectName(_fromUtf8("DS_InclinaisonY"))
+        self.DS_InclinaisonY.valueChanged.connect(self.on_DS_InclinaisonY) #connection doubleSpinBox
+
+        self.DS_InclinaisonZ = QtGui.QSpinBox(self.groupBox_02)
+        self.DS_InclinaisonZ.setEnabled(False)
+        self.DS_InclinaisonZ.setGeometry(QtCore.QRect(160, 270, 61, 22))
+        self.DS_InclinaisonZ.setToolTip(_fromUtf8("Inclination character axis Z"))
+        self.DS_InclinaisonZ.setMinimum(-360)
+        self.DS_InclinaisonZ.setMaximum(360)
+        self.DS_InclinaisonZ.setValue(inclinaisonZ)
+        self.DS_InclinaisonZ.setObjectName(_fromUtf8("DS_InclinaisonZ"))
+        self.DS_InclinaisonZ.valueChanged.connect(self.on_DS_InclinaisonZ) #connection doubleSpinBox
+
+        self.CH_Sp_Inclination = QtGui.QCheckBox(self.groupBox_02)
+        self.CH_Sp_Inclination.setGeometry(QtCore.QRect(230, 270, 111, 20))
+        self.CH_Sp_Inclination.setToolTip(_fromUtf8("Inclination of character in the choice or alls plane "))
+        self.CH_Sp_Inclination.setText(_fromUtf8("Sp. inclination"))
+        self.CH_Sp_Inclination.setObjectName(_fromUtf8("CH_Sp_Inclination"))
+        self.CH_Sp_Inclination.clicked.connect(self.on_CH_Sp_Inclination) #connection checkBox
+
+        self.S_Begin_Angle = QtGui.QSpinBox(self.groupBox_02)
+        self.S_Begin_Angle.setGeometry(QtCore.QRect(140, 90, 81, 22))
+        self.S_Begin_Angle.setMaximum(360)
+        self.S_Begin_Angle.setObjectName(_fromUtf8("spinBox"))
+        self.S_Begin_Angle.setToolTip(_fromUtf8("Starting text of the circle "))
+        self.S_Begin_Angle.setValue(debut)
+        self.S_Begin_Angle.valueChanged.connect(self.on_S_Begin_Angle) #connection SpinBox
+
+        self.S_End_Angle = QtGui.QSpinBox(self.groupBox_02)
+        self.S_End_Angle.setGeometry(QtCore.QRect(140, 120, 81, 22))
+        self.S_End_Angle.setMaximum(360)
+        self.S_End_Angle.setValue(rotation)
+        self.S_End_Angle.setToolTip(_fromUtf8("End text of the circle "))
+        self.S_End_Angle.setObjectName(_fromUtf8("S_End_Angle"))
+        self.S_End_Angle.valueChanged.connect(self.on_S_End_Angle) #connection SpinBox
+
+        self.DS_PlacementX = QtGui.QDoubleSpinBox(self.groupBox_02)
+        self.DS_PlacementX.setEnabled(False)
+        self.DS_PlacementX.setGeometry(QtCore.QRect(10, 240, 62, 22))
+        self.DS_PlacementX.setToolTip(_fromUtf8("Placement direction X"))
+        self.DS_PlacementX.setSpecialValueText(_fromUtf8(""))
+        self.DS_PlacementX.setMinimum(-9999999.0)
+        self.DS_PlacementX.setMaximum(9999999.99)
+        self.DS_PlacementX.setObjectName(_fromUtf8("DS_PlacementX"))
+        self.DS_PlacementX.valueChanged.connect(self.on_DS_PlacementX) #connection doubleSpinBox
+
+        self.DS_PlacementY = QtGui.QDoubleSpinBox(self.groupBox_02)
+        self.DS_PlacementY.setEnabled(False)
+        self.DS_PlacementY.setGeometry(QtCore.QRect(85, 240, 62, 22))
+        self.DS_PlacementY.setToolTip(_fromUtf8("Placement direction Y"))
+        self.DS_PlacementY.setSpecialValueText(_fromUtf8(""))
+        self.DS_PlacementY.setMinimum(-9999999.0)
+        self.DS_PlacementY.setMaximum(9999999.99)
+        self.DS_PlacementY.setObjectName(_fromUtf8("DS_PlacementY"))
+        self.DS_PlacementY.valueChanged.connect(self.on_DS_PlacementY) #connection doubleSpinBox
+
+        self.DS_PlacementZ = QtGui.QDoubleSpinBox(self.groupBox_02)
+        self.DS_PlacementZ.setEnabled(False)
+        self.DS_PlacementZ.setGeometry(QtCore.QRect(160, 240, 62, 22))
+        self.DS_PlacementZ.setToolTip(_fromUtf8("Placement direction Z"))
+        self.DS_PlacementZ.setSpecialValueText(_fromUtf8(""))
+        self.DS_PlacementZ.setMinimum(-9999999.0)
+        self.DS_PlacementZ.setMaximum(9999999.99)
+        self.DS_PlacementZ.setObjectName(_fromUtf8("DS_PlacementZ"))
+        self.DS_PlacementZ.valueChanged.connect(self.on_DS_PlacementZ) #connection doubleSpinBox
+
+        self.CH_Sp_Placement = QtGui.QCheckBox(self.groupBox_02)
+        self.CH_Sp_Placement.setGeometry(QtCore.QRect(230, 240, 111, 20))
+        self.CH_Sp_Placement.setToolTip(_fromUtf8("Placement of character in the choice"))
+        self.CH_Sp_Placement.setObjectName(_fromUtf8("CH_Sp_Placement"))
+        self.CH_Sp_Placement.clicked.connect(self.on_CH_Sp_Placement) #connection checkBox
+
+        self.groupBox_05 = QtGui.QGroupBox(self.centralWidget)
+        self.groupBox_05.setEnabled(False)
+        self.groupBox_05.setGeometry(QtCore.QRect(10, 480, 351, 111))
+        self.groupBox_05.setAccessibleDescription(_fromUtf8(""))
+        self.groupBox_05.setObjectName(_fromUtf8("groupBox_05"))
+
+        self.PU_Roman = QtGui.QPushButton(self.groupBox_05)
+        self.PU_Roman.setGeometry(QtCore.QRect(250, 20, 93, 28))
+        self.PU_Roman.setAccessibleDescription(_fromUtf8(""))
+        self.PU_Roman.setText(_fromUtf8("Mode Arabic"))
+        self.PU_Roman.setObjectName(_fromUtf8("PU_Roman"))
+        self.PU_Roman.clicked.connect(self.on_PU_Roman)
+
+        self.PU_Redress = QtGui.QPushButton(self.groupBox_05)
+        self.PU_Redress.setGeometry(QtCore.QRect(250, 50, 93, 28))
+        self.PU_Redress.setAccessibleDescription(_fromUtf8(""))
+        self.PU_Redress.setText(_fromUtf8("Redress"))
+        self.PU_Redress.setObjectName(_fromUtf8("PU_Redress"))
+        self.PU_Redress.clicked.connect(self.on_PU_Redress)
+
+        self.S_Number_Faces_Support = QtGui.QSpinBox(self.groupBox_05)
+        self.S_Number_Faces_Support.setGeometry(QtCore.QRect(10, 50, 81, 22))
+        self.S_Number_Faces_Support.setToolTip(_fromUtf8("Number of side of the support 0=none, 1=circle, 2=rectangle, 3=triangle, 4=square, 5=pentagon . . . . (Thickness egal extrude)"))
+        self.S_Number_Faces_Support.setAccessibleDescription(_fromUtf8(""))
+        self.S_Number_Faces_Support.setMaximum(999)
+        self.S_Number_Faces_Support.setValue(nombreFaces)
+        self.S_Number_Faces_Support.setObjectName(_fromUtf8("S_Number_Faces_Support"))
+        self.S_Number_Faces_Support.valueChanged.connect(self.on_S_Number_Faces_Support) #connection SpinBox
+
+        self.label_5 = QtGui.QLabel(self.groupBox_05)
+        self.label_5.setGeometry(QtCore.QRect(100, 50, 131, 16))
+        self.label_5.setAccessibleDescription(_fromUtf8(""))
+        self.label_5.setText(_fromUtf8("Support number face"))
+        self.label_5.setObjectName(_fromUtf8("label_5"))
+
+        self.DS_Radius_Support = QtGui.QDoubleSpinBox(self.groupBox_05)
+        self.DS_Radius_Support.setGeometry(QtCore.QRect(10, 20, 81, 22))
+        self.DS_Radius_Support.setToolTip(_fromUtf8("Radius of the support the clock (By defaut : Radius of circle)"))
+        self.DS_Radius_Support.setAccessibleDescription(_fromUtf8(""))
+        self.DS_Radius_Support.setMaximum(99999999.99)
+        self.DS_Radius_Support.setValue(cercleClock)
+        self.DS_Radius_Support.setObjectName(_fromUtf8("DS_Radius_Support"))
+        self.DS_Radius_Support.valueChanged.connect(self.on_DS_Radius_Support) #connection doubleSpinBox
+
+        self.label_11 = QtGui.QLabel(self.groupBox_05)
+        self.label_11.setGeometry(QtCore.QRect(100, 20, 121, 16))
+        self.label_11.setAccessibleDescription(_fromUtf8(""))
+        self.label_11.setObjectName(_fromUtf8("label_11"))
+
+        self.doubleSpinBox = QtGui.QDoubleSpinBox(self.groupBox_05)
+        self.doubleSpinBox.setGeometry(QtCore.QRect(10, 80, 81, 22))
+        self.doubleSpinBox.setObjectName(_fromUtf8("doubleSpinBox"))
+
+        self.DS_Extrude_Support = QtGui.QDoubleSpinBox(self.groupBox_05)
+        self.DS_Extrude_Support.setGeometry(QtCore.QRect(10, 80, 81, 22))
+        self.DS_Extrude_Support.setToolTip(_fromUtf8("Thickness of the extrude the support. If thickness = 0 then not extrude"))
+        self.DS_Extrude_Support.setAccessibleDescription(_fromUtf8(""))
+        self.DS_Extrude_Support.setMaximum(99999999.0)
+        self.DS_Extrude_Support.setEnabled(False)
+        self.DS_Extrude_Support.setValue(epaisSupp)
+        self.DS_Extrude_Support.setObjectName(_fromUtf8("DS_Extrude_Support"))
+        self.DS_Extrude_Support.valueChanged.connect(self.on_DS_Extrude_Support) #connection doubleSpinBox
+
+        self.label_6 = QtGui.QLabel(self.groupBox_05)
+        self.label_6.setGeometry(QtCore.QRect(100, 80, 121, 16))
+        self.label_6.setObjectName(_fromUtf8("label_6"))
+
+        self.groupBox_04 = QtGui.QGroupBox(self.centralWidget)
+        self.groupBox_04.setEnabled(False)
+        self.groupBox_04.setGeometry(QtCore.QRect(10, 400, 351, 81))
+        self.groupBox_04.setAccessibleDescription(_fromUtf8(""))
+        self.groupBox_04.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.groupBox_04.setCheckable(False)
+        self.groupBox_04.setObjectName(_fromUtf8("groupBox_04"))
+
+        self.DS_Base_Helix = QtGui.QDoubleSpinBox(self.groupBox_04)
+        self.DS_Base_Helix.setGeometry(QtCore.QRect(10, 50, 81, 22))
+        self.DS_Base_Helix.setToolTip(_fromUtf8("Base (begin) of helix (to activate Step of Helix must be zero)"))
+        self.DS_Base_Helix.setEnabled(False)
+        self.DS_Base_Helix.setAccessibleDescription(_fromUtf8(""))
+        self.DS_Base_Helix.setMinimum(-99999999.0)
+        self.DS_Base_Helix.setMaximum(99999999.0)
+        self.DS_Base_Helix.setValue(baseHelix)
+        self.DS_Base_Helix.setObjectName(_fromUtf8("DS_Base_Helix"))
+        self.DS_Base_Helix.valueChanged.connect(self.on_DS_Base_Helix) #connection doubleSpinBox
+
+        self.label = QtGui.QLabel(self.groupBox_04)
+        self.label.setGeometry(QtCore.QRect(270, 20, 91, 16))
+        self.label.setAccessibleDescription(_fromUtf8(""))
+        self.label.setText(_fromUtf8("Char. per turn"))
+        self.label.setObjectName(_fromUtf8("label"))
+
+        self.DS_End_Helix = QtGui.QDoubleSpinBox(self.groupBox_04)
+        self.DS_End_Helix.setGeometry(QtCore.QRect(180, 50, 81, 22))
+        self.DS_End_Helix.setToolTip(_fromUtf8("Final height of the helix (to activate Step of Helix must be zero)"))
+        self.DS_End_Helix.setEnabled(False)
+        self.DS_End_Helix.setAccessibleDescription(_fromUtf8(""))
+        self.DS_End_Helix.setMinimum(-99999999.0)
+        self.DS_End_Helix.setMaximum(99999999.0)
+        self.DS_End_Helix.setValue(endHelix)
+        self.DS_End_Helix.setObjectName(_fromUtf8("DS_End_Helix"))
+        self.DS_End_Helix.valueChanged.connect(self.on_DS_End_Helix) #connection doubleSpinBox
+
+        self.label_2 = QtGui.QLabel(self.groupBox_04)
+        self.label_2.setGeometry(QtCore.QRect(100, 50, 81, 16))
+        self.label_2.setAccessibleDescription(_fromUtf8(""))
+        self.label_2.setText(_fromUtf8("Base Helix"))
+        self.label_2.setObjectName(_fromUtf8("label_2"))
+
+        self.label_3 = QtGui.QLabel(self.groupBox_04)
+        self.label_3.setGeometry(QtCore.QRect(270, 50, 61, 16))
+        self.label_3.setAccessibleDescription(_fromUtf8(""))
+        self.label_3.setText(_fromUtf8("End Helix"))
+        self.label_3.setObjectName(_fromUtf8("label_3"))
+
+        self.DS_Number_Char_Per_Turn = QtGui.QSpinBox(self.groupBox_04)
+        self.DS_Number_Char_Per_Turn.setGeometry(QtCore.QRect(180, 20, 81, 22))
+        self.DS_Number_Char_Per_Turn.setToolTip(_fromUtf8("Number of characters for one turn of helix"))
+        self.DS_Number_Char_Per_Turn.setAccessibleDescription(_fromUtf8(""))
+        self.DS_Number_Char_Per_Turn.setMaximum(99999999)
+        self.DS_Number_Char_Per_Turn.setValue(nombreCarParTour)
+        self.DS_Number_Char_Per_Turn.setObjectName(_fromUtf8("DS_Number_Char_Per_Turn"))
+        self.DS_Number_Char_Per_Turn.valueChanged.connect(self.on_DS_Number_Char_Per_Turn) #connection doubleSpinBox
+
+        self.DS_Step_Of_The_Helix = QtGui.QDoubleSpinBox(self.groupBox_04)
+        self.DS_Step_Of_The_Helix.setGeometry(QtCore.QRect(10, 20, 81, 22))
+        self.DS_Step_Of_The_Helix.setToolTip(_fromUtf8("Step of the text along the helix (min Size Caractere)"))
+        self.DS_Step_Of_The_Helix.setAccessibleDescription(_fromUtf8(""))
+        self.DS_Step_Of_The_Helix.setMaximum(99999999.99)
+        self.DS_Step_Of_The_Helix.setValue(pasHelix)
+
+        self.DS_Step_Of_The_Helix.setObjectName(_fromUtf8("DS_Step_Of_The_Helix"))
+        self.DS_Step_Of_The_Helix.valueChanged.connect(self.on_DS_Step_Of_The_Helix) #connection doubleSpinBox
+
+        self.label_12 = QtGui.QLabel(self.groupBox_04)
+        self.label_12.setGeometry(QtCore.QRect(100, 20, 81, 16))
+        self.label_12.setAccessibleDescription(_fromUtf8(""))
+        self.label_12.setObjectName(_fromUtf8("label_12"))
+
+        self.PU_Exit = QtGui.QPushButton(self.centralWidget)
+        self.PU_Exit.setGeometry(QtCore.QRect(10, 600, 81, 28))
+        self.PU_Exit.setAccessibleDescription(_fromUtf8(""))
+        self.PU_Exit.setText(_fromUtf8("Exit"))
+        self.PU_Exit.setObjectName(_fromUtf8("PU_Exit"))
+        self.PU_Exit.clicked.connect(self.on_PU_Exit)
+
+        self.PU_Execute = QtGui.QPushButton(self.centralWidget)
+        self.PU_Execute.setGeometry(QtCore.QRect(280, 600, 81, 28))
+        self.PU_Execute.setAccessibleDescription(_fromUtf8(""))
+        self.PU_Execute.setText(_fromUtf8("Run"))
+        self.PU_Execute.setToolTip("Execute the process") # without Compount
+        self.PU_Execute.setObjectName(_fromUtf8("PU_Execute"))
+        self.PU_Execute.clicked.connect(self.on_PU_Execute)
+
+        self.PU_Reset = QtGui.QPushButton(self.centralWidget)
+        self.PU_Reset.setGeometry(QtCore.QRect(100, 600, 81, 28))
+        self.PU_Reset.setToolTip(_fromUtf8("Reset the macro and give the number of the characters of windows Textedit"))
+        self.PU_Reset.setAccessibleDescription(_fromUtf8(""))
+        self.PU_Reset.setEnabled(True)
+        self.PU_Reset.setObjectName(_fromUtf8("PU_Reset"))
+        self.PU_Reset.clicked.connect(self.on_PU_Reset)
+
+        self.groupBox_01 = QtGui.QGroupBox(self.centralWidget)
+        self.groupBox_01.setGeometry(QtCore.QRect(10, 0, 351, 101))
+        self.groupBox_01.setAccessibleDescription(_fromUtf8(""))
+        self.groupBox_01.setObjectName(_fromUtf8("groupBox_01"))
+
+        self.lineEdit = QtGui.QLineEdit(self.groupBox_01)
+        self.lineEdit.setGeometry(QtCore.QRect(10, 70, 211, 22))
+        self.lineEdit.setObjectName(_fromUtf8("lineEdit"))
+        self.lineEdit.setText(PolicePath)
+
+        self.textEdit = QtGui.QTextEdit(self.groupBox_01)
+        self.textEdit.setGeometry(QtCore.QRect(10, 20, 331, 41))
+        self.textEdit.setObjectName(_fromUtf8("textEdit"))
+        self.textEdit.setText(texte)
+
+        self.PU_New_Font = QtGui.QPushButton(self.groupBox_01)
+        self.PU_New_Font.setGeometry(QtCore.QRect(230, 70, 111, 21))
+        self.PU_New_Font.setToolTip(_fromUtf8("Search your new font"))
+        self.PU_New_Font.setAccessibleDescription(_fromUtf8(""))
+        self.PU_New_Font.setText(_fromUtf8("New Font"))
+        self.PU_New_Font.setObjectName(_fromUtf8("PU_New_Font"))
+        self.PU_New_Font.clicked.connect(self.on_PU_New_Font)
+
+        self.PU_Benchmarks = QtGui.QPushButton(self.centralWidget)
+        self.PU_Benchmarks.setGeometry(QtCore.QRect(190, 600, 81, 28))
+        self.PU_Benchmarks.setToolTip(_fromUtf8("Execute the process and one Compount of the characters is create"))
+#        self.PU_Benchmarks.setEnabled(True)
+        self.PU_Benchmarks.setText("Run Comp")
+        self.PU_Benchmarks.setObjectName(_fromUtf8("PU_Benchmarks"))
+        self.PU_Benchmarks.clicked.connect(self.on_PU_Benchmarks)
+
+        MainWindow.setCentralWidget(self.centralWidget)
+
+        self.retranslateUi(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    def retranslateUi(self, MainWindow):
+        try:
+            MainWindow.setWindowFlags(PyQt4.QtCore.Qt.WindowStaysOnTopHint)        # PyQt4 cette fonction met la fenetre en avant
+        except Exception:
+            MainWindow.setWindowFlags(PySide.QtCore.Qt.WindowStaysOnTopHint)       # PySide cette fonction met la fenetre en avant
+        MainWindow.setWindowTitle("FCCircularText")
+        self.groupBox_02.setTitle("Configuration FCCircularText Character")
+        self.label_10.setText("Radius of circle")
+        self.groupBox_03.setTitle("Choice")
+        self.RA_Choice_Outdoor.setToolTip("Create the text on the outer face of the cylinder")
+        self.RA_Choice_Outdoor.setText("Outdoor")
+        self.RA_Choice_Indoor.setToolTip("Create the text on the inside of the cylinder")
+        self.RA_Choice_Indoor.setText("Indoor")
+        self.RA_Choice_Helix.setToolTip("Create the text in a helix")
+        self.RA_Choice_Helix.setText("Helix")
+        self.RA_Choice_Clock.setToolTip("Create the text to form a clock")
+        self.RA_Choice_Clock.setText("Clock")
+        self.label_13.setText("Begin angle")
+        self.label_14.setText("End angle")
+        self.CH_Extrude.setText("Extrude Char.")
+        self.DS_InclinaisonX.setSuffix(unicode(" Â°"))
+        self.DS_InclinaisonY.setSuffix(unicode(" Â°"))
+        self.DS_InclinaisonZ.setSuffix(unicode(" Â°"))
+        self.DS_PlacementX.setSuffix(" X")
+        self.DS_PlacementY.setSuffix(" Y")
+        self.DS_PlacementZ.setSuffix(" Z")
+        self.CH_Sp_Placement.setText("Placement")
+        self.groupBox_05.setTitle("Clock")
+        self.PU_Roman.setToolTip("The characters is in Roman or Arabic (default)")
+        self.PU_Redress.setToolTip("The numbers is straight or tangent of the circle")
+        self.label_11.setText("Radius of support")
+        self.label_6.setText("Extrude support")
+        self.groupBox_04.setTitle("Helix")
+        self.label_12.setText("Step of Helix")
+        self.PU_Exit.setToolTip("Exit FCCircularText")
+        self.PU_Reset.setText("Reset")
+        self.groupBox_01.setTitle("Text to be displayed  ( "+str(len(texte))+" characters )")
+        self.lineEdit.setToolTip("Font to defaut")
+        self.lineEdit.setText(PolicePath)
+        self.textEdit.setToolTip("Your text to be displayed")
+        self.textEdit.setHtml(texte)
+
+##############################################################################
+
+    def on_PU_New_Font(self):         # New Font
+        global PolicePath
+        OpenName = ""
+        try:
+            OpenName = QFileDialog.getOpenFileName(None,QString.fromLocal8Bit("New Font"),PolicePath,"*.ttf") # PyQt4
+        except Exception:
+            OpenName, Filter = PySide.QtGui.QFileDialog.getOpenFileName(None, "New Font", PolicePath, "*.ttf")#PySide
+        try:
+            if OpenName != "":
+                PolicePath = OpenName
+                self.lineEdit.setText(PolicePath)
+        except Exception:
+            None
+        App.Console.PrintMessage("New Font " + (PolicePath)+"\n")
+
+    def on_PU_Reset_Placement(self):           # Reset_Placement
+        global PlacementX
+        global PlacementY
+        global PlacementZ
+        global coor_X
+        global coor_Y
+        global coor_Z
+        coor_X = coor_Y = coor_Z = 0.0
+        PlacementX = PlacementY = PlacementZ = 0.0
+        self.CH_Sp_Placement.setChecked(False)
+        self.DS_PlacementX.setValue(PlacementX)
+        self.DS_PlacementX.setEnabled(False)
+        self.DS_PlacementY.setValue(PlacementY)
+        self.DS_PlacementY.setEnabled(False)
+        self.DS_PlacementZ.setValue(PlacementZ)
+        self.DS_PlacementZ.setEnabled(False)
+#        App.Console.PrintMessage(str("on_PU_Reset_Placement ")+"\n")
+        
+    def on_PU_Reset_Inclination(self):           # Reset_Inclination
+        global inclinaisonX
+        global inclinaisonY
+        global inclinaisonZ
+        inclinaisonX = inclinaisonY = inclinaisonZ = 0.0
+        self.CH_Sp_Inclination.setChecked(False)
+        self.DS_InclinaisonX.setValue(inclinaisonX)
+        self.DS_InclinaisonX.setEnabled(False)
+        self.DS_InclinaisonY.setValue(inclinaisonY)
+        self.DS_InclinaisonY.setEnabled(False)
+        self.DS_InclinaisonZ.setValue(inclinaisonZ)
+        self.DS_InclinaisonZ.setEnabled(False)
+#        App.Console.PrintMessage(str("on_PU_Reset_Inclination ")+"\n")
+
+    def on_RA_Choice_Outdoor(self):           #
+        global exterieur
+        global extrusion
+        global epaisseur
+
+        extrusion = 0
+        epaisseur = 0.0
+        self.DS_Extrude.setValue(epaisseur)
+        self.CH_Extrude.setChecked(False)
+        self.DS_Extrude.setEnabled(False)
+        exterieur = 1
+        self.S_Begin_Angle.setEnabled(True)
+        self.S_End_Angle.setEnabled(True)
+        self.DS_Correction_Radius.setEnabled(True)
+        self.DS_Correction_Angle.setEnabled(True)
+        self.PU_Flat.setEnabled(True)
+        self.groupBox_04.setEnabled(False)
+        self.groupBox_05.setEnabled(False)
+        ff2 = ui
+        ff2.on_PU_Reset_Placement()
+        ff3 = ui
+        ff3.on_PU_Reset_Inclination()
+#        App.Console.PrintMessage(str("on_RA_Choice_Outdoor ")+" "+str(exterieur)+"\n")
+
+    def on_RA_Choice_Indoor(self):          #
+        global exterieur
+        global extrusion
+        global epaisseur
+
+        extrusion = 0
+        epaisseur = 0.0
+        self.DS_Extrude.setValue(epaisseur)
+        self.CH_Extrude.setChecked(False)
+        self.DS_Extrude.setEnabled(False)
+        exterieur = 0
+        self.S_Begin_Angle.setEnabled(True)
+        self.S_End_Angle.setEnabled(True)
+        self.DS_Correction_Radius.setEnabled(True)
+        self.DS_Correction_Angle.setEnabled(True)
+        self.PU_Flat.setEnabled(True)
+        self.groupBox_04.setEnabled(False)
+        self.groupBox_05.setEnabled(False)
+        ff2 = ui
+        ff2.on_PU_Reset_Placement()
+        ff3 = ui
+        ff3.on_PU_Reset_Inclination()
+#        App.Console.PrintMessage(str("on_RA_Choice_Indoor ")+" "+str(exterieur)+"\n")
+
+    def on_RA_Choice_Helix(self):              #
+        global exterieur
+        global cercleClock
+        global nombreFaces
+        global debout
+        global extrusion
+        global epaisseur
+
+        extrusion = 0
+        epaisseur = 0.0
+        self.DS_Extrude.setValue(epaisseur)
+        self.CH_Extrude.setChecked(False)
+        self.DS_Extrude.setEnabled(False)
+        exterieur = 2
+        cercleClock = 0
+        nombreFaces = 0
+        debout = 1
+
+        self.RA_Choice_Outdoor.setText("Outdoor")
+        self.RA_Choice_Indoor.setText("Indoor")
+        self.PU_Flat.setText(_fromUtf8("Mode Stand"))
+
+        self.S_Begin_Angle.setEnabled(True)
+        self.S_End_Angle.setEnabled(True)
+        self.DS_Correction_Radius.setEnabled(True)
+        self.DS_Correction_Angle.setEnabled(True)
+        self.PU_Flat.setEnabled(False)##
+        self.groupBox_04.setEnabled(True)
+        self.groupBox_05.setEnabled(False)
+
+        ff2 = ui
+        ff2.on_PU_Reset_Placement()
+        ff3 = ui
+        ff3.on_PU_Reset_Inclination()
+
+    def on_RA_Choice_Clock(self):              #
+        global exterieur
+        global debout
+        global correctionRayon
+        global correctionAngle
+        global extrusion
+        global epaisseur
+
+        extrusion = 0
+        epaisseur = 0.0
+        self.DS_Extrude.setValue(epaisseur)
+        self.CH_Extrude.setChecked(False)
+        self.DS_Extrude.setEnabled(False)
+        exterieur = 3
+        debout = 0
+        self.PU_Flat.setEnabled(False)
+        self.S_Begin_Angle.setEnabled(False)
+        self.S_End_Angle.setEnabled(False)
+#        correctionRayon = 0
+        self.DS_Correction_Radius.setEnabled(False)
+        self.DS_Correction_Radius.setValue(0.0)
+#        correctionAngle = 10.0
+        self.DS_Correction_Angle.setEnabled(False)
+        self.DS_Correction_Angle.setValue(0.0)
+        self.groupBox_04.setEnabled(False)
+        self.groupBox_05.setEnabled(True)
+        ff2 = ui
+        ff2.on_PU_Reset_Placement()
+        ff3 = ui
+        ff3.on_PU_Reset_Inclination()
+#        App.Console.PrintMessage(str("on_RA_Choice_Clock ")+str(exterieur)+"\n")
+
+    def on_PU_Flat(self):         # Flat or Stand
+        global debout
+        if debout == 1:
+            debout = 0
+            self.RA_Choice_Outdoor.setText("Indoor")
+            self.RA_Choice_Indoor.setText("Outdoor")
+            self.PU_Flat.setText(_fromUtf8("Mode Flat"))
+            self.PU_Flat.setToolTip(_fromUtf8("Click for create the text Stand"))
+        else:
+            debout = 1
+            self.RA_Choice_Outdoor.setText("Outdoor")
+            self.RA_Choice_Indoor.setText("Indoor")
+            self.PU_Flat.setText(_fromUtf8("Mode Stand"))
+            self.PU_Flat.setToolTip(_fromUtf8("Click for create the text Flat"))
+#        App.Console.PrintMessage(str("on_PU_Flat ")+str(debout)+"\n")
+
+    def on_DS_Radius_Circle(self,value):
+        global rayon
+        global cercleClock
+        rayon = value  
+        cercleClock = rayon
+#        App.Console.PrintMessage("on_DS_Radius_Circle Radius"+str(rayon)+"\n")
+
+    def on_DS_Size_Character(self,value):
+        global SizeCaractere
+        SizeCaractere = value
+#        App.Console.PrintMessage("on_DS_Size_Character Size"+str(SizeCaractere)+"\n")
+
+    def on_S_Begin_Angle(self,value):          #
+        global debut
+        debut = value
+#        App.Console.PrintMessage(str("on_S_Begin_Angle ")+str(debut)+"\n")
+
+    def on_S_End_Angle(self,value):            #
+        global rotation
+        rotation = value
+#        App.Console.PrintMessage(str("on_S_End_Angle ")+str(rotation)+"\n")
+
+    def on_DS_PlacementX(self,value):          #
+        global PlacementX
+        PlacementX = value
+#        App.Console.PrintMessage(str("on_DS_PlacementX ")+str(PlacementX)+"\n")
+
+    def on_DS_PlacementY(self,value):          #
+        global PlacementY
+        PlacementY = value
+#        App.Console.PrintMessage(str("on_DS_PlacementY ")+str(PlacementY)+"\n")
+
+    def on_DS_PlacementZ(self,value):          #
+        global PlacementZ
+        PlacementZ = value
+#        App.Console.PrintMessage(str("on_DS_PlacementZ ")+str(PlacementZ)+"\n")
+
+    def on_CH_Sp_Placement(self):              # Placement or not Placement
+        if self.CH_Sp_Placement.isChecked(): 
+            self.DS_PlacementX.setEnabled(True)
+            self.DS_PlacementY.setEnabled(True)
+            self.DS_PlacementZ.setEnabled(True)
+#            App.Console.PrintMessage(str("on_CH_Sp_Placement ")+str("True")+"\n")
+        else:
+            ff2 = ui
+            ff2.on_PU_Reset_Placement()
+        if self.RA_Choice_Clock.isChecked():
+            self.DS_PlacementX.setEnabled(False)
+            self.DS_PlacementY.setEnabled(False)
+#            App.Console.PrintMessage(str("on_CH_Sp_Placement ")+str("False")+"\n")
+
+    def on_DS_Correction_Angle(self,value):    # 
+        global correctionAngle
+        correctionAngle = value
+#        App.Console.PrintMessage(str("on_DS_Correction_Angle ")+str(correctionAngle)+"\n")
+
+    def on_DS_Correction_Radius(self,value):   # 
+        global correctionRayon
+        correctionRayon = value
+#        App.Console.PrintMessage(str("on_DS_Correction_Radius ")+str(correctionRayon)+"\n")
+
+    def on_DS_Extrude(self,value):             # 
+        global epaisseur
+        epaisseur = value
+#        App.Console.PrintMessage("on_DS_Extrude "+str(epaisseur)+"\n")
+
+    def on_CH_Extrude(self):                   #
+        global extrusion
+        global epaisseur
+        if self.CH_Extrude.isChecked(): 
+            self.DS_Extrude.setEnabled(True)
+            extrusion = 1
+            epaisseur = 1.0
+        else:
+            self.DS_Extrude.setEnabled(False)
+            extrusion = 0
+            epaisseur = 0.0
+        self.DS_Extrude.setValue(epaisseur)
+#        App.Console.PrintMessage(str("on_CH_Extrude ")+str(extrusion)+" "+str(epaisseur)+"\n")
+
+    def on_DS_InclinaisonX(self,value):        # 
+        global inclinaisonX
+        inclinaisonX = value
+#        App.Console.PrintMessage(str("on_DS_InclinaisonX ")+str(inclinaisonX)+"\n")
+
+    def on_DS_InclinaisonY(self,value):        # 
+        global inclinaisonY
+        inclinaisonY = value
+#        App.Console.PrintMessage(str("on_DS_InclinaisonY ")+str(inclinaisonY)+"\n")
+
+    def on_DS_InclinaisonZ(self,value):        # 
+        global inclinaisonZ
+        inclinaisonZ = value
+#        App.Console.PrintMessage(str("on_DS_InclinaisonZ ")+str(inclinaisonZ)+"\n")
+
+    def on_CH_Sp_Inclination(self):            #
+        if self.CH_Sp_Inclination.isChecked(): 
+            self.DS_InclinaisonX.setEnabled(True)
+            self.DS_InclinaisonY.setEnabled(True)
+            self.DS_InclinaisonZ.setEnabled(True)
+        else:
+            ff3 = ui
+            ff3.on_PU_Reset_Inclination()
+#        App.Console.PrintMessage(str("on_CH_Sp_Inclination ")+str(self.CH_Sp_Inclination.isChecked())+"\n")
+
+    def on_DS_Step_Of_The_Helix(self,value):   # 
+        global pasHelix
+        global baseHelix
+        global endHelix
+        pasHelix = value
+        if pasHelix == 0:
+            baseHelix = endHelix = 0.0
+            self.DS_Base_Helix.setValue(baseHelix)
+            self.DS_Base_Helix.setEnabled(True)
+            self.DS_End_Helix.setValue(endHelix)
+            self.DS_End_Helix.setEnabled(True)
+        else:
+            baseHelix = endHelix = 0.0
+            self.DS_Base_Helix.setValue(baseHelix)
+            self.DS_Base_Helix.setEnabled(False)
+            self.DS_End_Helix.setValue(endHelix)
+            self.DS_End_Helix.setEnabled(False)
+#        App.Console.PrintMessage(str("on_DS_Step_Of_The_Helix ")+str(SizeCaractere)+"\n")
+
+    def on_DS_Number_Char_Per_Turn(self,value):# 
+        global nombreCarParTour
+        nombreCarParTour = value
+#        App.Console.PrintMessage(str("on_DS_Number_Char_Per_Turn ")+str(nombreCarParTour)+"\n")
+
+    def on_DS_Base_Helix(self,value):          # 
+        global baseHelix
+        baseHelix = value
+#        App.Console.PrintMessage(str("on_DS_Base_Helix ")+str(baseHelix)+"\n")
+
+    def on_DS_End_Helix(self,value):           # 
+        global endHelix
+        endHelix = value
+#        App.Console.PrintMessage(str("on_DS_End_Helix ")+str(endHelix)+"\n")
+
+    def on_DS_Radius_Support(self,value):      # 
+        global cercleClock
+        cercleClock = value
+#        App.Console.PrintMessage(str("on_DS_Radius_Support ")+str(cercleClock)+"\n")
+
+    def on_S_Number_Faces_Support(self,value): # number Faces of support 0=none 1=circle 2=rectangle 3=triangle 4,5 ... polygon
+        global nombreFaces
+        nombreFaces = value
+        self.DS_Extrude_Support.setEnabled(True)
+        if nombreFaces == 0:
+            self.label_5.setText(_fromUtf8("Support number face"))
+            self.DS_Extrude_Support.setEnabled(False)
+        elif nombreFaces == 1:
+            self.label_5.setText(_fromUtf8("Support Circle"))
+        elif nombreFaces == 2:
+            self.label_5.setText(_fromUtf8("Support Rectangle"))
+        elif nombreFaces == 3:
+            self.label_5.setText(_fromUtf8("Support Triangle"))
+        elif nombreFaces == 4:
+            self.label_5.setText(_fromUtf8("Support Square"))
+        else :
+            self.label_5.setText(_fromUtf8("Support Polygone"))
+#        App.Console.PrintMessage(str("on_S_Number_Faces_Support ")+str(nombreFaces)+"\n")
+
+    def on_DS_Extrude_Support(self,value):     # 
+        global epaisSupp
+        epaisSupp = value
+        self.DS_PlacementZ.setEnabled(True)
+#        App.Console.PrintMessage(str("on_DS_Extrude_Support ")+str(epaisSupp)+"\n")
+
+    def on_PU_Roman(self):                     # Roman or Arabic Clock
+        global romain
+        if romain == 1:
+            romain = 0
+            self.PU_Roman.setText(_fromUtf8("Mode Arabic"))
+            self.PU_Roman.setToolTip(_fromUtf8("Click for activate the mode Roman"))
+        else:
+            romain = 1
+            self.PU_Roman.setText(_fromUtf8("Mode Roman"))
+            self.PU_Roman.setToolTip(_fromUtf8("Click for activate the mode Arabic"))
+#        App.Console.PrintMessage(str("romain ")+str(romain)+"\n")
+
+    def on_PU_Redress(self):                   # Redress or circumferencial Clock
+        global redressement
+        if redressement == 1:
+            redressement = 0
+            self.PU_Redress.setText(_fromUtf8("Redress"))
+            self.PU_Redress.setToolTip(_fromUtf8("Click for activate the mode Axial"))
+        else:
+            redressement = 1
+            self.PU_Redress.setText(_fromUtf8("Axial"))
+            self.PU_Redress.setToolTip(_fromUtf8("Click for activate the mode Redress"))
+#        App.Console.PrintMessage(str("redressement ")+str(redressement)+"\n")
+
+    def on_PU_Exit(self):                      # Exit
+        App.Console.PrintMessage("Fin FCCircularText"+"\n")
+        self.window.hide()
+
+    def on_PU_Reset(self):                     #
+        global points
+        global coor_X
+        global coor_Y
+        global coor_Z
+        global vec
+
+        global PolicePath
+
+        global rayon
+        global texte
+        global debut
+        global rotation
+        global SizeCaractere
+
+        global precision
+        global correctionAngle
+        global correctionRayon
+        global debout
+        global exterieur
+        global baseHelix
+        global endHelix
+        global pasHelix
+        global nombreCarParTour
+
+        global PlacementX
+        global PlacementY
+        global PlacementZ
+
+        global inclinaisonX
+        global inclinaisonY
+        global inclinaisonZ
+
+        global cercleClock
+        global nombreFaces
+        global romain
+        global redressement
+
+        global comP
+        global nameL
+        global epaisseur
+        global epaisSupp
+        global extrusion
+        global compount1
+
+        texte = ""
+
+        exterieur = 1
+        self.RA_Choice_Outdoor.setText("Outdoor")
+        self.RA_Choice_Indoor.setText("Indoor")
+        self.RA_Choice_Outdoor.setChecked(True)
+
+        debout = 1
+        self.PU_Flat.setText(_fromUtf8("Mode Stand"))
+        self.PU_Flat.setToolTip(_fromUtf8("Click for create the text Flat"))
+
+        SizeCaractere = 2.0
+        self.DS_Size_Character.setValue(SizeCaractere)
+        rayon = 10.0
+        self.DS_Radius_Circle.setValue(rayon)
+
+        debut = 0
+        self.S_Begin_Angle.setValue(debut)
+        self.S_Begin_Angle.setEnabled(True)
+        rotation = 360
+        self.S_End_Angle.setValue(rotation)
+        self.S_End_Angle.setEnabled(True)
+
+        correctionAngle = 10.0
+        self.DS_Correction_Angle.setValue(correctionAngle)
+        self.DS_Correction_Radius.setEnabled(True)
+        correctionRayon = 0.15
+        self.DS_Correction_Radius.setValue(correctionRayon)
+        self.DS_Correction_Angle.setEnabled(True)
+
+        extrusion = 0
+        epaisseur = 0.0
+        self.DS_Extrude.setValue(epaisseur)
+        self.CH_Extrude.setChecked(False)
+        self.DS_Extrude.setEnabled(False)
+
+        ff2 = ui
+        ff2.on_PU_Reset_Placement()
+        ff3 = ui
+        ff3.on_PU_Reset_Inclination()
+
+        self.groupBox_04.setEnabled(False)
+        baseHelix = 0.0
+        self.DS_Base_Helix.setValue(baseHelix)
+        self.DS_Base_Helix.setEnabled(False)
+        endHelix = 0.0
+        self.DS_End_Helix.setValue(endHelix)
+        self.DS_Base_Helix.setEnabled(False)
+        pasHelix = 2.0
+        self.DS_Step_Of_The_Helix.setValue(pasHelix)
+        nombreCarParTour = 10
+        self.DS_Number_Char_Per_Turn.setValue(nombreCarParTour)
+
+        self.groupBox_05.setEnabled(False)
+        cercleClock = rayon
+        self.DS_Radius_Support.setValue(cercleClock)
+        nombreFaces = 0
+        self.S_Number_Faces_Support.setValue(nombreFaces)
+        self.label_5.setText(_fromUtf8("Support number face"))
+        epaisSupp   = 0.0
+        self.DS_Extrude_Support.setEnabled(False)
+        self.DS_Extrude_Support.setValue(epaisSupp)
+
+        romain = 0
+        self.PU_Roman.setText(_fromUtf8("Mode Arabic"))
+        self.PU_Roman.setToolTip(_fromUtf8("Click for activate the mode Roman"))
+        redressement = 0
+        self.PU_Redress.setText(_fromUtf8("Redress"))
+        self.PU_Redress.setToolTip(_fromUtf8("Click for activate the mode Axial"))
+
+        compount1 = 0
+
+        ##### update the setTitle ########################################
+
+        texte = unicode(self.textEdit.toPlainText())
+        self.groupBox_01.setTitle("Text to be displayed  ( "+str(len(texte))+" characters )")
+#        App.Console.PrintMessage(str("on_PU_Reset ")+str()+"\n")
+
+    def on_PU_Benchmarks(self):                # Benchmarks
+      try:
+        global compount1
+        compount1 = 1
+        ff = ui
+        ff.on_PU_Execute()
+#        App.Console.PrintMessage(str("Benchmarks")+"\n")
+      except:
+        sayexc("Error")
+       
+    ##########################################################################
+
+    def on_PU_Execute(self):         # Execute
+        global PolicePath
+
+        global points
+        global coor_X
+        global coor_Y
+        global coor_Z
+        
+        global PlacementX
+        global PlacementY
+        global PlacementZ
+
+        global inclinaisonX
+        global inclinaisonY
+        global inclinaisonZ
+
+        global vec
+        global PolicePath
+        global rayon
+        global texte
+        global debut
+        global rotation
+        global SizeCaractere
+
+        global ii
+        global precision
+        global correctionAngle
+        global correctionRayon
+        global debout
+        global exterieur
+        global baseHelix
+        global endHelix
+        global pasHelix
+        global nombreCarParTour
+
+        global cercleClock
+        global nombreFaces
+        global romain
+        global redressement
+
+        global comP
+        global nameL
+
+        global epaisseur
+        global epaisSupp
+        global extrusion
+        global compount1
+
+        points   = []
+        comP     = []
+        nameL    = []
+
+        del   points[:]
+        del     comP[:]
+        del    nameL[:]
+
+        doc = FreeCAD.ActiveDocument
+        if doc == None:
+            doc = FreeCAD.newDocument()
+
+        texte = unicode(self.textEdit.toPlainText())
+        self.groupBox_01.setTitle("Text to be displayed  ( "+str(len(texte))+" characters )")
+
+        if ((exterieur == 0) and (debout == 0)):
+            vecligne=[FreeCAD.Vector(PlacementX,PlacementY,PlacementZ),FreeCAD.Vector(rayon + correctionRayon,0.0,0.0)]      # 
+        else:
+            if exterieur == 3:
+                vecligne=[FreeCAD.Vector(PlacementX,PlacementY,PlacementZ),FreeCAD.Vector(rayon - (SizeCaractere/2),0.0,0.0)]      # 
+            elif debout == 0:
+                vecligne=[FreeCAD.Vector(PlacementX,PlacementY,PlacementZ),FreeCAD.Vector(rayon + correctionRayon - SizeCaractere,0.0,0.0)]      # 
+            else:
+                vecligne=[FreeCAD.Vector(PlacementX,PlacementY,PlacementZ),FreeCAD.Vector(rayon + correctionRayon,0.0,0.0)]      # 
+
+        ligne = Draft.makeWire(vecligne,closed=False,face=False,support=None)     # creation de la ligne de base
+        lineName = ligne.Name
+
+        ii  = -1
+        ii2 = -1
+
+        nombre = len(texte)
+        coor_Z = PlacementZ
+           
+        if (exterieur == 0) or (debout == 0):
+            texte = texte[::-1]
+            if (exterieur == 0) and (debout == 0):
+                texte = texte[::-1]
+
+        depart = time.clock()     # chrono begin
+
+        if exterieur == 2:        # helix
+            if nombreCarParTour == 0:
+                nombreCarParTour = 1
+                App.Console.PrintError("Insufficient number"+"\n")
+            pas = 0.0
+            nombre = nombreCarParTour
+            if pasHelix != 0:
+                pas = pasHelix / (nombreCarParTour)
+            else:
+                pas = ((((endHelix - SizeCaractere)-baseHelix)/(len(texte) / nombreCarParTour))/(nombreCarParTour)) # pas of helix
+                coor_Z += baseHelix
+        else:
+            nombreCarParTour = 1
+
+        if exterieur == 3:         # Clock
+            FcString = doc.addObject("App::DocumentObjectGroup","FcClock")
+            nombre = 12
+            if romain == 0:
+                texte = ["1","2","3","4","5","6","7","8","9","10","11","12"]
+            else:
+                texte = ["I","II","III","IIII","V","VI","VII","VIII","IX","X","XI","XII"]
+            texte = texte[::-1]
+        else:
+            FcString = doc.addObject("App::DocumentObjectGroup","FcString")
+
+        ####Boucle principale############################################################################
+        boucler = len(texte) / nombreCarParTour
+
+        if (len(texte) % nombreCarParTour) != 0: # calcul number spires Helix
+            boucler += 1
+
+        for hel in range(boucler):
+            ii = -1
+            ####Boucle de travail#################################################
+            for angleTr in range(debut,rotation,((rotation-debut)/nombre)):
+                ii  += 1
+                ii2 += 1
+                ligne.Placement = App.Placement(App.Vector(PlacementX,PlacementY,PlacementZ), App.Rotation(App.Vector(0,0,1),angleTr), App.Vector(0,0,0))
+                a = ligne.Shape.Edges[0].Vertexes[1] # fin de ligne
+
+                coor_X = (a.Point.x)
+                coor_Y = (a.Point.y)
+
+                if (ii < nombre) and (ii2 < len(texte)):
+                    if exterieur == 3:                  # clock
+                        ligne.Placement = App.Placement(App.Vector(PlacementX,PlacementY,PlacementZ), App.Rotation(App.Vector(0,0,1),angleTr+90), App.Vector(0,0,0))
+                        a = ligne.Shape.Edges[0].Vertexes[1] # fin
+                        coor_X = (a.Point.x)
+                        coor_Y = (a.Point.y)
+                    ss=Draft.makeShapeString(String=unicode(texte[ii2]),FontFile=PolicePath,Size=SizeCaractere,Tracking=0)
+
+                    FcString.addObject(ss)  # contener character
+
+                    centreX = (ss.Shape.BoundBox.Center[0])
+                    centreY = (ss.Shape.BoundBox.Center[1])
+                    centreZ = (ss.Shape.BoundBox.Center[2])
+                    lengthX = (ss.Shape.BoundBox.XLength)
+                    lengthY = (ss.Shape.BoundBox.YLength)
+                    lengthZ = (ss.Shape.BoundBox.ZLength)
+
+                    coor_X = coor_X + PlacementX
+                    coor_Y = coor_Y + PlacementY
+
+                    plm=""
+                    plm=FreeCAD.Placement()
+                    plm.Base=FreeCAD.Vector(coor_X,coor_Y,coor_Z)
+
+                    if debout == 1:           # debout
+                        if exterieur == 0:    # circumferential internal
+                            plm = App.Placement(App.Vector(coor_X,coor_Y,coor_Z), App.Rotation(angleTr-90-correctionAngle+inclinaisonX,inclinaisonY,90+inclinaisonZ), App.Vector(0,0,0)) # pitch,roll...1
+                        elif exterieur == 1:  # circumferential external
+                            plm = App.Placement(App.Vector(coor_X,coor_Y,coor_Z), App.Rotation(angleTr+90+correctionAngle+inclinaisonX,inclinaisonY,90+inclinaisonZ), App.Vector(0,0,0)) # pitch,roll...1
+                        elif exterieur == 2:  # circumferential helix
+                            plm = App.Placement(App.Vector(coor_X,coor_Y,coor_Z), App.Rotation(angleTr+90+correctionAngle+inclinaisonX,inclinaisonY,90+inclinaisonZ), App.Vector(0,0,0)) # pitch,roll...1
+                            coor_Z = coor_Z + pas
+                    else:                     # a plat
+                        if exterieur == 1:    # exterieur (superieur)
+                            plm = App.Placement(App.Vector(coor_X,coor_Y,coor_Z), App.Rotation(angleTr-90-correctionAngle+inclinaisonX,inclinaisonY,inclinaisonZ), App.Vector(0,0,0)) # pitch,roll...1
+                        elif exterieur == 3:  # circumferential plat (clock)
+                            if redressement == 1:
+                                plm = App.Placement(App.Vector(coor_X-centreX,coor_Y-centreY,coor_Z), App.Rotation(inclinaisonX,inclinaisonY,inclinaisonZ), App.Vector(0,0,0)) # pitch,roll...1
+                            else:
+                                plm = App.Placement(App.Vector(coor_X-centreX,coor_Y-centreY,coor_Z), App.Rotation(angleTr+inclinaisonX,inclinaisonY,inclinaisonZ), App.Vector(centreX,centreY,centreZ)) # pitch,roll...1
+                        else:                 # interieur  (inferieur)
+                            plm = App.Placement(App.Vector(-coor_X,-coor_Y,-coor_Z), App.Rotation(angleTr+90+correctionAngle+inclinaisonX,180+inclinaisonY,180+inclinaisonZ), App.Vector(0,0,0)) # pitch,roll...1   
+
+                    if epaisseur > 0:         # extrusion characrters
+                        CharExtrude = Draft.extrude(ss,Base.Vector(0,0,epaisseur))
+                        CharExtrude.Placement=plm 
+                        comP.append(CharExtrude.Shape)
+#                        nameL.append(CharExtrude.Name)
+                        FcString.addObject(CharExtrude)  # contener extrude
+                    else:                 # 
+                        ss.Placement=plm 
+                        ss.Support=None
+                        comP.append(ss.Shape)
+#                        nameL.append(ss.Name)
+
+#                        points += [FreeCAD.Vector(coor_X,coor_Y,coor_Z)]  # coordinates makeBSpline
+#        BSpline = Draft.makeBSpline(points,closed=False)                  # makeBSpline repere
+        App.ActiveDocument.removeObject(lineName)     # remove ligne de base directrice
+        if compount1 == 1:                            # create compount
+            comp = Part.makeCompound(comP)
+            Part.show(comp)
+        ####Boucle de travail fin########################################################################
+
+        ####Extrude support clock#############################################
+        if nombreFaces > 0:                           # support clock
+            pl = FreeCAD.Placement()
+            if nombreFaces == 1:                      # circle
+                pl.Base = FreeCAD.Vector(0.0,0.0,0.0)
+                supp = Draft.makeCircle(cercleClock,placement=pl,face=True,support=None)
+            if nombreFaces == 2:                      # rectangle
+                cercleClock = cercleClock * 2
+                pl.Base = FreeCAD.Vector(-cercleClock, (-cercleClock / 2), 0.0)
+                supp = Draft.makeRectangle((cercleClock * 2), cercleClock, placement=pl, face = True)
+            if nombreFaces > 2:                       # polygone with number faces
+                if nombreFaces == 4:
+                    rotateSupport = 45
+                else:
+                    rotateSupport = 90
+                pl = App.Placement(App.Vector(0.0,0.0,0.0), App.Rotation(rotateSupport,0,0), App.Vector(0,0,0))
+                supp = Draft.makePolygon(nombreFaces,cercleClock,inscribed = False,placement = pl,face = True,support=None)
+
+            supp.MakeFace = True
+            App.activeDocument().recompute()
+            FcString.addObject(supp)                  # contener support
+
+            if epaisSupp != 0:                        # extrude support clock
+                suppExtrude = Draft.extrude(supp,Base.Vector(0,0,epaisSupp))
+                FcString.addObject(suppExtrude)       # contener support extrude
+
+        ####Info################################################
+        App.Console.PrintMessage((PolicePath)+"\n")
+        App.Console.PrintMessage(u"texte         " + unicode(texte)+"\n")
+        App.Console.PrintMessage("rayon         " + str(rayon)+"\n")
+        App.Console.PrintMessage("rotation      " + str(rotation)+"\n")
+        App.Console.PrintMessage("SizeCaractere " + str(SizeCaractere)+"\n")
+        App.Console.PrintMessage("debout        " + str(debout)+"\n")
+
+        ####Reset################################################
+        ff = ui
+        ff.on_PU_Reset()
+
+        #### Chrono end ####################################
+        arrivee = time.clock()                                                                    # chrono end
+        App.Console.PrintMessage("Time : "+str("%.2f" % ((arrivee - depart)/60))+" min"+"\n\n")   # chrono end
+        ####################################################
+
+MainWindow = QtGui.QMainWindow()
+ui = Ui_MainWindow()
+ui.setupUi(MainWindow)
+MainWindow.show()
