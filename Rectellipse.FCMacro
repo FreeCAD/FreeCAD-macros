@@ -6,48 +6,69 @@
 
 from __future__ import division
 
+__Comment__ = 'Creates a parametric approximation of a rectellipse'
+__Web__ = 'http://freecadweb.org/wiki/index.php?title=Macro_Rectellipse'
+__Wiki__ = 'http://freecadweb.org/wiki/index.php?title=Macro_Rectellipse'
+__Icon__ = ""
+__Help__ = 'Run, zoom fit, and change parameters'
+__Author__ = 'fcaponi78, shoogen and other contributors'
+__Version__ = 0.1
+__Status__ = 'alpha'
+__Requires__ = ''
+
 import FreeCAD
-import FreeCADGui
 from FreeCAD import Part
+from FreeCAD import Vector
 
 
 class RectEllipseFeature:
     def __init__(self, obj):
-        """Add the properties: a, b, n, createFace"""
+        """Add the properties: a, b, s, createFace"""
         obj.addProperty('App::PropertyLength', 'a', 'Rectellipse',
-                        'A - horizontal radius').a = 16.0
+                        'Horizontal radius').a = 16.0
         obj.addProperty('App::PropertyLength', 'b', 'Rectellipse',
-                        'B - vertical radius').b = 9.0
-        # TODO: Document N.
-        obj.addProperty('App::PropertyFloat', 'n', 'Rectellipse', 'N').n = 0.2
+                        'Vertical radius').b = 9.0
+        obj.addProperty('App::PropertyFloat', 's', 'Rectellipse',
+                        'Squareness (0=ellipse, 1=rectangle)').s = 0.2
         obj.addProperty('App::PropertyBool', 'createFace', 'Rectellipse',
-                        'Whether to create a face or not').createFace = True
+                        'true => face; false => wire').createFace = True
         obj.Proxy = self
 
     def onChanged(self, feature, prop):
-        if prop in ['a',  'b', 'n', 'createFace']:
+        if prop in ['a',  'b', 's', 'createFace']:
             self.execute(feature)
 
     def execute(self, feature):
         r1 = feature.a
         r2 = feature.b
-        s = feature.n
+        if feature.s < 0:
+            feature.s = 0
+        elif feature.s > 1:
+            feature.s = 1
         z = 0.0
+        # TODO: tweak p, so that the curve is the exact definition of a
+        # rectellipse (if possible).
         p = 1.0
-        w = 2 ** 0.5 / 2.0 / (1 - s ** p)
+        # NURBS knots weigts.
+        if feature.s > 0.9999999:
+            # If larger than 1e7, we obtain a rhombus.
+            w = 1e7
+        else:
+            w = 2 ** 0.5 / 2.0 / (1 - feature.s ** p)
+        # TODO: use a real rectangle if feature.s close to 1.
         curve = Part.BSplineCurve()
         curve.setPeriodic()
         curve.increaseDegree(2)
-        # 5 Knots, 8 Poles
+        # 5 knots, 8 poles
         curve.insertKnots([i / 4 for i in (1, 2, 3)], [2] * 3)
-        curve.setPole(1, FreeCAD.Vector(0, -r2, z), 1)
-        curve.setPole(2, FreeCAD.Vector(-r1, -r2, z), w)
-        curve.setPole(3, FreeCAD.Vector(-r1, 0, z), 1)
-        curve.setPole(4, FreeCAD.Vector(-r1, r2, z), w)
-        curve.setPole(5, FreeCAD.Vector(0, r2, z), 1)
-        curve.setPole(6, FreeCAD.Vector(r1, r2, z), w)
-        curve.setPole(7, FreeCAD.Vector(r1, 0, z), 1)
-        curve.setPole(8, FreeCAD.Vector(r1, -r2, z), w)
+        curve.setPole(1, Vector(0, -r2, z), 1)
+        curve.setPole(2, Vector(-r1, -r2, z), w)
+        curve.setPole(3, Vector(-r1, 0, z), 1)
+        curve.setPole(4, Vector(-r1, r2, z), w)
+        curve.setPole(5, Vector(0, r2, z), 1)
+        curve.setPole(6, Vector(r1, r2, z), w)
+        curve.setPole(7, Vector(r1, 0, z), 1)
+        curve.setPole(8, Vector(r1, -r2, z), w)
         if feature.createFace:
             feature.Shape = Part.Face(Part.Wire(curve.toShape()))
         else:
@@ -64,9 +85,6 @@ def makeRectellipseFeature():
     obj.Label = 'RectEllipse'
     RectEllipseFeature(obj)
     obj.ViewObject.Proxy = 0
-    viewObject = FreeCADGui.ActiveDocument.getObject(obj.Name)
-    viewObject.DisplayMode = 'Flat Lines'
-    obj.Shape.check()
 
 if __name__ == "__main__":
     makeRectellipseFeature()
