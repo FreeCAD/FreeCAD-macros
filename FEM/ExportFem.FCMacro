@@ -1,0 +1,52 @@
+# -*- coding: utf-8 -*-
+# Export FreeCAD FEM Data
+# Author: Gomez Lucio
+# License: LGPL v 2.1
+
+
+__Comment__ = "This macro exports FEM Data"
+__Web__ = "http://forum.freecadweb.org/viewtopic.php?f=18&t=11455"
+__Wiki__ = ""
+__Icon__  = ""
+__Help__ = "select an object and start the macro"
+__Status__ = ""
+__Requires__ = ""
+__Communication__ = ""
+__Author__ ="Gomez Lucio"
+
+
+
+
+import os
+import FreeCADGui
+import FreeCAD
+import shutil
+from PySide import QtGui
+
+### START OF MACRO ###
+
+# Mehcanical Analysis Select
+sel = FreeCADGui.Selection.getSelection() # Selection
+sel1=sel[0]
+
+# Save folder select
+dialog = QtGui.QFileDialog.getExistingDirectory()
+destiny_folder = str(dialog) 
+
+# Proceed
+if sel1.TypeId == 'Fem::FemAnalysisPython':
+  try:
+     dir1 = sel1.Document.TransientDir #Temporaly Directoy
+     nam_fold = sel1.Uid[32:] # Analysis temporaly fold name
+     # Analysis Final Directory 
+     direc = str(dir1 + '/FemAnl_' + nam_fold + '/')
+     calculix_files = os.listdir(direc)
+     for files in calculix_files:
+          shutil.copy(direc + files,destiny_folder)
+     FreeCAD.Console.PrintMessage('Mechanical Analysis files save in' + destiny_folder)
+  except:
+     FreeCAD.Console.PrintError('Sorry but none temporaly file exists')
+else:
+  FreeCAD.Console.PrintError('Error in Selection: Select a correct Mechanical Analysis')
+
+### END OF MACRO ###
