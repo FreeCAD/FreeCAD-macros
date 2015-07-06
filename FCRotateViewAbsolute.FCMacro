@@ -1,0 +1,90 @@
+from FreeCAD import Base
+
+from math import cos,sin,pi
+
+import sys
+from PySide.QtCore import *
+from PySide.QtGui import *
+
+
+class Form(QDialog):
+
+	def __init__(self, parent=None):
+		super(Form, self).__init__(parent)
+		self.alpha=00
+		self.beta=180
+		
+
+		dial = QDial()
+		dial.setNotchesVisible(True)
+		self.dial=dial
+		dial.setMaximum(360)
+		dial.setValue(self.alpha)
+		
+		
+		dial2 = QDial()
+		dial2.setNotchesVisible(True)
+		self.dial2=dial2
+		dial2.setMaximum(360)
+		dial2.setValue(self.beta)
+
+		spinbox = QSpinBox()
+		spinbox.setMaximum(360)
+
+		layout = QHBoxLayout()
+		layout.addWidget(dial)
+		layout.addWidget(dial2)
+# 		layout.addWidget(spinbox)
+		self.setLayout(layout)
+
+		#self.connect(dial, SIGNAL("valueChanged(int)"),                    spinbox.setValue)
+		#self.connect(spinbox, SIGNAL("valueChanged(int)"),                    dial.setValue)
+		dial.valueChanged.connect(spinbox.setValue);
+					
+		dial.valueChanged.connect(self.dreher);
+		dial2.valueChanged.connect(self.heber);
+		self.cami()
+		self.setWindowTitle("Camera position")
+		Gui.SendMsgToActiveView("ViewFit")
+
+
+	def dreher(self):
+		self.alpha=self.dial.value()
+		self.cami()
+
+	def heber(self):
+		self.beta=self.dial2.value()
+		self.cami()
+
+
+	def cami(self):
+
+		from pivy import coin
+		alpha=self.alpha
+		beta=self.beta
+		
+		camera = FreeCADGui.ActiveDocument.ActiveView.getCameraNode()
+
+		Gui=FreeCADGui
+		if False:
+			typeCamera="Orthographic"
+			if typeCamera=="Orthographic":
+				Gui.activeDocument().activeView().setCameraType("Orthographic")
+			else:
+				Gui.activeDocument().activeView().setCameraType("Perspective")
+
+		campos=Base.Vector( 1000 * cos (pi*alpha/360)*sin(pi*beta/360), 1000*sin(pi*alpha/360)*sin(pi*beta/360), 1000*cos(pi*beta/360))
+		camera.position.setValue( campos) 
+
+		pos3=FreeCAD.Vector(0,0,0)
+		pos3.sub(campos)
+			
+		if False:	
+			camera.pointAt(coin.SbVec3f(pos3),coin.SbVec3f(0,0,1))
+		
+		App.ActiveDocument.recompute()
+		FreeCADGui.updateGui() 
+
+
+form = Form()
+form.show()
