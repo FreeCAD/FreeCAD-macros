@@ -161,6 +161,7 @@ class Ui_MainWindow(object):
         #path = FreeCAD.ConfigGet("AppHomePath")
         path = FreeCAD.ConfigGet("UserAppData")    # 
 #        path = "Yout path"                        # 
+        path="/usr/lib/freecad/Mod/plugins/FreeCAD-macros-git/icons/Camera/"
         App.Console.PrintMessage("Path locality to FCCamera.....images.png [ " + path + " ]"+"\n")
 #        print "Path locality ( ",path," )"
 

@@ -1,0 +1,206 @@
+
+# [http://forum.freecadweb.org/viewtopic.php?f=3&t=1784&hilit=View+Rotation#p12012 View+Rotation]
+
+
+from PyQt4 import QtGui, QtCore
+from pivy import coin
+from math import pi
+
+import FreeCADGui as Gui
+
+
+def find_centre():
+	xmax = xmin = ymax = ymin = zmax = zmin = 0	
+	for obj in App.ActiveDocument.Objects:
+		if obj.Type[:4] == "Mesh":
+			box = obj.Mesh.BoundBox
+		elif obj.Type[:6] == "Points":
+			box = obj.Points.BoundBox
+		elif obj.Type[:4] == "Part":
+			box = obj.Shape.BoundBox
+		else:
+			continue
+		xmax = max(xmax, box.XMax)
+		xmin = min(xmin, box.XMin)
+		ymax = max(ymax, box.YMax)
+		ymin = min(ymin, box.YMin)
+		zmax = max(zmax, box.ZMax)
+		zmin = min(zmin, box.ZMin)
+
+	centre = FreeCAD.Vector((xmax+xmin)/2.0, (ymax+ymin)/2.0, (zmax+zmin)/2.0)
+	return centre
+
+
+
+class rotate_gui(QtGui.QWidget):  
+	def __init__(self):
+		super(rotate_gui, self).__init__()
+		self.initUI()
+		self.initRotate()
+
+
+	def initUI(self):
+		self.sld = [0,1,2]
+		self.tbox = [0,1,2]
+		path = FreeCAD.ConfigGet("UserAppData") + "/Mod/plugins/FreeCAD-macros-git/icons/RotateView/"
+		path = FreeCAD.ConfigGet("AppHomePath") + "/Mod/plugins/FreeCAD-macros/icons/RotateView/"
+		
+		
+		icon = [0,1,2]
+		icons = ('right.png', 'up.png', 'out.png')
+
+		for i in range(3): 
+			self.sld[i] = QtGui.QSlider(QtCore.Qt.Horizontal, self)
+			self.sld[i].setFocusPolicy(QtCore.Qt.NoFocus)
+			self.sld[i].setSingleStep(5)
+			self.sld[i].setPageStep(15)
+			self.sld[i].setValue(0)
+			self.sld[i].setMaximum(180)
+			self.sld[i].setMinimum(-180)
+			self.tbox[i] = QtGui.QLineEdit(self)
+			self.tbox[i].setText("0")
+			self.tbox[i].setAlignment(QtCore.Qt.AlignRight)
+			icon[i] = QtGui.QLabel(self)
+			icon[i].setPixmap(QtGui.QPixmap(path + icons[i]))
+			self.sld[i].valueChanged[int].connect(self.valueChange)
+			self.tbox[i].returnPressed.connect(self.valueEntered)
+
+		resetButton = QtGui.QPushButton("Reset")
+		resetButton.clicked.connect(self.reset)
+
+		okButton = QtGui.QPushButton("OK")
+		okButton.clicked.connect(self.close)
+
+		cancelButton = QtGui.QPushButton("Cancel")
+		cancelButton.clicked.connect(self.cancel)
+
+		hbox = [0,1,2,3]
+		vbox = QtGui.QVBoxLayout()
+
+		for i in range(3):
+			hbox[i] = QtGui.QHBoxLayout()
+			hbox[i].addWidget(icon[i],1, QtCore.Qt.AlignCenter)
+			hbox[i].addWidget(self.sld[i],4)
+			hbox[i].addWidget(self.tbox[i],1)
+			vbox.addLayout(hbox[i])
+
+		hbox[3] = QtGui.QHBoxLayout()
+		hbox[3].addWidget(resetButton,1)
+		hbox[3].addWidget(okButton,1)
+		hbox[3].addWidget(cancelButton,1)
+		vbox.addStretch(1)
+		vbox.addLayout(hbox[3])
+
+		self.setLayout(vbox)
+
+		a = QtGui.QDesktopWidget()
+		right = a.availableGeometry().width()
+
+		self.setGeometry(right-300, 0, 300, 150)
+		self.setWindowTitle('Rotate view...')
+		self.show()
+
+
+	def initRotate(self):
+		self.internal = False
+		self.current = 0
+
+		self.cam = Gui.ActiveDocument.ActiveView.getCameraNode()	
+		self.centre = coin.SbVec3f(find_centre())		
+		self.view = self.cam.orientation.getValue()
+		self.pos = self.cam.position.getValue()
+
+		#store a copy of the original view to be restored in the case of user selecting Reset or Cancel
+		self.original_view = coin.SbRotation(self.view.getValue())
+		self.original_pos = coin.SbVec3f(self.pos.getValue())
+
+		self.config_direction(0)
+
+
+	def reset(self):
+		#reset the view to the original one
+		self.cam.orientation = self.original_view
+		self.cam.position = self.original_pos
+		self.internal = True
+		for sld in self.sld:
+			sld.setValue(0)
+		self.internal = False
+		for tbox in self.tbox:
+			tbox.setText("0")
+		self.config_direction(0)
+
+
+	def cancel(self):
+		self.reset()
+		self.close()
+
+
+	def config_direction(self, i):
+		#evaluate the vectors corresponding to the three directions for the current view, and assign the i-th one to self.direction
+		self.view = self.cam.orientation.getValue()	
+		self.view = coin.SbRotation(self.view.getValue())
+		self.pos = self.cam.position.getValue()
+		self.pos = coin.SbVec3f(self.pos.getValue())
+
+		up = coin.SbVec3f(0,1,0)
+		self.up = self.view.multVec(up)
+		out = coin.SbVec3f(0,0,1)
+		self.out = self.view.multVec(out)
+		u = self.up.getValue()
+		o = self.out.getValue()
+		r = (u[1]*o[2]-u[2]*o[1], u[2]*o[0]-u[0]*o[2], u[0]*o[1]-u[1]*o[0])
+		self.right = coin.SbVec3f(r)
+
+		self.direction = [self.right, self.up, self.out][i]
+
+ 	def check(self, i):
+		#check if the direction of rotation has changed, if so then set previous slider & textbox to zero, and setup the new direction
+		if i <> self.current:
+			self.internal = True
+			self.sld[self.current].setValue(0)
+			self.tbox[self.current].setText("0")
+			self.internal = False
+			self.current = i
+			self.config_direction(i)
+
+
+	def rotate(self, value):
+		#carry out the desired rotation about self.direction
+		val = value*pi/180.0
+		rot = coin.SbRotation(self.direction, -val)		
+		nrot = self.view*rot
+		prot = rot.multVec(self.pos - self.centre) + self.centre
+		self.cam.orientation = nrot
+		self.cam.position = prot
+
+
+	def valueChange(self, value):
+		#respond to the change in value of a slider, update the corresponding text box, check for a direction change then rotate
+		#if the value was changed internally, ignore event.
+		if self.internal:
+			return
+
+		sender = self.sender()
+		for i in range(3):
+			if sender == self.sld[i]:
+				break
+		self.tbox[i].setText(str(value))
+		self.check(i)
+		self.rotate(value)
+
+
+	def valueEntered(self):
+		#respond to a value being entered in a text box, updating the corresponding slider, check for direction change then rotate
+		sender = self.sender()
+		for i in range(3):
+			if sender == self.tbox[i]:
+				break
+		value = int(self.tbox[i].text())
+		self.internal = True
+		self.sld[i].setValue(value)
+		self.internal = False
+		self.check(i)
+		self.rotate(value)
+ 
+
+rotate = rotate_gui()
