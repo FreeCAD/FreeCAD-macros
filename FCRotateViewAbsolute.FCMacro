@@ -1,4 +1,6 @@
 from FreeCAD import Base
+import FreeCADGui as Gui
+
 
 from math import cos,sin,pi
 
@@ -79,8 +81,8 @@ class Form(QDialog):
 		pos3=FreeCAD.Vector(0,0,0)
 		pos3.sub(campos)
 			
-		if False:	
-			camera.pointAt(coin.SbVec3f(pos3),coin.SbVec3f(0,0,1))
+		#if False:	
+		camera.pointAt(coin.SbVec3f(pos3),coin.SbVec3f(0,0,1))
 		
 		App.ActiveDocument.recompute()
 		FreeCADGui.updateGui() 
