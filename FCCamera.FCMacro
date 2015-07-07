@@ -44,14 +44,49 @@ __url__     = "http://www.freecadweb.org/wiki/index.php?title=Macro_FCCamera"
 __version__ = "00.03"
 __date__    = "18/03/2015"
 
+
 try:
-    import PyQt4                     #  PyQt4 
-    from PyQt4 import QtCore, QtGui  #  PyQt4
-    App.Console.PrintMessage("PyQt4"+"\n")
+	import PyQt4                     #  PyQt4 
+	from PyQt4 import QtCore, QtGui  #  PyQt4
+	App.Console.PrintMessage("PyQt4"+"\n")
 except Exception:
-    import PySide                    #  PySide
-    from PySide import QtCore, QtGui #  PySide
-    App.Console.PrintMessage("PySide"+"\n")
+	import PySide                    #  PySide
+	from PySide import QtCore, QtGui #  PySide
+	App.Console.PrintMessage("PySide"+"\n")
+
+
+#import PySide                    #  PySide
+#from PySide import QtCore, QtGui #  PySide
+#App.Console.PrintMessage("PySide"+"\n")
+
+###########
+import sys, traceback
+
+def saye(s):
+	FreeCAD.Console.PrintError(str(s)+"\n")
+
+
+def dlgexc(mess=''):
+	exc_type, exc_value, exc_traceback = sys.exc_info()
+	ttt=repr(traceback.format_exception(exc_type, exc_value,exc_traceback))
+	lls=eval(ttt)
+	lls2=eval(ttt)
+	l=len(lls)
+	l2=lls[(l-1):]
+	FreeCAD.Console.PrintError(mess + "\n" +"-->  ".join(lls2))
+	msg=mess + "\n\n" +"-->  ".join(l2)
+	diag = QtGui.QMessageBox(QtGui.QMessageBox.Critical,u"Plugin Loader Error",msg )
+	diag.setWindowFlags(PySide.QtCore.Qt.WindowStaysOnTopHint)
+	diag.exec_()
+
+def sayexc(mess=''):
+	exc_type, exc_value, exc_traceback = sys.exc_info()
+	ttt=repr(traceback.format_exception(exc_type, exc_value,exc_traceback))
+	lls=eval(ttt)
+	saye(mess + "\n" +"-->  ".join(lls))
+
+
+###########
 
 import Draft, Part, FreeCAD, math, PartGui, FreeCADGui, DraftVecUtils
 #import os, WorkingPlane 
@@ -61,6 +96,11 @@ from FreeCAD import Base
 from FreeCAD import Vector
 import pivy
 from pivy import coin
+
+import FreeCADGui
+App=FreeCAD
+Gui=FreeCADGui
+
 
 global path     ; path = ""
 global valeur   ; valeur  = 0.0
@@ -152,7 +192,8 @@ def To_Face_Or_To_Axis(ToFace):         # 1=NormalAt 0=Axis   #Align Face select
         Gui.ActiveDocument.ActiveView.setCameraOrientation(r.Q)#
         vueView += 1
     except:
-        App.Console.PrintError("Select a face"+"\n")
+        sayexc()
+        App.Console.PrintError("!Select a face"+"\n")
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
