@@ -15,7 +15,7 @@ class Form(QDialog):
 		super(Form, self).__init__(parent)
 		self.alpha=00
 		self.beta=180
-		
+		self.setWindowFlags(Qt.WindowStaysOnTopHint)
 
 		dial = QDial()
 		dial.setNotchesVisible(True)
@@ -58,6 +58,28 @@ class Form(QDialog):
 		self.beta=self.dial2.value()
 		self.cami()
 
+	def rotY(self,delta=10):
+		if self.beta==1:
+			self.beta=0
+
+		self.beta += delta
+		if self.beta >360:
+			self.beta -= 360
+		if self.beta <0:
+			self.beta += 360
+		if self.beta==0:
+			self.beta=1
+		FreeCAD.Console.PrintMessage(str(self.beta)+"  # ");
+		self.dial2.setValue(self.beta)
+	
+
+	def rotZ(self,delta=10):
+		self.alpha += delta
+		if self.alpha >360:
+			self.alpha -= 360
+		if self.alpha <0:
+			self.alpha += 360
+		self.dial.setValue(self.alpha)
 
 	def cami(self):
 
@@ -75,7 +97,7 @@ class Form(QDialog):
 			else:
 				Gui.activeDocument().activeView().setCameraType("Perspective")
 
-		campos=Base.Vector( 1000 * cos (pi*alpha/360)*sin(pi*beta/360), 1000*sin(pi*alpha/360)*sin(pi*beta/360), 1000*cos(pi*beta/360))
+		campos=Base.Vector( 1000 * cos (pi*alpha/360*2)*sin(pi*beta/360*1), 1000*sin(pi*alpha/360*2)*sin(pi*beta/360*1), 1000*cos(pi*beta/360*1))
 		camera.position.setValue( campos) 
 
 		pos3=FreeCAD.Vector(0,0,0)
@@ -87,6 +109,13 @@ class Form(QDialog):
 		App.ActiveDocument.recompute()
 		FreeCADGui.updateGui() 
 
-
-form = Form()
-form.show()
+if hasattr(FreeCAD,"ViewMgr")and FreeCAD.ViewMgr:
+	FreeCAD.ViewMgr.show()
+	FreeCAD.Console.PrintMessage("neu gestrte")
+else:
+	FreeCAD.ViewMgr=Form()
+	FreeCAD.ViewMgr.show()
+	FreeCAD.Console.PrintMessage(" war schon da")
+ 
+t=FreeCADGui.getMainWindow()
+t.activateWindow()

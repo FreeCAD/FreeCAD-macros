@@ -659,3 +659,5 @@ ui = Ui_MainWindow()
 ui.setupUi(MainWindow)
 MainWindow.show()
 
+t=FreeCADGui.getMainWindow()
+t.activateWindow()

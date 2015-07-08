@@ -190,21 +190,21 @@ class rotate_gui(QtGui.QWidget):
 		#carry out the desired rotation about self.direction
 		try:
 			val = value*pi/180.0
-			FreeCAD.Console.PrintMessage(" val: "+ str(val) + "\n")
+		#	FreeCAD.Console.PrintMessage(" val: "+ str(val) + "\n")
 			rot = coin.SbRotation(self.direction, -val)		
 			nrot = self.view*rot
 			prot = rot.multVec(self.pos - self.centre) + self.centre
 			self.cam.orientation = nrot
 			self.cam.position = prot
-			FreeCAD.Console.PrintMessage("Rot "+  str(value) +"\n!")
-			FreeCAD.Console.PrintMessage(str(nrot) + "\n")
+		#	FreeCAD.Console.PrintMessage("Rot "+  str(value) +"\n!")
+		#	FreeCAD.Console.PrintMessage(str(nrot) + "\n")
 		except:
 			sayexc()
 		FreeCAD.Console.PrintMessage("-------------------" + "\n")
 
 	def mysender(self):
 		if self.keyctrl:
-			FreeCAD.Console.PrintMessage("-------keyctrl ------------== " +str(self.keyctrl) +  "\n")
+			#FreeCAD.Console.PrintMessage("-------keyctrl ------------== " +str(self.keyctrl) +  "\n")
 			return (self.keyctrl - 1)
 		else:
 			return self.sender()
@@ -216,23 +216,23 @@ class rotate_gui(QtGui.QWidget):
 		try:
 			
 			if self.internal:
-				FreeCAD.Console.PrintMessage("return intren\n")
+			#	FreeCAD.Console.PrintMessage("return intren\n")
 				return
 			sender = self.mysender()
-			FreeCAD.Console.PrintMessage("sender " + str(sender) +"\n")
+			#FreeCAD.Console.PrintMessage("sender " + str(sender) +"\n")
 			if sender.__class__ == int:
 				i=sender
 			else:
 				for i in range(3):
 					if sender == self.sld[i]:
 						break
-			FreeCAD.Console.PrintMessage("valueChanged sender:" + str(sender) + "  i= " +str(i)+ "\n")
+			#FreeCAD.Console.PrintMessage("valueChanged sender:" + str(sender) + "  i= " +str(i)+ "\n")
 			self.tbox[i].setText(str(value))
 			FreeCAD.Console.PrintMessage("check ---")
 			self.check(i)
-			FreeCAD.Console.PrintMessage(" ---done check ---")
+			#FreeCAD.Console.PrintMessage(" ---done check ---")
 			self.rotate(value)
-			FreeCAD.Console.PrintMessage(" ---rotiert ---")
+			#FreeCAD.Console.PrintMessage(" ---rotiert ---")
 		except:
 			sayexc()
 
@@ -268,19 +268,19 @@ class rotate_gui(QtGui.QWidget):
 		self.rotate(value)
 
 	def rot(self, axis,delta):
-		FreeCAD.Console.PrintMessage("rot ..." + str(axis) +"\n")
+		#FreeCAD.Console.PrintMessage("rot ..." + str(axis) +"\n")
 		i=axis
 		
 		value = int(self.tbox[i].text())
-		FreeCAD.Console.PrintMessage("ww 3" +str(value) +"! ")
+		#FreeCAD.Console.PrintMessage("ww 3" +str(value) +"! ")
 		value += delta 
-		FreeCAD.Console.PrintMessage("ww4 " +str(value) +"! ")
+		#FreeCAD.Console.PrintMessage("ww4 " +str(value) +"! ")
 		self.sld[i].setValue(value)
 		self.internal = False
 		self.valueChange(value)
-		FreeCAD.Console.PrintMessage("ww 5 " +str(self.keyctrl) +"! ")
+		#FreeCAD.Console.PrintMessage("ww 5 " +str(self.keyctrl) +"! ")
 		# self.keyctrl=False 
-		
+
 	def rotZ(self, delta):
 		self.keyctrl=2
 		self.rot(1,delta)
@@ -296,12 +296,16 @@ class rotate_gui(QtGui.QWidget):
 		self.rot(0,delta)
 		self.keyctrl=False 
 
-		
-
 if hasattr(FreeCAD,"ViewMgrRel")and FreeCAD.ViewMgrRel:
 	FreeCAD.ViewMgrRel.show()
+	FreeCAD.Console.PrintMessage("schon da")
+	pass
 else:
 	FreeCAD.ViewMgrRel=rotate_gui()
-	FreeCAD.ViewMgrRel.show()
+	FreeCAD.Console.PrintMessage("erzeugt")
+#	FreeCAD.ViewMgrRel.show()
 
 
+# defocus 
+t=FreeCADGui.getMainWindow()
+t.activateWindow()
