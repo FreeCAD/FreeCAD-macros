@@ -8,6 +8,7 @@ import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
 
+from pivy import coin
 
 class Form(QDialog):
 
@@ -24,6 +25,7 @@ class Form(QDialog):
 		dial.setValue(self.alpha)
 		
 		
+		
 		dial2 = QDial()
 		dial2.setNotchesVisible(True)
 		self.dial2=dial2
@@ -34,6 +36,22 @@ class Form(QDialog):
 		spinbox.setMaximum(360)
 
 		layout = QHBoxLayout()
+		
+		
+		self.pushButton00 = QPushButton(QIcon('icons:freecad.svg'),"Dimetric")
+		self.pushButton01 = QPushButton(QIcon('icons:freecad.svg'),"Trimetric")
+		self.pushButton02 = QPushButton(QIcon('icons:freecad.svg'),"Isometric")
+		self.pushButton03 = QPushButton(QIcon('icons:freecad.svg'),"Front")
+		self.pushButton00.clicked.connect(self.dimetric) 
+		self.pushButton01.clicked.connect(self.trimetric) 
+		self.pushButton02.clicked.connect(self.isometric) 
+		self.pushButton03.clicked.connect(self.front) 
+		layout.addWidget(self.pushButton03)
+		layout.addWidget(self.pushButton00)
+		layout.addWidget(self.pushButton01)
+		layout.addWidget(self.pushButton02)
+		
+		
 		layout.addWidget(dial)
 		layout.addWidget(dial2)
 # 		layout.addWidget(spinbox)
@@ -45,9 +63,12 @@ class Form(QDialog):
 					
 		dial.valueChanged.connect(self.dreher);
 		dial2.valueChanged.connect(self.heber);
+
+
 		self.cami()
 		self.setWindowTitle("Camera position")
 		Gui.SendMsgToActiveView("ViewFit")
+
 
 
 	def dreher(self):
@@ -108,6 +129,43 @@ class Form(QDialog):
 		
 		App.ActiveDocument.recompute()
 		FreeCADGui.updateGui() 
+	
+	def front(self):
+		from pivy import coin
+		pos3=FreeCAD.Vector(0,0,0)
+		campos=FreeCAD.Vector(10,0,0)
+		camera = FreeCADGui.ActiveDocument.ActiveView.getCameraNode()
+		camera.position.setValue( campos) 
+		camera.pointAt(coin.SbVec3f(pos3),coin.SbVec3f(0,0,1))
+
+	def isometric(self):
+		
+		pos3=FreeCAD.Vector(0,0,0)
+		campos=FreeCAD.Vector(100,-100,100)
+		camera = FreeCADGui.ActiveDocument.ActiveView.getCameraNode()
+		camera.position.setValue( campos) 
+		pos3.sub(campos)
+		camera.pointAt(coin.SbVec3f(pos3),coin.SbVec3f(0,0,1))
+
+	def dimetric(self):
+		pos3=FreeCAD.Vector(0,0,0)
+		campos=FreeCAD.Vector(68,-68,27)
+		camera = FreeCADGui.ActiveDocument.ActiveView.getCameraNode()
+		camera.position.setValue( campos) 
+		pos3.sub(campos)
+		camera.pointAt(coin.SbVec3f(pos3),coin.SbVec3f(0,0,1))
+		App.ActiveDocument.recompute()
+		FreeCADGui.updateGui() 
+	
+
+	def trimetric(self):
+		pos3=FreeCAD.Vector(0,0,0)
+		campos=FreeCAD.Vector(-210,-790,580)
+		camera = FreeCADGui.ActiveDocument.ActiveView.getCameraNode()
+		camera.position.setValue( campos) 
+		pos3.sub(campos)
+		camera.pointAt(coin.SbVec3f(pos3),coin.SbVec3f(0,0,1))
+
 
 if hasattr(FreeCAD,"ViewMgr")and FreeCAD.ViewMgr:
 	FreeCAD.ViewMgr.show()
@@ -116,6 +174,7 @@ else:
 	FreeCAD.ViewMgr=Form()
 	FreeCAD.ViewMgr.show()
 	FreeCAD.Console.PrintMessage(" war schon da")
- 
+
+
 t=FreeCADGui.getMainWindow()
 t.activateWindow()
