@@ -133,7 +133,7 @@ class Form(QDialog):
 	def front(self):
 		from pivy import coin
 		pos3=FreeCAD.Vector(0,0,0)
-		campos=FreeCAD.Vector(10,0,0)
+		campos=FreeCAD.Vector(0,-10,0)
 		camera = FreeCADGui.ActiveDocument.ActiveView.getCameraNode()
 		camera.position.setValue( campos) 
 		camera.pointAt(coin.SbVec3f(pos3),coin.SbVec3f(0,0,1))
@@ -160,7 +160,7 @@ class Form(QDialog):
 
 	def trimetric(self):
 		pos3=FreeCAD.Vector(0,0,0)
-		campos=FreeCAD.Vector(-210,-790,580)
+		campos=FreeCAD.Vector(210,-790,580)
 		camera = FreeCADGui.ActiveDocument.ActiveView.getCameraNode()
 		camera.position.setValue( campos) 
 		pos3.sub(campos)
