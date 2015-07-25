@@ -1,0 +1,113 @@
+import FreeCAD, FreeCADGui, Part, PySide
+from FreeCAD import Base
+from PySide import QtCore, QtGui
+from PySide.QtGui import QLineEdit, QRadioButton
+App=FreeCAD
+
+class p():
+
+    def makeHyp(self):
+       
+        if self.radio1.isChecked():
+            try:
+
+                tS1 = float(self.r1.text())
+                tS2 = float(self.r2.text())
+                fc = float(self.f1.text())
+
+                para=Part.Parabola()
+                para.Focal = fc
+
+
+                shape=para.toShape(tS1,tS2)
+                Part.show(shape)
+
+            except:
+                sayexc()
+                FreeCAD.Console.PrintError("Unable to complete task")
+
+            self.close()
+
+
+        if self.radio2.isChecked():
+            try:
+
+                tS1 = float(self.r1.text())
+                tS2 = float(self.r2.text())
+                fc = float(self.f1.text())
+                Dg = float(self.Dg.text())
+
+                para=Part.Parabola()
+                para.Focal = fc
+
+                shape=para.toShape(tS1,tS2)
+                rev=shape.revolve(App.Vector(1,0,0),App.Vector(1,0,0),Dg) # revolve around X axis by number of degrees
+                Part.show(rev)
+            except:
+                sayexc()
+                FreeCAD.Console.PrintError("Unable to complete task")
+
+            self.close()
+
+    def close(self):
+        self.dialog.hide()
+
+
+
+    def __init__(self):
+        self.dialog = None
+
+        self.dialog = QtGui.QDialog()
+        #self.dialog.resize(450,110)
+
+        self.dialog.setWindowTitle("Parabola Creator")
+        la = QtGui.QVBoxLayout(self.dialog)
+       
+        self.radio1 = QRadioButton("Make 2D Shape")
+        self.radio2 = QRadioButton("Make 3D Revolution")
+
+# # # #
+# set default to "Make 2D Shape" & make radio buttons - Change self.radio1.setChecked(True) to
+# self.radio2.setChecked(True) to set "Make 3D Revolution" as default
+# # # #
+
+        self.radio1.setChecked(True)
+        la.addWidget(self.radio1)
+        la.addWidget(self.radio2)
+
+        iN1 = QtGui.QLabel("Range Of Curve - Minimum")
+        la.addWidget(iN1)
+        self.r1 = QtGui.QLineEdit()
+        la.addWidget(self.r1)
+        self.r1.setText('-3')
+
+        iN2 = QtGui.QLabel("Range Of Curve - Maximum")
+        la.addWidget(iN2)
+        self.r2 = QtGui.QLineEdit()
+        la.addWidget(self.r2)
+        self.r2.setText('3')
+
+        iN3 = QtGui.QLabel("Focus")
+        la.addWidget(iN3)
+        self.f1 = QtGui.QLineEdit()
+        la.addWidget(self.f1)
+        self.f1.setText('2')
+
+        iN4 = QtGui.QLabel("Degrees of Revolve (Only valid for 3D Revolution)")
+        la.addWidget(iN4)
+        self.Dg = QtGui.QLineEdit()
+        la.addWidget(self.Dg)
+        self.Dg.setText('360')
+
+
+        okbox = QtGui.QDialogButtonBox(self.dialog)
+        okbox.setOrientation(QtCore.Qt.Horizontal)
+        okbox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
+        la.addWidget(okbox)
+        QtCore.QObject.connect(okbox, QtCore.SIGNAL("accepted()"), self.makeHyp)
+        QtCore.QObject.connect(okbox, QtCore.SIGNAL("rejected()"), self.close)
+        QtCore.QMetaObject.connectSlotsByName(self.dialog)
+        self.dialog.show()
+        self.dialog.exec_()
+
+p()
