@@ -1,0 +1,34 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
+__Name__ = 'Message Box'
+__Comment__ = 'Show how to give information to the user in macros'
+__Web__ = 'http://freecadweb.org/wiki/index.php?title=Macro_MessageBox'
+__Wiki__ = 'http://freecadweb.org/wiki/index.php?title=Macro_MessageBox'
+__Icon__ = ""
+__Help__ = 'Run and be warned'
+__Author__ = 'galou, Mario52 and other contributors'
+__Version__ = 1.0
+__Status__ = 'Production'
+__Requires__ = ''
+
+from PySide import QtCore, QtGui
+
+
+def errorDialog(msg):
+    """Create a simple dialog QMessageBox"""
+    # The first argument indicates the icon used: one of
+    # QtGui.QMessageBox.{NoIcon, Information, Warning, Critical, Question}
+    diag = QtGui.QMessageBox(QtGui.QMessageBox.Warning,
+                             u'Warning in macro MessageBox', msg)
+    diag.setWindowModality(QtCore.Qt.ApplicationModal)
+    diag.exec_()
+
+# To display multiple lines in a dialog box Qt, '\n' can be added between
+# lines. '\t' inserts a tab. The backslash is a then a special character which
+# must be escaped, i.e. insert '\\' to display a backslash. Single quotes must
+# also be escaped in a single-quote-delimited string and double-quotes in a
+# double-quote-delimited string. See Python doc for details.
+msg = 'Example of warning message\nYou should\'t have done this.'
+errorDialog(msg)
+raise(Exception(msg))
