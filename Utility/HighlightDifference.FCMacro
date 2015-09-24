@@ -37,23 +37,32 @@ shape_a = object_a.Shape
 shape_b = object_b.Shape
 label_a = object_a.Label
 label_b = object_b.Label
-shape_cut = shape_a.cut(shape_b)
-if abs(shape_cut.Volume - shape_a.Volume) < 1e-6:
-    FreeCAD.Console.PrintMessage('No intersection between {} and {}\n'.format(
-        label_a, label_b))
-elif shape_cut.Volume < 1e-6:
-    FreeCAD.Console.PrintMessage('{} and {} have the same shape\n'.format(
+shape_addition = shape_a.cut(shape_b)
+if shape_addition.Volume < 1e-6:
+    FreeCAD.Console.PrintMessage('No addition from {} to {}\n'.format(
         label_a, label_b))
 else:
     FreeCAD.Console.PrintMessage(
-        'Volume of the difference between {} and {}: {}\n'.format(
-            label_a, label_b, shape_cut.Volume))
+        'Volume of the addition from {} to {}: {}\n'.format(
+            label_a, label_b, shape_addition.Volume))
+
+shape_removal = shape_b.cut(shape_a)
+if shape_removal.Volume < 1e-6:
+    FreeCAD.Console.PrintMessage('No removal from {} to {}\n'.format(
+        label_a, label_b))
+else:
+    FreeCAD.Console.PrintMessage(
+        'Volume of the removal from {} to {}: {}\n'.format(
+            label_a, label_b, shape_removal.Volume))
+
+if (shape_addition.Volume < 1e-6) and (shape_removal.Volume < 1e-6):
+    FreeCAD.Console.PrintMessage('{} and {} have the same shape\n'.format(
+        label_a, label_b))
 
 added = FreeCAD.ActiveDocument.addObject('Part::Feature')
 added.Label = 'Addition ({} − {})'.format(label_a, label_b)
-added.Shape = shape_cut
+added.Shape = shape_addition
 added.ViewObject.ShapeColor = (1.0, 0.0, 0.0, 1.0)
-shape_removal = shape_b.cut(shape_a)
 removed = FreeCAD.ActiveDocument.addObject('Part::Feature')
 removed.Label = 'Removal ({} − {})'.format(label_b, label_a)
 removed.Shape = shape_removal
