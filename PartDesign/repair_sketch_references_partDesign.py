@@ -20,7 +20,7 @@ for sketch_name, exGeom, supportGeom in reference_state:
         old_name = g.description.subElementName
         if se_name != old_name:
             changed = True
-            debugPrint( 2,'  ExternalGeometry: %s -> %s' % (se_name, old_name) )
+            debugPrint( 2,'  ExternalGeometry: %s -> %s' % (old_name, se_name) )
         newExtGeom.append( ( g.object, se_name) )
 
     if supportGeom != None:
@@ -28,7 +28,7 @@ for sketch_name, exGeom, supportGeom in reference_state:
         old_name = supportGeom.description.subElementName
         if se_name != old_name:
             changed = True
-            debugPrint( 2,'  supportGeom: %s->%s' % (se_name, old_name) )
+            debugPrint( 2,'  supportGeom: %s->%s' % (old_name, se_name) )
             sketch.Support = ( supportGeom.object, [se_name] )
 
     if changed:

@@ -11,7 +11,7 @@ def debugPrint( level, msg, timePrefix=False ):
     if level <= debugPrint.printLevel:
         tPrefix = '' if not timePrefix else datetime.datetime.now().strftime('%H:%M:%S ')
         FreeCAD.Console.PrintMessage( '%s%s\n' % (tPrefix,msg))
-debugPrint.printLevel = 2
+debugPrint.printLevel = 3
 
 
 class ShapeElementReference:
@@ -23,11 +23,13 @@ class ShapeElementReference:
         se_org = self.description
         se_org_name = se_org.subElementName
         T = ReversePlacementTransformWithBoundsNormalization( self.object )
-        se_current = SubElementInfo( se_org_name, self.object, T )
-        if se_org == se_current:
-            return se_org_name
-        else:
-            debugPrint(3, 'ShapeElementReference %s.%s has changed. Searching for closest match' % ( self.object.Name, se_org_name) )
+        try:
+            se_current = SubElementInfo( se_org_name, self.object, T )
+            if se_org == se_current:
+                return se_org_name
+        except (IndexError, ValueError):
+            pass
+        debugPrint(3, 'ShapeElementReference %s.%s has changed. Searching for closest match' % ( self.object.Name, se_org_name) )
 
         prefixDict = {'Vertexes':'Vertex','Edges':'Edge','Faces':'Face'}
         if se_org_name.startswith('Vertex'):
@@ -39,7 +41,12 @@ class ShapeElementReference:
         se_errors = []
         for j, subelement in enumerate( getattr( self.object.Shape, listName) ):
             se_name =  '%s%i' % (prefixDict[listName], j+1 )
-            if classifySubElement( self.object, se_name ) == se_org.category:
+            try:
+                se_category = classifySubElement( self.object, se_name )
+            except RuntimeError:
+                FreeCAD.Console.PrintError('failure to classify %s.%s\n' % ( self.object.Name, se_name ) )
+                continue
+            if se_category == se_org.category:
                 se_errors.append( SubElementInfo( se_name, self.object, T) - se_org )
         min_error = min( se_errors )
         return min_error.se1.subElementName
@@ -92,6 +99,19 @@ class SubElementInfo:
             return False
     def __sub__(self, b):
         return SubElementInfo_Absolute_Difference( self, b )
+
+class ShapeElementReference_Sketch_Support(ShapeElementReference):
+    def __init__(self, object, sketch):
+        self.object = object
+        self.description = SubElementInfo_Sketch_Support( object, sketch )
+
+class SubElementInfo_Sketch_Support(SubElementInfo):
+    def __init__(self, obj, sketch ):
+        self.subElementName = 'Face_Unparasable_Sketch_Support'
+        T =  ReversePlacementTransformWithBoundsNormalization( obj )
+        self.category = 'plane'
+        self.axis_T = T.unRotate( sketch.Shape.Placement.Rotation.Axis ) 
+        self.pos_T = T( sketch.Shape.Placement.Base )
 
 
 class SubElementInfo_Absolute_Difference:

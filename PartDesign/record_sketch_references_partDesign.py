@@ -11,7 +11,10 @@ for obj in FreeCAD.ActiveDocument.Objects:
             exGeom = [ ShapeElementReference(se_obj, se) for se_obj,se in obj.ExternalGeometry ]
             if obj.Support != None:
                 assert len( obj.Support[1] ) == 1
-                supportGeom = ShapeElementReference( obj.Support[0], obj.Support[1][0])
+                try:
+                    supportGeom = ShapeElementReference( obj.Support[0], obj.Support[1][0])
+                except IndexError: #it has occured that the supporting shape element reference is broken, in which case
+                    supportGeom = ShapeElementReference_Sketch_Support( obj.Support[0], obj )
             else:
                 supportGeom = None
             reference_state.append( [ obj.Name, exGeom, supportGeom ] )
