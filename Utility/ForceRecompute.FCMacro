@@ -1,0 +1,21 @@
+# -*- coding: utf-8 -*-
+# Force Recompute
+
+__Name__ = 'Force Recompute'
+__Comment__ = 'Force a manual recompute of the complete model'
+__Web__ = 'http://www.freecadweb.org/wiki/index.php?title=Macro_ForceRecompute'
+__Wiki__ = 'http://www.freecadweb.org/wiki/index.php?title=Macro_ForceRecompute'
+__Icon__ = 'ForceRecompute.png'
+__Help__ = 'Execute the macro to force a manual recompute of the complete model'
+__Author__ = 'shoogen, galou_breizh'
+__Version__ = '1.0'
+__Status__ = 'Production'
+__Requires__ = ''
+
+import FreeCAD
+
+doc = FreeCAD.activeDocument()
+if doc is not None:
+    for obj in doc.Objects:
+        obj.touch()
+    doc.recompute()
