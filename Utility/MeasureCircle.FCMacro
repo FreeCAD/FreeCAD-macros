@@ -33,8 +33,8 @@ class MeasureCircle:
         self.curve = None
         self.observer_added = False
         self.getElementsFromSelectionEx()
-        # We add the observer only if we don't have enough points yet.
-        self.observer_added = (len(self.points) < 3)
+        # We add the observer only if necessary.
+        self.observer_added = (self.curve is None)
         if self.observer_added:
             Gui.Selection.addObserver(self)
             App.Console.PrintMessage(
