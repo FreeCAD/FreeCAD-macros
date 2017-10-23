@@ -1,4 +1,4 @@
-# see http://www.freecadweb.org/wiki/index.php?title=Macro_unrollRuledSurface
+# see http://www.freecadweb.org/wiki/Macro_unrollRuledSurface
 #***************************************************************************
 #*                                                                         *
 #*   Copyright (c) 2013 - DoNovae/Herve BAILLY <hbl13@donovae.com>           *
@@ -122,7 +122,7 @@ def close():
 
 #####################################
 # Class unrollRuledSurface 
-#     - file_name : ouput file 
+#     - file_name : output file 
 #     - pts_nbr : nbr point of 
 #       discretization
 #####################################

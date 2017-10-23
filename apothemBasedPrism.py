@@ -8,7 +8,7 @@
 #
 # # # # # # # # # # #
 
-#  see http://www.freecadweb.org/wiki/index.php?title=Macro_Apothem_Based_Prism_GUI
+#  see http://www.freecadweb.org/wiki/Macro_Apothem_Based_Prism_GUI
  
 import FreeCAD, FreeCADGui, Part, PartGui, math
 from FreeCAD import Base

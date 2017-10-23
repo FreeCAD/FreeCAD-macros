@@ -4,8 +4,8 @@ from __future__ import unicode_literals
 
 __Name__ = 'Highlight Difference'
 __Comment__ = 'Compute the difference between two shapes'
-__Web__ = 'http://freecadweb.org/wiki/index.php?title=Macro_HighlightDifference'
-__Wiki__ = 'http://freecadweb.org/wiki/index.php?title=Macro_HighlightDifference'
+__Web__ = 'http://freecadweb.org/wiki/Macro_HighlightDifference'
+__Wiki__ = 'http://freecadweb.org/wiki/Macro_HighlightDifference'
 __Icon__ = ""
 __Help__ = 'Select two objects and run'
 __Author__ = 'galou and other contributors'

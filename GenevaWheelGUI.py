@@ -1,4 +1,4 @@
-# see http://www.freecadweb.org/wiki/index.php?title=Macro_Geneva_Wheel_GUI
+# see http://www.freecadweb.org/wiki/Macro_Geneva_Wheel_GUI
 
 #Creation of a Geneva Wheel with Parametric values  By: Isaac Ayala (drei) & Mark Stephen (quick61)
 #This Macro creates the main parts of a Geneva Wheel Mechanism 

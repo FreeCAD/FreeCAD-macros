@@ -12,7 +12,7 @@
 
 __Comment__ = 'Imports and scales an Airfoil in the form of a Draft Wire (DWire) or Basic Spline (BSpline)'
 __Web__ = "http://forum.freecadweb.org/viewtopic.php?f=22&t=5554"
-__Wiki__ = "http://www.freecadweb.org/wiki/index.php?title=Macro_Airfoil_Import_%26_Scale"
+__Wiki__ = "http://www.freecadweb.org/wiki/Macro_Airfoil_Import_%26_Scale"
 __Icon__  = "/usr/lib/freecad/Mod/plugins/icons/airfoil.png"
 __Help__ = ""
 __Author__ = "quick61"

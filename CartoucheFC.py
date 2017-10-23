@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 # Macro_CartoucheFC.py
 # Remplir les zones du cartouche de la feuille originale de FreeCAD
-# http://www.freecadweb.org/wiki/index.php?title=Macro_CartoucheFC/fr
+# http://www.freecadweb.org/wiki/Macro_CartoucheFC/fr
 # il faut que la page (drawing viewer) s'appelle " Page " qui est le nom par défaut du module Drawing
 # Fill the area of the cartridge
-# http://www.freecadweb.org/wiki/index.php?title=Macro_CartoucheFC
+# http://www.freecadweb.org/wiki/Macro_CartoucheFC
 # It is necessary that the page (drawing viewer) is called "Page", which is the default name of the Drawing module
 # ver 0.3
 # Created: 02/07/2014
@@ -22,7 +22,7 @@
 #Coin version: 3.1.0
 #SoQt version: 1.4.1
 
-# see http://www.freecadweb.org/wiki/index.php?title=Macro_CartoucheFC
+# see http://www.freecadweb.org/wiki/Macro_CartoucheFC
 
 try:
     import PyQt4

@@ -3,8 +3,8 @@
 
 __Name__ = 'Force Recompute'
 __Comment__ = 'Force a manual recompute of the complete model'
-__Web__ = 'http://www.freecadweb.org/wiki/index.php?title=Macro_ForceRecompute'
-__Wiki__ = 'http://www.freecadweb.org/wiki/index.php?title=Macro_ForceRecompute'
+__Web__ = 'http://www.freecadweb.org/wiki/Macro_ForceRecompute'
+__Wiki__ = 'http://www.freecadweb.org/wiki/Macro_ForceRecompute'
 __Icon__ = 'ForceRecompute.png'
 __Help__ = 'Execute the macro to force a manual recompute of the complete model'
 __Author__ = 'shoogen, galou_breizh'
