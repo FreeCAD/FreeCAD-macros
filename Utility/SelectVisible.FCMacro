@@ -2,8 +2,8 @@
 
 __Name__ = 'Select Visible'
 __Comment__ = 'All visible objects in the tree will be selected'
-__Web__ = 'http://www.freecadweb.org/wiki/index.php?title=Macro_SelectVisible'
-__Wiki__ = 'http://www.freecadweb.org/wiki/index.php?title=Macro_SelectVisible'
+__Web__ = 'http://www.freecadweb.org/wiki/Macro_SelectVisible'
+__Wiki__ = 'http://www.freecadweb.org/wiki/Macro_SelectVisible'
 __Icon__ = 'SelectVisible.svg'
 __Help__ = 'All visible objects in the tree and only these will be selected'
 __Author__ = 'galou_breizh'

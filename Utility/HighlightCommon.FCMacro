@@ -4,8 +4,8 @@ from __future__ import unicode_literals
 
 __Name__ = 'Highlight Common parts'
 __Comment__ = 'Compute the common parts between selected shapes'
-__Web__ = 'http://freecadweb.org/wiki/index.php?title=Macro_HighlightCommon'
-__Wiki__ = 'http://freecadweb.org/wiki/index.php?title=Macro_HighlightCommon'
+__Web__ = 'http://freecadweb.org/wiki/Macro_HighlightCommon'
+__Wiki__ = 'http://freecadweb.org/wiki/Macro_HighlightCommon'
 __Icon__ = ""
 __Help__ = 'Select at least two objects and run'
 __Author__ = 'JMG, galou and other contributors'

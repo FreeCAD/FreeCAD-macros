@@ -36,8 +36,8 @@ Macro to generate screws with FreeCAD.
 """
 
 __Comment__ = 'Generate a screw'
-__Web__ = 'http://freecadweb.org/wiki/index.php?title=Macro_screw_maker1_2'
-__Wiki__ = 'http://freecadweb.org/wiki/index.php?title=Macro_screw_maker1_2'
+__Web__ = 'http://freecadweb.org/wiki/Macro_screw_maker1_2'
+__Wiki__ = 'http://freecadweb.org/wiki/Macro_screw_maker1_2'
 __Icon__ = ''
 __Help__ = 'Select the characteristics of the screw and click on the create button'
 __Author__ = "Ulrich Brammer <ulrich1a@users.sourceforge.net>"

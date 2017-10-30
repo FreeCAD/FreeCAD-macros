@@ -3,8 +3,8 @@
 
 __Name__ = 'Message Box'
 __Comment__ = 'Show how to give information to the user in macros'
-__Web__ = 'http://freecadweb.org/wiki/index.php?title=Macro_MessageBox'
-__Wiki__ = 'http://freecadweb.org/wiki/index.php?title=Macro_MessageBox'
+__Web__ = 'http://freecadweb.org/wiki/Macro_MessageBox'
+__Wiki__ = 'http://freecadweb.org/wiki/Macro_MessageBox'
 __Icon__ = ""
 __Help__ = 'Run and be warned'
 __Author__ = 'galou, Mario52 and other contributors'

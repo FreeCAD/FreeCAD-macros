@@ -38,9 +38,9 @@
 #Coin version: 4.0.0a                           #Coin version: 4.0.0a
 #OCC version: 6.7.1                             #OCC version: 6.7.1
 #
-__title__   ="FCCamera"
+__title__   = "FCCamera"
 __author__  = "Mario52"
-__url__     = "http://www.freecadweb.org/wiki/index.php?title=Macro_FCCamera"
+__url__     = "http://www.freecadweb.org/wiki/Macro_FCCamera"
 __version__ = "00.03"
 __date__    = "18/03/2015"
 
@@ -641,7 +641,7 @@ class Ui_MainWindow(object):
 
     def on_PB_Quit_clicked(self): # quit
         App.Console.PrintMessage("Fin FCCamera"+"\n")
-        FreeCADGui.Selection.removeObserver(s)    # desinstalle la fonction residente
+        FreeCADGui.Selection.removeObserver(s)    # de-install the function in resident mode
         self.window.hide()
 
 ##Start#####
@@ -651,8 +651,8 @@ if doc == None:
     doc = FreeCAD.newDocument()
 #Gui.ActiveDocument.ActiveView.setAxisCross(True) # GuiAxis true
 
-s=SelObserver()                                   # installe the function in resident mode SelObserver
-FreeCADGui.Selection.addObserver(s)               # installe the function in resident mode SelObserver
+s=SelObserver()                                   # install the function in resident mode SelObserver
+FreeCADGui.Selection.addObserver(s)               # install the function in resident mode SelObserver
 
 MainWindow = QtGui.QMainWindow()
 ui = Ui_MainWindow()

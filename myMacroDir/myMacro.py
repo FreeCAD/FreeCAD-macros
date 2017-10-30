@@ -2,11 +2,11 @@
 # your copyright info here
 #
 
-# meta data for  macro	management
+# meta data for macro management
 
 __Comment__ = 'My macro is a super macro and can be used whenever other macros fail '
 __Web__ = "http://forum.freecadweb.org/viewtopic.php?f=8&t=11302"
-__Wiki__ = "http://www.freecadweb.org/wiki/index.php?title=Macro_FreeCAD_to_Kerkythea"
+__Wiki__ = "http://www.freecadweb.org/wiki/Macro_FreeCAD_to_Kerkythea"
 __Icon__  = "Part_Common.svg"
 __Help__ = "This is the help text of this macro"
 __Author__ = "Freek Ad"
@@ -20,7 +20,7 @@ import FreeCAD
 
 
 #
-# the macro should have a test method to check the sucess of the installation
+# the macro should have a test method to check the success of the installation
 #
 def test():
 	errorMsg="There are some errors: a, b, c"
