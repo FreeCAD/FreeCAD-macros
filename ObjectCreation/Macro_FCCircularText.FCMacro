@@ -22,7 +22,7 @@ from __future__ import unicode_literals
 *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
 *   USA                                                                   *
 ***************************************************************************
-*   http://www.freecadweb.org/wiki/index.php?title=Macro_FCCircularText   *
+*   http://www.freecadweb.org/wiki/Macro_FCCircularText   *
 *           WARNING! All changes in this file will be lost and            *  
 *                  may cause malfunction of the program                   *
 ***************************************************************************
@@ -60,13 +60,13 @@ __Date__    = "12/06/2015"
 
 __Comment__ = "This macro creates a text around a cylinder"
 __Web__ = "http://forum.freecadweb.org/viewtopic.php?f=3&t=7384"
-__Wiki__ = "http://www.freecadweb.org/wiki/index.php?title=Macro_FCCircularText"
+__Wiki__ = "http://www.freecadweb.org/wiki/Macro_FCCircularText"
 __Icon__  = "/usr/lib/freecad/Mod/plugins/icons/FCCircularTextButtom.png"
 __IconW__  = "C:/Documents and Settings/YourUserName/Application Data/FreeCAD"
 __Help__ = "start the macro and follow the instructions"
 __Status__ = "stable"
 __Requires__ = "freecad 0.14.3706"
-__Communication__ = "http://www.freecadweb.org/wiki/index.php?title=User:Mario52"
+__Communication__ = "http://www.freecadweb.org/wiki/User:Mario52"
 
 
 try:
@@ -161,7 +161,7 @@ global precision        ;precision       = 0.0
 global correctionAngle  ;correctionAngle = 10.0
 global correctionRayon  ;correctionRayon = 0.15
 global debout           ;debout          = 1                  # 1=stand   0=flat
-global exterieur        ;exterieur       = 1                  # 1=exteral 0=internal
+global exterieur        ;exterieur       = 1                  # 1=external 0=internal
 global baseHelix        ;baseHelix       = 0.0                # base of helix
 global endHelix         ;endHelix        = 0.0                # end of helix (heigth)
 global pasHelix         ;pasHelix        = 2.0                # Pas of helix
@@ -505,7 +505,7 @@ class Ui_MainWindow(object):
 
         self.DS_Radius_Support = QtGui.QDoubleSpinBox(self.groupBox_05)
         self.DS_Radius_Support.setGeometry(QtCore.QRect(10, 20, 81, 22))
-        self.DS_Radius_Support.setToolTip(_fromUtf8("Radius of the support the clock (By defaut : Radius of circle)"))
+        self.DS_Radius_Support.setToolTip(_fromUtf8("Radius of the support the clock (By default : Radius of circle)"))
         self.DS_Radius_Support.setAccessibleDescription(_fromUtf8(""))
         self.DS_Radius_Support.setMaximum(99999999.99)
         self.DS_Radius_Support.setValue(cercleClock)
@@ -703,7 +703,7 @@ class Ui_MainWindow(object):
         self.PU_Exit.setToolTip("Exit FCCircularText")
         self.PU_Reset.setText("Reset")
         self.groupBox_01.setTitle("Text to be displayed  ( "+str(len(texte))+" characters )")
-        self.lineEdit.setToolTip("Font to defaut")
+        self.lineEdit.setToolTip("Font to default")
         self.lineEdit.setText(PolicePath)
         self.textEdit.setToolTip("Your text to be displayed")
         self.textEdit.setHtml(texte)

@@ -7,8 +7,8 @@
 from __future__ import division
 
 __Comment__ = 'Creates a parametric approximation of a rectellipse'
-__Web__ = 'http://freecadweb.org/wiki/index.php?title=Macro_Rectellipse'
-__Wiki__ = 'http://freecadweb.org/wiki/index.php?title=Macro_Rectellipse'
+__Web__ = 'http://freecadweb.org/wiki/Macro_Rectellipse'
+__Wiki__ = 'http://freecadweb.org/wiki/Macro_Rectellipse'
 __Icon__ = ""
 __Help__ = 'Run, zoom fit, and change parameters'
 __Author__ = 'fcaponi78, shoogen and other contributors'

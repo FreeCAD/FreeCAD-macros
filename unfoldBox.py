@@ -1,4 +1,4 @@
-# SEE http://www.freecadweb.org/wiki/index.php?title=Macro_unfoldBox
+# SEE http://www.freecadweb.org/wiki/Macro_unfoldBox
 #***************************************************************************
 #*                                                                         *
 #*   Copyright (c) 2013 - DoNovae/Herve BAILLY <hbl13@donovae.com>         *
