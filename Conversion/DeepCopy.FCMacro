@@ -1,0 +1,100 @@
+__Name__ = 'Deep Copy'
+__Comment__ = 'Takes a part and makes a compound out of it'
+__Web__ = 'https://www.freecadweb.org/wiki/index.php?title=Macro_DeepCopy'
+__Wiki__ = 'https://www.freecadweb.org/wiki/index.php?title=Macro_DeepCopy'
+__Icon__ = 'DeepCopy.png'
+__Help__ = 'Select a part and launch'
+__Author__ = 'galou_breizh'
+__Version__ = '1.0.0'
+__Status__ = 'Stable'
+__Requires__ = 'FreeCAD >= v0.17'
+
+from freecad import app
+from freecad import gui
+
+
+def deep_copy(doc):
+    for sel_object in gui.Selection.getSelectionEx():
+        deep_copy_part(doc, sel_object.Object)
+
+
+def deep_copy_part(doc, part):
+    if part.TypeId != 'App::Part':
+        # Part is not a part, return.
+        return
+
+    copied_subobjects = []
+    for o in get_all_subobjects(part):
+        copied_subobjects += copy_subobject(doc, o)
+
+    compound = doc.addObject('Part::Compound', 'Copy of ' + part.Label)
+    compound.Links = copied_subobjects
+    doc.recompute()
+
+
+def get_all_subobjects(o):
+    """Recursively get all subobjects
+    
+    Subobjects of objects having a Shape attribute are not included otherwise each
+    single feature of the object would be copied. The result is that bodies,
+    compounds, and the result of boolean operations will be converted into a
+    simple copy of their shape.
+    """
+    if hasattr(o, 'Shape'):
+        return []
+    # With the assumption that the attribute InList is ordered, only add the
+    # subobject if o is the direct parent, i.e. the first in InList.
+    try:
+        l = [so for so in o.OutList if so.InList and so.InList[0] is o]
+        for subobject in l:
+            l += get_all_subobjects(subobject)
+    except (AttributeError, IndexError):
+        return []
+    return l
+
+
+def copy_subobject(doc, o):
+    """Copy the shape of an object
+
+    Some GUI attributes are also copied
+    """
+    copied_object = []
+    if not hasattr(o, 'Shape') or o.Shape.isNull():
+        return copied_object
+    vo_o = o.ViewObject
+    try:
+        copy = doc.addObject('Part::Feature', o.Name + '_Shape')
+        copy.Shape = o.Shape
+        copy.Label = 'Copy of ' + o.Label
+        copy.Placement = get_recursive_inverse_placement(o).inverse()
+
+        vo_copy = copy.ViewObject
+        vo_copy.ShapeColor = vo_o.ShapeColor
+        vo_copy.LineColor = vo_o.LineColor
+        vo_copy.PointColor = vo_o.PointColor
+        vo_copy.DiffuseColor = vo_o.DiffuseColor
+        vo_copy.Transparency = vo_o.Transparency
+    except AttributeError:
+        pass
+    else:
+        copied_object = [copy]
+    return copied_object
+
+def get_recursive_inverse_placement(o):
+    # We browse the parent in reverse order so we have to multipy the inverse
+    # placements and return the inverse placement.
+    # Note that we cannot rely on o.InListRecursive because the order there is
+    # not reliable.
+    # TODO: see if this cannot be replaced with o.getGlobalPlacement().
+    p = o.Placement.inverse()
+    parent = o.getParentGeoFeatureGroup()
+    if parent:
+        p = p.multiply(get_recursive_inverse_placement(parent))
+    return p
+
+if __name__ == "__main__":
+    doc = app.activeDocument()
+    if doc:
+        deep_copy(doc)
+    else:
+        app.Console.PrintWarning('No active document')
