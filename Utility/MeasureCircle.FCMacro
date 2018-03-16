@@ -92,10 +92,11 @@ class MeasureCircle:
     def finish(self):
         if self.curve:
             c = self.curve
-            line = Part.makeLine(c.Center, c.Center + c.XAxis * c.Radius)
-            obj = App.ActiveDocument.addObject('Part::Feature', 'Radius')
-            obj.Shape = line
-            App.Console.PrintMessage('Radius: {}\n'.format(c.Radius))
+            # line = Part.makeLine(c.Center, c.Center + c.XAxis * c.Radius)
+            # obj = App.ActiveDocument.addObject('Part::Feature', 'Radius')
+            # obj.Shape = line
+            App.Console.PrintMessage('Diameter: {} mm\n'.format(2 * c.Radius))
+            App.Console.PrintMessage('Radius: {} mm\n'.format(c.Radius))
             App.Console.PrintMessage(
                 'Center: (X, Y, Z) = ({}, {}, {})\n'.format(
                     *list(c.Center)))
