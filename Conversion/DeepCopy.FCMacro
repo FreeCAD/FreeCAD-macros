@@ -40,17 +40,17 @@ def get_all_subobjects(o):
     compounds, and the result of boolean operations will be converted into a
     simple copy of their shape.
     """
-    if hasattr(o, 'Shape'):
-        return []
-    # With the assumption that the attribute InList is ordered, only add the
-    # subobject if o is the direct parent, i.e. the first in InList.
-    try:
-        l = [so for so in o.OutList if so.InList and so.InList[0] is o]
-        for subobject in l:
-            l += get_all_subobjects(subobject)
-    except (AttributeError, IndexError):
-        return []
-    return l
+    # Depth-first search algorithm.
+    discovered = []
+    # We do not need an extra copy for stack because OutList is already a copy.
+    stack = o.OutList
+    while stack:
+        v = stack.pop(0)
+        if v not in discovered:
+            discovered.append(v)
+            if not hasattr(v, 'Shape'):
+                stack += v.OutList
+    return discovered
 
 
 def copy_subobject(doc, o):
@@ -66,7 +66,7 @@ def copy_subobject(doc, o):
         copy = doc.addObject('Part::Feature', o.Name + '_Shape')
         copy.Shape = o.Shape
         copy.Label = 'Copy of ' + o.Label
-        copy.Placement = get_recursive_inverse_placement(o).inverse()
+        copy.Placement = o.getGlobalPlacement()
 
         vo_copy = copy.ViewObject
         vo_copy.ShapeColor = vo_o.ShapeColor
@@ -80,17 +80,6 @@ def copy_subobject(doc, o):
         copied_object = [copy]
     return copied_object
 
-def get_recursive_inverse_placement(o):
-    # We browse the parent in reverse order so we have to multipy the inverse
-    # placements and return the inverse placement.
-    # Note that we cannot rely on o.InListRecursive because the order there is
-    # not reliable.
-    # TODO: see if this cannot be replaced with o.getGlobalPlacement().
-    p = o.Placement.inverse()
-    parent = o.getParentGeoFeatureGroup()
-    if parent:
-        p = p.multiply(get_recursive_inverse_placement(parent))
-    return p
 
 if __name__ == "__main__":
     doc = app.activeDocument()
