@@ -1,0 +1,67 @@
+# -*- coding: utf-8 -*-
+
+###############################################
+#
+#	SketcherClipView
+#
+# This macro creates a temporary cross section at the 
+# sketch plane in order to 'look into' an object when you 
+# want to create a feature on the inside (i.e. create a revolved 
+# groove on the inner side of a tube).
+#
+# The macro creates a clipping plane at the sketch plane and 
+# activates it. Running the macro again deletes the clipping plane.
+#
+# If you map the macro to F7 it behaves almost exactly like 
+# in Autodesk Inventor, from which I got the inspiration.
+# 
+# (c) Ricardo Beck
+#################################################
+
+__Name__ = 'Sketcher Clip View'
+__Comment__ = 'Creates a temporary clipping plane at the support plane of the sketch'
+__Web__ = ''
+__Wiki__ = ''
+__Icon__ = "SketcherClipView.png"
+__Help__ = 'Launch while editing a sketch'
+__Author__ = 'Ricardo Beck'
+__Version__ = '1.0.0'
+__Status__ = 'Beta'
+__Requires__ = 'FreeCAD >= v0.17'
+
+
+import FreeCAD
+from pivy import coin
+
+# check if there is a temporary clipping plane from a previous run of the macro
+if hasattr(FreeCAD, 'temporary_sketch_clip_plane'):
+	# clipping plane found, remove from scenegraph and delete the object
+	Gui.ActiveDocument.ActiveView.getSceneGraph().removeChild(FreeCAD.temporary_sketch_clip_plane)
+	del FreeCAD.temporary_sketch_clip_plane
+
+else:
+	# no clipping plane found, create one at the sketch base
+
+	# get placement information of the active sketch
+	mat  = ActiveSketch.getGlobalPlacement()
+	point = mat.Base
+	normal = mat.Rotation.multVec(App.Vector(0,0,1))
+
+	# offset of the clipping plane so the sketch elements (lines, etc) are not cut off
+	sketch_offset = 0.02		
+
+	# create coin3d vectors of the sketch position	
+	coin_normal_vector = coin.SbVec3f(-normal.x, -normal.y, -normal.z)
+	coin_base_point = coin.SbVec3f(point.x+sketch_offset, point.y+sketch_offset, point.z+sketch_offset)
+
+	# create the clipping plane at the sketch position
+	FreeCAD.temporary_sketch_clip_plane = coin.SoClipPlane()
+	FreeCAD.temporary_sketch_clip_plane.plane.setValue(coin.SbPlane(coin_normal_vector,coin_base_point))
+	Gui.ActiveDocument.ActiveView.getSceneGraph().insertChild(FreeCAD.temporary_sketch_clip_plane,0)
+	
+	FreeCAD.temporary_sketch_clip_plane.on.setValue(True) # switch clipping plane on
+
+
+
+
+
