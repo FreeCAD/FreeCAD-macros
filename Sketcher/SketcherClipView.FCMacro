@@ -47,19 +47,31 @@ else:
 	point = mat.Base
 	normal = mat.Rotation.multVec(App.Vector(0,0,1))
 
-	# offset of the clipping plane so the sketch elements (lines, etc) are not cut off
-	sketch_offset = 0.02		
-
 	# create coin3d vectors of the sketch position	
-	coin_normal_vector = coin.SbVec3f(-normal.x, -normal.y, -normal.z)
-	coin_base_point = coin.SbVec3f(point.x+sketch_offset, point.y+sketch_offset, point.z+sketch_offset)
+	coin_normal_vector = coin.SbVec3f(normal.x, normal.y, normal.z)
+	coin_normal_vector.negate()
+	coin_base_point = coin.SbVec3f(point.x, point.y, point.z)
 
-	# create the clipping plane at the sketch position
+	# offset of the clipping plane so the sketch elements (lines, etc) are not cut off
+	sketch_offset_factor = -0.02		
+
+	coin_normal_vector_normalized = coin.SbVec3f(coin_normal_vector)
+	coin_normal_vector_normalized.normalize()
+	
+	# offset the clipping plane base by a fraction of the (normalized) normal vector
+	coin_base_point += (coin_normal_vector_normalized * sketch_offset_factor)
+
+	# create the clipping plane at the calculated position
 	FreeCAD.temporary_sketch_clip_plane = coin.SoClipPlane()
 	FreeCAD.temporary_sketch_clip_plane.plane.setValue(coin.SbPlane(coin_normal_vector,coin_base_point))
 	Gui.ActiveDocument.ActiveView.getSceneGraph().insertChild(FreeCAD.temporary_sketch_clip_plane,0)
 	
 	FreeCAD.temporary_sketch_clip_plane.on.setValue(True) # switch clipping plane on
+
+
+
+
+
 
 
 
