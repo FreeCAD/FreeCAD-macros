@@ -3,7 +3,7 @@ A repository for the FreeCAD macros from http://www.freecadweb.org/wiki/Macros_r
 
 To submit a macro, fork this repository, push to your repository, write a pull request, and get thanked.
 
-Please add the following metadata in your macro. Please also add a more complete description how to use the macro near the top of your macro as normal Python comments.
+Please add the following metadata in your macro. Please also add a more complete description how to use the macro near the top of your macro as normal Python comments. Please follow the `CamelCase.FCMacro` convention for the macro name (other associated files except the macro icon don't need to follow this convention).
 
 Macro metadata:
 ```python
