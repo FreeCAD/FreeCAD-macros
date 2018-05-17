@@ -1,5 +1,6 @@
 __Name__ = 'Deep Copy'
 __Comment__ = 'Takes a part and makes a compound out of it'
+__License__ = 'Apache-2.0'
 __Web__ = 'https://www.freecadweb.org/wiki/index.php?title=Macro_DeepCopy'
 __Wiki__ = 'https://www.freecadweb.org/wiki/index.php?title=Macro_DeepCopy'
 __Icon__ = 'DeepCopy.png'
@@ -8,6 +9,7 @@ __Author__ = 'galou_breizh'
 __Version__ = '1.0.0'
 __Status__ = 'Stable'
 __Requires__ = 'FreeCAD >= v0.17'
+__Files__ = 'DeepCopy.svg'
 
 from freecad import app
 from freecad import gui
@@ -81,7 +83,7 @@ def copy_subobject(doc, o):
     return copied_object
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     doc = app.activeDocument()
     if doc:
         deep_copy(doc)
