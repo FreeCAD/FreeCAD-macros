@@ -40,7 +40,7 @@ __title__ = "FCBmpImport"
 __author__ = "TheMarkster"
 __url__ = "http://www.freecadweb.org/"
 __Wiki__ = "http://www.freecadweb.org/wiki/index.php"
-__date__ = "2018.05.16a" #year.month.date and optional a,b,c, etc. subrevision letter, e.g. 2018.10.16a
+__date__ = "2018.05.17" #year.month.date and optional a,b,c, etc. subrevision letter, e.g. 2018.10.16a
 __version__ = "0."+__date__
 
 VERSION_STRING = __title__ + ' Macro v' + __version__
@@ -215,7 +215,7 @@ class Ui_MainWindow(object):
         self.staysOnTopCheckBox.setGeometry(QtCore.QRect(10, 10, 151, 17))
         self.staysOnTopCheckBox.setObjectName("staysOnTopCheckBox")
         self.wireEditGroupBox = QtGui.QGroupBox(self.centralwidget)
-        self.wireEditGroupBox.setGeometry(QtCore.QRect(10, 200, 160, 80))
+        self.wireEditGroupBox.setGeometry(QtCore.QRect(10, 190, 160, 80))
         self.wireEditGroupBox.setObjectName("wireEditGroupBox")
         self.verticalLayout_9 = QtGui.QVBoxLayout(self.wireEditGroupBox)
         self.verticalLayout_9.setObjectName("verticalLayout_9")
@@ -250,7 +250,7 @@ class Ui_MainWindow(object):
         self.graphicsView.setDragMode(QtGui.QGraphicsView.ScrollHandDrag)
         self.graphicsView.setObjectName("graphicsView")
         self.horizontalGroupBox = QtGui.QGroupBox(self.centralwidget)
-        self.horizontalGroupBox.setGeometry(QtCore.QRect(10, 290, 161, 41))
+        self.horizontalGroupBox.setGeometry(QtCore.QRect(10, 280, 161, 51))
         self.horizontalGroupBox.setObjectName("horizontalGroupBox")
         self.horizontalLayout_6 = QtGui.QHBoxLayout(self.horizontalGroupBox)
         self.horizontalLayout_6.setObjectName("horizontalLayout_6")
@@ -303,6 +303,7 @@ class Ui_MainWindow(object):
         self.insertButton.setText(QtGui.QApplication.translate("MainWindow", "Insert", None, QtGui.QApplication.UnicodeUTF8))
         self.blackForegroundCheckbox.setText(QtGui.QApplication.translate("MainWindow", "Black Foreground", None, QtGui.QApplication.UnicodeUTF8))
         self.selectFacesButton.setText(QtGui.QApplication.translate("MainWindow", "Select Objects", None, QtGui.QApplication.UnicodeUTF8))
+        self.horizontalGroupBox.setTitle(QtGui.QApplication.translate("MainWindow", "Defaults", None, QtGui.QApplication.UnicodeUTF8))
         self.zeroButton.setText(QtGui.QApplication.translate("MainWindow", "Zero Offsets", None, QtGui.QApplication.UnicodeUTF8))
         self.defaultsButton.setText(QtGui.QApplication.translate("MainWindow", "Defaults", None, QtGui.QApplication.UnicodeUTF8))
         self.offsetsGroupBoxLabel.setText(QtGui.QApplication.translate("MainWindow", "various options", None, QtGui.QApplication.UnicodeUTF8))
