@@ -40,10 +40,10 @@ __title__ = "FCBmpImport"
 __author__ = "TheMarkster"
 __url__ = "http://www.freecadweb.org/"
 __Wiki__ = "http://www.freecadweb.org/wiki/index.php"
-__date__ = "2018.05.17" #year.month.date and optional a,b,c, etc. subrevision letter, e.g. 2018.10.16a
-__version__ = "0."+__date__
+__date__ = "2018.05.23" #year.month.date and optional a,b,c, etc. subrevision letter, e.g. 2018.10.16a
+__version__ = __date__
 
-VERSION_STRING = __title__ + ' Macro v' + __version__
+VERSION_STRING = __title__ + ' Macro v0.' + __version__
 
 #Translators: Do not modify any text except in the translation section
 #which follows the QT Designer produced code
@@ -376,6 +376,7 @@ lineSegmentsText = u' line segments'
 examiningText = u'Examining '
 objectsText = u' objects'
 selectOddPointsErrorMessage = u'No points selected.  Select a point or points on a DWire object.'
+selectOddPointsErrorMessage2 = u'These methods only work with DWire objects.'
 scaleFactorErrorText = u'Error setting scale_factor, resetting to 1'
 recomputeErrorText = u'Error setting recompute_interval, resetting to 10'
 xOffsetErrorText = u'Error setting import_x_offset, resetting to 0'
@@ -815,6 +816,9 @@ def insertPoint(): # add new point on wire in between the 2 selected points
         return
     doc = Gui.activeDocument()
     obj = doc.getObject(selObj.ObjectName)
+    if not hasattr(obj.Object,'Points'):
+        msgDialog(selectOddPointsErrorMessage2,u'FCBmpImport',QtGui.QMessageBox.Critical)#no object selected
+        return
     allPoints = obj.Object.Points #all the points in the selected wire
     modifiers = QtGui.QApplication.keyboardModifiers()
 
@@ -884,6 +888,9 @@ def cutSelected():
 
     doc = Gui.activeDocument()
     obj = doc.getObject(selObj.ObjectName)
+    if not hasattr(obj.Object,'Points'):
+        msgDialog(selectOddPointsErrorMessage2,u'FCBmpImport',QtGui.QMessageBox.Critical)#no object selected
+        return
     allPoints = obj.Object.Points #all the points in the selected wire
     modifiers = QtGui.QApplication.keyboardModifiers()
     if modifiers == QtCore.Qt.ShiftModifier: #undo deleted points if shift-clicked
@@ -977,7 +984,9 @@ def selectOddPoints(idx=None): #user selects 2 points on the same wire, we selec
     obj = doc.getObject(objectName)
 
 
-
+    if not hasattr(obj.Object,'Points'):
+        msgDialog(selectOddPointsErrorMessage2,u'FCBmpImport',QtGui.QMessageBox.Critical)#no object selected
+        return
     allPoints = obj.Object.Points #all the points in the selected wire
 
     
@@ -1004,7 +1013,7 @@ def selectOddPoints(idx=None): #user selects 2 points on the same wire, we selec
     end = None
 
     if len(startEndIndices)!=2: #if user selects more than 2 points we select all odd points beginning at 1st (unless shift+click, we select all points between)
-        if startEndIndices[0] % 2 == 0: #select all even or odd points depending on the user's initial selection if he only selected one point
+        if len(startEndIndices)!= 0 and startEndIndices[0] % 2 == 0: #select all even or odd points depending on the user's initial selection if he only selected one point
             start = 0
         else:
             start = 1
@@ -1117,7 +1126,9 @@ def moveSelected(newVector = None):
 
     doc = Gui.activeDocument()
     obj = doc.getObject(selObj.ObjectName)
-  
+    if not hasattr(obj.Object,'Points'):
+        msgDialog(selectOddPointsErrorMessage2,u'FCBmpImport',QtGui.QMessageBox.Critical)#no object selected
+        return  
     allPoints = obj.Object.Points #all the points in the selected wire
 
 
