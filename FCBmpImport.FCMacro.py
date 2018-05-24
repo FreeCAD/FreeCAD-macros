@@ -40,7 +40,7 @@ __title__ = "FCBmpImport"
 __author__ = "TheMarkster"
 __url__ = "http://www.freecadweb.org/"
 __Wiki__ = "http://www.freecadweb.org/wiki/index.php"
-__date__ = "2018.05.23" #year.month.date and optional a,b,c, etc. subrevision letter, e.g. 2018.10.16a
+__date__ = "2018.05.24" #year.month.date and optional a,b,c, etc. subrevision letter, e.g. 2018.10.16a
 __version__ = __date__
 
 VERSION_STRING = __title__ + ' Macro v0.' + __version__
@@ -72,15 +72,19 @@ import re
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(591, 493)
+        MainWindow.resize(636, 512)
+        font = QtGui.QFont()
+        font.setFamily("Helvetica")
+        font.setPointSize(10)
+        MainWindow.setFont(font)
         MainWindow.setDockNestingEnabled(True)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.imagePreviewLabel = QtGui.QLabel(self.centralwidget)
-        self.imagePreviewLabel.setGeometry(QtCore.QRect(180, 0, 401, 20))
+        self.imagePreviewLabel.setGeometry(QtCore.QRect(180, 0, 451, 20))
         self.imagePreviewLabel.setObjectName("imagePreviewLabel")
         self.verticalGroupBox_2 = QtGui.QGroupBox(self.centralwidget)
-        self.verticalGroupBox_2.setGeometry(QtCore.QRect(410, 340, 171, 131))
+        self.verticalGroupBox_2.setGeometry(QtCore.QRect(440, 340, 181, 151))
         self.verticalGroupBox_2.setObjectName("verticalGroupBox_2")
         self.verticalLayout = QtGui.QVBoxLayout(self.verticalGroupBox_2)
         self.verticalLayout.setObjectName("verticalLayout")
@@ -116,7 +120,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.addWidget(self.importAsWireButton)
         self.verticalLayout.addLayout(self.horizontalLayout_2)
         self.offsetsGroupBox = QtGui.QGroupBox(self.centralwidget)
-        self.offsetsGroupBox.setGeometry(QtCore.QRect(10, 339, 391, 131))
+        self.offsetsGroupBox.setGeometry(QtCore.QRect(10, 349, 391, 141))
         self.offsetsGroupBox.setTitle("")
         self.offsetsGroupBox.setObjectName("offsetsGroupBox")
         self.gridLayout = QtGui.QGridLayout(self.offsetsGroupBox)
@@ -190,7 +194,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_7.addWidget(self.cheatFactorLabel)
         self.gridLayout.addLayout(self.verticalLayout_7, 0, 3, 1, 1)
         self.progressGroupBox = QtGui.QGroupBox(self.centralwidget)
-        self.progressGroupBox.setGeometry(QtCore.QRect(10, 60, 161, 91))
+        self.progressGroupBox.setGeometry(QtCore.QRect(10, 50, 161, 101))
         self.progressGroupBox.setTitle("")
         self.progressGroupBox.setObjectName("progressGroupBox")
         self.verticalLayout_6 = QtGui.QVBoxLayout(self.progressGroupBox)
@@ -215,7 +219,7 @@ class Ui_MainWindow(object):
         self.staysOnTopCheckBox.setGeometry(QtCore.QRect(10, 10, 151, 17))
         self.staysOnTopCheckBox.setObjectName("staysOnTopCheckBox")
         self.wireEditGroupBox = QtGui.QGroupBox(self.centralwidget)
-        self.wireEditGroupBox.setGeometry(QtCore.QRect(10, 190, 160, 80))
+        self.wireEditGroupBox.setGeometry(QtCore.QRect(10, 179, 160, 101))
         self.wireEditGroupBox.setObjectName("wireEditGroupBox")
         self.verticalLayout_9 = QtGui.QVBoxLayout(self.wireEditGroupBox)
         self.verticalLayout_9.setObjectName("verticalLayout_9")
@@ -241,27 +245,31 @@ class Ui_MainWindow(object):
         self.blackForegroundCheckbox.setGeometry(QtCore.QRect(10, 30, 140, 21))
         self.blackForegroundCheckbox.setObjectName("blackForegroundCheckbox")
         self.selectFacesButton = QtGui.QPushButton(self.centralwidget)
-        self.selectFacesButton.setGeometry(QtCore.QRect(10, 160, 161, 23))
+        self.selectFacesButton.setGeometry(QtCore.QRect(10, 150, 161, 23))
         self.selectFacesButton.setObjectName("selectFacesButton")
         self.graphicsView = QtGui.QGraphicsView(self.centralwidget)
-        self.graphicsView.setGeometry(QtCore.QRect(180, 20, 401, 311))
+        self.graphicsView.setGeometry(QtCore.QRect(190, 20, 431, 321))
         self.graphicsView.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.graphicsView.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.graphicsView.setDragMode(QtGui.QGraphicsView.ScrollHandDrag)
         self.graphicsView.setObjectName("graphicsView")
         self.horizontalGroupBox = QtGui.QGroupBox(self.centralwidget)
-        self.horizontalGroupBox.setGeometry(QtCore.QRect(10, 280, 161, 51))
+        self.horizontalGroupBox.setGeometry(QtCore.QRect(10, 280, 171, 61))
         self.horizontalGroupBox.setObjectName("horizontalGroupBox")
         self.horizontalLayout_6 = QtGui.QHBoxLayout(self.horizontalGroupBox)
         self.horizontalLayout_6.setObjectName("horizontalLayout_6")
         self.zeroButton = QtGui.QPushButton(self.horizontalGroupBox)
+        font = QtGui.QFont()
+        font.setFamily("Helvetica")
+        font.setPointSize(9)
+        self.zeroButton.setFont(font)
         self.zeroButton.setObjectName("zeroButton")
         self.horizontalLayout_6.addWidget(self.zeroButton)
         self.defaultsButton = QtGui.QPushButton(self.horizontalGroupBox)
         self.defaultsButton.setObjectName("defaultsButton")
         self.horizontalLayout_6.addWidget(self.defaultsButton)
         self.offsetsGroupBoxLabel = QtGui.QLabel(self.centralwidget)
-        self.offsetsGroupBoxLabel.setGeometry(QtCore.QRect(20, 330, 391, 16))
+        self.offsetsGroupBoxLabel.setGeometry(QtCore.QRect(20, 340, 391, 16))
         self.offsetsGroupBoxLabel.setObjectName("offsetsGroupBoxLabel")
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QtGui.QStatusBar(MainWindow)
@@ -273,6 +281,8 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
+        if not hasattr(QtGui.QApplication,'UnicodeUTF8'):
+            return
         MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "MainWindow", None, QtGui.QApplication.UnicodeUTF8))
         self.imagePreviewLabel.setText(QtGui.QApplication.translate("MainWindow", "Image Preview:", None, QtGui.QApplication.UnicodeUTF8))
         self.verticalGroupBox_2.setTitle(QtGui.QApplication.translate("MainWindow", "Import Buttons", None, QtGui.QApplication.UnicodeUTF8))
@@ -338,6 +348,8 @@ abortButtonText = u'Abort'
 iambTip = u'Imports image as Mesh object'
 importAsFaceButtonTip = u'Imports image as 2D Face objects'
 importAsWireButtonTip = u'Imports image as DWire objects'
+importAsWireButtonText = u'Wire'
+importAsFaceButtonText = u'Face'
 importAsShapeButtonTip = u'Imports as Extruded Shapes'
 blackForegroundCheckboxText = u'Black Foreground'
 imagePreviewLabelText = u'Image Preview'
@@ -464,6 +476,7 @@ baseNameText = u'Imported'
 zoomText = u'Zoom'
 zeroText = u'Zero XYZ'
 zeroButtonTipText = u'Zero out XYZ offsets'
+defaultsButtonText = u'Defaults'
 defaultsButtonTipText = u'Resets all UI elements to default values (same as closing and restarting macro).  To change defaults you must edit the source code defaults section.'
 #END TRANSLATION SECTION
 
@@ -1206,7 +1219,8 @@ def progressAbort():
 
 def processEvents():
      sleep(0.001)
-     QtGui.qApp.processEvents() #so FreeCAD stays responsive to user input
+     #QtGui.qApp.processEvents() #so FreeCAD stays responsive to user input
+     QtGui.QApplication.processEvents()
 
 def msgDialog(msg, title='FCBmpImport', icon=QtGui.QMessageBox.Information):
 
@@ -1468,7 +1482,8 @@ def preview():
     zoomFactor = 0.95 #show it bit smaller the first time so the axis cross is visible
     try:
 
-        name= QtGui.QFileDialog.getOpenFileName(QtGui.qApp.activeWindow(),openMonoFileText,'*.bmp')[0]
+        #name= QtGui.QFileDialog.getOpenFileName(QtGui.qApp.activeWindow(),openMonoFileText,'*.bmp')[0]
+        name= QtGui.QFileDialog.getOpenFileName(QtGui.QApplication.activeWindow(),openMonoFileText,'*.bmp')[0]
         if not name:
             return
         scene.clear()
@@ -1517,7 +1532,6 @@ def doImport():
         preview() #sets global name variable to new fileName
     try:
         scene.clear()
-        #name = QtGui.QFileDialog.getOpenFileName(QtGui.qApp.activeWindow(),openMonoFileText,'*.bmp')[0]
         pixmap = QtGui.QPixmap(name)
 
 
@@ -1814,7 +1828,7 @@ def doImport():
                 if progress == 10:
                     Gui.SendMsgToActiveView("ViewFit") 
                 updateProgressBar(progress)
-                QtGui.qApp.processEvents()
+
       
 
             for vl in vlines:    
@@ -2359,6 +2373,8 @@ ui.importAsWireButton.clicked.connect(doWire)
 
 setToolTip(ui.importAsFaceButton,importAsFaceButtonTip)
 setToolTip(ui.importAsWireButton,importAsWireButtonTip)
+ui.importAsWireButton.setText(importAsWireButtonText)
+ui.importAsFaceButton.setText(importAsFaceButtonText)
 
 setToolTip(ui.previewButton, previewButtonTip)
 ui.previewButton.clicked.connect(preview)
@@ -2428,6 +2444,7 @@ ui.moveButton.clicked.connect(moveSelected)
 ui.insertButton.clicked.connect(insertPoint)
 ui.defaultsButton.clicked.connect(defaults)
 setToolTip(ui.defaultsButton, defaultsButtonTipText)
+ui.defaultsButton.setText(defaultsButtonText)
 
 #end of clicked connections
 
