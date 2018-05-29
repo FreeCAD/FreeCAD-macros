@@ -4,69 +4,80 @@ from __future__ import unicode_literals
 
 __Name__ = 'Highlight Difference'
 __Comment__ = 'Compute the difference between two shapes'
-__Web__ = 'http://freecadweb.org/wiki/Macro_HighlightDifference'
-__Wiki__ = 'http://freecadweb.org/wiki/Macro_HighlightDifference'
-__Icon__ = ""
-__Help__ = 'Select two objects and run'
 __Author__ = 'galou and other contributors'
-__Version__ = 1.0
+__Version__ = '2.0.0'
+__Date__ = '2018-05-29'
+__License__ = 'CC0-1.0'
+__Web__ = 'https://freecadweb.org/wiki/Macro_HighlightDifference'
+__Wiki__ = 'https://freecadweb.org/wiki/Macro_HighlightDifference'
+__Icon__ = ''
+__Help__ = 'Select two objects and run'
 __Status__ = 'Production'
-__Requires__ = ''
+__Requires__ = 'FreeCAD V0.17+'
+__Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
+__Files__ = ''
 
 from PySide import QtCore
 from PySide import QtGui
 
-import FreeCAD
+from freecad import app
+from freecad import gui
 
 
 def error_dialog(msg):
     """Create a simple dialog QMessageBox with an error message"""
-    FreeCAD.Console.PrintError(msg + '\n')
+    app.Console.PrintError(msg + '\n')
     diag = QtGui.QMessageBox(QtGui.QMessageBox.Icon.Critical,
                              'Error in macro highlight_difference',
                              msg)
     diag.setWindowModality(QtCore.Qt.ApplicationModal)
     diag.exec_()
 
-if len(FreeCAD.Gui.Selection.getSelectionEx()) < 2:
-    error_dialog('Select two objects')
 
-object_a = FreeCAD.Gui.Selection.getSelectionEx()[0].Object
-object_b = FreeCAD.Gui.Selection.getSelectionEx()[1].Object
-shape_a = object_a.Shape
-shape_b = object_b.Shape
-label_a = object_a.Label
-label_b = object_b.Label
-shape_addition = shape_a.cut(shape_b)
-if shape_addition.Volume < 1e-6:
-    FreeCAD.Console.PrintMessage('No addition from {} to {}\n'.format(
-        label_a, label_b))
-else:
-    FreeCAD.Console.PrintMessage(
-        'Volume of the addition from {} to {}: {}\n'.format(
-            label_a, label_b, shape_addition.Volume))
+def main():
+    if len(gui.Selection.getSelection()) < 2:
+        error_dialog('Select two objects')
+        return
 
-shape_removal = shape_b.cut(shape_a)
-if shape_removal.Volume < 1e-6:
-    FreeCAD.Console.PrintMessage('No removal from {} to {}\n'.format(
-        label_a, label_b))
-else:
-    FreeCAD.Console.PrintMessage(
-        'Volume of the removal from {} to {}: {}\n'.format(
-            label_a, label_b, shape_removal.Volume))
+    object_a = gui.Selection.getSelection()[0]
+    object_b = gui.Selection.getSelection()[1]
+    shape_a = object_a.Shape
+    shape_b = object_b.Shape
+    label_a = object_a.Label
+    label_b = object_b.Label
+    shape_addition = shape_a.cut(shape_b)
+    if shape_addition.Volume < 1e-6:
+        app.Console.PrintMessage('No addition from {} to {}\n'.format(
+            label_a, label_b))
+    else:
+        app.Console.PrintMessage(
+            'Volume of the addition from {} to {}: {}\n'.format(
+                label_a, label_b, shape_addition.Volume))
 
-if (shape_addition.Volume < 1e-6) and (shape_removal.Volume < 1e-6):
-    FreeCAD.Console.PrintMessage('{} and {} have the same shape\n'.format(
-        label_a, label_b))
+    shape_removal = shape_b.cut(shape_a)
+    if shape_removal.Volume < 1e-6:
+        app.Console.PrintMessage('No removal from {} to {}\n'.format(
+            label_a, label_b))
+    else:
+        app.Console.PrintMessage(
+            'Volume of the removal from {} to {}: {}\n'.format(
+                label_a, label_b, shape_removal.Volume))
 
-added = FreeCAD.ActiveDocument.addObject('Part::Feature')
-added.Label = 'Addition ({} − {})'.format(label_a, label_b)
-added.Shape = shape_addition
-added.ViewObject.ShapeColor = (1.0, 0.0, 0.0, 1.0)
-removed = FreeCAD.ActiveDocument.addObject('Part::Feature')
-removed.Label = 'Removal ({} − {})'.format(label_b, label_a)
-removed.Shape = shape_removal
-removed.ViewObject.ShapeColor = (0.0, 0.5, 0.0, 1.0)
+    if (shape_addition.Volume < 1e-6) and (shape_removal.Volume < 1e-6):
+        app.Console.PrintMessage('{} and {} have the same shape\n'.format(
+            label_a, label_b))
 
-object_a.ViewObject.Transparency = 80
-object_b.ViewObject.Transparency = 80
+    added = app.ActiveDocument.addObject('Part::Feature')
+    added.Label = 'Addition ({} − {})'.format(label_a, label_b)
+    added.Shape = shape_addition
+    added.ViewObject.ShapeColor = (1.0, 0.0, 0.0, 1.0)
+    removed = app.ActiveDocument.addObject('Part::Feature')
+    removed.Label = 'Removal ({} − {})'.format(label_b, label_a)
+    removed.Shape = shape_removal
+    removed.ViewObject.ShapeColor = (0.0, 0.5, 0.0, 1.0)
+
+    object_a.ViewObject.Transparency = 80
+    object_b.ViewObject.Transparency = 80
+
+if __name__ == '__main__':
+    main()

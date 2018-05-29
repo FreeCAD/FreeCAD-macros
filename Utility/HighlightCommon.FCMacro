@@ -4,61 +4,73 @@ from __future__ import unicode_literals
 
 __Name__ = 'Highlight Common parts'
 __Comment__ = 'Compute the common parts between selected shapes'
-__Web__ = 'http://freecadweb.org/wiki/Macro_HighlightCommon'
-__Wiki__ = 'http://freecadweb.org/wiki/Macro_HighlightCommon'
+__Author__ = 'JMG, galou and other contributors'
+__Version__ = '2.0.0'
+__Date__ = '2018-05-29'
+__License__ = 'CC0-1.0'
+__Web__ = 'https://freecadweb.org/wiki/Macro_HighlightCommon'
+__Wiki__ = 'https://freecadweb.org/wiki/Macro_HighlightCommon'
 __Icon__ = ""
 __Help__ = 'Select at least two objects and run'
-__Author__ = 'JMG, galou and other contributors'
-__Version__ = 1.0
 __Status__ = 'Production'
-__Requires__ = ''
+__Requires__ = 'FreeCAD V0.17+'
+__Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
+__Files__ = ''
 
 from PySide import QtCore
 from PySide import QtGui
 
-import FreeCAD
+from freecad import app
+from freecad import gui
 
 
 def error_dialog(msg):
     """Create a simple dialog QMessageBox with an error message"""
-    FreeCAD.Console.PrintError(msg + '\n')
+    app.Console.PrintError(msg + '\n')
     diag = QtGui.QMessageBox(QtGui.QMessageBox.Icon.Critical,
-                             'Error in macro highlight_difference',
+                             'Error in macro HighlightCommon',
                              msg)
     diag.setWindowModality(QtCore.Qt.ApplicationModal)
     diag.exec_()
 
-if len(FreeCAD.Gui.Selection.getSelectionEx()) < 2:
-    error_dialog('Select at least two objects')
 
-object_list = []
-for obj in FreeCAD.Gui.Selection.getSelectionEx():
-    object_list.append(obj.Object)
+def main():
+    if len(gui.Selection.getSelection()) < 2:
+        error_dialog('Select at least two objects')
+        return
 
-for i, object_a in enumerate(object_list):
-    for object_b in object_list[(i + 1):]:
-        shape_a = object_a.Shape
-        shape_b = object_b.Shape
-        label_a = object_a.Label
-        label_b = object_b.Label
-        common = shape_a.common(shape_b)
-        if common.Volume > 1e-6:
-            FreeCAD.Console.PrintMessage(
-                'Volume of the intersection between {} and {}: {}\n'.format(
-                    label_a,
-                    label_b,
-                    common.Volume))
+    object_list = []
+    for obj in gui.Selection.getSelection():
+        if not obj in object_list:
+            object_list.append(obj)
 
-            intersection_object = FreeCAD.ActiveDocument.addObject(
-                'Part::Feature')
-            intersection_object.Label = 'Common ({} - {})'.format(
-                label_a, label_b)
-            intersection_object.Shape = common
-            intersection_object.ViewObject.ShapeColor = (1.0, 0.0, 0.0, 1.0)
-            object_a.ViewObject.Transparency = 80
-            object_b.ViewObject.Transparency = 80
-        else:
-            FreeCAD.Console.PrintMessage(
-                'No intersection between {} and {}\n'.format(
-                    label_a,
-                    label_b))
+    for i, object_a in enumerate(object_list):
+        for object_b in object_list[(i + 1):]:
+            shape_a = object_a.Shape
+            shape_b = object_b.Shape
+            label_a = object_a.Label
+            label_b = object_b.Label
+            common = shape_a.common(shape_b)
+            if common.Volume > 1e-6:
+                app.Console.PrintMessage(
+                    'Volume of the intersection between {} and {}: {}\n'.format(
+                        label_a,
+                        label_b,
+                        common.Volume))
+
+                intersection_object = app.activeDocument().addObject(
+                    'Part::Feature')
+                intersection_object.Label = 'Common ({} - {})'.format(
+                    label_a, label_b)
+                intersection_object.Shape = common
+                intersection_object.ViewObject.ShapeColor = (1.0, 0.0, 0.0, 1.0)
+                object_a.ViewObject.Transparency = 80
+                object_b.ViewObject.Transparency = 80
+            else:
+                app.Console.PrintMessage(
+                    'No intersection between {} and {}\n'.format(
+                        label_a,
+                        label_b))
+
+if __name__ == '__main__':
+    main()
