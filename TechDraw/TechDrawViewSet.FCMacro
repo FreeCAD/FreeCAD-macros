@@ -1,0 +1,56 @@
+# TechDrawViewSet
+#
+# This allows you to take a view of your part from the the 3D viewer
+# and insert it into a TechDraw document.  It's useful for when you
+# need a tech drawing of your part from a weird angle.
+#
+# 1. Create a TechDrawing and insert a view of your part.
+# 2. Open your part up in the 3D viewer
+# 3. Orient it however you want it
+# 4. While keeping the 3D view active/visible, select the TechDraw
+#     Object/View from step 1.
+# 5. Run the macro.  This will automatically adjust the direction of
+#     techDraw object to match the 3D view.
+
+__Name__ = 'TechDraw View Set'
+__Comment__ = 'Set the parameters of the current view to correspond to the 3D Window'
+__Author__ = 'MechaMecca, galou_breizh'
+__Version__ = '0.1.0'
+__License__ = 'CC-BY-3.0'
+__Web__ = 'http://www.freecadweb.org/wiki/index.php?title=Macro_TechDrawViewSet'
+__Wiki__ = 'http://www.freecadweb.org/wiki/index.php?title=Macro_TechDrawViewSet'
+__Icon__ = ''
+__Help__ = 'Select a TechDraw View while staying in the 3D viewer, execute'
+__Status__ = 'Alpha'
+__Requires__ = ''
+__Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
+__Files__ = ''
+
+import freecad as fc
+
+
+def set_view():
+    gui_doc = fc.gui.activeDocument()
+    if gui_doc is None:
+        fc.app.Console.PrintWarning('No active document\n')
+        return
+
+    try:
+        cam_orientation = gui_doc.ActiveView.getCameraOrientation()
+    except AttributeError:
+        fc.app.Console.PrintWarning('The current tab is not a 3D view\n')
+        return
+
+    if not fc.gui.Selection.getSelection():
+        fc.app.Console.PrintWarning('Nothing selected\n')
+        return
+
+    view_dir = cam_orientation.multVec(fc.app.Vector(0, 0, 1))
+    for tech_view in fc.gui.Selection.getSelection():
+        try:
+            tech_view.Direction = view_dir
+        except AttributeError:
+            fc.app.Console.PrintMessage('"{}" is not a TechDraw View, ignoring\n'.format(tech_view.Label))
+
+if __name__ == '__main__':
+    set_view()
