@@ -1,0 +1,239 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#***************************************************************************
+#*                                                                         *
+#*   Copyright (c) 2018 Chakkree Tiyawongsuwan                             *
+#*   Copyright (c) 2015 Yorik van Havre <yorik@uncreated.net>              *
+#*                                                                         *
+#*   This program is free software; you can redistribute it and/or modify  *
+#*   it under the terms of the GNU Lesser General Public License (LGPL)    *
+#*   as published by the Free Software Foundation; either version 2 of     *
+#*   the License, or (at your option) any later version.                   *
+#*   for detail see the LICENCE text file.                                 *
+#*                                                                         *
+#*   This program is distributed in the hope that it will be useful,       *
+#*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+#*   GNU Library General Public License for more details.                  *
+#*                                                                         *
+#*   You should have received a copy of the GNU Library General Public     *
+#*   License along with this program; if not, write to the Free Software   *
+#*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
+#*   USA                                                                   *
+#*                                                                         *
+#***************************************************************************
+"""
+FreeCAD Symbols Library import macro
+
+INSTALLATION
+
+This script is made to be used as a FreeCAD macro, and to be placed
+inside your macros  (default is $HOME/.FreeCAD/Macro on mac/linux,
+C:/Users/youruser/Application Data/FreeCAD/Macro on windows).
+
+After it is installed on the above location, it will be available
+in the macros menu.
+
+On first launch, you'll be ask to point to the directory where your symbols
+are.
+If you wish, you can use the official symbols library
+https://github.com/FreeCAD/FreeCAD-symbols.
+Run 'git clone --recursive https://github.com/FreeCAD/FreeCAD-symbols.git'
+in a terminal and then point to the created directory 'FreeCAD-symbols'.
+
+USAGE
+
+This macro adds a browser window to the FreeCAD interface, from
+which you can browse and add items from the library to the current TechDraw
+page by double clicking.
+"""
+from __future__ import division
+
+__Name__ = 'FreeCAD Symbols Library'
+__Author__ = 'Yorik van Havre, Chakkree Tiyawongsuwan, Gaël Écorchard'
+__Version__ = '1.0'
+__Date__ = '2018-05-29'
+__License__ = 'LGPL-2.0-or-later'
+__Web__ = 'http://www.freecadweb.org'
+__Wiki__ = ''
+__Icon__ = ''
+__Help__ = 'Launch and double-click to insert a symbol in the current TechDraw page'
+__Status__ = ''
+__Requires__ = 'FreeCAD v0.17+'
+__Communication__ = ''
+__Files__ = ''
+
+import os
+
+from freecad import app
+from freecad import gui
+from PySide import QtGui, QtCore, QtSvg
+
+
+def get_library_path(force_ask=False, parent=None):
+    """Get the user parameter for the library path
+
+    Get the user parameter for the library path (parameter
+    "Plugins/symbols_library/destination"). In the case that the parameter
+    isn't defined or that it points to a non-existing directory or that
+    force_ask is True, a dialog opens to set a new path, which is then saved as
+    FreeCAD preference.
+    """
+    param = app.ParamGet('User parameter:Plugins/symbols_library')
+    s = param.GetString('destination')
+
+    if not force_ask and s and QtCore.QDir(s).exists():
+        return s
+
+    folderDialog = QtGui.QFileDialog.getExistingDirectory(parent,
+        QtGui.QApplication.translate("SymbolsLibrary", "Location of your existing Symbols library", None, QtGui.QApplication.UnicodeUTF8))
+    param.SetString('destination', folderDialog)
+    return param.GetString('destination')
+
+
+def get_symbol_label(path=None):
+    if not path:
+        return 'Symbol'
+    return 'Symbol_' + os.path.splitext(os.path.basename(path))[0]
+
+
+class AspectRatioSvgWidget(QtSvg.QSvgWidget):
+    """A QSvgWidget preserving aspect ratio
+
+    From http://lists.qt-project.org/pipermail/pyside/2013-March/001207.html.
+    """
+    def paintEvent(self, paint_event):
+        painter = QtGui.QPainter(self)
+        default_width, default_height = self.renderer().defaultSize().toTuple()
+        widget_width, widget_height = self.size().toTuple()
+        ratio_x = widget_width / default_width
+        ratio_y = widget_height / default_height
+        if ratio_x < ratio_y:
+            new_width = widget_width
+            new_height = widget_width * default_height / default_width
+            new_left = 0
+            new_top = (widget_height - new_height) / 2
+        else:
+            new_width = widget_height * default_width / default_height
+            new_height = widget_height
+            new_left = (widget_width - new_width) / 2
+            new_top = 0
+        self.renderer().render(painter, QtCore.QRectF(new_left, new_top, new_width, new_height))
+
+
+class ExpDockWidget(QtGui.QDockWidget):
+    """A library explorer dock widget"""
+
+    def __init__(self, library_path):
+        QtGui.QDockWidget.__init__(self)
+
+        self.setObjectName('SymbolsLibrary')
+        self.setWindowTitle('Symbols Library')
+
+        # setting up a directory model that shows only svg files
+        self.dirmodel = QtGui.QFileSystemModel()
+        self.dirmodel.setRootPath(library_path)
+        self.dirmodel.setNameFilters(['*.svg', '*.SVG'])
+        self.dirmodel.setNameFilterDisables(0)
+
+        container = QtGui.QWidget()
+        layout = QtGui.QVBoxLayout(container)
+        self.folder = QtGui.QTreeView();
+        self.folder.setModel(self.dirmodel)
+        self.folder.clicked[QtCore.QModelIndex].connect(self.clicked)
+        self.folder.doubleClicked[QtCore.QModelIndex].connect(self.doubleclicked)
+        # Don't show columns for size, file type, and last modified
+        self.folder.setHeaderHidden(True)
+        self.folder.hideColumn(1)
+        self.folder.hideColumn(2)
+        self.folder.hideColumn(3)
+        self.folder.setRootIndex(self.dirmodel.index(library_path))
+        layout.addWidget(self.folder)
+        self.preview = AspectRatioSvgWidget()
+        self.preview.setFixedHeight(128)
+        self.preview.setFixedWidth(128)
+        layout.addWidget(self.preview)
+        self.configbutton = QtGui.QPushButton()
+        self.configbutton.setText('Change path')
+        self.configbutton.clicked.connect(self.changepath)
+        layout.addWidget(self.configbutton)
+        layout.setAlignment(self.preview, QtCore.Qt.AlignHCenter)
+        self.setWidget(container)
+
+    def clicked(self, index):
+        path = self.dirmodel.filePath(index)
+        if path.lower().endswith('.svg'):
+            self.preview.load(path)
+            self.preview.show()
+            return
+        self.preview.hide()
+
+    def changepath(self):
+        library_path = get_library_path(force_ask=True, parent=self)
+        self.dirmodel.setRootPath(library_path)
+        self.folder.setRootIndex(self.dirmodel.index(library_path))
+
+    def doubleclicked(self, index):
+        doc = app.activeDocument()
+        if doc is None:
+            app.Console.PrintWarning(
+                QtGui.QApplication.translate('SymbolsLibrary', 'No active document, doing nothing\n'))
+            return
+
+        path = self.dirmodel.filePath(index)
+        page = None
+        for o in gui.Selection.getSelection():
+            if o.isDerivedFrom('Drawing::FeaturePage'):
+                page = o
+                break
+            if o.isDerivedFrom('TechDraw::DrawPage'):
+                page = o
+                break
+        if not page:
+            page_count = 0
+            for o in doc.Objects:
+                if o.isDerivedFrom('Drawing::FeaturePage'):
+                    page = o
+                    page_count += 1
+                if o.isDerivedFrom('TechDraw::DrawPage'):
+                    page = o
+                    page_count += 1
+            if page_count > 1:
+                app.Console.PrintWarning(
+                    QtGui.QApplication.translate('SymbolsLibrary', 'More than one page, cannot decide where to insert symbol\n'))
+                return
+
+        if not page:
+            app.Console.PrintWarning(
+                QtGui.QApplication.translate('SymbolsLibrary', 'No page found either in the selection or the document\n'))
+            return
+
+        f = open(path)
+        svg = f.read()
+        f.close()
+        label = get_symbol_label(path)
+        if page.isDerivedFrom('Drawing::FeaturePage'):
+            import Drawing
+            s = doc.addObject('Drawing::FeatureViewSymbol', label)
+            s.Symbol = Drawing.removeSvgTags(svg)
+            page.addObject(s)
+        if page.isDerivedFrom('TechDraw::DrawPage'):
+            symbol = doc.addObject('TechDraw::DrawViewSymbol', label)
+            symbol.Symbol = svg
+            page.addView(symbol)
+        doc.recompute()
+
+def main():
+    m = gui.getMainWindow()
+    w = m.findChild(QtGui.QDockWidget, 'SymbolsLibrary')
+    if w:
+        if w.isVisible():
+            w.hide()
+        else:
+            w.show()
+    else:
+        m.addDockWidget(QtCore.Qt.RightDockWidgetArea,
+                        ExpDockWidget(get_library_path()))
+
+if __name__ == '__main__':
+    main()
