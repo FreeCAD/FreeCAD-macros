@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # (c) microelly 2015
 
-		
-__Comment__ = ' creates a realsized 300 dpi foto of the selected part from top view'
+
+__Comment__ = 'creates a real sized 300dpi foto of the selected part from top view'
 __Web__ = ""
 __Wiki__ = ""
 __Icon__  = "AppHomePath/Mod/plugins/icons/camera-photo.png"
@@ -35,17 +35,17 @@ def foto(fn='/tmp/fc_camera_out.jpg',width=150,height=100,x=0,y=0,res=300):
 	  aspectRatio 100
 	  focalDistance 1
 	'''
-	
+
 	cam += '\nposition ' +str(x) + ' ' + str(y) + ' 999\n '
 	cam += '\nheight ' + str(height) + '\n}\n\n'
 	FreeCADGui.activeDocument().activeView().setCamera(cam)
 	print(FreeCADGui.activeDocument().activeView().getCamera())
-	
+
 	print ppx
-	print ppy 
-	
+	print ppy
+
 	FreeCADGui.ActiveDocument.update()
-	FreeCADGui.activeDocument().activeView().saveImage(fn,ppx,ppy,'#ffffff')			
+	FreeCADGui.activeDocument().activeView().saveImage(fn,ppx,ppy,'#ffffff')
 
 import os
 

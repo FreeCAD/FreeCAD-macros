@@ -22,8 +22,8 @@ from __future__ import unicode_literals
 *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
 *   USA                                                                   *
 ***************************************************************************
-*   http://www.freecadweb.org/wiki/Macro_FCCircularText   *
-*           WARNING! All changes in this file will be lost and            *  
+*   http://www.freecadweb.org/wiki/Macro_FCCircularText                   *
+*           WARNING! All changes in this file will be lost and            *
 *                  may cause malfunction of the program                   *
 ***************************************************************************
 """
@@ -79,7 +79,7 @@ except Exception:
     from PySide import QtGui ,QtCore
     from PySide.QtGui import *
     from PySide.QtCore import *
- 
+
 import Draft, Part, FreeCAD, math, PartGui, FreeCADGui
 from math import sqrt, pi, sin, cos, asin, degrees, radians, tan
 from FreeCAD import Base
@@ -163,13 +163,13 @@ global correctionRayon  ;correctionRayon = 0.15
 global debout           ;debout          = 1                  # 1=stand   0=flat
 global exterieur        ;exterieur       = 1                  # 1=external 0=internal
 global baseHelix        ;baseHelix       = 0.0                # base of helix
-global endHelix         ;endHelix        = 0.0                # end of helix (heigth)
+global endHelix         ;endHelix        = 0.0                # end of helix (height)
 global pasHelix         ;pasHelix        = 2.0                # Pas of helix
 global nombreCarParTour ;nombreCarParTour= 10                 # number char by Pas
 
 global PlacementX       ;PlacementX      = 0.0                # Placement character axis X
 global PlacementY       ;PlacementY      = 0.0                # Placement characher axis Y
-global PlacementZ       ;PlacementZ      = 0.0                # Placement characher axis Z
+global PlacementZ       ;PlacementZ      = 0.0                # Placement character axis Z
 
 global inclinaisonX     ;inclinaisonX    = 0                  # inclination character axis X
 global inclinaisonY     ;inclinaisonY    = 0                  # inclination character axis Y
@@ -180,9 +180,9 @@ global nombreFaces      ;nombreFaces     = 0                  # number Faces of 
 global romain           ;romain          = 0                  # number roman or arabic
 global redressement     ;redressement    = 0                  # character V or circular
 
-global comP             ;comP            = ""                 # contener 
-global nameL            ;nameL           = ""                 # contener 
-global epaisseur        ;epaisseur       = 0.0                # epaisseur extrusion chacacter
+global comP             ;comP            = ""                 # container
+global nameL            ;nameL           = ""                 # container
+global epaisseur        ;epaisseur       = 0.0                # epaisseur extrusion character
 global epaisSupp        ;epaisSupp       = 0.0                # epaisseur extrusion support
 global extrusion        ;extrusion       = 0.0                # epaisseur extrusion
 
@@ -354,7 +354,7 @@ class Ui_MainWindow(object):
         self.PU_Flat.setGeometry(QtCore.QRect(10, 105, 81, 28))
         self.PU_Flat.setAccessibleDescription(_fromUtf8(""))
         self.PU_Flat.setText(_fromUtf8("Mode Stand"))
-        self.PU_Flat.setToolTip(_fromUtf8("Click for create the text Flat"))
+        self.PU_Flat.setToolTip(_fromUtf8("Click to create the text Flat"))
         self.PU_Flat.setObjectName(_fromUtf8("PU_Flat"))
         self.PU_Flat.clicked.connect(self.on_PU_Flat)
 
@@ -411,7 +411,7 @@ class Ui_MainWindow(object):
 
         self.CH_Sp_Inclination = QtGui.QCheckBox(self.groupBox_02)
         self.CH_Sp_Inclination.setGeometry(QtCore.QRect(230, 270, 111, 20))
-        self.CH_Sp_Inclination.setToolTip(_fromUtf8("Inclination of character in the choice or alls plane "))
+        self.CH_Sp_Inclination.setToolTip(_fromUtf8("Inclination of character in the choice or all plane "))
         self.CH_Sp_Inclination.setText(_fromUtf8("Sp. inclination"))
         self.CH_Sp_Inclination.setObjectName(_fromUtf8("CH_Sp_Inclination"))
         self.CH_Sp_Inclination.clicked.connect(self.on_CH_Sp_Inclination) #connection checkBox
@@ -594,7 +594,7 @@ class Ui_MainWindow(object):
 
         self.DS_Step_Of_The_Helix = QtGui.QDoubleSpinBox(self.groupBox_04)
         self.DS_Step_Of_The_Helix.setGeometry(QtCore.QRect(10, 20, 81, 22))
-        self.DS_Step_Of_The_Helix.setToolTip(_fromUtf8("Step of the text along the helix (min Size Caractere)"))
+        self.DS_Step_Of_The_Helix.setToolTip(_fromUtf8("Step of the text along the helix (min Size Character)"))
         self.DS_Step_Of_The_Helix.setAccessibleDescription(_fromUtf8(""))
         self.DS_Step_Of_The_Helix.setMaximum(99999999.99)
         self.DS_Step_Of_The_Helix.setValue(pasHelix)
@@ -742,7 +742,7 @@ class Ui_MainWindow(object):
         self.DS_PlacementZ.setValue(PlacementZ)
         self.DS_PlacementZ.setEnabled(False)
 #        App.Console.PrintMessage(str("on_PU_Reset_Placement ")+"\n")
-        
+
     def on_PU_Reset_Inclination(self):           # Reset_Inclination
         global inclinaisonX
         global inclinaisonY
@@ -879,19 +879,19 @@ class Ui_MainWindow(object):
             self.RA_Choice_Outdoor.setText("Indoor")
             self.RA_Choice_Indoor.setText("Outdoor")
             self.PU_Flat.setText(_fromUtf8("Mode Flat"))
-            self.PU_Flat.setToolTip(_fromUtf8("Click for create the text Stand"))
+            self.PU_Flat.setToolTip(_fromUtf8("Click to create the text Stand"))
         else:
             debout = 1
             self.RA_Choice_Outdoor.setText("Outdoor")
             self.RA_Choice_Indoor.setText("Indoor")
             self.PU_Flat.setText(_fromUtf8("Mode Stand"))
-            self.PU_Flat.setToolTip(_fromUtf8("Click for create the text Flat"))
+            self.PU_Flat.setToolTip(_fromUtf8("Click to create the text Flat"))
 #        App.Console.PrintMessage(str("on_PU_Flat ")+str(debout)+"\n")
 
     def on_DS_Radius_Circle(self,value):
         global rayon
         global cercleClock
-        rayon = value  
+        rayon = value
         cercleClock = rayon
 #        App.Console.PrintMessage("on_DS_Radius_Circle Radius"+str(rayon)+"\n")
 
@@ -926,7 +926,7 @@ class Ui_MainWindow(object):
 #        App.Console.PrintMessage(str("on_DS_PlacementZ ")+str(PlacementZ)+"\n")
 
     def on_CH_Sp_Placement(self):              # Placement or not Placement
-        if self.CH_Sp_Placement.isChecked(): 
+        if self.CH_Sp_Placement.isChecked():
             self.DS_PlacementX.setEnabled(True)
             self.DS_PlacementY.setEnabled(True)
             self.DS_PlacementZ.setEnabled(True)
@@ -939,17 +939,17 @@ class Ui_MainWindow(object):
             self.DS_PlacementY.setEnabled(False)
 #            App.Console.PrintMessage(str("on_CH_Sp_Placement ")+str("False")+"\n")
 
-    def on_DS_Correction_Angle(self,value):    # 
+    def on_DS_Correction_Angle(self,value):    #
         global correctionAngle
         correctionAngle = value
 #        App.Console.PrintMessage(str("on_DS_Correction_Angle ")+str(correctionAngle)+"\n")
 
-    def on_DS_Correction_Radius(self,value):   # 
+    def on_DS_Correction_Radius(self,value):   #
         global correctionRayon
         correctionRayon = value
 #        App.Console.PrintMessage(str("on_DS_Correction_Radius ")+str(correctionRayon)+"\n")
 
-    def on_DS_Extrude(self,value):             # 
+    def on_DS_Extrude(self,value):             #
         global epaisseur
         epaisseur = value
 #        App.Console.PrintMessage("on_DS_Extrude "+str(epaisseur)+"\n")
@@ -957,7 +957,7 @@ class Ui_MainWindow(object):
     def on_CH_Extrude(self):                   #
         global extrusion
         global epaisseur
-        if self.CH_Extrude.isChecked(): 
+        if self.CH_Extrude.isChecked():
             self.DS_Extrude.setEnabled(True)
             extrusion = 1
             epaisseur = 1.0
@@ -968,23 +968,23 @@ class Ui_MainWindow(object):
         self.DS_Extrude.setValue(epaisseur)
 #        App.Console.PrintMessage(str("on_CH_Extrude ")+str(extrusion)+" "+str(epaisseur)+"\n")
 
-    def on_DS_InclinaisonX(self,value):        # 
+    def on_DS_InclinaisonX(self,value):        #
         global inclinaisonX
         inclinaisonX = value
 #        App.Console.PrintMessage(str("on_DS_InclinaisonX ")+str(inclinaisonX)+"\n")
 
-    def on_DS_InclinaisonY(self,value):        # 
+    def on_DS_InclinaisonY(self,value):        #
         global inclinaisonY
         inclinaisonY = value
 #        App.Console.PrintMessage(str("on_DS_InclinaisonY ")+str(inclinaisonY)+"\n")
 
-    def on_DS_InclinaisonZ(self,value):        # 
+    def on_DS_InclinaisonZ(self,value):        #
         global inclinaisonZ
         inclinaisonZ = value
 #        App.Console.PrintMessage(str("on_DS_InclinaisonZ ")+str(inclinaisonZ)+"\n")
 
     def on_CH_Sp_Inclination(self):            #
-        if self.CH_Sp_Inclination.isChecked(): 
+        if self.CH_Sp_Inclination.isChecked():
             self.DS_InclinaisonX.setEnabled(True)
             self.DS_InclinaisonY.setEnabled(True)
             self.DS_InclinaisonZ.setEnabled(True)
@@ -993,7 +993,7 @@ class Ui_MainWindow(object):
             ff3.on_PU_Reset_Inclination()
 #        App.Console.PrintMessage(str("on_CH_Sp_Inclination ")+str(self.CH_Sp_Inclination.isChecked())+"\n")
 
-    def on_DS_Step_Of_The_Helix(self,value):   # 
+    def on_DS_Step_Of_The_Helix(self,value):   #
         global pasHelix
         global baseHelix
         global endHelix
@@ -1012,22 +1012,22 @@ class Ui_MainWindow(object):
             self.DS_End_Helix.setEnabled(False)
 #        App.Console.PrintMessage(str("on_DS_Step_Of_The_Helix ")+str(SizeCaractere)+"\n")
 
-    def on_DS_Number_Char_Per_Turn(self,value):# 
+    def on_DS_Number_Char_Per_Turn(self,value):#
         global nombreCarParTour
         nombreCarParTour = value
 #        App.Console.PrintMessage(str("on_DS_Number_Char_Per_Turn ")+str(nombreCarParTour)+"\n")
 
-    def on_DS_Base_Helix(self,value):          # 
+    def on_DS_Base_Helix(self,value):          #
         global baseHelix
         baseHelix = value
 #        App.Console.PrintMessage(str("on_DS_Base_Helix ")+str(baseHelix)+"\n")
 
-    def on_DS_End_Helix(self,value):           # 
+    def on_DS_End_Helix(self,value):           #
         global endHelix
         endHelix = value
 #        App.Console.PrintMessage(str("on_DS_End_Helix ")+str(endHelix)+"\n")
 
-    def on_DS_Radius_Support(self,value):      # 
+    def on_DS_Radius_Support(self,value):      #
         global cercleClock
         cercleClock = value
 #        App.Console.PrintMessage(str("on_DS_Radius_Support ")+str(cercleClock)+"\n")
@@ -1051,7 +1051,7 @@ class Ui_MainWindow(object):
             self.label_5.setText(_fromUtf8("Support Polygone"))
 #        App.Console.PrintMessage(str("on_S_Number_Faces_Support ")+str(nombreFaces)+"\n")
 
-    def on_DS_Extrude_Support(self,value):     # 
+    def on_DS_Extrude_Support(self,value):     #
         global epaisSupp
         epaisSupp = value
         self.DS_PlacementZ.setEnabled(True)
@@ -1062,23 +1062,23 @@ class Ui_MainWindow(object):
         if romain == 1:
             romain = 0
             self.PU_Roman.setText(_fromUtf8("Mode Arabic"))
-            self.PU_Roman.setToolTip(_fromUtf8("Click for activate the mode Roman"))
+            self.PU_Roman.setToolTip(_fromUtf8("Click to activate Roman mode"))
         else:
             romain = 1
             self.PU_Roman.setText(_fromUtf8("Mode Roman"))
-            self.PU_Roman.setToolTip(_fromUtf8("Click for activate the mode Arabic"))
+            self.PU_Roman.setToolTip(_fromUtf8("Click to activate Arabic mode"))
 #        App.Console.PrintMessage(str("romain ")+str(romain)+"\n")
 
-    def on_PU_Redress(self):                   # Redress or circumferencial Clock
+    def on_PU_Redress(self):                   # Redress or circumferential Clock
         global redressement
         if redressement == 1:
             redressement = 0
             self.PU_Redress.setText(_fromUtf8("Redress"))
-            self.PU_Redress.setToolTip(_fromUtf8("Click for activate the mode Axial"))
+            self.PU_Redress.setToolTip(_fromUtf8("Click to activate Axial mode"))
         else:
             redressement = 1
             self.PU_Redress.setText(_fromUtf8("Axial"))
-            self.PU_Redress.setToolTip(_fromUtf8("Click for activate the mode Redress"))
+            self.PU_Redress.setToolTip(_fromUtf8("Click to activate Redress mode"))
 #        App.Console.PrintMessage(str("redressement ")+str(redressement)+"\n")
 
     def on_PU_Exit(self):                      # Exit
@@ -1139,7 +1139,7 @@ class Ui_MainWindow(object):
 
         debout = 1
         self.PU_Flat.setText(_fromUtf8("Mode Stand"))
-        self.PU_Flat.setToolTip(_fromUtf8("Click for create the text Flat"))
+        self.PU_Flat.setToolTip(_fromUtf8("Click to create the Flat text"))
 
         SizeCaractere = 2.0
         self.DS_Size_Character.setValue(SizeCaractere)
@@ -1195,10 +1195,10 @@ class Ui_MainWindow(object):
 
         romain = 0
         self.PU_Roman.setText(_fromUtf8("Mode Arabic"))
-        self.PU_Roman.setToolTip(_fromUtf8("Click for activate the mode Roman"))
+        self.PU_Roman.setToolTip(_fromUtf8("Click to activate Roman mode"))
         redressement = 0
         self.PU_Redress.setText(_fromUtf8("Redress"))
-        self.PU_Redress.setToolTip(_fromUtf8("Click for activate the mode Axial"))
+        self.PU_Redress.setToolTip(_fromUtf8("Click to activate Axial mode"))
 
         compount1 = 0
 
@@ -1217,7 +1217,7 @@ class Ui_MainWindow(object):
 #        App.Console.PrintMessage(str("Benchmarks")+"\n")
       except:
         sayexc("Error")
-       
+
     ##########################################################################
 
     def on_PU_Execute(self):         # Execute
@@ -1227,7 +1227,7 @@ class Ui_MainWindow(object):
         global coor_X
         global coor_Y
         global coor_Z
-        
+
         global PlacementX
         global PlacementY
         global PlacementZ
@@ -1284,14 +1284,14 @@ class Ui_MainWindow(object):
         self.groupBox_01.setTitle("Text to be displayed  ( "+str(len(texte))+" characters )")
 
         if ((exterieur == 0) and (debout == 0)):
-            vecligne=[FreeCAD.Vector(PlacementX,PlacementY,PlacementZ),FreeCAD.Vector(rayon + correctionRayon,0.0,0.0)]      # 
+            vecligne=[FreeCAD.Vector(PlacementX,PlacementY,PlacementZ),FreeCAD.Vector(rayon + correctionRayon,0.0,0.0)]      #
         else:
             if exterieur == 3:
-                vecligne=[FreeCAD.Vector(PlacementX,PlacementY,PlacementZ),FreeCAD.Vector(rayon - (SizeCaractere/2),0.0,0.0)]      # 
+                vecligne=[FreeCAD.Vector(PlacementX,PlacementY,PlacementZ),FreeCAD.Vector(rayon - (SizeCaractere/2),0.0,0.0)]      #
             elif debout == 0:
-                vecligne=[FreeCAD.Vector(PlacementX,PlacementY,PlacementZ),FreeCAD.Vector(rayon + correctionRayon - SizeCaractere,0.0,0.0)]      # 
+                vecligne=[FreeCAD.Vector(PlacementX,PlacementY,PlacementZ),FreeCAD.Vector(rayon + correctionRayon - SizeCaractere,0.0,0.0)]      #
             else:
-                vecligne=[FreeCAD.Vector(PlacementX,PlacementY,PlacementZ),FreeCAD.Vector(rayon + correctionRayon,0.0,0.0)]      # 
+                vecligne=[FreeCAD.Vector(PlacementX,PlacementY,PlacementZ),FreeCAD.Vector(rayon + correctionRayon,0.0,0.0)]      #
 
         ligne = Draft.makeWire(vecligne,closed=False,face=False,support=None)     # creation de la ligne de base
         lineName = ligne.Name
@@ -1301,7 +1301,7 @@ class Ui_MainWindow(object):
 
         nombre = len(texte)
         coor_Z = PlacementZ
-           
+
         if (exterieur == 0) or (debout == 0):
             texte = texte[::-1]
             if (exterieur == 0) and (debout == 0):
@@ -1360,7 +1360,7 @@ class Ui_MainWindow(object):
                         coor_Y = (a.Point.y)
                     ss=Draft.makeShapeString(String=unicode(texte[ii2]),FontFile=PolicePath,Size=SizeCaractere,Tracking=0)
 
-                    FcString.addObject(ss)  # contener character
+                    FcString.addObject(ss)  # container character
 
                     centreX = (ss.Shape.BoundBox.Center[0])
                     centreY = (ss.Shape.BoundBox.Center[1])
@@ -1393,16 +1393,16 @@ class Ui_MainWindow(object):
                             else:
                                 plm = App.Placement(App.Vector(coor_X-centreX,coor_Y-centreY,coor_Z), App.Rotation(angleTr+inclinaisonX,inclinaisonY,inclinaisonZ), App.Vector(centreX,centreY,centreZ)) # pitch,roll...1
                         else:                 # interieur  (inferieur)
-                            plm = App.Placement(App.Vector(-coor_X,-coor_Y,-coor_Z), App.Rotation(angleTr+90+correctionAngle+inclinaisonX,180+inclinaisonY,180+inclinaisonZ), App.Vector(0,0,0)) # pitch,roll...1   
+                            plm = App.Placement(App.Vector(-coor_X,-coor_Y,-coor_Z), App.Rotation(angleTr+90+correctionAngle+inclinaisonX,180+inclinaisonY,180+inclinaisonZ), App.Vector(0,0,0)) # pitch,roll...1
 
                     if epaisseur > 0:         # extrusion characrters
                         CharExtrude = Draft.extrude(ss,Base.Vector(0,0,epaisseur))
-                        CharExtrude.Placement=plm 
+                        CharExtrude.Placement=plm
                         comP.append(CharExtrude.Shape)
 #                        nameL.append(CharExtrude.Name)
-                        FcString.addObject(CharExtrude)  # contener extrude
-                    else:                 # 
-                        ss.Placement=plm 
+                        FcString.addObject(CharExtrude)  # container extrude
+                    else:                 #
+                        ss.Placement=plm
                         ss.Support=None
                         comP.append(ss.Shape)
 #                        nameL.append(ss.Name)
@@ -1425,7 +1425,7 @@ class Ui_MainWindow(object):
                 cercleClock = cercleClock * 2
                 pl.Base = FreeCAD.Vector(-cercleClock, (-cercleClock / 2), 0.0)
                 supp = Draft.makeRectangle((cercleClock * 2), cercleClock, placement=pl, face = True)
-            if nombreFaces > 2:                       # polygone with number faces
+            if nombreFaces > 2:                       # polygon with number faces
                 if nombreFaces == 4:
                     rotateSupport = 45
                 else:
@@ -1435,15 +1435,15 @@ class Ui_MainWindow(object):
 
             supp.MakeFace = True
             App.activeDocument().recompute()
-            FcString.addObject(supp)                  # contener support
+            FcString.addObject(supp)                  # container support
 
             if epaisSupp != 0:                        # extrude support clock
                 suppExtrude = Draft.extrude(supp,Base.Vector(0,0,epaisSupp))
-                FcString.addObject(suppExtrude)       # contener support extrude
+                FcString.addObject(suppExtrude)       # container support extrude
 
         ####Info################################################
         App.Console.PrintMessage((PolicePath)+"\n")
-        App.Console.PrintMessage(u"texte         " + unicode(texte)+"\n")
+        App.Console.PrintMessage(u"texte        " + unicode(texte)+"\n")
         App.Console.PrintMessage("rayon         " + str(rayon)+"\n")
         App.Console.PrintMessage("rotation      " + str(rotation)+"\n")
         App.Console.PrintMessage("SizeCaractere " + str(SizeCaractere)+"\n")
@@ -1454,8 +1454,8 @@ class Ui_MainWindow(object):
         ff.on_PU_Reset()
 
         #### Chrono end ####################################
-        arrivee = time.clock()                                                                    # chrono end
-        App.Console.PrintMessage("Time : "+str("%.2f" % ((arrivee - depart)/60))+" min"+"\n\n")   # chrono end
+        arrive = time.clock()                                                                    # chrono end
+        App.Console.PrintMessage("Time : "+str("%.2f" % ((arrive - depart)/60))+" min"+"\n\n")   # chrono end
         ####################################################
 
 MainWindow = QtGui.QMainWindow()
