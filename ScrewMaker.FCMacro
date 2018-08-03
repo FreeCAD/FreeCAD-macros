@@ -53,7 +53,7 @@ import DraftVecUtils
 try:
    #from PyQt4 import QtCore, QtGui
    from PySide import QtCore, QtGui
-   FreeCAD.Console.PrintMessage("PySyde is used" + "\n")
+   FreeCAD.Console.PrintMessage("PySide is used" + "\n")
 except:
    #from PySide import QtCore, QtGui
    FreeCAD.Console.PrintMessage("PyQt4 is needed" + "\n")
@@ -150,7 +150,7 @@ iso4017length = {
    '200':(199.1, 200.9)
          }
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso4017range = {
    'M1.6':  ('2', '16'),
@@ -181,9 +181,9 @@ iso4017range = {
 iso4014head={
    'M4': (0.70, 14.0,  0.0,  0.0, 0.2, 5.9,  7.7,   3.5, 0.2, 7.0),
    'M5': (0.80, 16.0,  0.0,  0.0, 0.2, 6.9,  8.9,   3.5, 0.2, 8.0),
-	'M6': (1.00, 18.0, 24.0, 37.0, 0.2, 8.9,  11.05, 4.0, 0.25, 10.0),
-	'M8': (1.25, 22.0, 28.0, 41.0, 0.3, 11.7, 14.5,  5.3, 0.4, 13.0),
-	'M10':(1.50, 26.0, 32.0, 45.0, 0.3, 14.7, 17.9,  6.4, 0.4, 16.0),
+   'M6': (1.00, 18.0, 24.0, 37.0, 0.2, 8.9,  11.05, 4.0, 0.25, 10.0),
+   'M8': (1.25, 22.0, 28.0, 41.0, 0.3, 11.7, 14.5,  5.3, 0.4, 13.0),
+   'M10':(1.50, 26.0, 32.0, 45.0, 0.3, 14.7, 17.9,  6.4, 0.4, 16.0),
    'M12':(1.75, 30.0, 36.0, 49.0, 0.3, 16.7, 20.1,  7.5, 0.6, 18.0),
    'M14':(2.00, 34.0, 40.0,  0.0, 0.3, 20.5, 24.5,  8.8, 0.6, 22.0),
    'M16':(2.00, 38.0, 44.0, 57.0, 0.4, 22.4, 26.9, 10.0, 0.6, 24.0),
@@ -218,7 +218,7 @@ iso4014length = {
    '220':(219.1, 220.9)
          }
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso4014range = {
    'M4':  ('25', '50'),
@@ -239,15 +239,15 @@ iso4014range = {
 #          P,   b0,    b1,   b2,   b3,   c,  dc,    dw,    e,     k,   kw,  lf,  r1,   s
 en1662def={
    'M5': (0.80, 25.0, 16.0,  0.0,  0.0, 1.0, 11.4,  9.4,  7.59,  5.6, 2.3, 1.4, 0.2, 7.0),
-	'M6': (1.00, 30.0, 18.0,  0.0,  0.0, 1.1, 13.6, 11.6,  8.71,  6.9, 2.9, 1.6, 0.25, 8.0),
-	'M8': (1.25, 35.0, 22.0, 28.0,  0.0, 1.2, 17.0, 14.9, 10.95,  8.5, 3.8, 2.1, 0.4, 10.0),
-	'M10':(1.50, 40.0, 26.0, 32.0,  0.0, 1.5, 20.8, 18.7, 14.26,  9.7, 4.3, 2.1, 0.4, 13.0),
+   'M6': (1.00, 30.0, 18.0,  0.0,  0.0, 1.1, 13.6, 11.6,  8.71,  6.9, 2.9, 1.6, 0.25, 8.0),
+   'M8': (1.25, 35.0, 22.0, 28.0,  0.0, 1.2, 17.0, 14.9, 10.95,  8.5, 3.8, 2.1, 0.4, 10.0),
+   'M10':(1.50, 40.0, 26.0, 32.0,  0.0, 1.5, 20.8, 18.7, 14.26,  9.7, 4.3, 2.1, 0.4, 13.0),
    'M12':(1.75, 45.0, 30.0, 36.0,  0.0, 1.8, 24.7, 22.5, 17.62, 12.1, 5.4, 2.1, 0.6, 16.0),
    'M14':(2.00, 50.0, 34.0, 40.0,  0.0, 2.1, 28.6, 26.4, 19.86, 12.9, 5.6, 2.1, 0.6, 18.0),
    'M16':(2.00, 55.0, 38.0, 44.0, 57.0, 2.4, 32.8, 30.6, 23.15, 15.2, 6.8, 3.2, 0.6, 21.0)}
 
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 en1662range = {
    'M5': ('10', '50'),
@@ -290,16 +290,16 @@ en1662length = {
 #          P,    b0,  b1,   b2,   b3,   c,  dc,    dw,    e,     k,   kw,  lf,  r1,   s
 en1665def={
    'M5': (0.80, 25.0, 16.0,  0.0,  0.0, 1.0, 11.8,  9.8,  8.71,  5.8, 2.6, 1.4, 0.2,  8.0),
-	'M6': (1.00, 30.0, 18.0,  0.0,  0.0, 1.1, 14.2, 12.2, 10.95,  6.6, 3.0, 1.6, 0.25,10.0),
-	'M8': (1.25, 35.0, 22.0, 28.0,  0.0, 1.2, 18.0, 15.8, 14.26,  8.1, 3.9, 2.1, 0.4, 13.0),
-	'M10':(1.50, 40.0, 26.0, 32.0,  0.0, 1.5, 22.3, 19.6, 17.62, 10.4, 4.1, 2.1, 0.4, 16.0),
+   'M6': (1.00, 30.0, 18.0,  0.0,  0.0, 1.1, 14.2, 12.2, 10.95,  6.6, 3.0, 1.6, 0.25,10.0),
+   'M8': (1.25, 35.0, 22.0, 28.0,  0.0, 1.2, 18.0, 15.8, 14.26,  8.1, 3.9, 2.1, 0.4, 13.0),
+   'M10':(1.50, 40.0, 26.0, 32.0,  0.0, 1.5, 22.3, 19.6, 17.62, 10.4, 4.1, 2.1, 0.4, 16.0),
    'M12':(1.75, 45.0, 30.0, 36.0,  0.0, 1.8, 26.6, 23.8, 19.86, 11.8, 5.6, 2.1, 0.6, 18.0),
    'M14':(2.00, 50.0, 34.0, 40.0,  0.0, 2.1, 30.5, 27.6, 23.15, 13.7, 6.5, 2.1, 0.6, 21.0),
    'M16':(2.00, 55.0, 38.0, 44.0, 57.0, 2.4, 35.0, 31.9, 26.51, 15.4, 7.3, 3.2, 0.6, 24.0),
    'M20':(2.50, 65.0, 46.0, 52.0, 65.0, 3.0, 43.0, 39.9, 33.23, 18.9, 8.9, 4.2, 0.8, 30.0)}
 
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 en1665range = {
    'M5': ('10', '50'),
@@ -356,7 +356,7 @@ iso1207def={
    'M8':  (1.25, 2.5, 38.0, 13.0, 12.85, 9.2, 5.0, 2.06, 0.4, 2.0, 3.2),
    'M10': (1.50, 3.0, 38.0, 16.0, 15.85, 11.2,6.0, 2.56, 0.4, 2.4, 3.8)}
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso1207range = {
    'M1.6':('2', '16'),
@@ -458,7 +458,7 @@ iso7048def={
    'M8':  (1.25, 2.5, 38.0, 13.0, 12.85, 9.2, 5.0, 0.4, 3.2, '3', 7.7, 7.5)
    }
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso7048range = {
    'M2.5':('3', '25'),
@@ -530,7 +530,7 @@ iso7380def={
    'M16': (1.75, 3.5, 18.2, 28.0, 27.8, 10.06,5.20, 0.6, 8.8,  9.15, 2.25)
    }
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso7380range = {
    'M3':  ('5', '25'),
@@ -587,7 +587,7 @@ iso2009def={
    'M8':  (1.25, 2.5, 38,17.3, 15.6, 4.65, 2.06, 2.0, 2.0, 3.2),
    'M10': (1.50, 3.0, 38,20.0, 18.1, 5.0,  2.56, 2.5, 2.3, 3.8)}
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso2009range = {
    'M1.6':('2.5', '16'),
@@ -603,7 +603,7 @@ iso2009range = {
 
 
 # ISO 7046 definitions Class A
-# ISO 7046 Countersunk flat head srews (common head style)
+# ISO 7046 Countersunk flat head screws (common head style)
 # with type H or type Z cross recess
 # Parameters P, a, b, dk_theo, dk_mean, k, r, x to be read from iso2009def
 # Length = iso7045length
@@ -620,7 +620,7 @@ iso7046def={
    'M8':  ('4', 8.9, 8.8),
    'M10': ('4', 10.0,9.8)}
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso7046range = {
    'M1.6':('3', '16'),
@@ -634,8 +634,8 @@ iso7046range = {
    'M8': ('10', '60'),
    'M10':('12', '60')}
 
-# ISO 2010, ISO 7047 definitions Class A: Raised Countersunk head srews
-# ISO 2010 slotted screws (common head style)   range = iso2009range
+# ISO 2010, ISO 7047 definitions Class A: Raised Countersunk head screws
+# ISO 2010  slotted screws (common head style)  range = iso2009range
 # ISO 7047  with type H or type Z cross recess  range = iso7046range
 # Parameters P, a, b, dk_theo, dk_mean, k, r, x to be read from iso2009def
 # Length = iso7045length
@@ -710,7 +710,7 @@ iso7045length = {
    '60':(59.05, 60.95)
       }
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso7045range = {
    'M1.6':('3', '16'),
@@ -726,7 +726,7 @@ iso7045range = {
 
 
 # ISO 14583 Hexalobular socket pan head screws
-#   hexalobular recess;    tt = size of hexalobular recess
+#   hexalobular recess; tt = size of hexalobular recess
 
 #           tt,    A,  t_mean
 iso14583def={
@@ -746,7 +746,7 @@ iso14583def={
 
 
 
-# ISO 4762 Hexagon socket head cap screws ( Allan screw)
+# ISO 4762 Hexagon socket head cap screws (Allen screw)
 # ISO 4762 definitions
 #           P,   b,  dk_max, da,  ds_min,   e,    lf,   k,   r,   s_mean, t,    v,   dw,   w
 iso4762def={
@@ -803,7 +803,7 @@ iso4762length = {
    '200':(199.1, 200.9)
       }
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso4762range = {
    'M1.6':('2.5', '16'),
@@ -842,11 +842,11 @@ iso14579def={
    'M12': ('T55', 11.35, 5.0),
    'M14': ('T60', 13.45, 5.8),
    'M16': ('T70', 15.70, 6.8),
-   #'M18': ('T80', 17.75, 7.8),
+#   'M18': ('T80', 17.75, 7.8),
    'M20': ('T90', 20.20, 9.0),
    }
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso14579range = {
    'M2':  ('3', '20'),
@@ -898,7 +898,7 @@ iso14579length = {
          }
 
 
-# ISO 10642 Hexagon socket countersunk head screws ( Allan screw)
+# ISO 10642 Hexagon socket countersunk head screws (Allen screw)
 # ISO 10642 definitions
 #           P,   b,  dk_theo, dk_mean,da,  ds_min,   e,  k,   r,   s_mean, t,    w
 iso10642def={
@@ -913,7 +913,7 @@ iso10642def={
    'M16': (2.00, 44.0, 33.60, 31.0, 17.5, 15.73, 11.43, 8.80, 0.6, 10.07,  4.8, 2.20),
    'M20': (2.50, 52.0, 40.32, 38.0, 22.0, 19.67, 13.72, 10.16, 0.8, 12.10,  5.6, 2.20)}
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso10642range = {
    'M3':  ('8', '30'),
@@ -950,7 +950,7 @@ iso10642length = {
          }
 
 
-# ISO 7089 definitions  Washer
+# ISO 7089 definitions Washer
 #           d1_min, d2_max, h, h_max
 iso7089def={
    'M1.6':( 1.7,  4.0, 0.3, 0.35),
@@ -1162,7 +1162,7 @@ class Ui_ScrewMaker(object):
     def retranslateUi(self, ScrewMaker):
         ScrewMaker.setWindowTitle(QtGui.QApplication.translate("ScrewMaker", "Screw-Maker", None, QtGui.QApplication.UnicodeUTF8))
         self.ScrewTypeLabel.setText(QtGui.QApplication.translate("ScrewMaker", "Type of Screw", None, QtGui.QApplication.UnicodeUTF8))
-        self.NomDiaLabel.setText(QtGui.QApplication.translate("ScrewMaker", "Nomimal Diameter", None, QtGui.QApplication.UnicodeUTF8))
+        self.NomDiaLabel.setText(QtGui.QApplication.translate("ScrewMaker", "Nominal Diameter", None, QtGui.QApplication.UnicodeUTF8))
         self.NomLenLabel.setText(QtGui.QApplication.translate("ScrewMaker", "Nominal length", None, QtGui.QApplication.UnicodeUTF8))
         self.ThreadTypeLabel.setText(QtGui.QApplication.translate("ScrewMaker", "Thread type", None, QtGui.QApplication.UnicodeUTF8))
         self.ScrewType.setItemText(0, QtGui.QApplication.translate("ScrewMaker", "ISO4017: Hexagon head screws", None, QtGui.QApplication.UnicodeUTF8))
@@ -1578,7 +1578,7 @@ class Ui_ScrewMaker(object):
                   if hasattr(s.Curve,"Center"):
                      """
                      FreeCAD.Console.PrintMessage( "The object has a Center!\n")
-                     FreeCAD.Console.PrintMessage( "Curve attribut. "+ str(s.__getattribute__('Curve')) + "\n")
+                     FreeCAD.Console.PrintMessage( "Curve attribute. "+ str(s.__getattribute__('Curve')) + "\n")
                      FreeCAD.Console.PrintMessage( "Center: "+ str(s.Curve.Center) + "\n")
                      FreeCAD.Console.PrintMessage( "Axis: "+ str(s.Curve.Axis) + "\n")
                      """
@@ -1764,7 +1764,7 @@ class Ui_ScrewMaker(object):
 
          alpha = (beta_A + beta)/2.0 # half angle
          #print 'alpha: ', math.degrees(alpha)
-         # heigth of head edge
+         # height of head edge
          he = k - A/2.0/tan_beta_A + (dk_max/2.0) / tan_beta
          #print 'he: ', he
          h_arc_x = rf * math.sin(alpha)
@@ -1773,7 +1773,7 @@ class Ui_ScrewMaker(object):
       else:
          alpha = beta/2.0 # half angle
          #print 'alpha: ', math.degrees(alpha)
-         # heigth of head edge
+         # height of head edge
          he = k - rf + (dk_max/2.0) / tan_beta
          #print 'he: ', he
          h_arc_x = rf * math.sin(alpha)
@@ -1841,7 +1841,7 @@ class Ui_ScrewMaker(object):
          #Lengths and angles for calculation of recess positioning
          beta_cr = math.asin(mH /2.0 / rf)   # angle of recess edge
          tan_beta_cr = math.tan(beta_cr)
-         # heigth of cross recess cutting
+         # height of cross recess cutting
          hcr = k - rf + (mH/2.0) / tan_beta_cr
          #print 'hcr: ', hcr
 
@@ -2141,7 +2141,7 @@ class Ui_ScrewMaker(object):
       beta = math.radians(25.0)
       tan_beta = math.tan(beta)
 
-      # Calcualtion of Arc points of flange edge using dc and c
+      # Calculation of Arc points of flange edge using dc and c
       arc1_x = dc/2.0 - c/2.0 + (c/2.0)*math.sin(beta)
       arc1_z = c/2.0 + (c/2.0)*math.cos(beta)
 
@@ -2252,7 +2252,7 @@ class Ui_ScrewMaker(object):
           t_mean = t
       else:
           P, a, b, dk_theo, dk_mean, k, n_min, r, t_mean, x = iso2009def[ThreadType]
-          ht = 0.0 # Head heigth of flat head
+          ht = 0.0 # Head height of flat head
       if SType == 'ISO7046':
          cT, mH, mZ  = iso7046def[ThreadType]
       if (SType == 'ISO2010') or (SType == 'ISO7047'):
@@ -2262,7 +2262,7 @@ class Ui_ScrewMaker(object):
          beta = math.asin(dk_mean /2.0 / rf)   # angle of head edge
          tan_beta = math.tan(beta)
          alpha = beta/2.0 # half angle
-         # heigth of raised head top
+         # height of raised head top
          ht = rf - (dk_mean/2.0) / tan_beta
          #print 'he: ', he
          h_arc_x = rf * math.sin(alpha)
@@ -2359,7 +2359,7 @@ class Ui_ScrewMaker(object):
 
       return head
 
-    # make ISO 4762 Allan Screw head
+    # make ISO 4762 Allen Screw head
     # ISO 14579 Hexalobular socket head cap screws
     def makeIso4762(self, SType ='ISO4762', ThreadType ='M6',l=25.0):
       dia=float(ThreadType.lstrip('M'))
@@ -2425,7 +2425,7 @@ class Ui_ScrewMaker(object):
       aFace =Part.Face(aWire)
       head = aFace.revolve(Base.Vector(0.0,0.0,0.0),Base.Vector(0.0,0.0,1.0),360)
 
-      # The round part of the cutting tool, we need for the allan hex
+      # The round part of the cutting tool, we need for the allen hex
       #PntH1 = Base.Vector(0.0,0.0,k)
       #PntH2 = Base.Vector(e_cham/2.0,0.0,k)
       #PntH3 = Base.Vector(e_cham/2.0,0.0,k-t)
@@ -2525,7 +2525,7 @@ class Ui_ScrewMaker(object):
       head = aFace.revolve(Base.Vector(0.0,0.0,0.0),Base.Vector(0.0,0.0,1.0),360)
       #Part.show(head)
 
-      # The round part of the cutting tool, we need for the allan hex
+      # The round part of the cutting tool, we need for the allen hex
       PntH1 = Base.Vector(0.0,0.0,k)
       PntH2 = Base.Vector(e_cham/2.0,0.0,k)
       PntH3 = Base.Vector(e_cham/2.0,0.0,k-t_min)
