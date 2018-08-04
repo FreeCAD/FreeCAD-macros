@@ -176,7 +176,7 @@ class unrollRuledSurface:
   # composed of 2 or 4 edges
   #####################################
   def unroll(self,face,name):
-    FreeCAD.Console.PrintMessage("UnrollRuledSurface.unroll: Ege Nbr= "+str( face.Edges.__len__())+"\n")
+    FreeCAD.Console.PrintMessage("UnrollRuledSurface.unroll: Edge Nbr= "+str( face.Edges.__len__())+"\n")
     if face.Edges.__len__() == 2: 
        e1=face.Edges[0]
        e2=face.Edges[1]

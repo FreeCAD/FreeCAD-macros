@@ -21,12 +21,12 @@
 *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
 *   USA                                                                   *
 ***************************************************************************
-*           WARNING! All changes in this file will be lost and            *  
+*           WARNING! All changes in this file will be lost and            *
 *                  may cause malfunction of the program                   *
 ***************************************************************************
 """
 # FCCamera 0.3 18/03/2015
-# 
+#
 #OS: Windows Vista                              #OS: Windows Vista
 #Word size of OS: 32-bit                        #Word size of OS: 32-bit
 #Word size of FreeCAD: 32-bit                   #Word size of FreeCAD: 32-bit
@@ -46,7 +46,7 @@ __date__    = "18/03/2015"
 
 
 try:
-	import PyQt4                     #  PyQt4 
+	import PyQt4                     #  PyQt4
 	from PyQt4 import QtCore, QtGui  #  PyQt4
 	App.Console.PrintMessage("PyQt4"+"\n")
 except Exception:
@@ -89,7 +89,7 @@ def sayexc(mess=''):
 ###########
 
 import Draft, Part, FreeCAD, math, PartGui, FreeCADGui, DraftVecUtils
-#import os, WorkingPlane 
+#import os, WorkingPlane
 
 from math import radians, degrees, sqrt, pi, sin, cos, asin
 from FreeCAD import Base
@@ -156,7 +156,7 @@ def To_Face_Or_To_Axis(ToFace):         # 1=NormalAt 0=Axis   #Align Face select
     global Nameelement2
 
     try:
-        SubElement = FreeCADGui.Selection.getSelectionEx()   
+        SubElement = FreeCADGui.Selection.getSelectionEx()
         Nameelement = SubElement[0].SubElementNames[0]
         if Nameelement != Nameelement2:
             vueView = 0
@@ -200,8 +200,8 @@ class Ui_MainWindow(object):
         global path
         self.window = MainWindow
         #path = FreeCAD.ConfigGet("AppHomePath")
-        path = FreeCAD.ConfigGet("UserAppData")    # 
-#        path = "Yout path"                        # 
+        path = FreeCAD.ConfigGet("UserAppData")    #
+#        path = "Yout path"                        #
         path="/usr/lib/freecad/Mod/plugins/FreeCAD-macros-git/icons/Camera/"
         App.Console.PrintMessage("Path locality to FCCamera.....images.png [ " + path + " ]"+"\n")
 #        print "Path locality ( ",path," )"
@@ -307,7 +307,7 @@ class Ui_MainWindow(object):
         self.DS_Angle.setSingleStep(1.0)
         self.DS_Angle.setObjectName(_fromUtf8("DS_Angle"))
         self.DS_Angle.setToolTip(u"Enter the angle of rotation in degrees.\n"
-" The given angle is added to the angle of the current view")
+                                  " The given angle is added to the angle of the current view")
         self.DS_Angle.valueChanged.connect(self.on_DS_Angle_valueChanged) #connection DS_Angle
 
         self.PB_Accept_View = QtGui.QPushButton(self.groupBox_01)
@@ -330,7 +330,7 @@ class Ui_MainWindow(object):
         self.PB_Detect_Camera.setIcon(icon2)
         self.PB_Detect_Camera.setObjectName(_fromUtf8("PB_Detect_Camera"))
         self.PB_Detect_Camera.setToolTip(u"Detect the position of the camera\n"
-" The returned value is the value provided by the function getCameraOrientation()")
+                                          " The returned value is the value provided by the function getCameraOrientation()")
         self.PB_Detect_Camera.clicked.connect(self.on_PB_Detect_Camera_clicked)
 
         self.PB_To_Face = QtGui.QPushButton(self.groupBox_02)
@@ -340,8 +340,8 @@ class Ui_MainWindow(object):
         self.PB_To_Face.setIcon(icon3)
         self.PB_To_Face.setObjectName(_fromUtf8("PB_To_Face"))
         self.PB_To_Face.setToolTip("Align the view to the selected face \n"
-"Click and repeat the click for NormalAt : \n"
-"(0,0,1) (0,0,-1) (0,1,0) (0,-1,0) (1,0,0) (-1,0,0)")
+                                   "Click and repeat the click for NormalAt : \n"
+                                   "(0,0,1) (0,0,-1) (0,1,0) (0,-1,0) (1,0,0) (-1,0,0)")
         self.PB_To_Face.clicked.connect(self.on_PB_To_Face_clicked) # align view to face Face
 
         self.label_04 = QtGui.QLabel(self.groupBox_02)
@@ -355,8 +355,8 @@ class Ui_MainWindow(object):
         self.PB_To_Axis.setIcon(icon4)
         self.PB_To_Axis.setObjectName(_fromUtf8("PB_To_Axis"))
         self.PB_To_Axis.setToolTip("Align the view to Axis face selected \n"
-"Click and repeat the click for Surface Axis : \n"
-"(0,0,1) (0,0,-1) (0,1,0) (0,-1,0) (1,0,0) (-1,0,0)")
+                                   "Click and repeat the click for Surface Axis : \n"
+                                   "(0,0,1) (0,0,-1) (0,1,0) (0,-1,0) (1,0,0) (-1,0,0)")
         self.PB_To_Axis.clicked.connect(self.on_PB_To_Axis_clicked) # Align view to face Axis
 
         self.PB_Align_O_To_View = QtGui.QPushButton(self.groupBox_02)
@@ -366,10 +366,10 @@ class Ui_MainWindow(object):
         self.PB_Align_O_To_View.setIcon(icon5)
         self.PB_Align_O_To_View.setObjectName(_fromUtf8("PB_Align_O_To_View"))
         self.PB_Align_O_To_View.setToolTip("Align the object selected to the actual view \n"
-"The changed values are : Rotation Axis((X, Y, Z), Angle) \n"
-"Same Euler angles : Yaw, Pitch, Roll \n The Translation is not modify")
+                                           "The changed values are : Rotation Axis((X, Y, Z), Angle) \n"
+                                           "Same Euler angles : Yaw, Pitch, Roll \n The Translation is not modified")
         self.PB_Align_O_To_View.clicked.connect(self.on_PB_Align_O_To_View_clicked) # Align object to view
-       
+
         self.PB_Create_Plane = QtGui.QPushButton(self.groupBox_02)
         self.PB_Create_Plane.setGeometry(QtCore.QRect(10, 140, 171, 28))
         icon6 = QtGui.QIcon()
@@ -377,8 +377,8 @@ class Ui_MainWindow(object):
         self.PB_Create_Plane.setIcon(icon6)
         self.PB_Create_Plane.setObjectName(_fromUtf8("PB_Create_Plane"))
         self.PB_Create_Plane.setToolTip("A circular plane is created facing the screen to mouse click coordinates on an object \n"
-"The radius of the plane is equal to the maximum dimension of BoundBox  \n"
-"If no object is selected, the plane is created to 0, 0, 0 coordinates with a radius of 20 mm")
+                                        "The radius of the plane is equal to the maximum dimension of BoundBox  \n"
+                                        "If no object is selected, the plane is created to 0, 0, 0 coordinates with a radius of 20 mm")
         self.PB_Create_Plane.clicked.connect(self.on_PB_Create_Plane_clicked) # create plane
 
         self.PB_Reset = QtGui.QPushButton(self.centralWidget)
@@ -387,7 +387,7 @@ class Ui_MainWindow(object):
         icon7.addPixmap(QtGui.QPixmap(_fromUtf8(path+"FCCamera_07.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PB_Reset.setIcon(icon7)
         self.PB_Reset.setObjectName(_fromUtf8("PB_Reset"))
-        self.PB_Reset.setToolTip("Refresh alls")
+        self.PB_Reset.setToolTip("Refresh all")
         self.PB_Reset.clicked.connect(self.on_PB_Reset_clicked) # refresh
 
         self.PB_Quit = QtGui.QPushButton(self.centralWidget)
@@ -435,7 +435,7 @@ class Ui_MainWindow(object):
         App.Console.PrintMessage("X"+"\n")
         pic = QtGui.QPixmap(path+"FCCamera_Axis_rotation_X.png")
         self.scene = QtGui.QGraphicsScene()
-        self.scene.addPixmap(QtGui.QPixmap(pic)) 
+        self.scene.addPixmap(QtGui.QPixmap(pic))
         self.graphicsView.setScene(ui.scene)
 
     def on_RB_Angle_Y_clicked(self):     # Y
@@ -444,7 +444,7 @@ class Ui_MainWindow(object):
         App.Console.PrintMessage("Y"+"\n")
         pic = QtGui.QPixmap(path+"FCCamera_Axis_rotation_Y.png")
         self.scene = QtGui.QGraphicsScene()
-        self.scene.addPixmap(QtGui.QPixmap(pic)) 
+        self.scene.addPixmap(QtGui.QPixmap(pic))
         self.graphicsView.setScene(ui.scene)
 
     def on_RB_Angle_Z_clicked(self):     # Z
@@ -453,7 +453,7 @@ class Ui_MainWindow(object):
         App.Console.PrintMessage("Z"+"\n")
         pic = QtGui.QPixmap(path+"FCCamera_Axis_rotation_Z.png")
         self.scene = QtGui.QGraphicsScene()
-        self.scene.addPixmap(QtGui.QPixmap(pic)) 
+        self.scene.addPixmap(QtGui.QPixmap(pic))
         self.graphicsView.setScene(ui.scene)
 
     def on_DS_Angle_valueChanged(self,value): # connection DS_Angle value donnee en degres
@@ -486,7 +486,7 @@ class Ui_MainWindow(object):
 
     def on_PB_Accept_View_clicked(self):        # Accept Rotation Camera to Axis
         global valeur
-        
+
         if (valeur != 0):
             Xv = 0.0;Yv = 0.0;Zv = 0.0
             cam = Gui.ActiveDocument.ActiveView.getCameraNode()
@@ -522,7 +522,7 @@ class Ui_MainWindow(object):
 
     def on_PB_Align_O_To_View_clicked(self):  #Align and Fix Object to View
 
-        sel = FreeCADGui.Selection.getSelection()   
+        sel = FreeCADGui.Selection.getSelection()
         if (len(sel)==0):
             App.Console.PrintError("Select one object"+"\n")
         else:
@@ -555,7 +555,7 @@ class Ui_MainWindow(object):
             elif rayon < boundBoxLZ:
                 rayon = boundBoxLZ
 
-        radiusP = rayon                       # Radius of plane       
+        radiusP = rayon                       # Radius of plane
         App.Console.PrintMessage("Create plane ("+str(radiusP)+" mm)"+"\n")
         FcPlane = doc.addObject("App::DocumentObjectGroup","FcPlane")
 
@@ -572,17 +572,17 @@ class Ui_MainWindow(object):
         pl.Rotation.Q = (xP,yP,zP,qP)         # rotation of object
 
         pl.Base = FreeCAD.Vector(positionX,positionY,positionZ) # here coordinates XYZ of plan
-        
+
 #        Draft.makeRectangle(length=radiusP,height=radiusP,placement=pl,face=False,support=None)
         points=[FreeCAD.Vector(-(radiusP*1.5),0,0),FreeCAD.Vector((radiusP*1.5),0,0)]
         mire01 = Draft.makeWire(points,closed=False,placement=pl,face=False,support=None)
         FreeCADGui.ActiveDocument.getObject(App.ActiveDocument.ActiveObject.Name).LineColor = (1.0,0.0,0.0)
-        FcPlane.addObject(mire01)  # contener character
-        
+        FcPlane.addObject(mire01)  # container character
+
         points=[FreeCAD.Vector(0,-(radiusP*1.5),0),FreeCAD.Vector(0,(radiusP*1.5),0)]
         mire02 = Draft.makeWire(points,closed=False,placement=pl,face=False,support=None)
         FreeCADGui.ActiveDocument.getObject(App.ActiveDocument.ActiveObject.Name).LineColor = (1.0,0.0,0.0)
-        FcPlane.addObject(mire02)  # contener character
+        FcPlane.addObject(mire02)  # container character
 
         cercle = Draft.makeCircle(radius=radiusP,placement=pl,face=False,support=None)
         Rnameplane = App.ActiveDocument.ActiveObject.Name
@@ -596,7 +596,7 @@ class Ui_MainWindow(object):
 #        FreeCADGui.ActiveDocument.getObject(Rnameplane).GridSnap = True
         FreeCADGui.ActiveDocument.getObject(Rnameplane).ShowGrid = True
 
-        FcPlane.addObject(cercle)  # contener character
+        FcPlane.addObject(cercle)  # container character
         FreeCAD.ActiveDocument.recompute()
 
         positionX = 0.0
@@ -614,7 +614,7 @@ class Ui_MainWindow(object):
         global positionX
         global positionY
         global positionZ
-        global vueView 
+        global vueView
 
         App.Console.PrintMessage("Refresh"+"\n")
         Gui.activeDocument().activeView().viewTop()
@@ -629,14 +629,14 @@ class Ui_MainWindow(object):
 
         self.groupBox_01.setTitle("Camera of Axis")
         self.label_02.setText("Angle rotation Axis in degrees")
-        self.label_03.setText("Axe of rotation")
+        self.label_03.setText("Axis of rotation")
         self.RB_Angle_X.setText("X")
         self.RB_Angle_Y.setText("Y")
         self.RB_Angle_Z.setText("Z")
         self.RB_Angle_X.setChecked(True)
         pic = QtGui.QPixmap(path+"Axis_rotation_X.png")
         self.scene = QtGui.QGraphicsScene()
-        self.scene.addPixmap(QtGui.QPixmap(pic)) 
+        self.scene.addPixmap(QtGui.QPixmap(pic))
         self.graphicsView.setScene(ui.scene)
 
     def on_PB_Quit_clicked(self): # quit

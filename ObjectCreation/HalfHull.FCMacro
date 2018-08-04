@@ -1004,7 +1004,7 @@ def sortOutFilesAndDocuments():
 	# fileName (reads)
 	# keepSourceOpenFlag (global, writes)
 	# it determines if the 'user selected input document' is already open,
-	# if it is then is is made the ActiveDocument, otherwise it is
+	# if it is then it is made the ActiveDocument, otherwise it is
 	# Opened which also sets it to the ActiveDocument
 	if len(FreeCAD.listDocuments())==0:
 		# no documents open

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #-------------------------------------------------
-#-- makecamera2dview 
+#-- makecamera2dview
 #--
 #-- microelly 2015
 #--
@@ -8,7 +8,7 @@
 #-------------------------------------------------
 # create a 2dview object from the camera position
 
-__Comment__ = ' create a 2dview object from the camera position'
+__Comment__ = 'create a 2dview object from the camera position'
 __Web__ = ""
 __Wiki__ = ""
 __Icon__  = ""
@@ -46,7 +46,7 @@ camera.pointAt(coin.SbVec3f(0,0,0),coin.SbVec3f(0,0,1))
 al=str(camera.position.getValue().toString()).split(' ')
 vec2=FreeCAD.Vector(float(al[0]),float(al[1]),float(al[2]))
 print al
- 
+
 gier=np.arctan2(vec2.x,vec2.y) *180/np.pi
 steig=np.arctan2(vec2.z,np.sqrt(vec2.x**2 + vec2.y**2)) *180/np.pi
 print  gier
@@ -64,4 +64,3 @@ print vec2
 print pla1
 print pla2
 print pla3
-
