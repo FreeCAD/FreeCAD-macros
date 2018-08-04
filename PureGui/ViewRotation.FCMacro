@@ -13,13 +13,13 @@ from __future__ import division
 
 __Name__ = 'View Rotation'
 __Comment__ = 'This GUI allows the view to be rotated precisely'
-__License__ = ''
+__Author__ = 'Joe Dowsett'
+__Version__ = '1.0'
+__License__ = 'CC-BY-3.0'
 __Web__ = 'https://www.freecadweb.org/wiki/Macro_View_Rotation'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_View_Rotation'
 __Icon__ = ''
 __Help__ = 'Rotation is according to axes fixed with respect to the user.'
-__Author__ = 'Joe Dowsett'
-__Version__ = '1.0'
 __Status__ = ''
 __Requires__ = ''
 __Files__ = 'ViewRotationOut.png,ViewRotationRight.png,ViewRotationUp.png'
@@ -53,13 +53,16 @@ def find_centre():
     zmax = 0
     zmin = 0
     for obj in doc.Objects:
-        if obj.TypeId[:4] == 'Mesh':
-            box = obj.Mesh.BoundBox
-        elif obj.TypeId[:6] == 'Points':
-            box = obj.Points.BoundBox
-        elif obj.TypeId[:4] == 'Part':
-            box = obj.Shape.BoundBox
-        else:
+        try:
+            if obj.TypeId[:4] == 'Mesh':
+                box = obj.Mesh.BoundBox
+            elif obj.TypeId[:6] == 'Points':
+                box = obj.Points.BoundBox
+            elif obj.TypeId[:4] == 'Part':
+                box = obj.Shape.BoundBox
+            else:
+                continue
+        except AttributeError:
             continue
         xmax = max(xmax, box.XMax)
         xmin = min(xmin, box.XMin)
@@ -68,8 +71,7 @@ def find_centre():
         zmax = max(zmax, box.ZMax)
         zmin = min(zmin, box.ZMin)
 
-    centre = app.Vector((xmax + xmin) / 2, (ymax + ymin) / 2, (zmax + zmin) / 2)
-    return centre
+    return app.Vector((xmax + xmin) / 2, (ymax + ymin) / 2, (zmax + zmin) / 2)
 
 
 class RotateGui(QtGui.QWidget):  

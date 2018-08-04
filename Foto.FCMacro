@@ -1,66 +1,64 @@
 # -*- coding: utf-8 -*-
 # (c) microelly 2015
 
-
-__Comment__ = 'creates a real sized 300dpi foto of the selected part from top view'
-__Web__ = ""
-__Wiki__ = ""
-__Icon__  = "AppHomePath/Mod/plugins/icons/camera-photo.png"
-__Help__ = "select an object"
-__Author__ = "microelly"
-__Version__ = 0.1
+__Name__ = 'Foto'
+__Comment__ = 'Creates a real sized 300-dpi foto of the selected part from top view'
+__Author__ = 'microelly'
+__Version__ = '0.1.0'
+__Date__ = ''
+__License__ = ''
+__Web__ = ''
+__Wiki__ = ''
+__Icon__ = ''
+__Help__ = 'Select an object'
 __Status__ = 'alpha'
 __Requires__ = ''
-
-
-
-import FreeCAD
-import FreeCADGui
-
-def foto(fn='/tmp/fc_camera_out.jpg',width=150,height=100,x=0,y=0,res=300):
-	hi=height
-	dpi=300
-	dpmm=11.8110
-	if res <> 300:
-			dpmm *= res/300
-	ppy=int(dpmm*height)
-	ppx=int(dpmm*width)
-	y+= -1
-	cam='''#Inventor V2.1 ascii
-	OrthographicCamera {
-	  viewportMapping ADJUST_CAMERA
-	  orientation 1 0 0  0.001
-	  nearDistance 0
-	  farDistance 1000
-	  aspectRatio 100
-	  focalDistance 1
-	'''
-
-	cam += '\nposition ' +str(x) + ' ' + str(y) + ' 999\n '
-	cam += '\nheight ' + str(height) + '\n}\n\n'
-	FreeCADGui.activeDocument().activeView().setCamera(cam)
-	print(FreeCADGui.activeDocument().activeView().getCamera())
-
-	print ppx
-	print ppy
-
-	FreeCADGui.ActiveDocument.update()
-	FreeCADGui.activeDocument().activeView().saveImage(fn,ppx,ppy,'#ffffff')
+__Communication__ = ''
+__Files__ = ''
 
 import os
 
-fn="/tmp/fc_foto6.jpg"
-res=300
+import FreeCADGui
 
-s=FreeCADGui.Selection.getSelection()
-s0=s[0]
-s0.ViewObject.LineWidth=1
-b=s[0].Shape.BoundBox
-px=0.5*(b.XMin+b.XMax)
-py=0.5*(b.YMin+b.YMax)
-width=b.XMax-b.XMin
-height=b.YMax-b.YMin
 
-foto(fn,width,height,px,py,res)
-FreeCADGui.ActiveDocument.update()
-os.system("eog "+ fn + "&")
+def foto(fn='/tmp/fc_camera_out.jpg', width=150, height=100, x=0, y=0, res=300):
+    if res <= 0:
+        # TODO: add a warning about wrong res value.
+        res = 300
+    dpmm = 11.8110 * res / 300
+    ppy = int(dpmm * height)
+    ppx = int(dpmm * width)
+    y -= 1
+    cam = '''#Inventor V2.1 ascii
+    OrthographicCamera {{
+      viewportMapping ADJUST_CAMERA
+      orientation 1 0 0  0.001
+      nearDistance 0
+      farDistance 1000
+      aspectRatio 100
+      focalDistance 1
+      position {x} {y} 999
+      height {height}
+    }}
+
+    '''.format(x=x, y=y, height=height)
+
+    FreeCADGui.activeDocument().activeView().setCamera(cam)
+
+    FreeCADGui.ActiveDocument.update()
+    FreeCADGui.activeDocument().activeView().saveImage(fn, ppx, ppy, '#ffffff')
+
+fn = "/tmp/fc_photo.jpg"
+res = 300
+
+sel = FreeCADGui.Selection.getSelection()
+sel0 = sel[0]
+sel0.ViewObject.LineWidth = 1
+bbox = sel0.Shape.BoundBox
+px = 0.5 * (bbox.XMin + bbox.XMax)
+py = 0.5 * (bbox.YMin + bbox.YMax)
+width = bbox.XMax - bbox.XMin
+height = bbox.YMax - bbox.YMin
+
+foto(fn, width, height, px, py, res)
+os.system('xdg-open {}'.format(fn))

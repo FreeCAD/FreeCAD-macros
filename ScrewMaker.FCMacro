@@ -41,9 +41,11 @@ __Wiki__ = 'http://freecadweb.org/wiki/Macro_screw_maker1_2'
 __Icon__ = ''
 __Help__ = 'Select the characteristics of the screw and click on the create button'
 __Author__ = "Ulrich Brammer <ulrich1a@users.sourceforge.net>"
-__Version__ = 1.7
+__Version__ = '1.7'
 __Status__ = 'alpha'
 __Requires__ = ''
+__Files__ = ''
+__License__ = 'LGPL2+'
 
 
 import FreeCAD, Part, math
