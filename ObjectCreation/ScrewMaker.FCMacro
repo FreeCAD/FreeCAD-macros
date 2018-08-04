@@ -78,7 +78,7 @@ check chamfer angle on hexogon heads and nuts
 __Name__ = 'Screw Maker'
 __Comment__ = 'Generate a screw'
 __Author__ = "Ulrich Brammer <ulrich1a@users.sourceforge.net>"
-__Version__ = '2.0.1'
+__Version__ = '2.1.0'
 __Date__ = '2018-08-04'
 __License__ = 'LGPL2+'
 __Web__ = 'http://freecadweb.org/wiki/Macro_screw_maker1_2'
@@ -2087,7 +2087,7 @@ class Screw(object):
     return M_text, self.objAvailable
 
 
-  def createScrew(self, ST_text, ND_text, NL_text, threadType):
+  def createScrew(self, ST_text, ND_text, NL_text, threadType, shapeOnly=False):
     #self.simpThread = self.SimpleScrew.isChecked()
     #self.symThread = self.SymbolThread.isChecked()
     #self.rThread = self.RealThread.isChecked()
@@ -2253,6 +2253,8 @@ class Screw(object):
               label = ST_text + '-' + ND_text +'x'+ NL_text +'_'
             else: # washer
               label = ST_text + '-' + ND_text.lstrip('M') +'_'
+        if shapeOnly:
+          return screw
         ScrewObj = doc.addObject("Part::Feature")
         ScrewObj.Label=label
         ScrewObj.Shape=screw
