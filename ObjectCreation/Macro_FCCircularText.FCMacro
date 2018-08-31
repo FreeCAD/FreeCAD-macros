@@ -152,7 +152,7 @@ cm=ConfigManager("circular text")
 PolicePath=cm.get("PolicePath","/usr/share/fonts/truetype/ubuntu-font-family/Ubuntu-M.ttf","C:/Windows/Fonts/ARIAL.TTF",".../macfontdir/macfont.ttf")
 
 global rayon            ;rayon           = 10.0               # radius
-global texte            ;texte           = "FreeCAD the best" #FreeCad The Best your text
+global texte            ;texte           = "FreeCAD the best" # FreeCad The Best your text
 global debut            ;debut           = 0                  # begin text
 global rotation         ;rotation        = 360                # must exceed the number of characters of text
 global SizeCaractere    ;SizeCaractere   = 2.0                # size font
@@ -168,7 +168,7 @@ global pasHelix         ;pasHelix        = 2.0                # Pas of helix
 global nombreCarParTour ;nombreCarParTour= 10                 # number char by Pas
 
 global PlacementX       ;PlacementX      = 0.0                # Placement character axis X
-global PlacementY       ;PlacementY      = 0.0                # Placement characher axis Y
+global PlacementY       ;PlacementY      = 0.0                # Placement character axis Y
 global PlacementZ       ;PlacementZ      = 0.0                # Placement character axis Z
 
 global inclinaisonX     ;inclinaisonX    = 0                  # inclination character axis X
@@ -264,7 +264,7 @@ class Ui_MainWindow(object):
         self.DS_Extrude = QtGui.QDoubleSpinBox(self.groupBox_02)
         self.DS_Extrude.setEnabled(False)
         self.DS_Extrude.setGeometry(QtCore.QRect(140, 210, 81, 22))
-        self.DS_Extrude.setToolTip(_fromUtf8("Thickness of the extrude of character. If thickness = 0 then not extrude"))
+        self.DS_Extrude.setToolTip(_fromUtf8("Thickness of the extrude of character. If thickness = 0 then don't extrude"))
         self.DS_Extrude.setAccessibleDescription(_fromUtf8(""))
         self.DS_Extrude.setMinimum(-99999999.0)
         self.DS_Extrude.setMaximum(99999999.0)
@@ -280,7 +280,7 @@ class Ui_MainWindow(object):
 
         self.DS_Correction_Angle = QtGui.QDoubleSpinBox(self.groupBox_02)
         self.DS_Correction_Angle.setGeometry(QtCore.QRect(140, 150, 81, 22))
-        self.DS_Correction_Angle.setToolTip(_fromUtf8("Correct angle for tangent the text of thr circle or give a tilt angle "))
+        self.DS_Correction_Angle.setToolTip(_fromUtf8("Correct angle for tangent the text of the circle or give a tilt angle "))
         self.DS_Correction_Angle.setAccessibleDescription(_fromUtf8(""))
         self.DS_Correction_Angle.setMinimum(-359.00)
         self.DS_Correction_Angle.setMaximum(359.00)
@@ -523,7 +523,7 @@ class Ui_MainWindow(object):
 
         self.DS_Extrude_Support = QtGui.QDoubleSpinBox(self.groupBox_05)
         self.DS_Extrude_Support.setGeometry(QtCore.QRect(10, 80, 81, 22))
-        self.DS_Extrude_Support.setToolTip(_fromUtf8("Thickness of the extrude the support. If thickness = 0 then not extrude"))
+        self.DS_Extrude_Support.setToolTip(_fromUtf8("Thickness of the extrude the support. If thickness = 0 then don't extrude"))
         self.DS_Extrude_Support.setAccessibleDescription(_fromUtf8(""))
         self.DS_Extrude_Support.setMaximum(99999999.0)
         self.DS_Extrude_Support.setEnabled(False)
@@ -545,7 +545,7 @@ class Ui_MainWindow(object):
 
         self.DS_Base_Helix = QtGui.QDoubleSpinBox(self.groupBox_04)
         self.DS_Base_Helix.setGeometry(QtCore.QRect(10, 50, 81, 22))
-        self.DS_Base_Helix.setToolTip(_fromUtf8("Base (begin) of helix (to activate Step of Helix must be zero)"))
+        self.DS_Base_Helix.setToolTip(_fromUtf8("Base (beginning) of helix (to activate Step of Helix must be zero)"))
         self.DS_Base_Helix.setEnabled(False)
         self.DS_Base_Helix.setAccessibleDescription(_fromUtf8(""))
         self.DS_Base_Helix.setMinimum(-99999999.0)

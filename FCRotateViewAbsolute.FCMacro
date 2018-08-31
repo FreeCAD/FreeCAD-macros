@@ -1,3 +1,16 @@
+__Name__ = 'FCRotateViewAbsolute'
+__Comment__ = ''
+__License__ = ''
+__Web__ = ''
+__Wiki__ = ''
+__Icon__ = ''
+__Help__ = ''
+__Author__ = ''
+__Version__ = ''
+__Status__ = ''
+__Requires__ = ''
+__Files__ = ''
+
 from FreeCAD import Base
 import FreeCADGui as Gui
 
@@ -23,9 +36,9 @@ class Form(QDialog):
 		self.dial=dial
 		dial.setMaximum(360)
 		dial.setValue(self.alpha)
-		
-		
-		
+
+
+
 		dial2 = QDial()
 		dial2.setNotchesVisible(True)
 		self.dial2=dial2
@@ -36,22 +49,22 @@ class Form(QDialog):
 		spinbox.setMaximum(360)
 
 		layout = QHBoxLayout()
-		
-		
+
+
 		self.pushButton00 = QPushButton(QIcon('icons:freecad.svg'),"Dimetric")
 		self.pushButton01 = QPushButton(QIcon('icons:freecad.svg'),"Trimetric")
 		self.pushButton02 = QPushButton(QIcon('icons:freecad.svg'),"Isometric")
 		self.pushButton03 = QPushButton(QIcon('icons:freecad.svg'),"Front")
-		self.pushButton00.clicked.connect(self.dimetric) 
-		self.pushButton01.clicked.connect(self.trimetric) 
-		self.pushButton02.clicked.connect(self.isometric) 
-		self.pushButton03.clicked.connect(self.front) 
+		self.pushButton00.clicked.connect(self.dimetric)
+		self.pushButton01.clicked.connect(self.trimetric)
+		self.pushButton02.clicked.connect(self.isometric)
+		self.pushButton03.clicked.connect(self.front)
 		layout.addWidget(self.pushButton03)
 		layout.addWidget(self.pushButton00)
 		layout.addWidget(self.pushButton01)
 		layout.addWidget(self.pushButton02)
-		
-		
+
+
 		layout.addWidget(dial)
 		layout.addWidget(dial2)
 # 		layout.addWidget(spinbox)
@@ -60,7 +73,7 @@ class Form(QDialog):
 		#self.connect(dial, SIGNAL("valueChanged(int)"),                    spinbox.setValue)
 		#self.connect(spinbox, SIGNAL("valueChanged(int)"),                    dial.setValue)
 		dial.valueChanged.connect(spinbox.setValue);
-					
+
 		dial.valueChanged.connect(self.dreher);
 		dial2.valueChanged.connect(self.heber);
 
@@ -92,7 +105,7 @@ class Form(QDialog):
 			self.beta=1
 		FreeCAD.Console.PrintMessage(str(self.beta)+"  # ");
 		self.dial2.setValue(self.beta)
-	
+
 
 	def rotZ(self,delta=10):
 		self.alpha += delta
@@ -107,7 +120,7 @@ class Form(QDialog):
 		from pivy import coin
 		alpha=self.alpha
 		beta=self.beta
-		
+
 		camera = FreeCADGui.ActiveDocument.ActiveView.getCameraNode()
 
 		Gui=FreeCADGui
@@ -119,31 +132,31 @@ class Form(QDialog):
 				Gui.activeDocument().activeView().setCameraType("Perspective")
 
 		campos=Base.Vector( 1000 * cos (pi*alpha/360*2)*sin(pi*beta/360*1), 1000*sin(pi*alpha/360*2)*sin(pi*beta/360*1), 1000*cos(pi*beta/360*1))
-		camera.position.setValue( campos) 
+		camera.position.setValue( campos)
 
 		pos3=FreeCAD.Vector(0,0,0)
 		pos3.sub(campos)
-			
-		#if False:	
+
+		#if False:
 		camera.pointAt(coin.SbVec3f(pos3),coin.SbVec3f(0,0,1))
-		
+
 		App.ActiveDocument.recompute()
-		FreeCADGui.updateGui() 
-	
+		FreeCADGui.updateGui()
+
 	def front(self):
 		from pivy import coin
 		pos3=FreeCAD.Vector(0,0,0)
 		campos=FreeCAD.Vector(0,-10,0)
 		camera = FreeCADGui.ActiveDocument.ActiveView.getCameraNode()
-		camera.position.setValue( campos) 
+		camera.position.setValue( campos)
 		camera.pointAt(coin.SbVec3f(pos3),coin.SbVec3f(0,0,1))
 
 	def isometric(self):
-		
+
 		pos3=FreeCAD.Vector(0,0,0)
 		campos=FreeCAD.Vector(100,-100,100)
 		camera = FreeCADGui.ActiveDocument.ActiveView.getCameraNode()
-		camera.position.setValue( campos) 
+		camera.position.setValue( campos)
 		pos3.sub(campos)
 		camera.pointAt(coin.SbVec3f(pos3),coin.SbVec3f(0,0,1))
 
@@ -151,18 +164,18 @@ class Form(QDialog):
 		pos3=FreeCAD.Vector(0,0,0)
 		campos=FreeCAD.Vector(68,-68,27)
 		camera = FreeCADGui.ActiveDocument.ActiveView.getCameraNode()
-		camera.position.setValue( campos) 
+		camera.position.setValue( campos)
 		pos3.sub(campos)
 		camera.pointAt(coin.SbVec3f(pos3),coin.SbVec3f(0,0,1))
 		App.ActiveDocument.recompute()
-		FreeCADGui.updateGui() 
-	
+		FreeCADGui.updateGui()
+
 
 	def trimetric(self):
 		pos3=FreeCAD.Vector(0,0,0)
 		campos=FreeCAD.Vector(210,-790,580)
 		camera = FreeCADGui.ActiveDocument.ActiveView.getCameraNode()
-		camera.position.setValue( campos) 
+		camera.position.setValue( campos)
 		pos3.sub(campos)
 		camera.pointAt(coin.SbVec3f(pos3),coin.SbVec3f(0,0,1))
 

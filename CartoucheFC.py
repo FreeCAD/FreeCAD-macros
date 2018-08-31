@@ -9,7 +9,7 @@
 # It is necessary that the page (drawing viewer) is called "Page", which is the default name of the Drawing module
 # ver 0.3
 # Created: 02/07/2014
-# Created:  by mario52
+# Created: by mario52
 # PyQt and PySide
 
 #OS: Windows Vista
@@ -22,7 +22,18 @@
 #Coin version: 3.1.0
 #SoQt version: 1.4.1
 
-# see http://www.freecadweb.org/wiki/Macro_CartoucheFC
+__Name__ = 'CartoucheFC'
+__Comment__ = ''
+__License__ = ''
+__Web__ = ''
+__Wiki__ = 'http://www.freecadweb.org/wiki/Macro_CartoucheFC'
+__Icon__ = ''
+__Help__ = ''
+__Author__ = 'mario52'
+__Version__ = '0.3'
+__Status__ = ''
+__Requires__ = ''
+__Files__ = ''
 
 try:
     import PyQt4
@@ -659,7 +670,7 @@ class Ui_MainWindow(object):
         else:
             self.lineEdit_02.setText(str(dateEu()))
     def on_pushButton05_clicked(self):    # Bouton Appliquer
-        DESIGNED_BY = self.lineEdit_01.text()    
+        DESIGNED_BY = self.lineEdit_01.text()
         CREATION_DATE = self.lineEdit_02.text()+" - "+self.lineEdit_02h.text()
         CHECKED_BY = self.lineEdit_03.text()
         CHECK_DATE = self.lineEdit_04.text()+" - "+self.lineEdit_04h.text()

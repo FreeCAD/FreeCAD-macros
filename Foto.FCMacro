@@ -13,6 +13,7 @@ __Icon__ = ''
 __Help__ = 'Select an object'
 __Status__ = 'alpha'
 __Requires__ = ''
+__Contact__ = 'https://forum.freecadweb.org/memberlist.php?mode=viewprofile&u=2364'
 __Communication__ = ''
 __Files__ = ''
 
