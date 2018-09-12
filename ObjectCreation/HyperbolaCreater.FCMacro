@@ -40,7 +40,7 @@ __IconW__  = "C:/Documents and Settings/YourUserName/Application Data/FreeCAD"
 __Help__ = "start the macro and follow the instructions"
 __Status__ = ""
 __Requires__ = ""
-__Communication__ = "http://www.freecadweb.org/wiki/User:??"
+__Communication__ = "https://forum.freecadweb.org/memberlist.php?mode=viewprofile&u=2030"
 
 
 import FreeCAD, FreeCADGui, Part, PySide
@@ -62,15 +62,15 @@ def sayexc(mess=''):
 class p():
 
     def makeHyp(self):
-       
+
         if self.radio1.isChecked():
             try:
-           
+
                 Mi = float(self.r1.text())
                 Ma = float(self.r2.text())
                 tS1 = float(self.s1.text())
                 tS2 = float(self.s2.text())
-           
+
                 hyp=Part.Hyperbola()
                 hyp.MinorRadius=Mi
                 hyp.MajorRadius=Ma
@@ -87,7 +87,7 @@ class p():
 
         if self.radio2.isChecked():
             try:
-           
+
                 Mi = float(self.r1.text())
                 Ma = float(self.r2.text())
                 tS1 = float(self.s1.text())
@@ -120,7 +120,7 @@ class p():
 
         self.dialog.setWindowTitle("Hyperbola Creator")
         la = QtGui.QVBoxLayout(self.dialog)
-       
+
         self.radio1 = QRadioButton("Make 2D Shape")
         self.radio2 = QRadioButton("Make 3D Revolution")
 
@@ -174,4 +174,3 @@ class p():
         self.dialog.exec_()
 
 p()
-
