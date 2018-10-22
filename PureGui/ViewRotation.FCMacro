@@ -74,7 +74,7 @@ def find_centre():
     return app.Vector((xmax + xmin) / 2, (ymax + ymin) / 2, (zmax + zmin) / 2)
 
 
-class RotateGui(QtGui.QWidget):  
+class RotateGui(QtGui.QWidget):
     def __init__(self):
         super(RotateGui, self).__init__()
         self.init_ui()
@@ -88,7 +88,7 @@ class RotateGui(QtGui.QWidget):
         vbox = QtGui.QVBoxLayout()
 
         icons = ('ViewRotationRight.png', 'ViewRotationUp.png', 'ViewRotationOut.png')
-        for icon in icons: 
+        for icon in icons:
             slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
             slider.setFocusPolicy(QtCore.Qt.NoFocus)
             slider.setSingleStep(5)
@@ -143,8 +143,8 @@ class RotateGui(QtGui.QWidget):
         self.internal = False
         self.current = 0
 
-        self.cam = gui.activeDocument().ActiveView.getCameraNode()	
-        self.centre = coin.SbVec3f(find_centre())		
+        self.cam = gui.activeDocument().ActiveView.getCameraNode()
+        self.centre = coin.SbVec3f(find_centre())
         self.view = self.cam.orientation.getValue()
         self.pos = self.cam.position.getValue()
 
@@ -176,7 +176,7 @@ class RotateGui(QtGui.QWidget):
     def config_direction(self, i):
         # Evaluate the vectors corresponding to the three directions for the
         # current view, and assign the i-th one to self.direction.
-        self.view = self.cam.orientation.getValue()	
+        self.view = self.cam.orientation.getValue()
         self.view = coin.SbRotation(self.view.getValue())
         self.pos = self.cam.position.getValue()
         self.pos = coin.SbVec3f(self.pos.getValue())
@@ -206,7 +206,7 @@ class RotateGui(QtGui.QWidget):
     def rotate(self, value):
         # Carry out the desired rotation about self.direction.
         val = value*pi/180.0
-        rot = coin.SbRotation(self.direction, -val)		
+        rot = coin.SbRotation(self.direction, -val)
         nrot = self.view*rot
         prot = rot.multVec(self.pos - self.centre) + self.centre
         self.cam.orientation = nrot
@@ -240,7 +240,7 @@ class RotateGui(QtGui.QWidget):
         self.internal = False
         self.check(i)
         self.rotate(value)
- 
+
 if __name__ == '__main__':
     # We need to set a variable, otherwise, the dialog doesn't appear.
-    rotate = RotateGui() 
+    rotate = RotateGui()

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Macro to generate screws with FreeCAD.
@@ -33,25 +34,36 @@ Screw-tap to drill inner threads in parts with user defined length
 
 ScrewMaker can now also used as a python module.
 The following shows how to generate a screw from a python script:
-  import ScrewMaker
+  import screw_maker2_0
 
   threadDef = 'M3.5'
-  o = ScrewMaker.Screw()
-  t = ScrewMaker.Screw.setThreadType(o,'real')
+  o = screw_maker2_0.Screw()
+  t = screw_maker2_0.Screw.setThreadType(o,'real')
   # Creates a Document-Object with label describing the screw
-  d = ScrewMaker.Screw.createScrew(o, 'ISO1207', threadDef, '20', 'real')
+  d = screw_maker2_0.Screw.createScrew(o, 'ISO1207', threadDef, '20', 'real')
 
   # creates a shape in memory
-  t = ScrewMaker.Screw.setThreadType(o,'real')
-  s = ScrewMaker.Screw.makeIso7046(o, 'ISO14582', threadDef, 40.0)
+  t = screw_maker2_0.Screw.setThreadType(o,'real')
+  s = screw_maker1_9d.Screw.makeIso7046(o, 'ISO14582', threadDef, 40.0)
   Part.show(s)
 
+Version 2.1 August 2015
+added:
+ISO 8676 Hexagon head screw with metric fine pitch thread
 
+Version 2.2 May 2018
+- Extend function "moveScrew" to check for Body and Part.
+- Add Screw to Part if Body is in Part.
+- Search for plane support face to get correct orientation
+- fix failed hex-head
+
+Version 2.3 Oct 2018
+- fix missing function equal_vertex
 
 to do: check ISO7380 usage of rs and rt, actual only rs is used
 check chamfer angle on hexogon heads and nuts
 ***************************************************************************
-*   Copyright (c) 2013, 2014, 2015                                        *
+*   Copyright (c) 2013, 2014, 2015 2018                                   *
 *   Ulrich Brammer <ulrich1a[at]users.sourceforge.net>                    *
 *                                                                         *
 *   This file is a supplement to the FreeCAD CAx development system.      *
@@ -74,12 +86,13 @@ check chamfer angle on hexogon heads and nuts
 *                                                                         *
 ***************************************************************************
 """
+from __future__ import division
 
 __Name__ = 'Screw Maker'
 __Comment__ = 'Generate a screw'
 __Author__ = "Ulrich Brammer <ulrich1a@users.sourceforge.net>"
-__Version__ = '2.1.0'
-__Date__ = '2018-08-04'
+__Version__ = '2.3.1'
+__Date__ = '2018-10-22'
 __License__ = 'LGPL2+'
 __Web__ = 'http://freecadweb.org/wiki/Macro_screw_maker1_2'
 __Wiki__ = 'http://freecadweb.org/wiki/Macro_screw_maker1_2'
@@ -100,19 +113,22 @@ import DraftVecUtils
 
 try:
   from PySide import QtCore, QtGui
+  #FreeCAD.Console.PrintMessage("PySide is used" + "\n")
 except ImportError:
+  #FreeCAD.Console.PrintMessage("PyQt4 is needed" + "\n")
   from PyQt4 import QtCore, QtGui
 
 try:
-    _encoding = QtGui.QApplication.UnicodeUTF8
-    def _translate(text):
-        return QtGui.QApplication.translate('ScrewMaker', text, None, _encoding)
+  _encoding = QtGui.QApplication.UnicodeUTF8
+  def _translate(text):
+    return QtGui.QApplication.translate('ScrewMaker', text, None, _encoding)
 except AttributeError:
-    def _translate(text):
-        return QtGui.QApplication.translate('ScrewMaker', text, None)
+  def _translate(text):
+    return QtGui.QApplication.translate('ScrewMaker', text, None)
 
 DEBUG = False # set to True to show debug messages; does not work, still todo.
 
+debObject = None
 
 # Diameters included in this library/macro.
 # Some ISO-standards may include more diameters!
@@ -122,6 +138,7 @@ standard_diameters = {
   'ISO4014': ('M1.6', 'M64'), # ISO 4014 Hex-head-bolt
   'EN1662':  ('M5',   'M16'), # EN 1662 Hexagon bolts with flange, small series
   'EN1665':  ('M5',   'M20'), # EN 1665 Hexagon bolts with flange, heavy series
+  'ISO8676': ('M8x1', 'M64x4'), # ISO 8676 Hexagon head screw with metric fine pitch thread
   'ISO4762': ('M1.6', 'M64'), # ISO 4762 Hexagon socket head cap screws
   'ISO2009': ('M1.6', 'M10'), # ISO 2009 Slotted countersunk flat head screws
   'ISO2010': ('M1.6', 'M10'), # ISO 2010 Slotted raised countersunk head screws
@@ -187,8 +204,6 @@ iso4017head={
   'M64':   (6.00, 0.7, 88.2,104.9, 40.0, 2.0,  95.0)
   }
 
-
-
 iso4017length = {
   '2': ( 1.8,  2.2),
   '3': ( 2.8,  3.2),
@@ -223,7 +238,7 @@ iso4017length = {
   '200':(199.1, 200.9)
   }
 
-# range of typical screw lengths
+# range of typical srew lengths
 #    min_length,  max_length
 iso4017range = {
   'M1.6':  ('2', '16'),
@@ -257,6 +272,103 @@ iso4017range = {
   'M64':  ('120','200')
   }
 
+# ISO 8676 Hexagon head screw with metric fine pitch thread
+#                P,    c,  dw,    e,     k,   r,   s
+iso8676def={
+  'M8x1':      (1.00, 0.3, 11.7, 14.5,  5.3, 0.25, 13.0),
+  'M10x1':     (1.00, 0.3, 14.7, 17.9,  6.4, 0.4,  16.0),
+  '(M10x1.25)':(1.25, 0.3, 14.7, 17.9,  6.4, 0.4,  16.0),
+  'M12x1.5':   (1.50, 0.3, 16.7, 20.1,  7.5, 0.6,  18.0),
+  '(M12x1.25)':(1.75, 0.3, 16.7, 20.1,  7.5, 0.6,  18.0),
+  '(M14x1.5)': (1.50, 0.3, 20.5, 24.5,  8.8, 0.6,  22.0),
+  'M16x1.5':   (1.50, 0.4, 22.4, 26.9, 10.0, 0.6,  24.0),
+  '(M18x1.5)': (1.50, 0.4, 25.4, 30.2, 11.5, 0.6,  27.0),
+  'M20x1.5':   (1.50, 0.4, 28.2, 33.7, 12.5, 0.8,  30.0),
+  '(M20x2)':   (2.00, 0.4, 28.2, 33.7, 12.5, 0.8,  30.0),
+  '(M22x1.5)': (1.50, 0.4, 31.8, 37.7, 14.0, 0.8,  34.0),
+  'M24x2':     (2.00, 0.4, 33.7, 40.1, 15.0, 0.8,  36.0),
+  '(M27x2)':   (2.00, 0.4, 38.0, 45.2, 17.0, 1.0,  41.0),
+  'M30x2':     (2.00, 0.4, 42.8, 50.9, 18.7, 1.0,  46.0), #dw not in class A, e not in class A
+  '(M33x2)':   (2.00, 0.4, 46.6, 55.4, 21.0, 1.0,  50.0),
+  'M36x3':     (3.00, 0.4, 51.2, 61.0, 22.5, 1.0,  55.0), #dw not in class A, e not in class A
+  '(M39x3)':   (3.00, 0.5, 55.9, 66.5, 25.0, 1.0,  60.0),
+  'M42x3':     (3.00, 0.7, 60.0, 71.3, 26.0, 1.2,  65.0),
+  '(M45x3)':   (3.00, 0.7, 64.7, 77.0, 28.0, 1.2,  70.0),
+  'M48x3':     (3.00, 0.7, 69.5, 82.6, 30.0, 1.6,  75.0),
+  '(M52x4)':   (4.00, 0.7, 74.5, 88.3, 33.0, 1.6,  80.0),
+  'M56x4':     (4.00, 0.7, 78.7, 93.6, 35.0, 2.0,  85.0),
+  '(M60x4)':   (4.00, 0.7, 82.7, 99.2, 38.0, 2.0,  90.0),
+  'M64x4':     (4.00, 0.7, 88.2,104.9, 40.0, 2.0,  95.0)
+  }
+
+iso8676length = {
+  '16':(15.65, 16.35),
+  '20':(19.58, 20.42),
+  '25':(24.58, 25.42),
+  '30':(29.58, 30.42),
+  '35':(34.5,  35.5),
+  '40':(39.5,  40.5),
+  '45':(44.5,  45.5),
+  '50':(49.5,  50.5),
+  '55':(54.4, 55.6),
+  '60':(59.4, 60.6),
+  '65':(64.4, 65.6),
+  '70':(69.4, 70.6),
+  '80':(79.4, 80.6),
+  '100':(99.3, 100.7),
+  '110':(109.3, 110.7),
+  '120':(119.3, 120.7),
+  '130':(129.2, 130.8),
+  '140':(139.2, 130.8),
+  '150':(149.2, 150.8),
+  '160':(159.2, 160.8),
+  '180':(179.2, 180.8),
+  '200':(199.1, 200.9),
+  '220':(217.7, 222.3),
+  '240':(237.7, 242.3),
+  '260':(219.1, 220.9),
+  '280':(219.1, 220.9),
+  '300':(219.1, 220.9),
+  '320':(219.1, 220.9),
+  '340':(219.1, 220.9),
+  '360':(219.1, 220.9),
+  '380':(219.1, 220.9),
+  '400':(219.1, 220.9),
+  '420':(219.1, 220.9),
+  '440':(219.1, 220.9),
+  '460':(219.1, 220.9),
+  '480':(219.1, 220.9),
+  '500':(496.85, 503.15)
+  }
+
+# range of typical srew lengths
+#    min_length,  max_length
+iso8676range = {
+  'M8x1':      ('16', '80'),
+  'M10x1':     ('20','100'),
+  '(M10x1.25)':('20','100'),
+  'M12x1.5':   ('25','120'),
+  '(M12x1.25)':('25','120'),
+  '(M14x1.5)': ('30','140'),
+  'M16x1.5':   ('35','160'),
+  '(M18x1.5)': ('35','180'),
+  'M20x1.5':   ('40','200'),
+  '(M20x2)':   ('40','200'),
+  '(M22x1.5)': ('45','220'),
+  'M24x2':     ('40','200'),
+  '(M27x2)':   ('55','260'),
+  'M30x2':     ('40','200'),
+  '(M33x2)':   ('65','360'),
+  'M36x3':     ('40','200'),
+  '(M39x3)':   ('80','380'),
+  'M42x3':     ('90','420'),
+  '(M45x3)':   ('90','440'),
+  'M48x3':     ('100','480'),
+  '(M52x4)':   ('100','500'),
+  'M56x4':     ('120','500'),
+  '(M60x4)':   ('120','500'),
+  'M64x4':     ('130','500')
+  }
 
 # ISO 4014 Hex-head-bolt
 #          P,      b1,    b2,    b3,  c,   dw,    e,    k,   r,   s
@@ -291,7 +403,6 @@ iso4014head={
   '(M60)': (5.50, 145.0, 145.0, 145.0, 0.7, 82.7, 99.2, 38.0, 2.0, 90.0),
   'M64':   (6.00, 153.0, 153.0, 153.0, 0.6, 88.2,104.9, 40.0, 2.0, 55.0)
   }
-
 
 iso4014length = {
   '12':(11.65, 12.35),
@@ -331,10 +442,10 @@ iso4014length = {
   '440':(219.1, 220.9),
   '460':(219.1, 220.9),
   '480':(219.1, 220.9),
-  '500':(496.85, 503.15)
+  '500':(496.85, 503.15),
   }
 
-# range of typical screw lengths
+# range of typical srew lengths
 #    min_length,  max_length
 iso4014range = {
   'M1.6':('12', '16'),
@@ -368,7 +479,6 @@ iso4014range = {
   'M64': ('260','500')
   }
 
-
 # EN 1662 Hexagon bolts with flange, small series
 #          P,   b0,    b1,   b2,   b3,   c,  dc,    dw,    e,     k,   kw,  lf,  r1,   s
 en1662def={
@@ -380,8 +490,7 @@ en1662def={
   '(M14)':(2.00, 50.0, 34.0, 40.0,  0.0, 2.1, 28.6, 26.4, 19.86, 12.9, 5.6, 2.1, 0.6, 18.0),
   'M16':(2.00, 55.0, 38.0, 44.0, 57.0, 2.4, 32.8, 30.6, 23.15, 15.2, 6.8, 3.2, 0.6, 21.0)}
 
-
-# range of typical screw lengths
+# range of typical srew lengths
 #    min_length,  max_length
 en1662range = {
   'M5': ('10', '50'),
@@ -419,7 +528,6 @@ en1662length = {
   '160':(159.2, 160.8)
   }
 
-
 # EN 1665 Hexagon bolts with flange, heavy series
 #          P,    b0,  b1,   b2,   b3,   c,  dc,    dw,    e,     k,   kw,  lf,  r1,   s
 en1665def={
@@ -431,7 +539,6 @@ en1665def={
   '(M14)':(2.00, 50.0, 34.0, 40.0,  0.0, 2.1, 30.5, 27.6, 23.15, 13.7, 6.5, 2.1, 0.6, 21.0),
   'M16':(2.00, 55.0, 38.0, 44.0, 57.0, 2.4, 35.0, 31.9, 26.51, 15.4, 7.3, 3.2, 0.6, 24.0),
   'M20':(2.50, 65.0, 46.0, 52.0, 65.0, 3.0, 43.0, 39.9, 33.23, 18.9, 8.9, 4.2, 0.8, 30.0)}
-
 
 # range of typical screw lengths
 #    min_length,  max_length
@@ -473,8 +580,6 @@ en1665length = {
   '180':(179.2, 180.8),
   '200':(199.1, 200.9)
   }
-
-
 
 # ISO 1207 definitions Class A, Slotted cheese head screws
 #          P,     a,   b,   dk,  dk_mean, da,  k,  n_min, r, t_min, x
@@ -531,7 +636,6 @@ iso1207length = {
   '75':(74.05, 75.95),
   '80':(79.05, 80.95)
   }
-
 
 # ISO 14580 definitions , Hexalobular socket cheese head screws
 #          P,     a,   b,   dk,  dk_mean, da,  k,  n_min, r, t_min, x
@@ -829,7 +933,7 @@ iso7046range = {
   'M8': ('10', '60'),
   'M10':('12', '60')}
 
-# ISO 2010, ISO 7047 definitions Class A: Raised Countersunk head screws
+# ISO 2010, ISO 7047 definitions Class A: Raised Countersunk head srews
 # ISO 2010 slotted screws (common head style)   range = iso2009range
 # ISO 7047  with type H or type Z cross recess  range = iso7046range
 # Parameters P, a, b, dk_theo, dk_mean, k, r, x to be read from iso2009def
@@ -948,7 +1052,7 @@ iso7045length = {
   '60':(59.05, 60.95)
   }
 
-# range of typical screw lengths
+# range of typical srew lengths
 #    min_length,  max_length
 iso7045range = {
   'M1.6':('3', '16'),
@@ -996,7 +1100,7 @@ iso14584def={
   'M10': (1.50, 38.0, 20.0, 18.3,  2.3, 5.00, 1.2, 19.5, 3.80, 'T50', 8.95, 3.8)}
 
 
-# range of typical screw lengths
+# range of typical srew lengths
 #    min_length,  max_length
 iso14584range = {
   'M2':  ('3', '20'),
@@ -1404,7 +1508,6 @@ iso10664def = {
 
 
 
-
 # ISO 4032 Hex-head-nut
 #           P,   c,  damax, dw,    e,     m,  mw,  s_nom
 iso4032def={
@@ -1457,11 +1560,6 @@ iso4033def={
   'M36':   (4.00, 0.4, 38.9, 51.2, 61.0, 33.1, 23.5,  55.0)
   }
 
-
-
-
-
-
 # ISO 4035 Hexagon thin nuts, chamfered
 #           P,   c,  damax, dw,    e,     m,  mw,  s_nom
 iso4035def={
@@ -1496,11 +1594,6 @@ iso4035def={
   'M64':   (6.00, 0.7, 69.1, 88.2,104.9, 32.0, 39.3, 95.0)
   }
 
-
-
-
-
-
 # ISO 4036 Hexagon thin nuts, unchamfered
 #           P,      e,   m,  s_nom
 iso4036def={
@@ -1515,8 +1608,6 @@ iso4036def={
   'M8':    (1.25, 14.5, 4.0, 13.0),
   'M10':   (1.50, 17.9, 5.0, 16.0)}
 
-
-
 # EN 1661 Hexagon nuts with flange
 #          P,    damax,  c,  dc,    dw,    e,     m,   mw,   r,   s
 en1661def={
@@ -1528,7 +1619,6 @@ en1661def={
   '(M14)':(2.00, 15.10, 2.1, 29.9, 27.6, 23.36, 14.0, 7.7,  0.88, 21.0),
   'M16'  :(2.00, 17.30, 2.4, 34.5, 31.9, 26.75, 16.0, 8.9,  0.96, 24.0),
   'M20'  :(2.50, 21.60, 3.0, 42.8, 39.9, 33.23, 20.0,10.7,  1.20, 30.0)}
-
 
 # Tuning table to get valid shapes
 #         P, tunIn, tunEx
@@ -1562,13 +1652,14 @@ tuningTable={
   }
 
 
-
+def equal_vertex(vert1, vert2, p=5):
+  # compares two vertices
+  return (round(vert1.X - vert2.X,p)==0 and round(vert1.Y - vert2.Y,p)==0 and round(vert1.Z - vert2.Z,p)==0)
 
 try:
   _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
   _fromUtf8 = lambda s: s
-
 
 class Ui_ScrewMaker(object):
   def setupUi(self, ScrewMaker):
@@ -1605,13 +1696,13 @@ class Ui_ScrewMaker(object):
     self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
     self.ScrewType = QtGui.QComboBox(self.layoutWidget1)
     self.ScrewType.setObjectName(_fromUtf8("ScrewType"))
-    for i in range(32):
+    for i in range(33):
       self.ScrewType.addItem(_fromUtf8(""))  # 0
 
     self.verticalLayout.addWidget(self.ScrewType)
     self.NominalDiameter = QtGui.QComboBox(self.layoutWidget1)
     self.NominalDiameter.setObjectName(_fromUtf8("NominalDiameter"))
-    for i in range(28):
+    for i in range(52):
       self.NominalDiameter.addItem(_fromUtf8("")) # 0
 
     self.verticalLayout.addWidget(self.NominalDiameter)
@@ -1633,10 +1724,6 @@ class Ui_ScrewMaker(object):
     self.CommentLabel.setObjectName(_fromUtf8("CommentLabel"))
     self.CommentLabel.setGeometry(QtCore.QRect(10, 184, 411, 21))
     #self.verticalLayout.addWidget(self.CommentLabel)
-
-
-
-
 
     self.layoutWidget2 = QtGui.QWidget(ScrewMaker)
     #self.layoutWidget2.setGeometry(QtCore.QRect(10, 200, 321, 83))
@@ -1670,7 +1757,6 @@ class Ui_ScrewMaker(object):
 
     self.theScrew = Screw()
 
-
     self.retranslateUi(ScrewMaker)
     self.NominalDiameter.setCurrentIndex(5)
     self.NominalLength.setCurrentIndex(9)
@@ -1681,132 +1767,156 @@ class Ui_ScrewMaker(object):
     QtCore.QMetaObject.connectSlotsByName(ScrewMaker)
 
   def retranslateUi(self, ScrewMaker):
-    ScrewMaker.setWindowTitle(_translate("Screw-Maker 2.0"))
-    self.ScrewTypeLabel.setText(_translate("Type of Screw"))
-    self.NomDiaLabel.setText(_translate("Nominal\nDiameter"))
-    self.NomLenLabel.setText(_translate("Nominal\nLength"))
-    self.UserLenLabel.setText(_translate("User length \nfor screw-tap"))
-    self.CommentLabel.setText(_translate("Values in brackets are not recommended!"))
-    self.ScrewType.setItemText(0, _translate("ISO4017: Hexagon head screws"))
-    self.ScrewType.setItemText(1, _translate("ISO4014: Hexagon head bolts"))
-    self.ScrewType.setItemText(2, _translate("EN1662: Hexagon bolts with flange, small\n   series"))
-    self.ScrewType.setItemText(3, _translate("EN1665: Hexagon bolts with flange, heavy\n   series"))
-    self.ScrewType.setItemText(4, _translate("ISO4762: Hexagon socket head cap screws"))
-    self.ScrewType.setItemText(5, _translate("ISO7380-1: Hexagon socket button head\n    screws"))
-    self.ScrewType.setItemText(6, _translate("ISO7380-2: Hexagon socket button head\n    screws with collar"))
-    self.ScrewType.setItemText(7, _translate("DIN967: Cross recessed pan head screws\n    with collar"))
-    self.ScrewType.setItemText(8, _translate("ISO10642: Hexagon socket countersunk \n    head screws"))
-    self.ScrewType.setItemText(9, _translate("ISO2009: Slotted countersunk flat head\n    screws"))
-    self.ScrewType.setItemText(10, _translate("ISO2010: Slotted raised countersunk head\n   screws"))
-    self.ScrewType.setItemText(11, _translate("ISO1207: Slotted cheese head screws"))
-    self.ScrewType.setItemText(12, _translate("ISO1580: Slotted pan head screws"))
-    self.ScrewType.setItemText(13, _translate("ISO7045: Pan head screws, type H cross recess"))
-    self.ScrewType.setItemText(14, _translate("ISO7046: Countersunk flat head screws\n    H cross recess"))
-    self.ScrewType.setItemText(15, _translate("ISO7047: Raised countersunk head screws\n    H cross recess"))
-    self.ScrewType.setItemText(16, _translate("ISO7048: Cheese head screws type H cross recess"))
-    self.ScrewType.setItemText(17, _translate("ISO14579: Hexalobular socket head cap screws"))
-    self.ScrewType.setItemText(18, _translate("ISO14580: Hexalobular socket cheese head\n   screws"))
-    self.ScrewType.setItemText(19, _translate("ISO14583: Hexalobular socket pan head screws"))
-    self.ScrewType.setItemText(20, _translate("ISO14582: Hexalobular socket countersunk\n    head screws, high head"))
-    self.ScrewType.setItemText(21, _translate("ISO14584: Hexalobular socket raised\n    countersunk head screws"))
-    self.ScrewType.setItemText(22, _translate("ISO7089: Plain washers - Normal series"))
-    self.ScrewType.setItemText(23, _translate("ISO7090: Plain washers, chamfered - Normal series"))
-    self.ScrewType.setItemText(24, _translate("ISO7092: Plain washers - Small series"))
-    self.ScrewType.setItemText(25, _translate("ISO7093-1: Plain washer - Large series"))
-    self.ScrewType.setItemText(26, _translate("ISO7094: Plain washers - Extra large series"))
-    self.ScrewType.setItemText(27, _translate("ISO4032: Hexagon nuts, Style 1"))
-    self.ScrewType.setItemText(28, _translate("ISO4033: Hexagon nuts, Style 2"))
-    self.ScrewType.setItemText(29, _translate("ISO4035: Hexagon thin nuts, chamfered"))
-    self.ScrewType.setItemText(30, _translate("EN1661: Hexagon nuts with flange"))
-    self.ScrewType.setItemText(31, _translate("ScrewTap: ISO Screw-Tap"))
+    ScrewMaker.setWindowTitle(_translate('Screw-Maker 2.2'))
+    self.ScrewTypeLabel.setText(_translate('Type of Screw'))
+    self.NomDiaLabel.setText(_translate('Nomimal\nDiameter'))
+    self.NomLenLabel.setText(_translate('Nominal\nLength'))
+    self.UserLenLabel.setText(_translate('User length \nfor screw-tap'))
+    self.CommentLabel.setText(_translate('Values in brackets are not recommended!'))
+    self.ScrewType.setItemText(0, _translate('ISO4017: Hexagon head screws'))
+    self.ScrewType.setItemText(1, _translate('ISO4014: Hexagon head bolts'))
+    self.ScrewType.setItemText(2, _translate('EN1662: Hexagon bolts with flange, small\n    series'))
+    self.ScrewType.setItemText(3, _translate('EN1665: Hexagon bolts with flange, heavy\n    series'))
+    self.ScrewType.setItemText(4, _translate('ISO8676: Hexagon head screw with\n    metric fine pitch thread'))
+    self.ScrewType.setItemText(5, _translate('ISO4762: Hexagon socket head cap screws'))
+    self.ScrewType.setItemText(6, _translate('ISO7380-1: Hexagon socket button head\n    screws'))
+    self.ScrewType.setItemText(7, _translate('ISO7380-2: Hexagon socket button head\n    screws with collar'))
+    self.ScrewType.setItemText(8, _translate('DIN967: Cross recessed pan head screws\n    with collar'))
+    self.ScrewType.setItemText(9, _translate('ISO10642: Hexagon socket countersunk \n    head screws'))
+    self.ScrewType.setItemText(10, _translate('ISO2009: Slotted countersunk flat head\n    screws'))
+    self.ScrewType.setItemText(11, _translate('ISO2010: Slotted raised countersunk head\n    screws'))
+    self.ScrewType.setItemText(12, _translate('ISO1207: Slotted cheese head screws'))
+    self.ScrewType.setItemText(13, _translate('ISO1580: Slotted pan head screws'))
+    self.ScrewType.setItemText(14, _translate('ISO7045: Pan head screws, type H cross recess'))
+    self.ScrewType.setItemText(15, _translate('ISO7046: Countersunk flat head screws\n    H cross recess'))
+    self.ScrewType.setItemText(16, _translate('ISO7047: Raised countersunk head screws\n    H cross recess'))
+    self.ScrewType.setItemText(17, _translate('ISO7048: Cheese head screws type H cross recess'))
+    self.ScrewType.setItemText(18, _translate('ISO14579: Hexalobular socket head cap screws'))
+    self.ScrewType.setItemText(19, _translate('ISO14580: Hexalobular socket cheese head\n    screws'))
+    self.ScrewType.setItemText(20, _translate('ISO14583: Hexalobular socket pan head screws'))
+    self.ScrewType.setItemText(21, _translate('ISO14582: Hexalobular socket countersunk\n    head screws, high head'))
+    self.ScrewType.setItemText(22, _translate('ISO14584: Hexalobular socket raised\n    countersunk head screws'))
+    self.ScrewType.setItemText(23, _translate('ISO7089: Plain washers - Normal series'))
+    self.ScrewType.setItemText(24, _translate('ISO7090: Plain washers, chamfered - Normal series'))
+    self.ScrewType.setItemText(25, _translate('ISO7092: Plain washers - Small series'))
+    self.ScrewType.setItemText(26, _translate('ISO7093-1: Plain washer - Large series'))
+    self.ScrewType.setItemText(27, _translate('ISO7094: Plain washers - Extra large series'))
+    self.ScrewType.setItemText(28, _translate('ISO4032: Hexagon nuts, Style 1'))
+    self.ScrewType.setItemText(29, _translate('ISO4033: Hexagon nuts, Style 2'))
+    self.ScrewType.setItemText(30, _translate('ISO4035: Hexagon thin nuts, chamfered'))
+    self.ScrewType.setItemText(31, _translate('EN1661: Hexagon nuts with flange'))
+    self.ScrewType.setItemText(32, _translate('ScrewTap: ISO Screw-Tap'))
 
-    self.NominalDiameter.setItemText(0, _translate("M1.6"))
-    self.NominalDiameter.setItemText(1, _translate("M2"))
-    self.NominalDiameter.setItemText(2, _translate("M2.5"))
-    self.NominalDiameter.setItemText(3, _translate("M3"))
-    self.NominalDiameter.setItemText(4, _translate("(M3.5)"))
-    self.NominalDiameter.setItemText(5, _translate("M4"))
-    self.NominalDiameter.setItemText(6, _translate("M5"))
-    self.NominalDiameter.setItemText(7, _translate("M6"))
-    self.NominalDiameter.setItemText(8, _translate("M8"))
-    self.NominalDiameter.setItemText(9, _translate("M10"))
-    self.NominalDiameter.setItemText(10, _translate("M12"))
-    self.NominalDiameter.setItemText(11, _translate("(M14)"))
-    self.NominalDiameter.setItemText(12, _translate("M16"))
-    self.NominalDiameter.setItemText(13, _translate("(M18)"))
-    self.NominalDiameter.setItemText(14, _translate("M20"))
-    self.NominalDiameter.setItemText(15, _translate("(M22)"))
-    self.NominalDiameter.setItemText(16, _translate("M24"))
-    self.NominalDiameter.setItemText(17, _translate("(M27)"))
-    self.NominalDiameter.setItemText(18, _translate("M30"))
-    self.NominalDiameter.setItemText(19, _translate("M36"))
-    self.NominalDiameter.setItemText(20, _translate("(M33)"))
-    self.NominalDiameter.setItemText(21, _translate("M42"))
-    self.NominalDiameter.setItemText(22, _translate("(M45)"))
-    self.NominalDiameter.setItemText(23, _translate("M48"))
-    self.NominalDiameter.setItemText(24, _translate("(M52)"))
-    self.NominalDiameter.setItemText(25, _translate("M54"))
-    self.NominalDiameter.setItemText(26, _translate("(M60)"))
-    self.NominalDiameter.setItemText(27, _translate("M64"))
+    self.NominalDiameter.setItemText(0, _translate('M1.6'))
+    self.NominalDiameter.setItemText(1, _translate('M2'))
+    self.NominalDiameter.setItemText(2, _translate('M2.5'))
+    self.NominalDiameter.setItemText(3, _translate('M3'))
+    self.NominalDiameter.setItemText(4, _translate('(M3.5)'))
+    self.NominalDiameter.setItemText(5, _translate('M4'))
+    self.NominalDiameter.setItemText(6, _translate('M5'))
+    self.NominalDiameter.setItemText(7, _translate('M6'))
+    self.NominalDiameter.setItemText(8, _translate('M8'))
+    self.NominalDiameter.setItemText(9, _translate('M10'))
+    self.NominalDiameter.setItemText(10, _translate('M12'))
+    self.NominalDiameter.setItemText(11, _translate('(M14)'))
+    self.NominalDiameter.setItemText(12, _translate('M16'))
+    self.NominalDiameter.setItemText(13, _translate('(M18)'))
+    self.NominalDiameter.setItemText(14, _translate('M20'))
+    self.NominalDiameter.setItemText(15, _translate('(M22)'))
+    self.NominalDiameter.setItemText(16, _translate('M24'))
+    self.NominalDiameter.setItemText(17, _translate('(M27)'))
+    self.NominalDiameter.setItemText(18, _translate('M30'))
+    self.NominalDiameter.setItemText(19, _translate('M36'))
+    self.NominalDiameter.setItemText(20, _translate('(M33)'))
+    self.NominalDiameter.setItemText(21, _translate('M42'))
+    self.NominalDiameter.setItemText(22, _translate('(M45)'))
+    self.NominalDiameter.setItemText(23, _translate('M48'))
+    self.NominalDiameter.setItemText(24, _translate('(M52)'))
+    self.NominalDiameter.setItemText(25, _translate('M54'))
+    self.NominalDiameter.setItemText(26, _translate('(M60)'))
+    self.NominalDiameter.setItemText(27, _translate('M64'))
 
-    self.NominalLength.setItemText(0, _translate("2"))
-    self.NominalLength.setItemText(1, _translate("2.5"))
-    self.NominalLength.setItemText(2, _translate("3"))
-    self.NominalLength.setItemText(3, _translate("4"))
-    self.NominalLength.setItemText(4, _translate("5"))
-    self.NominalLength.setItemText(5, _translate("6"))
-    self.NominalLength.setItemText(6, _translate("8"))
-    self.NominalLength.setItemText(7, _translate("10"))
-    self.NominalLength.setItemText(8, _translate("12"))
-    self.NominalLength.setItemText(9, _translate("16"))
-    self.NominalLength.setItemText(10, _translate("20"))
-    self.NominalLength.setItemText(11, _translate("25"))
-    self.NominalLength.setItemText(12, _translate("30"))
-    self.NominalLength.setItemText(13, _translate("35"))
-    self.NominalLength.setItemText(14, _translate("40"))
-    self.NominalLength.setItemText(15, _translate("45"))
-    self.NominalLength.setItemText(16, _translate("50"))
-    self.NominalLength.setItemText(17, _translate("55"))
-    self.NominalLength.setItemText(18, _translate("60"))
-    self.NominalLength.setItemText(19, _translate("65"))
-    self.NominalLength.setItemText(20, _translate("70"))
-    self.NominalLength.setItemText(21, _translate("80"))
-    self.NominalLength.setItemText(22, _translate("90"))
-    self.NominalLength.setItemText(23, _translate("100"))
-    self.NominalLength.setItemText(24, _translate("110"))
-    self.NominalLength.setItemText(25, _translate("120"))
-    self.NominalLength.setItemText(26, _translate("130"))
-    self.NominalLength.setItemText(27, _translate("140"))
-    self.NominalLength.setItemText(28, _translate("150"))
-    self.NominalLength.setItemText(29, _translate("160"))
-    self.NominalLength.setItemText(30, _translate("180"))
-    self.NominalLength.setItemText(31, _translate("200"))
-    self.NominalLength.setItemText(32, _translate("220"))
-    self.NominalLength.setItemText(33, _translate("240"))
-    self.NominalLength.setItemText(34, _translate("260"))
-    self.NominalLength.setItemText(35, _translate("280"))
-    self.NominalLength.setItemText(36, _translate("300"))
-    self.NominalLength.setItemText(37, _translate("320"))
-    self.NominalLength.setItemText(38, _translate("340"))
-    self.NominalLength.setItemText(39, _translate("360"))
-    self.NominalLength.setItemText(40, _translate("380"))
-    self.NominalLength.setItemText(41, _translate("400"))
-    self.NominalLength.setItemText(42, _translate("420"))
-    self.NominalLength.setItemText(43, _translate("440"))
-    self.NominalLength.setItemText(44, _translate("460"))
-    self.NominalLength.setItemText(45, _translate("480"))
-    self.NominalLength.setItemText(46, _translate("500"))
-    self.NominalLength.setItemText(47, _translate("User"))
-    #self.UserLen.setItemText(0, _translate("regular pitch"))
-    self.SimpleScrew.setText(_translate("Simple Screw (no thread at all!)"))
-    self.SymbolThread.setText(_translate("Symbol Thread (not implemented yet)"))
-    self.RealThread.setText(_translate("Real Thread (takes time, memory intensive)\nMay not work for all screws!"))
-    self.MessageLabel.setText(_translate("Select your screw type"))
-    self.MessageLabel.setProperty("Errortext", _translate("Combination not implemented"))
-    self.MessageLabel.setProperty("OK_text", _translate("Screw is made"))
-    self.CreateButton.setText(_translate("create"))
+    self.NominalDiameter.setItemText(28, _translate('M8x1'))
+    self.NominalDiameter.setItemText(29, _translate('M10x1'))
+    self.NominalDiameter.setItemText(30, _translate('(M10x1.25)'))
+    self.NominalDiameter.setItemText(31, _translate('M12x1.5'))
+    self.NominalDiameter.setItemText(32, _translate('(M12x1.25)'))
+    self.NominalDiameter.setItemText(33, _translate('(M14x1.5)'))
+    self.NominalDiameter.setItemText(34, _translate('M16x1.5'))
+    self.NominalDiameter.setItemText(35, _translate('(M18x1.5)'))
+    self.NominalDiameter.setItemText(36, _translate('M20x1.5'))
+    self.NominalDiameter.setItemText(37, _translate('(M20x2)'))
+    self.NominalDiameter.setItemText(38, _translate('(M22x1.5)'))
+    self.NominalDiameter.setItemText(39, _translate('M24x2'))
+    self.NominalDiameter.setItemText(40, _translate('(M27x2)'))
+    self.NominalDiameter.setItemText(41, _translate('M30x2'))
+    self.NominalDiameter.setItemText(42, _translate('(M33x2)'))
+    self.NominalDiameter.setItemText(43, _translate('M36x3'))
+    self.NominalDiameter.setItemText(44, _translate('(M39x3)'))
+    self.NominalDiameter.setItemText(45, _translate('M42x3'))
+    self.NominalDiameter.setItemText(46, _translate('(M45x3)'))
+    self.NominalDiameter.setItemText(47, _translate('M48x3'))
+    self.NominalDiameter.setItemText(48, _translate('(M52x4)'))
+    self.NominalDiameter.setItemText(49, _translate('M56x4'))
+    self.NominalDiameter.setItemText(50, _translate('(M60x4)'))
+    self.NominalDiameter.setItemText(51, _translate('M64x4'))
 
-
+    self.NominalLength.setItemText(0, _translate('2'))
+    self.NominalLength.setItemText(1, _translate('2.5'))
+    self.NominalLength.setItemText(2, _translate('3'))
+    self.NominalLength.setItemText(3, _translate('4'))
+    self.NominalLength.setItemText(4, _translate('5'))
+    self.NominalLength.setItemText(5, _translate('6'))
+    self.NominalLength.setItemText(6, _translate('8'))
+    self.NominalLength.setItemText(7, _translate('10'))
+    self.NominalLength.setItemText(8, _translate('12'))
+    self.NominalLength.setItemText(9, _translate('16'))
+    self.NominalLength.setItemText(10, _translate('20'))
+    self.NominalLength.setItemText(11, _translate('25'))
+    self.NominalLength.setItemText(12, _translate('30'))
+    self.NominalLength.setItemText(13, _translate('35'))
+    self.NominalLength.setItemText(14, _translate('40'))
+    self.NominalLength.setItemText(15, _translate('45'))
+    self.NominalLength.setItemText(16, _translate('50'))
+    self.NominalLength.setItemText(17, _translate('55'))
+    self.NominalLength.setItemText(18, _translate('60'))
+    self.NominalLength.setItemText(19, _translate('65'))
+    self.NominalLength.setItemText(20, _translate('70'))
+    self.NominalLength.setItemText(21, _translate('80'))
+    self.NominalLength.setItemText(22, _translate('90'))
+    self.NominalLength.setItemText(23, _translate('100'))
+    self.NominalLength.setItemText(24, _translate('110'))
+    self.NominalLength.setItemText(25, _translate('120'))
+    self.NominalLength.setItemText(26, _translate('130'))
+    self.NominalLength.setItemText(27, _translate('140'))
+    self.NominalLength.setItemText(28, _translate('150'))
+    self.NominalLength.setItemText(29, _translate('160'))
+    self.NominalLength.setItemText(30, _translate('180'))
+    self.NominalLength.setItemText(31, _translate('200'))
+    self.NominalLength.setItemText(32, _translate('220'))
+    self.NominalLength.setItemText(33, _translate('240'))
+    self.NominalLength.setItemText(34, _translate('260'))
+    self.NominalLength.setItemText(35, _translate('280'))
+    self.NominalLength.setItemText(36, _translate('300'))
+    self.NominalLength.setItemText(37, _translate('320'))
+    self.NominalLength.setItemText(38, _translate('340'))
+    self.NominalLength.setItemText(39, _translate('360'))
+    self.NominalLength.setItemText(40, _translate('380'))
+    self.NominalLength.setItemText(41, _translate('400'))
+    self.NominalLength.setItemText(42, _translate('420'))
+    self.NominalLength.setItemText(43, _translate('440'))
+    self.NominalLength.setItemText(44, _translate('460'))
+    self.NominalLength.setItemText(45, _translate('480'))
+    self.NominalLength.setItemText(46, _translate('500'))
+    self.NominalLength.setItemText(47, _translate('User'))
+    #self.UserLen.setItemText(0, _translate('regular pitch'))
+    self.SimpleScrew.setText(_translate('Simple Screw (no thread at all!)'))
+    self.SymbolThread.setText(_translate('Symbol Thread (not implemented yet)'))
+    self.RealThread.setText(_translate('Real Thread (takes time, memory intensive)\nMay not work for all screws!'))
+    self.MessageLabel.setText(_translate('Select your screw type'))
+    self.MessageLabel.setProperty('Errortext', _translate('Combination not implemented'))
+    self.MessageLabel.setProperty('OK_text', _translate('Screw is made'))
+    self.CreateButton.setText(_translate('create'))
 
   def guiCheck_Data(self):
     ST_text = str(self.ScrewType.currentText())
@@ -1815,7 +1925,6 @@ class Ui_ScrewMaker(object):
     NL_text = str(self.NominalLength.currentText())
     M_text, self.ScrewAvailable  = self.theScrew.check_Data(ST_text, ND_text, NL_text)
     self.MessageLabel.setText(_translate(M_text))
-
 
   def guiCreateScrew(self):
     #self.simpThread = self.SimpleScrew.isChecked()
@@ -1833,7 +1942,7 @@ class Ui_ScrewMaker(object):
     ST_text = str(self.ScrewType.currentText())
     ST_text = ST_text.split(':')[0]
 
-    if ST_text == 'ScrewTap':
+    if (ST_text == 'ScrewTap') or (ST_text == 'ISO8676'):
       if NL_text == 'User':
         textValue = self.UserLen.property("text")
         stLength = FreeCAD.Units.parseQuantity(textValue).Value
@@ -1842,15 +1951,27 @@ class Ui_ScrewMaker(object):
     myObj = self.theScrew.createScrew(ST_text, ND_text, NL_text, threadType)
 
 
+def get_diameter(thread_type):
+  """Return the screw diameter as float
 
-
-
+  Accepted input format are e.g. 'M5', 'M8x1', '(M3.5)', '(M10x1.25)'.
+  """
+  thread_string = thread_type.lstrip('(M').rstrip(')')
+  dia = float(thread_string.split('x')[0])
+  return dia
 
 
 class Screw(object):
   def __init__(self):
     self.objAvailable = True
     self.Tuner = 510
+    testCirc=Part.makeCircle(2.0,Base.Vector(0.0,0.0,-0.0),Base.Vector(0.0,0.0,-1.0))
+    testDisk = Part.Face(Part.Wire(testCirc))
+    z = testDisk.Surface.Axis.z
+    if z > 0:
+      self.circleAxis = Base.Vector(0.0,0.0,1.0)
+    else:
+      self.circleAxis = Base.Vector(0.0,0.0,-1.0)
 
   def check_Data(self, ST_text, ND_text, NL_text):
     #FreeCAD.Console.PrintMessage("Data checking" + NL_text + "\n")
@@ -1874,6 +1995,12 @@ class Screw(object):
       table = en1665def
       tab_len = en1665length
       tab_range = en1665range
+      Type_text = 'Screw'
+
+    if ST_text == 'ISO8676':
+      table = iso8676def
+      tab_len = iso8676length
+      tab_range = iso8676range
       Type_text = 'Screw'
 
     if ST_text == 'ISO2009':
@@ -2046,28 +2173,32 @@ class Screw(object):
         NL_min, NL_max = tab_range[ND_text]
         NL_min_float = float(NL_min)
         NL_max_float = float(NL_max)
-        if NL_text == 'User':
-          M_text = 'User length is only available for the screw-tab!'
+        if (NL_text == 'User') and (ST_text != 'ISO8676'):
+          M_text = 'User length is only available for the screw-tab and ISO 8676!'
           self.objAvailable = False
         else:
-          NL_text_float = float(NL_text)
-          if (NL_text_float<NL_min_float)or(NL_text_float>NL_max_float)or(NL_text not in tab_len):
-            if '(' in ND_text:
-              ND_text = ND_text.lstrip('(').rstrip(')')
-            M_text = ST_text+'-'+ ND_text +' has lengths from '+ NL_min +' to ' + NL_max + ' and not ' + NL_text +'!'
-            self.objAvailable = False
-            # set screw not ok
-          else:
-            if '(' in ND_text:
-              ND_text = ND_text.lstrip('(').rstrip(')')
-            M_text = ST_text+'-'+ ND_text +'x'+ NL_text +' is in library available! '
+          if NL_text == 'User':
+            M_text = 'ISO 8676 with user length is ok!'
             self.objAvailable = True
-            #set screw ok
+          else:
+            NL_text_float = float(NL_text)
+            if (NL_text_float<NL_min_float)or(NL_text_float>NL_max_float)or(NL_text not in tab_len):
+              if '(' in ND_text:
+                ND_text = ND_text.lstrip('(').rstrip(')')
+              M_text = ST_text+'-'+ ND_text +' has lengths from '+ NL_min +' to ' + NL_max + ' and not ' + NL_text +'!'
+              self.objAvailable = False
+              # set screw not ok
+            else:
+              if '(' in ND_text:
+                ND_text = ND_text.lstrip('(').rstrip(')')
+              M_text = ST_text+'-'+ ND_text +'x'+ NL_text +' is in library available! '
+              self.objAvailable = True
+              #set screw ok
       else: # Washers and Nuts
-        if not (Type_text == 'Screw-Tap'):
+        if Type_text != 'Screw-Tap':
           if '(' in ND_text:
             ND_text = ND_text.lstrip('(').rstrip(')')
-          M_text = ST_text+'-'+ ND_text +' is in library available! '
+          M_text = ST_text+'-'+ ND_text +' is available in library!'
           self.objAvailable = True
           #set washer/nut ok
         else:
@@ -2078,7 +2209,7 @@ class Screw(object):
             #NL_text = str(self.NominalLength.currentText())
             if '(' in ND_text:
               ND_text = ND_text.lstrip('(').rstrip(')')
-            M_text = ST_text+'-'+ ND_text +' with '+ NL_text +'mm length is in library available! '
+            M_text = ST_text+'-'+ ND_text +' with '+ NL_text +'mm length is available in library!'
             self.objAvailable = True
             #set screwTap ok
 
@@ -2087,7 +2218,7 @@ class Screw(object):
     return M_text, self.objAvailable
 
 
-  def createScrew(self, ST_text, ND_text, NL_text, threadType, shapeOnly=False):
+  def createScrew(self, ST_text, ND_text, NL_text, threadType):
     #self.simpThread = self.SimpleScrew.isChecked()
     #self.symThread = self.SymbolThread.isChecked()
     #self.rThread = self.RealThread.isChecked()
@@ -2119,6 +2250,8 @@ class Screw(object):
            table = en1662def
         if ST_text == 'EN1665':
            table = en1665def
+        if ST_text == 'ISO8676':
+           table = iso8676def
         if ST_text == 'ISO2009':
            table = iso2009def
         if ST_text == 'ISO2010':
@@ -2182,13 +2315,15 @@ class Screw(object):
         if ND_text not in table:
            FreeCAD.Console.PrintMessage("Combination of type "+ST_text \
               + " and diameter " + ND_text +" not available!" + "\n")
+        #self.MessageLabel.setText(_translate('not implemented'))
 
       except ValueError:
+        #print "Error! nom_dia and length values must be valid numbers!"
         FreeCAD.Console.PrintMessage("Error! nom_dia and length values must be valid numbers!\n")
       else:
         doc=FreeCAD.activeDocument()
         done = False
-        if (ST_text == 'ISO4014') or (ST_text == 'ISO4017'):
+        if (ST_text == 'ISO4014') or (ST_text == 'ISO4017') or (ST_text == 'ISO8676'):
           screw = self.makeIso4017_2(ST_text, ND_text,l)
           Type_text = 'Screw'
           done = True
@@ -2253,8 +2388,6 @@ class Screw(object):
               label = ST_text + '-' + ND_text +'x'+ NL_text +'_'
             else: # washer
               label = ST_text + '-' + ND_text.lstrip('M') +'_'
-        if shapeOnly:
-          return screw
         ScrewObj = doc.addObject("Part::Feature")
         ScrewObj.Label=label
         ScrewObj.Shape=screw
@@ -2262,12 +2395,39 @@ class Screw(object):
         #FreeCAD.Console.PrintMessage("The label: "+ label +"\n")
         self.moveScrew(ScrewObj)
         #ScrewObj.Label = label
+        if self.gotPart:
+          self.thePart.addObject(ScrewObj)
         doc.recompute()
         # Part.show(screw)
         return ScrewObj
 
+  def getFaceAxis(self, sp, c):
+    fList = []
+    fAxis = None
+    if len(c.Vertexes) ==1:
+      theVert = c.Vertexes[0]
+      # search for faces which have a vertex equal to theVert.
+      for f in sp.Faces:
+        for v in f.Vertexes:
+          if equal_vertex(v, theVert):
+            fList.append(f)
+    print (str(fList))
+    # search for a plane face
+    for f in fList:
+      if hasattr(f,'Surface'):
+        FreeCAD.Console.PrintMessage('type of surface: ', str(f.Surface))
+        if f.Surface.isPlanar():
+          fAxis = f.Surface.normal(0,0)
+          print ('got planar Face with normal: ', str(f.Surface.normal(0,0)))
+          print ('Orientation: ', str(f.Orientation))
+          if f.Orientation == 'Reversed':
+            fAxis = fAxis.multiply(-1.0)
+    return fAxis
+
   def moveScrew(self, ScrewObj_m):
     #FreeCAD.Console.PrintMessage("In Move Screw: " + str(ScrewObj_m) + "\n")
+    self.gotBody = False
+    self.gotPart = False
 
     mylist = FreeCAD.Gui.Selection.getSelectionEx()
     if (mylist.__len__() == 1):
@@ -2276,12 +2436,33 @@ class Screw(object):
        Pnt1 = None
        Axis1 = None
        Axis2 = None
+       theSelection = mylist[0]
+       #FreeCAD.Console.PrintMessage( "ObjectName: " + str(theSelection.ObjectName) + "\n")
+       if hasattr(theSelection, 'Object'):
+         if hasattr(theSelection.Object, 'InList'):
+           inLength = len(theSelection.Object.InList)
+           #FreeCAD.Console.PrintMessage( "InList: " + str(theSelection.Object.InList) + "\n")
+           for b in theSelection.Object.InList:
+             #FreeCAD.Console.PrintMessage( "OType: " + str(b.TypeId) + "\n")
+             if b.TypeId == 'PartDesign::Body':
+               self.gotBody = True
+               self.bPlacement = b.Placement
+               for par in b.InList:
+                 if par.TypeId == 'App::Part':
+                   self.gotPart = True
+                   self.thePart = par
 
-       for o in Gui.Selection.getSelectionEx():
+                   break
+
+       for o in FreeCADGui.Selection.getSelectionEx():
+          #FreeCAD.Console.PrintMessage( "name: " + str(o) + "\n")
+          #FreeCAD.Console.PrintMessage( "Properties: " + str(o.PropertiesList) + "\n")
+
           #for s in o.SubElementNames:
              #FreeCAD.Console.PrintMessage( "name: " + str(s) + "\n")
           for s in o.SubObjects:
              #FreeCAD.Console.PrintMessage( "object: "+ str(s) + "\n")
+             #FreeCAD.Console.PrintMessage( "Properties: " + str(s.PropertiesList) + "\n")
              if hasattr(s,"Curve"):
                 #FreeCAD.Console.PrintMessage( "The Object is a Curve!\n")
                 if hasattr(s.Curve,"Center"):
@@ -2293,6 +2474,9 @@ class Screw(object):
                    """
                    Pnt1 = s.Curve.Center
                    Axis1 = s.Curve.Axis
+                   fAxis = self.getFaceAxis(o.Object.Shape, s)
+                   if fAxis:
+                     Axis1 = fAxis
              if hasattr(s,'Surface'):
                 #print 'the object is a face!'
                 if hasattr(s.Surface,'Axis'):
@@ -2332,16 +2516,28 @@ class Screw(object):
           #FreeCAD.Console.PrintMessage("pl mit Rot: "+ str(pl) + "\n")
           #neuPlatz = Part2.Object.Placement.multiply(pl)
           neuPlatz = ScrewObj_m.Placement
-          #FreeCAD.Console.PrintMessage("die Position     "+ str(neuPlatz) + "\n")
+          FreeCAD.Console.PrintMessage("The Position     "+ str(neuPlatz) + "\n")
           neuPlatz.Rotation = pl.Rotation.multiply(ScrewObj_m.Placement.Rotation)
+          # neuPlatz.move(Pnt1)
+          FreeCAD.Console.PrintMessage("The Position in Body    "+ str(neuPlatz) + "\n")
+          if self.gotBody:
+            FreeCAD.Console.PrintMessage("got Placement: "+ str(self.bPlacement) + "\n")
+            #neuPlatz.Rotation = neuPlatz.Rotation.multiply(self.bPlacement.Rotation)
+            neuPlatz.Rotation = neuPlatz.Rotation.multiply(self.bPlacement.Rotation)
+            Pnt1 = self.bPlacement.multVec(Pnt1)
           neuPlatz.move(Pnt1)
+          #if self.gotBody:
+            #neuPlatz.move(self.bPlacement.Base)
+
+          # Python is not phytonic in FreeCAD 0.17, need to add allocation.
+          ScrewObj_m.Placement = neuPlatz
           #FreeCAD.Console.PrintMessage("die rot. Position: "+ str(neuPlatz) + "\n")
 
 
 
   # make Washer
   def makeIso7089(self,SType ='ISO7089', ThreadType ='M6'):
-    dia = self.getDia(ThreadType)
+    dia = get_diameter(ThreadType)
     #FreeCAD.Console.PrintMessage("die Scheibe mit dia: " + str(dia) + "\n")
     if SType == 'ISO7089':
       d1_min, d2_max, h, h_max = iso7089def[ThreadType]
@@ -2391,7 +2587,7 @@ class Screw(object):
   # make ISO 2010 Slotted raised countersunk head screws
   # make ISO 1580 Pan head slotted screw (Code is nearly identical to iso1207)
   def makeSlottedScrew(self,SType ='ISO1580', ThreadType ='M6',l=25.0):
-    dia = self.getDia(ThreadType)
+    dia = get_diameter(ThreadType)
     if SType == 'ISO1580':
       #FreeCAD.Console.PrintMessage("der Kopf mit l: " + str(l) + "\n")
       #P, a, b, dk, dk_mean, da, k, n_min, r, t_min, x = iso1580def[ThreadType]
@@ -2566,7 +2762,7 @@ class Screw(object):
   # ISO 7045 Pan head screws with type H or type Z cross recess
   # ISO 14583 Hexalobular socket pan head screws
   def makeIso7045(self, SType ='ISO7045', ThreadType ='M6',l=25.0):
-    dia = self.getDia(ThreadType)
+    dia = get_diameter(ThreadType)
     #FreeCAD.Console.PrintMessage("der Kopf mit l: " + str(l) + "\n")
     P, a, b, dk_max,da, k, r, rf, x, cT, mH, mZ  = iso7045def[ThreadType]
     #FreeCAD.Console.PrintMessage("der Kopf mit iso: " + str(dk_max) + "\n")
@@ -2756,7 +2952,7 @@ class Screw(object):
   # ISO 7048 cross recessed screw
   # ISO 14580 Hexalobular socket cheese head screws
   def makeIso1207(self,SType ='ISO1207', ThreadType ='M6',l=25.0):
-    dia = self.getDia(ThreadType)
+    dia = get_diameter(ThreadType)
     '''
     if '(' in TreadType:
       threadString = ThreadType.lstrip('(M')
@@ -2958,13 +3154,16 @@ class Screw(object):
   # make the ISO 4017 Hex-head-screw
   # make the ISO 4014 Hex-head-bolt
   def makeIso4017_2(self,SType ='ISO4017', ThreadType ='M6',l=40.0):
-    dia = self.getDia(ThreadType)
+    dia = get_diameter(ThreadType)
     #FreeCAD.Console.PrintMessage("der Kopf mit l: " + str(l) + "\n")
     if SType == 'ISO4017':
       P, c, dw, e,k,r,s = iso4017head[ThreadType]
-
-      ### make the new code with math.modf(l)
       residue, turns = math.modf((l-1*P)/P)
+      halfturns = 2*int(turns)
+
+    if SType == 'ISO8676':
+      P, c, dw, e,k,r,s = iso8676def[ThreadType]
+      residue, turns = math.modf((l-r-1*P)/P)
       halfturns = 2*int(turns)
 
     if SType == 'ISO4014':
@@ -2976,8 +3175,6 @@ class Screw(object):
             b = b2
          else:
             b = b3
-
-      ### make the new code with math.modf(l)
       residue, turns = math.modf((b)/P)
       halfturns = 2*int(turns)
 
@@ -3100,7 +3297,7 @@ class Screw(object):
   # EN 1662 Hex-head-bolt with flange - small series
   # EN 1665 Hexagon bolts with flange, heavy series
   def makeEN1662_2(self,SType ='EN1662', ThreadType ='M8',l=25.0):
-    dia = self.getDia(ThreadType)
+    dia = get_diameter(ThreadType)
     #FreeCAD.Console.PrintMessage("der Kopf mit l: " + str(l) + "\n")
     if SType == 'EN1662':
        P, b0, b1, b2, b3, c, dc, dw, e, k, kw,f, r1, s = en1662def[ThreadType]
@@ -3323,15 +3520,17 @@ class Screw(object):
 
     return screw
 
+  def makeIso7046(self, SType ='ISO7046', ThreadType ='M6', l=25.0):
+    """ISO 7046, ISO 7047, ISO 10642, ISO 14582, ISO 14584
 
-  # also used for ISO 7046 countersunk flat head screws with H cross recess
-  # also used for ISO 7047 raised countersunk head screws with H cross recess
-  # also used for ISO 10642 Hexagon socket countersunk head screws
-  # also used for ISO 14582 Hexalobular socket countersunk head screws, high head
-  # also used for ISO 14584 Hexalobular socket raised countersunk head screws
-  def makeIso7046(self, SType ='ISO7046', ThreadType ='M6',l=25.0):
-    dia = self.getDia(ThreadType)
-    #FreeCAD.Console.PrintMessage("der 2009Kopf mit l: " + str(l) + "\n")
+    Used for ISO 7046 countersunk flat head screws with H cross recess
+    Used for ISO 7047 raised countersunk head screws with H cross recess
+    Used for ISO 10642 Hexagon socket countersunk head screws
+    Used for ISO 14582 Hexalobular socket countersunk head screws, high head
+    Used for ISO 14584 Hexalobular socket raised countersunk head screws
+    """
+    dia = get_diameter(ThreadType)
+    #FreeCAD.Console.PrintMessage("The 2009 head with l: " + str(l) + "\n")
     if (SType == 'ISO10642'):
       P,b,dk_theo,dk_mean,da, ds_min, e, k, r, s_mean, t, w =iso10642def[ThreadType]
       ePrax = s_mean / math.sqrt(3.0) / 0.99
@@ -3374,7 +3573,7 @@ class Screw(object):
       h_arc_z = ctp + rf * math.cos(alpha)
 
 
-    #FreeCAD.Console.PrintMessage("der Kopf mit iso r: " + str(r) + "\n")
+    FreeCAD.Console.PrintMessage("The head with iso r: " + str(r) + "\n")
     cham = (dk_theo - dk_mean)/2.0
     rad225 = math.radians(22.5)
     rad45 = math.radians(45.0)
@@ -3460,6 +3659,7 @@ class Screw(object):
         recess, recessShell = self.makeCross_H3(cT, mH, ht)
       if (SType == 'ISO7046'):
         # ISO7046
+        FreeCAD.Console.PrintMessage("ISO7046: " + str(ht) + "\n")
         Pnt0 = Base.Vector(0.0,0.0,ht)
         edge1 = Part.makeLine(Pnt0,Pnt1)  # make flat head
         edge2 = Part.makeLine(Pnt1,Pnt2)
@@ -3503,13 +3703,17 @@ class Screw(object):
       #Part.show(hCut)
       topFace = hCut.Faces[2]
     else:
-      edgeH1 = Part.makeLine(Pnt1,PntH1)
+      if (SType == 'ISO7047'):
+        edgeH1 = Part.makeLine(Pnt1,PntH1)
+      else:
+        edgeH1 = Part.makeLine(PntCham,PntH1)
       edgeH2 = Part.makeLine(PntH1,PntH0)
       edgeH3 = Part.makeLine(PntH0,Pnt0)
       hWire = Part.Wire([edge1,edgeH1,edgeH2,edgeH3]) # Cutter for recess-Shell
       hFace = Part.Face(hWire)
       hCut = hFace.revolve(Base.Vector(0.0,0.0,0.0),Base.Vector(0.0,0.0,1.0),360)
-      #Part.show(hWire)
+      Part.show(hWire)
+      #Part.show(hCut)
       topFace = hCut.Faces[0]
 
     recessShell = recessShell.cut(hCut)
@@ -3549,7 +3753,7 @@ class Screw(object):
           rthread = self.makeShellthread(dia, P, halfturns, False, offSet)
           rthread.translate(Base.Vector(0.0, 0.0,-a_point -2.0*P))
           #head = head.fuse(rthread)
-          Part.show(rthread)
+          #Part.show(rthread)
           for threadFace in rthread.Faces:
             headFaces.append(threadFace)
 
@@ -3573,19 +3777,12 @@ class Screw(object):
       screwShell = Part.Shell(headFaces)
       screw = Part.Solid(screwShell)
 
-
-
     return screw
 
-
-
-
-
-
-  # make ISO 4762 Allen Screw head
-  # ISO 14579 Hexalobular socket head cap screws
   def makeIso4762(self, SType ='ISO4762', ThreadType ='M6',l=25.0):
-    dia = self.getDia(ThreadType)
+    """ISO 4762 Allen Screw head and ISO 14579 Hexalobular socket head cap
+    """
+    dia = get_diameter(ThreadType)
     #FreeCAD.Console.PrintMessage("der 4762Kopf mit l: " + str(l) + "\n")
     P, b, dk_max, da, ds_mean, e, lf, k, r, s_mean, t, v, dw, w = iso4762def[ThreadType]
     #FreeCAD.Console.PrintMessage("der Kopf mit iso r: " + str(r) + "\n")
@@ -3809,7 +4006,7 @@ class Screw(object):
   # make ISO 7380-2 Button head Screw with collar
   # make DIN 967 cross recessed pan head Screw with collar
   def makeIso7380(self, SType ='ISO7380-1', ThreadType ='M6',l=25.0):
-    dia = self.getDia(ThreadType)
+    dia = get_diameter(ThreadType)
     #todo: different radii for screws with thread to head or with shaft?
     sqrt2_ = 1.0/math.sqrt(2.0)
 
@@ -4008,7 +4205,7 @@ class Screw(object):
     polygon.append(vhex)
     hexagon = Part.makePolygon(polygon)
     # create circle
-    circ=Part.makeCircle(cir_hex/2.0,Base.Vector(0.0,0.0,-k_hex*0.1))
+    circ = Part.makeCircle(cir_hex/2.0, Base.Vector(0.0,0.0,-k_hex*0.1), self.circleAxis)
     # Create the face with the circle as outline and the hexagon as hole
     face=Part.Face([Part.Wire(circ),hexagon])
 
@@ -4313,10 +4510,6 @@ class Screw(object):
 
     return TheShell
 
-
-
-
-
   # if da<>None: make Shell for a nut else: make a screw tap
   def makeInnerThread_2(self, d, P, rotations, da, l):
     d = float(d)
@@ -4369,11 +4562,11 @@ class Screw(object):
     # print "Shellpoints: ", len(TheShell.Vertexes)
 
     # Handling of the top faces
-    if da <> None:
-      TheShell.translate(FreeCAD.Vector(0.0, 0.0,- P))
+    if da is not None:
+      TheShell.translate(FreeCAD.Vector(0.0, 0.0, -P))
       for flaeche in TheShell.Faces:
        TheFaces.append(flaeche)
-      TheShell.translate(FreeCAD.Vector(0.0, 0.0,- P))
+      TheShell.translate(FreeCAD.Vector(0.0, 0.0, -P))
       for flaeche in TheShell.Faces:
        TheFaces.append(flaeche)
 
@@ -4441,7 +4634,6 @@ class Screw(object):
          for flaeche in TheShell.Faces:
            TheFaces.append(flaeche)
 
-
     else:
       commonbox = Part.makeBox(d+4.0*P, d+4.0*P, 3.0*P)
       commonbox.translate(FreeCAD.Vector(-(d+4.0*P)/2.0, -(d+4.0*P)/2.0,-(3.0)*P))
@@ -4474,12 +4666,12 @@ class Screw(object):
          botFaces.append(flaeche)
     #FreeCAD.Console.PrintMessage("Bottom-Shell: " + str(i) + "\n")
 
-    if da <> None:
+    if da is not None:
       # points for chamfer: common-Method
-      pch0 =  (da/2.0-cham_i_delta, 0.0, -(rotations)*P + cham_i) # bottom chamfer
-      pch1 =  (da/2.0, 0.0, -(rotations)*P)  #
-      pch2 =  (da/2.0, 0.0, -(rotations)*P + 3.0*P)
-      pch3 =  (da/2.0-cham_i_delta, 0.0, -(rotations)*P + 3.0*P)
+      pch0 =  (da/2-cham_i_delta, 0.0, -(rotations)*P + cham_i) # bottom chamfer
+      pch1 =  (da/2, 0.0, -(rotations)*P)  #
+      pch2 =  (da/2, 0.0, -(rotations)*P + 3.0*P)
+      pch3 =  (da/2-cham_i_delta, 0.0, -(rotations)*P + 3.0*P)
       #pch4 =  (r-2.0*cham_i_delta, 0.0, -(rotations)*P + 3.0*P)
 
       edgech0 = Part.makeLine(pch0,pch1)
@@ -4508,7 +4700,7 @@ class Screw(object):
 
       for flaeche in BotShell.Faces:
         TheFaces.append(flaeche)
-      if da <> None:
+      if da is not None:
         TheFaces.append(cham_face.Faces[0])
       else:
         TheFaces.append(bot_face)
@@ -4517,8 +4709,6 @@ class Screw(object):
       #print self.Tuner, " ", TheShell.ShapeType, " ", TheShell.isValid(), " hrots: ", halfrots_int, " Shellpunkte: ", len(TheShell.Vertexes)
 
       return TheShell
-
-
 
     else: # make of screw tap
       #FreeCAD.Console.PrintMessage("without chamfer: " + str(i) + "\n")
@@ -4547,7 +4737,9 @@ class Screw(object):
 
       for flaeche in BotShell.Faces:
         TheFaces.append(flaeche)
-      if da <> None:
+      if da is not None:
+        raise NotImplementedError('da must be None')
+        # TODO: Fix cham_Shell undefined.
         for flaeche in cham_Shell.Faces:
           TheFaces.append(flaeche)
       else:
@@ -4559,15 +4751,9 @@ class Screw(object):
 
       return TheSolid
 
-
-
-
-
-
-  # make the ISO 4032 Hex-nut
-  # make the ISO 4033 Hex-nut
-  def makeIso4032(self,SType ='ISO4032', ThreadType ='M6'):
-    dia = self.getDia(ThreadType)
+  def makeIso4032(self, SType='ISO4032', ThreadType='M6'):
+    """ISO 4032 Hex-nut and 4033 Hex-nut"""
+    dia = get_diameter(ThreadType)
     if SType == 'ISO4032':
       # P, c, damax,  dw,    e,     m,   mw,   s_nom
       P, c, da, dw, e, m, mw, s = iso4032def[ThreadType]
@@ -4621,12 +4807,12 @@ class Screw(object):
     extrude = self.makeHextool(s, m, s*2.0)
 
     aWire=Part.Wire([edge0,edge1,edge2,edge3,edge4,edge5,edge6,edge7])
-    #Part.show(aWire)
+    # Part.show(aWire)
     aFace =Part.Face(aWire)
     head = aFace.revolve(Base.Vector(0.0,0.0,0.0),Base.Vector(0.0,0.0,1.0),360.0)
     #Part.show(head)
 
-    #Part.show(extrude)
+    # Part.show(extrude)
     nut = head.cut(extrude)
     # Part.show(nut)
 
@@ -4653,13 +4839,12 @@ class Screw(object):
 
     return nut
 
+  def makeEN1661(self, ThreadType='M8'):
+    """EN 1661 Hexagon nuts with flange
 
-
-
-  # EN 1661 Hexagon nuts with flange
-  # chamfer at top of hexagon is wrong = more than 30°
-  def makeEN1661(self, ThreadType ='M8'):
-    dia = self.getDia(ThreadType)
+    chamfer at top of hexagon is wrong = more than 30°
+    """
+    dia = get_diameter(ThreadType)
     P, da, c, dc, dw, e, m, mw, r1, s = en1661def[ThreadType]
 
     residue, turns = math.modf(m/P)
@@ -4825,14 +5010,14 @@ class Screw(object):
 
     return screw
 
-
-
-
-  # make ISO 7380-1 Button head Screw
-  # make ISO 7380-2 Button head Screw with collar
-  # make DIN 967 cross recessed pan head Screw with collar
   def makeScrewTap(self, ThreadType ='M6',l=25.0):
-    dia = self.getDia(ThreadType)
+    """ISO 7380-1, ISO 7380-2, DIN 967
+
+    make ISO 7380-1 Button head Screw
+    make ISO 7380-2 Button head Screw with collar
+    make DIN 967 cross recessed pan head Screw with collar
+    """
+    dia = get_diameter(ThreadType)
 
     P, tunIn, tunEx  = tuningTable[ThreadType]
 
@@ -4863,14 +5048,6 @@ class Screw(object):
 
     return screwTap
 
-
-
-
-
-
-
-
-
   def cutChamfer(self, dia_cC, P_cC, l_cC):
     cham_t = P_cC*math.sqrt(3.0)/2.0*17.0/24.0
     PntC0 = Base.Vector(0.0,0.0,-l_cC)
@@ -4890,16 +5067,18 @@ class Screw(object):
     cyl = CFace.revolve(Base.Vector(0.0,0.0,0.0),Base.Vector(0.0,0.0,1.0),360)
     return cyl
 
-
-  # cross recess type H
   def makeCross_H3(self, CrossType = '2', m = 6.9, h = 0.0):
-    # m = diameter of cross at top of screw at reference level for penetration depth
+    """Cross recess type H
+
+    m = diameter of cross at top of screw at reference level for penetration depth
+    """
     b, e_mean, g, f_mean, r, t1, alpha, beta = iso4757def[CrossType]
 
     rad265 = math.radians(26.5)
     rad28 = math.radians(28.0)
     tg = (m-g)/2.0/math.tan(rad265) # depth at radius of g
     t_tot = tg + g/2.0 * math.tan(rad28) # total depth
+    #FreeCAD.Console.PrintMessage("Cross H3: " + str(b) + "\n")
 
     # print 'tg: ', tg,' t_tot: ', t_tot
     hm = m / 4.0
@@ -4915,11 +5094,11 @@ class Screw(object):
     edge1 = Part.makeLine(Pnt0,Pnt1)
     edge3 = Part.makeLine(Pnt1,Pnt4)
     edge4 = Part.makeLine(Pnt4,Pnt5)
-    # FreeCAD.Console.PrintMessage("Edges made Pnt2: " + str(Pnt2) + "\n")
+    # FreeCAD.Console.PrintMessage("Edges made Pnt1: " + str(Pnt1) + "\n")
 
     aWire=Part.Wire([edge1,edge3,edge4])
     crossShell = aWire.revolve(Pnt3,Base.Vector(0.0,0.0,1.0),360)
-    # FreeCAD.Console.PrintMessage("Peak-wire revolved: " + str(e_mean) + "\n")
+    #FreeCAD.Console.PrintMessage("Peak-wire revolved: " + str(e_mean) + "\n")
     cross = Part.Solid(crossShell)
     #Part.show(cross)
 
@@ -4983,7 +5162,7 @@ class Screw(object):
     pl_rot.Rotation = (rot_axis.x,rot_axis.y,rot_axis.z,cos_res) #Rotation-Quaternion 90° z-Axis
 
     crossShell = crossShell.cut(corner)
-    #Part.show(crossShell)
+    # Part.show(crossShell)
     cutplace = corner.Placement
 
     cornerFaces = []
@@ -4999,13 +5178,15 @@ class Screw(object):
     crossFaces = cornerShell.Faces
 
     for i in range(3):
-      cutplace.Rotation = pl_rot.Rotation.multiply(corner.Placement.Rotation)
+      #cutplace.Rotation = pl_rot.Rotation.multiply(corner.Placement.Rotation)
+      corner.Placement.Rotation = pl_rot.Rotation.multiply(corner.Placement.Rotation)
       crossShell = crossShell.cut(corner)
-      addPlace.Rotation = pl_rot.Rotation.multiply(cornerShell.Placement.Rotation)
+      #addPlace.Rotation = pl_rot.Rotation.multiply(cornerShell.Placement.Rotation)
+      cornerShell.Placement.Rotation = pl_rot.Rotation.multiply(cornerShell.Placement.Rotation)
       for coFace in cornerShell.Faces:
         crossFaces.append(coFace)
 
-    #Part.show(crossShell)
+    # Part.show(crossShell)
     for i in range(1,6):
       crossFaces.append(crossShell.Faces[i])
 
@@ -5025,11 +5206,11 @@ class Screw(object):
     #Part.show(cross)
     return cross, crossShell0
 
+  def makeAllen2(self, s_a=3.0, t_a=1.5, h_a=2.0):
+    """Allen recess cutting tool
 
-
-  # Allen recess cutting tool
-  # Parameters used: s_mean, k, t_min, dk
-  def makeAllen2(self, s_a = 3.0, t_a = 1.5, h_a = 2.0 ):
+    Parameters used: s_mean, k, t_min, dk
+    """
     # h_a  top height location of cutting tool
     # s_a hex width
     # t_a dept of the allen
@@ -5038,7 +5219,6 @@ class Screw(object):
     e_cham = 2.0 * s_a / math.sqrt(3.0)
     depth = s_a / 3.0
     #FreeCAD.Console.PrintMessage("allen tool: " + str(s_a) + "\n")
-
 
     # Points for an arc at the peak of the cone
     rCone = e_cham/4.0
@@ -5087,7 +5267,7 @@ class Screw(object):
     hexFace = Part.Face(hexagon)
     solidHex = hexFace.extrude(Base.Vector(0.0,0.0,-1.0-t_a-depth*1.1))
     allen = solidHex.cut(roundtool)
-    #Part.show(allen)
+    # Part.show(allen)
 
     allenFaces = [allen.Faces[0]]
     for i in range(2,9):
@@ -5097,10 +5277,8 @@ class Screw(object):
     allenShell.Placement.Base = Base.Vector(0.0,0.0,h_a)
     return solidHex, allenShell
 
-
-
-  # ISO 10664 Hexalobular internal driving feature for bolts and screws
   def makeIso10664_3(self,RType ='T20',t_hl=3.0, h_hl = 0):
+    """ISO 10664 Hexalobular internal driving feature for bolts and screws"""
     # t_hl depth of the recess
     # h_hl top height location of Cutting tool
     A, B, Re = iso10664def[RType]
@@ -5218,14 +5396,6 @@ class Screw(object):
 
   def setTuner(self, myTuner = 511):
     self.Tuner = myTuner
-
-  def getDia(self,ThreadType):
-    if '(' in ThreadType:
-      threadString = ThreadType.lstrip('(M')
-      dia = float(threadString.rstrip(')'))
-    else:
-      dia=float(ThreadType.lstrip('M'))
-    return dia
 
 
 class ScrewMacro(object):
