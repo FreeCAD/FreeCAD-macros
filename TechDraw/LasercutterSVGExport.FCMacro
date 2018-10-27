@@ -1,5 +1,72 @@
 # -*- coding: utf-8 -*-
 
+__Name__ = 'LasercutterSVGExport'
+__Comment__ = 'Creates contour lines for all selected objects and arranges trem on a TechDraw page'
+__Author__ = 'christi'
+__Version__ = '0.1'
+__Date__ = '2018-10-25'
+__License__ = 'LGPL-3.0-or-later'
+__Web__ = ''
+__Wiki__ = ''
+__Icon__ = ''
+__Help__ = 'Try it out and play with it. It should be self explanatory'
+__Status__ = 'Alpha'
+__Requires__ = 'FreeCAD >= v0.17'
+__Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=15&t=31796'
+__Files__ = ''
+
+# Form implementation generated from reading ui file 'lasercuttersvg.ui'
+#
+# Created: Sat Oct 27 19:23:30 2018
+#      by: pyside-uic 0.2.15 running on PySide 1.2.2
+#
+
+from PySide import QtCore, QtGui
+
+class Ui_Dialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName("Dialog")
+        Dialog.resize(246, 178)
+        Dialog.setWindowTitle("Create Lasercutter SVG Export Template")
+        self.gridLayout = QtGui.QGridLayout(Dialog)
+        self.gridLayout.setObjectName("gridLayout")
+        self.label = QtGui.QLabel(Dialog)
+        self.label.setText("Laser beam width [mm]:")
+        self.label.setObjectName("label")
+        self.gridLayout.addWidget(self.label, 0, 1, 1, 1)
+        self.doubleSpinBox = QtGui.QDoubleSpinBox(Dialog)
+        self.doubleSpinBox.setProperty("value", 0.2)
+        self.doubleSpinBox.setObjectName("doubleSpinBox")
+        self.gridLayout.addWidget(self.doubleSpinBox, 0, 2, 1, 1)
+        self.pushButton = QtGui.QPushButton(Dialog)
+        self.pushButton.setText("Create Lasercutter Template")
+        self.pushButton.setObjectName("pushButton")
+        self.gridLayout.addWidget(self.pushButton, 2, 1, 1, 2)
+        self.label_2 = QtGui.QLabel(Dialog)
+        self.label_2.setText("<html><head/><body><p align=\"center\">Select one or more parts in your design.<br/>Then press the button.</p></body></html>")
+        self.label_2.setObjectName("label_2")
+        self.gridLayout.addWidget(self.label_2, 1, 1, 1, 2)
+
+        self.retranslateUi(Dialog)
+        QtCore.QObject.connect(self.pushButton,QtCore.SIGNAL("pressed()"),self.createSVG)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        pass
+
+    def createSVG(self):
+        beamWidth = self.doubleSpinBox.value()
+        selected_to_techdraw(beamWidth)
+
+
+
+d = QtGui.QWidget()
+ui = Ui_Dialog()
+ui.setupUi(d)
+d.show()
+
+
+
 import FreeCAD
 import FreeCADGui
 import Part
@@ -137,7 +204,5 @@ def sort_area_face_common(faces, test_function=compare_freecad_vector_direction)
             normal_area_list.append([normal, face.Area, [face]])
     # print normal_area_list
     sorted_list = sorted(normal_area_list, key=itemgetter(1))
-    return sorted_list
+    return sorted_list                                                                                                          
 
-
-selected_to_techdraw(1)
