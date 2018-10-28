@@ -80,6 +80,13 @@ from FreeCAD import Base
 def selected_to_techdraw(cutterDiameter):
     doc = FreeCAD.ActiveDocument
     selection = FreeCADGui.Selection.getSelection() 
+    if not selection:
+        print("nothing selected !")
+        return
+
+    if not selection[0].Shape:
+        print("selected part has no shape !")
+        return
 
     # get existing Techdraw page 'LaserCutterExport' or create a new one 
     techdraw = doc.getObject('LaserCutterExport')
@@ -125,7 +132,9 @@ def selected_to_techdraw(cutterDiameter):
         if maxheight > techdraw.Template.Height:
             techdraw.Template.Height = maxheight
 
-        techdraw.Template.Width = x + bbox.XLength + cutterDiameter
+        maxwidth = x + bbox.XLength + cutterDiameter
+        if maxwidth > techdraw.Template.Width:
+            techdraw.Template.Width = maxwidth
 
         view = doc.addObject('TechDraw::DrawViewPart', sel.Label + "_contour")
         view.CoarseView = True
@@ -163,9 +172,19 @@ def rotate_face_up(part_feature, face):
 
 
 def rotate_biggest_side_up(part_feature, face):
-    x = part_feature.Shape.BoundBox.XLength
-    y = part_feature.Shape.BoundBox.YLength
-    if x > y:
-        Draft.rotate([part_feature],90,FreeCAD.Vector(0.0,0.0,0.0),axis=FreeCAD.Vector(0.0,0.0,1.0),copy=False)
+    xmin = part_feature.Shape.BoundBox.XLength
+    anglemax = 0.0
+    angle = 0.0
+    while angle < 180:
+        Draft.rotate([part_feature], 22.5, FreeCAD.Vector(0.0,0.0,0.0), axis=FreeCAD.Vector(0.0,0.0,1.0), copy=False)
+        angle = angle + 22.5
+
+        if xmin > part_feature.Shape.BoundBox.XLength:
+            xmin = part_feature.Shape.BoundBox.XLength
+            anglemax = angle
+    
+
+    Draft.rotate([part_feature], 180 + anglemax, FreeCAD.Vector(0.0,0.0,0.0), axis=FreeCAD.Vector(0.0,0.0,1.0), copy=False)
+    
                                                                                                      
 
