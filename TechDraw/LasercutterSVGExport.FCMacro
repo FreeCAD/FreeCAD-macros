@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
 __Name__ = 'LasercutterSVGExport'
-__Comment__ = 'Creates contour lines for all selected objects and arranges trem on a TechDraw page'
+__Comment__ = 'Creates contour lines for all selected objects and arranges them on a TechDraw page'
 __Author__ = 'christi'
-__Version__ = '0.2'
-__Date__ = '2018-10-25'
+__Version__ = '0.3'
+__Date__ = '2018-10-28'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = ''
@@ -93,7 +93,8 @@ def selected_to_techdraw(cutterDiameter):
     if group == None:
         group = doc.addObject("App::DocumentObjectGroup","LaserCutterExportObjects")
 
-    x = float(techdraw.Template.Width) + cutterDiameter
+    x = cutterDiameter
+    y = float(techdraw.Template.Height)
 
     for sel in selection:
         # rotate biggest face into xy-plane        
@@ -120,7 +121,7 @@ def selected_to_techdraw(cutterDiameter):
         bbox = offset.Shape.BoundBox
 
         # add a 2D view to the TechDraw page right of the last part
-        maxheight = bbox.YLength + 4 * cutterDiameter
+        maxheight = y + bbox.YLength + cutterDiameter
         if maxheight > techdraw.Template.Height:
             techdraw.Template.Height = maxheight
 
@@ -136,7 +137,7 @@ def selected_to_techdraw(cutterDiameter):
         view.ScaleType = u"Custom"
         view.Scale = 1.00
         view.X = x + bbox.XLength / 2 - bbox.Center.x
-        view.Y = bbox.YLength - (bbox.YLength / 2 - bbox.Center.y) + cutterDiameter
+        view.Y = y + bbox.YLength - (bbox.YLength / 2 - bbox.Center.y)
         x = x + bbox.XLength + cutterDiameter
 
     doc.recompute()
