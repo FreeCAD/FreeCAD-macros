@@ -3,13 +3,13 @@
 __Name__ = 'LasercutterSVGExport'
 __Comment__ = 'Creates contour lines for all selected objects and arranges trem on a TechDraw page'
 __Author__ = 'christi'
-__Version__ = '0.1'
+__Version__ = '0.2'
 __Date__ = '2018-10-25'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = ''
 __Icon__ = ''
-__Help__ = 'Try it out and play with it. It should be self explanatory'
+__Help__ = 'https://github.com/chbergmann/LasercutterSVGExport'
 __Status__ = 'Alpha'
 __Requires__ = 'FreeCAD >= v0.17'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=15&t=31796'
@@ -70,6 +70,7 @@ d.show()
 import FreeCAD
 import FreeCADGui
 import Part
+import Draft
 import TechDraw
 import math
 from operator import itemgetter, attrgetter
@@ -95,9 +96,18 @@ def selected_to_techdraw(cutterDiameter):
     x = float(techdraw.Template.Width) + cutterDiameter
 
     for sel in selection:
-        # create a contour line object for every selected object        
+        # rotate biggest face into xy-plane        
+        clone = Draft.clone(sel)
+        clone.Label = sel.Label + "_clone"
+        clone.ViewObject.Visibility=False
+        doc.recompute()
+        face = get_biggest_face(clone)
+        rotate_face_up(clone, face)
+        rotate_biggest_side_up(clone, face)
+
+        # create a contour line object for every selected object
         offset = doc.addObject("Part::Offset", sel.Label + "_offset")
-        offset.Source = sel
+        offset.Source = clone
         offset.Value = cutterDiameter / 2
         offset.Mode = 0
         offset.Join = 2
@@ -105,10 +115,7 @@ def selected_to_techdraw(cutterDiameter):
         offset.SelfIntersection = False
         offset.ViewObject.Visibility=False
 
-        # rotate biggest face into xy-plane
         group.addObject(offset)
-        doc.recompute()
-        rotate_biggest_face_up(offset)
         doc.recompute()
         bbox = offset.Shape.BoundBox
 
@@ -126,83 +133,38 @@ def selected_to_techdraw(cutterDiameter):
         view.Direction = FreeCAD.Vector(0, 0, 1)
         techdraw.addView(view)
         doc.recompute()
-        view.X = x + bbox.XLength / 2 - bbox.Center.x
-        view.Y = bbox.YLength + (bbox.YLength / 2 - bbox.Center.y) + cutterDiameter
         view.ScaleType = u"Custom"
         view.Scale = 1.00
+        view.X = x + bbox.XLength / 2 - bbox.Center.x
+        view.Y = bbox.YLength - (bbox.YLength / 2 - bbox.Center.y) + cutterDiameter
         x = x + bbox.XLength + cutterDiameter
 
     doc.recompute()
 
-# rotate biggest face into xy-plane
-def rotate_biggest_face_up(part_feature):
-    normal_face_prop = biggest_area_faces(part_feature.Shape)
-    normal_ref = normal_face_prop[0]
+
+def get_biggest_face(part):
+    max_area = 0
+    max_face = None
+    for face in part.Shape.Faces:
+        if face.Area > max_area:
+            max_area = face.Area
+            max_face = face
+    
+    return max_face
+
+
+# rotate face into xy-plane
+def rotate_face_up(part_feature, face):
+    normal_ref = face.normalAt(0, 0)
     rotation_to_apply = FreeCAD.Rotation(normal_ref, FreeCAD.Vector(0, 0, 1))
     new_rotation = rotation_to_apply.multiply(part_feature.Placement.Rotation)
     part_feature.Placement.Rotation = new_rotation
 
 
-def biggest_area_faces(freecad_shape):
-    sorted_list = sort_area_shape_faces(freecad_shape)
-    biggest_area_face = sorted_list[-1]
-#       contains : 0:normal, 1:area mm2, 2; list of faces
-    return biggest_area_face
-
-
-#   Returns face grouping by normal,sorted by the amount of surface (descending)
-def sort_area_shape_faces(shape):
-    return sort_area_face_common(shape.Faces, compare_freecad_vector_direction)
-
-
-def sort_area_shape_list(faces_list):
-    return sort_area_face_common(faces_list, compare_freecad_vector)
-
-
-def compare_freecad_vector_direction(vector1, vector2, epsilon=10e-6):
-    return math.fabs(vector1.cross(vector2).Length) < epsilon
-
-
-def get_local_axis_normalized(face):
-    x_local, y_local_not_normalized, z_local_not_normalized = get_local_axis(face)
-    y_local_not_normalized.normalize()
-    z_local_not_normalized.normalize()
-    return x_local, y_local_not_normalized, z_local_not_normalized
-
-
-def compare_freecad_vector(vector1, vector2, epsilon=10e-6):
-    vector = vector1.sub(vector2)
-    if math.fabs(vector.x) < epsilon and math.fabs(vector.y) < epsilon and math.fabs(vector.z) < epsilon:
-        return True
-    return False
-
-
-def compare_value(value1, value2, epsilon=10e-6):
-    value = value1 - value2
-    if math.fabs(value) < epsilon:
-        return True
-    return False
-
-
-def sort_area_face_common(faces, test_function=compare_freecad_vector_direction):
-    normal_area_list = []
-    for face in faces:
-        # print face
-        normal = face.normalAt(0, 0)
-        # print normal
-        found = False
-        for i in range(len(normal_area_list)):
-            normal_test = normal_area_list[i][0]
-            if test_function(normal, normal_test):
-                found = True
-                normal_area_list[i][1] += face.Area
-                normal_area_list[i][2].append(face)
-                tmp = sorted(normal_area_list[i][2], key=attrgetter('Area'),  reverse=True)
-                normal_area_list[i][2] = tmp
-                break
-        if not found:
-            normal_area_list.append([normal, face.Area, [face]])
-    # print normal_area_list
-    sorted_list = sorted(normal_area_list, key=itemgetter(1))
-    return sorted_list                                                                                                          
+def rotate_biggest_side_up(part_feature, face):
+    x = part_feature.Shape.BoundBox.XLength
+    y = part_feature.Shape.BoundBox.YLength
+    if x > y:
+        Draft.rotate([part_feature],90,FreeCAD.Vector(0.0,0.0,0.0),axis=FreeCAD.Vector(0.0,0.0,1.0),copy=False)
+                                                                                                     
 
