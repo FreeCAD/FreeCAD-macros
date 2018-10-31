@@ -88,7 +88,6 @@ def create_box(materialWidth, boxWidth, boxHeight, boxLength, notchWidth, drawSi
 #overhang = [left, right, front, back]
 def draw_bottom(partname, materialWidth, boxWidth, boxLength, notchWidth, drawSides=[True, True, True, True, True, True], overhang=[0.0, 0.0, 0.0, 0.0]):
     lines = []
-    print(overhang)
 
     if overhang[2] > 0:
         lines1 = notch_holes(boxWidth, notchWidth, materialWidth, overhang[2], drawSides[4], overhang[0], overhang[1])

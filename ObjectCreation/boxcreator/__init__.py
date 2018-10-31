@@ -1,1 +1,1 @@
-import .boxcreator
+from . import boxcreator
