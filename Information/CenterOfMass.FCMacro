@@ -1,0 +1,680 @@
+# -*- coding: utf-8 -*-
+#
+# You have to select one or multiple solids and then you launch the macro.
+# You'll have a window listing the solids. You can put the density of your
+# material or choose in a huge list of predefined materials.
+# If you know your densities in another unit system, I used FreeCAD convert
+# system to propose differents units.
+# You can also display where is the center of mass.
+# An import button allows you to quickly load saved densities (even if it's
+# not a .csv file from the macro, as soon as there is a column named "Density"
+# it will be loaded.)
+
+from __future__ import division
+
+__Name__ = 'CenterOfMass'
+__Comment__ = 'Center of mass computation for multiple solids'
+__Author__ = 'schupin'
+__Version__ = '0.1.2'
+__Date__ = '2018-11-10'
+__License__ = ''
+__Web__ = ''
+__Wiki__ = ''
+__Icon__ = ''
+__Help__ = 'Select or more bodies and launch'
+__Status__ = 'alpha'
+__Requires__ = 'freecad 0.18'
+__Communication__ = 'https://forum.freecadweb.org/viewtopic.php?p=265270#p265270'
+__Files__ = 'CenterOfMass/import.png,CenterOfMass/compute.png,CenterOfMass/save.png,CenterOfMass/material.png,CenterOfMass/com.png'
+
+# TODO : add a button to edit material list
+
+import csv
+import glob
+import os
+
+from PySide import QtCore, QtGui
+
+from freecad import app
+from freecad import gui
+import DraftVecUtils
+import Material
+import MaterialEditor
+
+g_column_width = 310
+g_win_width = 330  # width of our window
+g_win_height = 430  # height of our window
+g_footer = 140
+
+# Find FreeCAD's root window
+g_freecad_root_window = gui.getMainWindow()
+
+
+class CenterofmassWindow(QtGui.QMainWindow):
+
+    def __init__(self):
+        super(CenterofmassWindow, self).__init__()
+        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.setWindowTitle('Center Of Mass')
+
+        self.child = CenterofmassWidget(self)
+        self.setCentralWidget(self.child)
+
+        self.child.initUI(self)
+        if self.child.startup_failed:
+            self.destroy()
+        else:
+            self.setPosition(g_freecad_root_window)
+            self.setMinimumSize(QtCore.QSize(g_win_width, g_win_height))
+            self.setMaximumSize(QtCore.QSize(g_win_width, g_win_height))
+            self.child.show()
+            self.show()
+
+    # Set a sensible default position for the window
+    # With FreeCAD's default layout, this will be over the docking area
+    # so it will not obscure the 3D view
+    def setPosition(self, parent):
+        geom = parent.geometry()
+        xpos = geom.left() + 50
+        ypos = geom.center().y() - g_win_height // 2
+        self.setGeometry(xpos, ypos, g_win_width, g_win_height)
+        # self.setFixedSize(g_win_width, g_win_height)
+
+
+class MaterialWidget():
+    def __init__(self, label, spin, combo, parent, material_database):
+        self.label = label
+        self.spin = spin
+        self.combo = combo
+        self.parent = parent
+        self.material_database = material_database
+
+    def on_comboMaterial_Changed(self, txt):
+        previous_value = self.spin.value()
+        materialDensity = convert_density(
+            self.material_database.get(txt, -10.0),
+            self.parent.comboUnit.currentText()
+        )
+        if materialDensity < 0.0:
+            self.spin.setValue(previous_value)
+            self.combo.setCurrentIndex(0)
+        else:
+            self.spin.setValue(materialDensity)
+            self.combo.setCurrentIndex(self.combo.findText(txt))
+
+    def on_densitySpinBox_valueChanged(self, density):
+        self.combo.setCurrentIndex(0)
+        self.parent.on_pushButton_ComputeCDG()
+
+
+def convert_density(density_siunits, unit):
+    """Convert the density in kg/m³ into another unit"""
+    tu = app.Units.parseQuantity
+    return float(tu('{} kg/m^3'.format(density_siunits)) / tu(unit))
+
+
+# This is the widget which does almost all of the work
+# Widgets don't have close boxes, so closing is dealt with in
+# CenterofmassWindow.
+class CenterofmassWidget(QtGui.QWidget):
+    def __init__(self, parent=None):
+        super(CenterofmassWidget, self).__init__(parent)
+        self.parent = parent
+        print('\033[1;35m%%%%% self.parent: {}\033[0m'.format(self.parent)) # DEBUG
+        self.solid_count = 0
+        self.TotalCdG = [0, 0, 0]
+
+    tu = app.Units.parseQuantity
+
+    material_database = {}
+
+    # Lay out the interactive elements
+    def initUI(self, parent):
+        global g_win_width
+        global sel
+
+        self.loadMaterials()
+
+        self.massTot = 0.0
+        self.centerOfMass = [0.0, 0.0, 0.0]
+
+        font = QtGui.QFont()
+        font.setFamily('Times New Roman')
+        font.setPointSize(10)
+        font.setWeight(10)
+        font.setBold(True)
+
+        sel = gui.Selection.getSelection()
+        self.solid_count = 0
+        for s in range(len(sel)):
+            if not hasattr(sel[s], 'Shape'):
+                error_dialog(u'invalid selection (select a solid)')
+            else:
+                self.solid_count += 1
+
+            if sel[s].Shape.Volume == 0:
+                error_dialog(u'invalid selection (select a solid)')
+                self.destroy()
+
+        if self.solid_count == 0:
+            self.startup_failed = True
+            app.Console.PrintMessage(u'Select an object' + '\n')
+            error_dialog(u'Select an object')
+        else:
+            self.startup_failed = False
+
+        margin = 10
+        labelWidth = 100  # solid label width
+        spinWidth = 60
+        comboWidth = 100
+        ypos = margin
+
+        self.setObjectName('CenterofmassWidget')
+
+        self.label_1 = QtGui.QLabel(self)
+        self.label_1.setGeometry(QtCore.QRect(margin, ypos, g_win_width - 2 * margin, 22))
+        self.label_1.setObjectName('label_1')
+        self.label_1.setText('Density of selected solids')
+        self.label_1.setToolTip('density of selected solids are listed')
+
+        self.label_MLU = QtGui.QLabel(self)
+        self.label_MLU.setGeometry(QtCore.QRect(210, ypos/2, 95, 22))
+        self.label_MLU.setText('unit')
+
+        self.comboUnit = QtGui.QComboBox(self)
+        self.comboUnit.setGeometry(QtCore.QRect(240, ypos/2, 70, 25))
+        self.comboUnit.setToolTip('Unit of density')
+        self.comboUnit.addItem('kg/m^3')
+        self.comboUnit.addItem('g/dm^3')
+        self.comboUnit.addItem('g/cm^3')
+        self.comboUnit.addItem('g/mm^3')
+        self.comboUnit.addItem('oz/in^3')
+        self.comboUnit.addItem('lb/in^3')
+        self.comboUnit.addItem('lb/ft^3')
+        self.comboUnit.addItem('lb/yd^3')
+        # QtCore.QObject.connect(self.comboUnit, QtCore.SIGNAL('currentIndexChanged(QString)'),self.on_comboUnit_Changed)
+        self.comboUnit.currentIndexChanged.connect(self.on_comboUnit_Changed)
+
+        lengthU = self.comboUnit.currentText().split('/')[1].split('^')[0]
+        massU = self.comboUnit.currentText().split('/')[0]
+
+        self.materials = [0] * self.solid_count
+        self.volumes = [0] * self.solid_count
+        self.centerofmasses = [0] * self.solid_count
+        self.masses = [0] * self.solid_count
+
+        self.minBdX = 1e8
+        self.minBdY = 1e8
+        self.minBdZ = 1e8
+        self.maxBdX = -1e8
+        self.maxBdY = -1e8
+        self.maxBdZ = -1e8
+
+        xpos = margin
+        for sol in range(self.solid_count):
+            ypos = ypos + 30
+            if ypos > (g_win_height - g_footer):
+                xpos += g_column_width
+                g_win_width += g_column_width
+                self.parent.resize(g_win_width, g_win_height)
+                ypos = margin + 30
+
+            self.materials[sol] = MaterialWidget(
+                label=QtGui.QLabel(self),
+                spin=QtGui.QDoubleSpinBox(self),
+                combo=QtGui.QComboBox(self),
+                parent=self,
+                material_database=self.material_database,
+            )
+
+            self.materials[sol].label.setGeometry(QtCore.QRect(xpos, ypos, labelWidth, 25))
+            # self.materials[sol].label.setObjectName('label_{}'.format(sol))
+            self.materials[sol].label.setText(
+                '{} : {}'.format(sol + 1, sel[sol].Label))
+
+            self.materials[sol].spin.setGeometry(
+                QtCore.QRect(xpos + g_column_width - 2 * margin - spinWidth,
+                             ypos,
+                             spinWidth,
+                             25))
+            self.materials[sol].spin.setMinimum(1.0)
+            self.materials[sol].spin.setMaximum(25000.0)
+            self.materials[sol].spin.setValue(1000.0)
+            self.materials[sol].spin.setSingleStep(100)
+            self.materials[sol].spin.setDecimals(6)
+            self.materials[sol].spin.valueChanged.connect(self.materials[sol].on_densitySpinBox_valueChanged)
+            self.materials[sol].spin.setObjectName('doubleSpinBox_density_%d' % sol)
+            self.materials[sol].spin.setToolTip(
+                'density of ' + sel[sol].Label + ' (in ' + self.comboUnit.currentText() +')')
+
+            self.materials[sol].combo.setGeometry(
+                QtCore.QRect(xpos + labelWidth, ypos, g_column_width - labelWidth - spinWidth - 2 * margin, 25))
+            self.materials[sol].combo.addItem('custom')
+            for m in sorted(self.material_database):
+                self.materials[sol].combo.addItem(m)
+            self.materials[sol].combo.setCurrentIndex(self.materials[sol].combo.findText('default'))
+            # QtCore.QObject.connect(self.materials[sol].combo, QtCore.SIGNAL('currentIndexChanged(QString)'), self.materials[sol].on_comboMaterial_Changed)
+            self.materials[sol].combo.currentIndexChanged.connect(self.materials[sol].on_comboMaterial_Changed)
+
+            self.volumes[sol] = sel[sol].Shape.Volume
+
+            # Find the center of mass depending of the type of object.
+            if sel[sol].InList and sel[sol].InList[0].TypeId == 'PartDesign::Body':
+                self.centerofmasses[sol] = sel[sol].InList[0].Shape.CenterOfMass
+            else:
+                try:
+                    self.centerofmasses[sol] = sel[sol].Shape.CenterOfMass
+                except:
+                    self.centerofmasses[sol] = sel[sol].Shape.Solids[0].CenterOfMass
+
+            if hasattr(sel[sol], 'ArrayType'):
+                if sel[sol].ArrayType == 'polar' and sel[sol].NumberPolar > 0:
+                    self.centerofmasses[sol] = sel[sol].Center
+                else:
+                    xvector = sel[sol].IntervalX
+                    yvector = sel[sol].IntervalY
+                    zvector = sel[sol].IntervalZ
+                    if hasattr(sel[sol].Base, 'IfcRole'):
+                        if sel[sol].Base.IfcRole == 'Reinforcing Bar':
+                            axis = sel[sol].Base.Base.Placement.Rotation.multVec(app.Vector(0, 0, -1))
+                            if hasattr(sel[sol].Base, 'Direction'):
+                                if not DraftVecUtils.isNull(sel[sol].Base.Direction):
+                                    axis = sel[sol].Base.Direction
+                                    axis.normalize()
+                            self.centerofmasses[sol] += float(sel[sol].Base.Spacing) * axis * float(sel[sol].Base.Amount - 1) / 2
+
+                    for xcount in range(sel[sol].NumberX):
+                        self.centerofmasses[sol] += xcount * xvector / (sel[sol].NumberX)
+                    for ycount in range(sel[sol].NumberY):
+                        self.centerofmasses[sol] += ycount * yvector / (sel[sol].NumberY)
+                    for zcount in range(sel[sol].NumberZ):
+                        self.centerofmasses[sol] += zcount * zvector / (sel[sol].NumberZ)
+
+            if hasattr(sel[sol], 'IfcRole'):
+                if sel[sol].IfcRole == 'Reinforcing Bar':
+                    axis = sel[sol].Base.Placement.Rotation.multVec(app.Vector(0, 0, -1))
+                    if hasattr(sel[sol], 'Direction'):
+                        if not DraftVecUtils.isNull(sel[sol].Direction):
+                            axis = sel[sol].Direction
+                            axis.normalize()
+                    self.centerofmasses[sol] += float(sel[sol].Spacing) * axis * float(sel[sol].Amount - 1) / 2
+
+            if sel[sol].Shape.BoundBox.XMin < self.minBdX:
+                self.minBdX = sel[sol].Shape.BoundBox.XMin
+            if sel[sol].Shape.BoundBox.YMin < self.minBdY:
+                self.minBdY = sel[sol].Shape.BoundBox.YMin
+            if sel[sol].Shape.BoundBox.ZMin < self.minBdZ:
+                self.minBdZ = sel[sol].Shape.BoundBox.ZMin
+            if sel[sol].Shape.BoundBox.XMax > self.maxBdX:
+                self.maxBdX = sel[sol].Shape.BoundBox.XMax
+            if sel[sol].Shape.BoundBox.YMax > self.maxBdY:
+                self.maxBdY = sel[sol].Shape.BoundBox.YMax
+            if sel[sol].Shape.BoundBox.ZMax > self.maxBdZ:
+                self.maxBdZ = sel[sol].Shape.BoundBox.ZMax
+
+        self.calc = QtGui.QPushButton(self)
+        self.calc.setGeometry(QtCore.QRect(10, g_win_height - margin - 100, 40, 40))
+        self.calc.setObjectName('compute')
+        self.calc.clicked.connect(self.on_pushButton_ComputeCDG)
+        self.calc.setToolTip(u'compute centerOfMass')
+        macro_dir = app.getUserMacroDir(False)
+        icon_path = os.path.join(macro_dir, 'CenterOfMass', 'compute.png')
+        self.calc.setIcon(QtGui.QIcon(icon_path))
+        self.calc.setIconSize(QtCore.QSize(35, 35))
+        self.calc.setStyleSheet('QPushButton{border: 0px solid;}')
+        # self.calc.setText('compute')
+
+        self.export = QtGui.QPushButton(self)
+        self.export.setEnabled(False)
+        self.export.setGeometry(QtCore.QRect(60, g_win_height - margin - 100, 40, 40))
+        self.export.setObjectName('export')
+        self.export.clicked.connect(self.on_pushButton_Export)
+        self.export.setToolTip(u'export values to a .csv file')
+        icon_path = os.path.join(macro_dir, 'CenterOfMass', 'save.png')
+        self.export.setIcon(QtGui.QIcon(icon_path))
+        self.export.setIconSize(QtCore.QSize(35, 35))
+        self.export.setStyleSheet('QPushButton{border: 0px solid;}')
+        # self.export.setText('export')
+
+        self.readDensities = QtGui.QPushButton(self)
+        self.readDensities.setGeometry(QtCore.QRect(110, g_win_height - margin - 100, 40, 40))
+        self.readDensities.setObjectName('import')
+        self.readDensities.clicked.connect(self.on_pushButton_Import)
+        self.readDensities.setToolTip(u'import densities from a .csv file')
+        icon_path = os.path.join(macro_dir, 'CenterOfMass', 'import.png')
+        self.readDensities.setIcon(QtGui.QIcon(icon_path))
+        self.readDensities.setIconSize(QtCore.QSize(35, 35))
+        self.readDensities.setStyleSheet('QPushButton{border: 0px solid;}')
+        # self.readDensities.setText('import')
+
+        self.editMat = QtGui.QPushButton(self)
+        self.editMat.setGeometry(QtCore.QRect(160, g_win_height - margin - 100, 40, 40))
+        self.editMat.setObjectName('editMaterial')
+        self.editMat.clicked.connect(self.on_pushButton_EditMat)
+        self.editMat.setToolTip('Edit Material list')
+        icon_path = os.path.join(macro_dir, 'CenterOfMass', 'material.png')
+        self.editMat.setIcon(QtGui.QIcon(icon_path))
+        self.editMat.setIconSize(QtCore.QSize(35, 35))
+        self.editMat.setStyleSheet('QPushButton{border: 0px solid;}')
+
+        self.label_Mass = QtGui.QLabel(self)
+        self.label_Mass.setGeometry(QtCore.QRect(margin, g_win_height-margin-60, 80, 25))
+        self.label_Mass.setObjectName('label_Mass')
+        self.label_Mass.setText('Total mass')
+        self.resultMasseTot = QtGui.QLineEdit(self)
+        self.resultMasseTot.setGeometry(QtCore.QRect(90, g_win_height - margin - 60, 150, 25))
+        self.resultMasseTot.setObjectName('total weight')
+        self.resultMasseTot.setReadOnly(True)
+        self.resultMasseTot.setPlaceholderText('no computation done')
+        self.resultMasseTot.setToolTip('total weight (in {})'.format(massU))
+
+        self.showCdg = QtGui.QPushButton(self)
+        self.showCdg.setGeometry(QtCore.QRect(250, g_win_height - margin - 65, 35, 35))
+        self.showCdg.setObjectName('showCdG')
+        self.showCdg.clicked.connect(self.on_pushButton_ShowCdG)
+        self.showCdg.setToolTip('show center of mass')
+        self.showCdg.setEnabled(False)
+        icon_path = os.path.join(macro_dir, 'CenterOfMass', 'cdg.png')
+        self.showCdg.setIcon(QtGui.QIcon(icon_path))
+        self.showCdg.setIconSize(QtCore.QSize(30, 30))
+
+        self.label_CdG = QtGui.QLabel(self)
+        self.label_CdG.setGeometry(QtCore.QRect(margin, g_win_height - margin - 30, 100, 25))
+        self.label_CdG.setObjectName('label_CdG')
+        self.label_CdG.setText('Center of mass')
+        self.resultCdGX = QtGui.QLineEdit(self)
+        self.resultCdGX.setGeometry(QtCore.QRect(115, g_win_height - margin - 30, 65, 25))
+        self.resultCdGX.setObjectName('center of mass')
+        self.resultCdGX.setReadOnly(True)
+        self.resultCdGX.setPlaceholderText('no computation done')
+        self.resultCdGX.setToolTip('center of mass X (in %s)' % lengthU)
+
+        self.resultCdGY = QtGui.QLineEdit(self)
+        self.resultCdGY.setGeometry(QtCore.QRect(185, g_win_height - margin - 30, 65, 25))
+        self.resultCdGY.setObjectName('center of mass')
+        self.resultCdGY.setReadOnly(True)
+        self.resultCdGY.setPlaceholderText('no computation done')
+        self.resultCdGY.setToolTip('center of mass Y (in %s)' % lengthU)
+
+        self.resultCdGZ = QtGui.QLineEdit(self)
+        self.resultCdGZ.setGeometry(QtCore.QRect(255, g_win_height - margin - 30, 65, 25))
+        self.resultCdGZ.setObjectName('center of mass')
+        self.resultCdGZ.setReadOnly(True)
+        self.resultCdGZ.setPlaceholderText('no computation done')
+        self.resultCdGZ.setToolTip('center of mass Z (in %s)' % lengthU)
+
+    def on_pushButton_EditMat(self):
+        MaterialEditor.openEditor()
+        self.loadMaterials()
+        for sol in range(self.solid_count):
+            for m in sorted(self.material_database):
+                if self.materials[sol].combo.findText(m) == -1:
+                    self.materials[sol].combo.addItem(m)
+
+    def add_cards_from_a_dir(self, materials_cards, mat_dir, icon):
+        mat_file_extension = '.FCMat'
+        dir_path_list = glob.glob(mat_dir + '/*' + mat_file_extension)
+        for a_path in dir_path_list:
+            materials_cards[a_path] = Material.importFCMat(a_path)
+
+    def loadMaterials(self):
+        materials_cards = {}
+        fem_prefs = app.ParamGet('User parameter:BaseApp/Preferences/Mod/Material/Resources')
+
+        use_built_in_materials = fem_prefs.GetBool('UseBuiltInMaterials', True)
+        if use_built_in_materials:
+            system_mat_dir = app.getResourceDir() + '/Mod/Material/StandardMaterial'
+            self.add_cards_from_a_dir(materials_cards, system_mat_dir, ':/icons/freecad.svg')
+
+        use_mat_from_config_dir = fem_prefs.GetBool('UseMaterialsFromConfigDir', True)
+        if use_mat_from_config_dir:
+            user_mat_dirname = app.getUserAppDataDir() + 'Material'
+            self.add_cards_from_a_dir(materials_cards, user_mat_dirname, ':/icons/preferences-general.svg')
+
+        use_mat_from_custom_dir = fem_prefs.GetBool('UseMaterialsFromCustomDir', True)
+        if use_mat_from_custom_dir:
+            custom_mat_dir = fem_prefs.GetString('CustomMaterialsDir', '')
+            self.add_cards_from_a_dir(materials_cards, custom_mat_dir, ':/icons/user.svg')
+
+        for mat_card in sorted(materials_cards):
+            self.material_database['default'] = 1000.0
+            try :
+                self.material_database[mat_card.split('/')[-1].split('\\')[-1].split('.FCMat')[0]] = float(
+                    materials_cards.get(mat_card).get('Density').split(' ')[0])
+            except:
+                pass
+
+    def convertLength(self, length):
+        length_unit = self.comboUnit.currentText().split('/')[1].split('^')[0]
+        return float(self.tu('{} mm'.format(length)) / self.tu(length_unit))
+
+    def convertVolume(self, volume):
+        densityU = self.comboUnit.currentText()
+        volU = densityU.split('/')[1]
+        volumeConverted = float(self.tu('%f mm^3' % volume) / self.tu(volU))
+        return volumeConverted
+
+    def on_comboUnit_Changed(self, txt):
+        densityU = self.comboUnit.currentText()
+        lengthU = densityU.split('/')[1].split('^')[0]
+        massU = densityU.split('/')[0]
+        self.resultMasseTot.setToolTip('total weight (in %s)' % massU)
+        self.resultCdGX.setToolTip('center of mass X (in %s)' % lengthU)
+        self.resultCdGY.setToolTip('center of mass Y (in %s)' % lengthU)
+        self.resultCdGZ.setToolTip('center of mass Z (in %s)' % lengthU)
+        for sol in range(self.solid_count):
+            self.materials[sol].spin.setToolTip('density of ' + sel[sol].Label + ' (in ' + densityU + ')')
+            prevMaterial = self.materials[sol].combo.currentIndex()
+            unit = self.comboUnit.currentText()
+            self.materials[sol].spin.setMinimum(convert_density(1, unit))
+            self.materials[sol].spin.setMaximum(convert_density(25000, unit))
+            self.materials[sol].spin.setSingleStep(convert_density(100, unit))
+            self.materials[sol].combo.setCurrentIndex(0)
+            self.materials[sol].combo.setCurrentIndex(prevMaterial)
+        self.on_pushButton_ComputeCDG()
+
+    def on_pushButton_ComputeCDG(self):
+        self.massTot = 0
+        for sol in range(self.solid_count):
+            volumeInUnit = self.convertVolume(self.volumes[sol])
+            self.masses[sol] = volumeInUnit * self.materials[sol].spin.value()
+            self.massTot += self.masses[sol]
+        for sol in range(self.solid_count):
+            self.TotalCdG[0] += 1 / self.massTot * self.masses[sol] * self.centerofmasses[sol][0]
+            self.TotalCdG[1] += 1 / self.massTot * self.masses[sol] * self.centerofmasses[sol][1]
+            self.TotalCdG[2] += 1 / self.massTot * self.masses[sol] * self.centerofmasses[sol][2]
+        self.resultMasseTot.setText('{:.6}'.format(self.massTot))
+        self.resultCdGX.setText('{:.4}'.format(self.convertLength(self.TotalCdG[0])))
+        self.resultCdGY.setText('{:.4}'.format(self.convertLength(self.TotalCdG[1])))
+        self.resultCdGZ.setText('{:.4}'.format(self.convertLength(self.TotalCdG[2])))
+
+        self.export.setEnabled(True)
+        self.showCdg.setEnabled(True)
+
+    def on_pushButton_ShowCdG(self):
+        doc = app.activeDocument()
+        if doc.findObjects('Part::Sphere', 'CenterOfMass'):
+            doc.removeObject('CenterOfMass')
+        if doc.findObjects('Part::Plane','PlaneX'):
+            doc.removeObject('PlaneX')
+        if doc.findObjects('Part::Plane','PlaneY'):
+            doc.removeObject('PlaneY')
+        if doc.findObjects('Part::Plane','PlaneZ'):
+            doc.removeObject('PlaneZ')
+        if doc.findObjects('App::DocumentObjectGroup', 'FCPlane' + 'CdG'):
+            doc.removeObject('FCPlane' + 'CdG')
+        for sol in range(self.solid_count):
+            if doc.findObjects('Part::Sphere', ('CenterOfMass_' + sel[sol].Label)):
+                doc.removeObject('CenterOfMass_' + sel[sol].Label)
+
+        boundBoxLX  = self.maxBdX - self.minBdX
+        boundBoxLY  = self.maxBdY - self.minBdY
+        boundBoxLZ  = self.maxBdZ - self.minBdZ
+        FCSpring = doc.addObject('App::DocumentObjectGroup', 'FCPlane' + 'CdG')
+        plr = app.Placement()
+        plr.Base = app.Vector(self.TotalCdG[0], self.TotalCdG[1], self.TotalCdG[2])
+
+        #Sphere to represent the center of masses
+        sphere = app.ActiveDocument.addObject('Part::Sphere', 'CenterOfMass')
+        sphere.Placement = plr
+        sphere.Radius = 0.01 * (max(boundBoxLX, max(boundBoxLY, boundBoxLZ)))
+        sphere.ViewObject.ShapeColor = (0.6, 0.0, 0.0)
+        sphere.ViewObject.Transparency = 5
+        sphere.ViewObject.LineWidth = 1.0
+        FCSpring.addObject(sphere)
+
+        if self.solid_count > 1:
+            for sol in range(self.solid_count):
+                sphere = app.ActiveDocument.addObject('Part::Sphere', 'CenterOfMass_' + sel[sol].Label)
+                plrSol = app.Placement()
+                plrSol.Base = app.Vector(self.centerofmasses[sol][0],
+                                         self.centerofmasses[sol][1],
+                                         self.centerofmasses[sol][2])
+                sphere.Placement = plrSol
+                sphere.Radius = 0.0075 * (max(boundBoxLX, max(boundBoxLY, boundBoxLZ)))
+                sphere.ViewObject.ShapeColor = (0.0, 0.6, 0.0)
+                sphere.ViewObject.Transparency = 5
+                sphere.ViewObject.LineWidth = 1.0
+                FCSpring.addObject(sphere)
+
+        ### PlaneX-R
+        plan = app.ActiveDocument.addObject('Part::Plane', 'PlaneX')
+        plan.Length = boundBoxLZ
+        plan.Width = boundBoxLX
+        plan.Placement = plr
+        plan.Placement.Rotation = plan.Placement.Rotation.multiply(app.Rotation(0.0, -90.0, 0.0))
+        plan.Placement = plan.Placement.multiply(
+            app.Placement(app.Vector(-float(plan.Length) / 2.0, -float(plan.Width) / 2.0, 0.0),
+                          app.Rotation(app.Vector(0.0, 0.0, 0.0), 0.0), app.Vector(0.0, 0.0, 0.0)))
+
+        plan.ViewObject.LineColor = (1.0, 0.66667, 0.0)
+        plan.ViewObject.ShapeColor = (0.6, 0.0, 0.0)
+        plan.ViewObject.Transparency = 90
+        plan.ViewObject.LineWidth = 1.0
+        FCSpring.addObject(plan)
+        ### PlaneY-V
+        plan = app.ActiveDocument.addObject('Part::Plane', 'PlaneY')
+        plan.Length = boundBoxLY
+        plan.Width = boundBoxLZ
+        plan.Placement = plr
+        plan.Placement.Rotation = plan.Placement.Rotation.multiply(app.Rotation(0.0, 0.0, 90.0))
+        plan.Placement = plan.Placement.multiply(
+            app.Placement(app.Vector(-float(plan.Length) / 2.0, -float(plan.Width) / 2.0, 0.0),
+                          app.Rotation(app.Vector(0.0, 0.0, 0.0), 0.0), app.Vector(0.0, 0.0, 0.0)))
+
+        plan.ViewObject.LineColor = (1.0, 0.66667, 0.0)
+        plan.ViewObject.ShapeColor = (0.0, 0.6, 0.0)
+        plan.ViewObject.Transparency = 90
+        plan.ViewObject.LineWidth = 1.0
+        FCSpring.addObject(plan)
+        ### PlaneZ-B
+        plan = app.ActiveDocument.addObject('Part::Plane', 'PlaneZ')
+        plan.Length = boundBoxLX
+        plan.Width = boundBoxLY
+        plan.Placement = plr
+        plan.Placement = plan.Placement.multiply(
+            app.Placement(app.Vector(-float(plan.Length) / 2.0, -float(plan.Width) / 2.0, 0.0),
+                          app.Rotation(app.Vector(0.0, 0.0, 0.0), 0.0), app.Vector(0.0, 0.0, 0.0)))
+
+        plan.ViewObject.LineColor = (1.0, 1.0, 1.0)
+        plan.ViewObject.ShapeColor = (0.0, 0.0, 0.6)
+        plan.ViewObject.Transparency = 90
+        plan.ViewObject.LineWidth = 1.0
+        FCSpring.addObject(plan)
+
+        doc.recompute()
+
+    def on_pushButton_Export(self):
+        SaveName = ''
+        SaveName, Filter = QtGui.QFileDialog.getSaveFileName(
+            None,
+            'Save a file .csv',
+            os.path.expanduser('~'),
+            '*.csv *.txt;Cvs (*.csv);;TXT (*.txt)')
+        if SaveName == '':
+            app.Console.PrintMessage('Process aborted' + '\n')
+            error_dialog('Process aborted')
+        else:
+            app.Console.PrintMessage('Saving ' + SaveName + '\n')
+
+            try:
+                f = open(SaveName, 'w') # write
+
+                densityU = self.comboUnit.currentText()
+                volU = densityU.split('/')[1]
+                lengthU = densityU.split('/')[1].split('^')[0]
+                massU = densityU.split('/')[0]
+
+                f.write('Number\tLabel\tMaterial\tVolume (%s)\tDensity (%s)\tWeight (%s)\tCenter of mass X (%s)\tCenter of mass Y (%s)\tCenter of mass Z (%s)\n' % (
+                    volU, densityU, massU, lengthU, lengthU, lengthU))
+                for sol in range(self.solid_count):
+                    f.write('%d\t%s\t%s\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\n' % (
+                        sol + 1, sel[sol].Label, self.materials[sol].combo.currentText(),
+                        self.convertVolume(self.volumes[sol]),
+                        self.materials[sol].spin.value(), self.masses[sol],
+                        self.convertLength(self.centerofmasses[sol][0]),
+                        self.convertLength(self.centerofmasses[sol][1]),
+                        self.convertLength(self.centerofmasses[sol][2])))
+
+                f.write('\nTotal\t\t\t\t\t%.6e\t%.6e\t%.6e\t%.6e\n' % (
+                    self.massTot,
+                    self.convertLength(self.TotalCdG[0]),
+                    self.convertLength(self.TotalCdG[1]),
+                    self.convertLength(self.TotalCdG[2])))
+                f.close()
+                app.Console.PrintMessage(SaveName + ' saved\n')
+
+            except Exception:
+                app.Console.PrintMessage('Error writing file ' + SaveName + '\n')
+                error_dialog('Error writing file ' + SaveName)
+
+    def on_pushButton_Import(self):
+        filename, filter = QtGui.QFileDialog.getOpenFileName(
+            parent=self,
+            caption='Open file',
+            dir=app.getUserMacroDir(False),
+            filter='*.csv')
+        app.Console.PrintMessage('reading densities from %s' % filename)
+        # open csv file
+        with open(filename, 'r') as csvfile:
+            reader = csv.DictReader(csvfile, delimiter='\t')
+
+            densityUnits = ['', ' (kg/m^3)', ' (g/dm^3)', ' (g/cm^3)', 'g/mm^3', ' (oz/in^3)', ' (lb/in^3)', ' (lb/ft^3)',
+                            ' (lb/yd^3)']
+
+            matLoaded = 0
+            for row in reader:
+                if matLoaded < self.solid_count:
+                    try:
+                        self.materials[matLoaded].combo.setCurrentIndex(
+                            self.materials[matLoaded].combo.findText(row['Material']))
+                    except:
+                        app.Console.PrintWarning('Unknown material or unable to find a "Material" column in the file --> Material set to "custom"')
+                        self.materials[matLoaded].combo.setCurrentIndex(
+                            self.materials[matLoaded].combo.findText('custom'))
+
+                    if self.materials[matLoaded].combo.currentText() == 'custom':
+                        try:
+                            for u in range(len(densityUnits)):
+                                try:
+                                    self.materials[matLoaded].spin.setValue(float(row['Density' + densityUnits[u]]))
+                                except:
+                                    pass
+
+                        except:
+                            self.materials[matLoaded].combo.setCurrentIndex(
+                                self.materials[matLoaded].combo.findText('default'))
+                            app.Console.PrintWarning('Unable to find a "Density" column in the file --> Material set to "default"')
+                    matLoaded += 1
+
+                #content = list(row[i] for i in included_cols)
+                #print content
+
+
+def error_dialog(msg):
+    diag = QtGui.QMessageBox(QtGui.QMessageBox.Critical, 'Error Message', msg)
+    diag.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+    diag.exec_()
+
+# Create the window and start it
+myWidget = CenterofmassWindow()
