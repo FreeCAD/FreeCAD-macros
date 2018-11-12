@@ -9,6 +9,9 @@
 # An import button allows you to quickly load saved densities (even if it's
 # not a .csv file from the macro, as soon as there is a column named "Density"
 # it will be loaded.)
+#
+# Icons import.png, compute.png, save.png, material.png, and com.png are
+# from https://www.freepik.com/.
 
 from __future__ import division
 
@@ -18,7 +21,7 @@ __Author__ = 'schupin'
 __Version__ = '0.1.2'
 __Date__ = '2018-11-10'
 __License__ = ''
-__Web__ = ''
+__Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = ''
 __Icon__ = ''
 __Help__ = 'Select or more bodies and launch'
