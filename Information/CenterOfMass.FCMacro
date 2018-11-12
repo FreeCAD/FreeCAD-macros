@@ -13,11 +13,11 @@
 from __future__ import division
 
 __Name__ = 'CenterOfMass'
-__Comment__ = 'Center of mass computation for multiple solids'
+__Comment__ = 'Computation of the center of mass for multiple solids'
 __Author__ = 'schupin'
-__Version__ = '0.1.2'
-__Date__ = '2018-11-10'
-__License__ = ''
+__Version__ = '0.1.3'
+__Date__ = '2018-11-12'
+__License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = ''
 __Icon__ = ''
@@ -120,7 +120,6 @@ class CenterofmassWidget(QtGui.QWidget):
     def __init__(self, parent=None):
         super(CenterofmassWidget, self).__init__(parent)
         self.parent = parent
-        print('\033[1;35m%%%%% self.parent: {}\033[0m'.format(self.parent)) # DEBUG
         self.solid_count = 0
         self.TotalCdG = [0, 0, 0]
 
@@ -666,9 +665,6 @@ class CenterofmassWidget(QtGui.QWidget):
                                 self.materials[matLoaded].combo.findText('default'))
                             app.Console.PrintWarning('Unable to find a "Density" column in the file --> Material set to "default"')
                     matLoaded += 1
-
-                #content = list(row[i] for i in included_cols)
-                #print content
 
 
 def error_dialog(msg):
