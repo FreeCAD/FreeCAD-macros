@@ -27,8 +27,6 @@ __Requires__ = 'freecad 0.18'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?p=265270#p265270'
 __Files__ = 'CenterOfMass/import.png,CenterOfMass/compute.png,CenterOfMass/save.png,CenterOfMass/material.png,CenterOfMass/com.png'
 
-# TODO : add a button to edit material list
-
 import csv
 import glob
 import os
@@ -90,9 +88,10 @@ class MaterialWidget():
         self.material_database = material_database
 
     def on_comboMaterial_Changed(self, txt):
+        materialName = self.combo.currentText()
         previous_value = self.spin.value()
         materialDensity = convert_density(
-            self.material_database.get(txt, -10.0),
+            self.material_database.get(materialName, -10.0),
             self.parent.comboUnit.currentText()
         )
         if materialDensity < 0.0:
@@ -100,7 +99,7 @@ class MaterialWidget():
             self.combo.setCurrentIndex(0)
         else:
             self.spin.setValue(materialDensity)
-            self.combo.setCurrentIndex(self.combo.findText(txt))
+            self.combo.setCurrentIndex(self.combo.findText(materialName))
 
     def on_densitySpinBox_valueChanged(self, density):
         self.combo.setCurrentIndex(0)
@@ -120,7 +119,7 @@ class CenterofmassWidget(QtGui.QWidget):
     def __init__(self, parent=None):
         super(CenterofmassWidget, self).__init__(parent)
         self.parent = parent
-        print('\033[1;35m%%%%% self.parent: {}\033[0m'.format(self.parent)) # DEBUG
+        #print('\033[1;35m%%%%% self.parent: {}\033[0m'.format(self.parent)) # DEBUG
         self.solid_count = 0
         self.TotalCdG = [0, 0, 0]
 
@@ -253,7 +252,7 @@ class CenterofmassWidget(QtGui.QWidget):
             for m in sorted(self.material_database):
                 self.materials[sol].combo.addItem(m)
             self.materials[sol].combo.setCurrentIndex(self.materials[sol].combo.findText('default'))
-            # QtCore.QObject.connect(self.materials[sol].combo, QtCore.SIGNAL('currentIndexChanged(QString)'), self.materials[sol].on_comboMaterial_Changed)
+            #QtCore.QObject.connect(self.materials[sol].combo, QtCore.SIGNAL('currentIndexChanged(QString)'), self.materials[sol].on_comboMaterial_Changed)
             self.materials[sol].combo.currentIndexChanged.connect(self.materials[sol].on_comboMaterial_Changed)
 
             self.volumes[sol] = sel[sol].Shape.Volume
@@ -281,7 +280,7 @@ class CenterofmassWidget(QtGui.QWidget):
                                 if not DraftVecUtils.isNull(sel[sol].Base.Direction):
                                     axis = sel[sol].Base.Direction
                                     axis.normalize()
-                            self.centerofmasses[sol] += float(sel[sol].Base.Spacing) * axis * float(sel[sol].Base.Amount - 1) / 2
+                            self.centerofmasses[sol] += float(sel[sol].Base.Spacing) * axis * (float(sel[sol].Base.Amount - 1) / 2.)
 
                     for xcount in range(sel[sol].NumberX):
                         self.centerofmasses[sol] += xcount * xvector / (sel[sol].NumberX)
@@ -297,7 +296,7 @@ class CenterofmassWidget(QtGui.QWidget):
                         if not DraftVecUtils.isNull(sel[sol].Direction):
                             axis = sel[sol].Direction
                             axis.normalize()
-                    self.centerofmasses[sol] += float(sel[sol].Spacing) * axis * float(sel[sol].Amount - 1) / 2
+                    self.centerofmasses[sol] += float(sel[sol].Spacing) * axis * (float(sel[sol].Amount - 1) / 2.)
 
             if sel[sol].Shape.BoundBox.XMin < self.minBdX:
                 self.minBdX = sel[sol].Shape.BoundBox.XMin
@@ -317,7 +316,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.calc.setObjectName('compute')
         self.calc.clicked.connect(self.on_pushButton_ComputeCDG)
         self.calc.setToolTip(u'compute centerOfMass')
-        macro_dir = app.getUserMacroDir(False)
+        macro_dir = app.getUserMacroDir()
         icon_path = os.path.join(macro_dir, 'CenterOfMass', 'compute.png')
         self.calc.setIcon(QtGui.QIcon(icon_path))
         self.calc.setIconSize(QtCore.QSize(35, 35))
@@ -374,7 +373,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.showCdg.clicked.connect(self.on_pushButton_ShowCdG)
         self.showCdg.setToolTip('show center of mass')
         self.showCdg.setEnabled(False)
-        icon_path = os.path.join(macro_dir, 'CenterOfMass', 'cdg.png')
+        icon_path = os.path.join(macro_dir, 'CenterOfMass', 'com.png')
         self.showCdg.setIcon(QtGui.QIcon(icon_path))
         self.showCdg.setIconSize(QtCore.QSize(30, 30))
 
@@ -493,19 +492,11 @@ class CenterofmassWidget(QtGui.QWidget):
 
     def on_pushButton_ShowCdG(self):
         doc = app.activeDocument()
-        if doc.findObjects('Part::Sphere', 'CenterOfMass'):
-            doc.removeObject('CenterOfMass')
-        if doc.findObjects('Part::Plane','PlaneX'):
-            doc.removeObject('PlaneX')
-        if doc.findObjects('Part::Plane','PlaneY'):
-            doc.removeObject('PlaneY')
-        if doc.findObjects('Part::Plane','PlaneZ'):
-            doc.removeObject('PlaneZ')
-        if doc.findObjects('App::DocumentObjectGroup', 'FCPlane' + 'CdG'):
-            doc.removeObject('FCPlane' + 'CdG')
-        for sol in range(self.solid_count):
-            if doc.findObjects('Part::Sphere', ('CenterOfMass_' + sel[sol].Label)):
-                doc.removeObject('CenterOfMass_' + sel[sol].Label)
+        try:
+            doc.getObject("FCPlaneCdG").removeObjectsFromDocument()
+            doc.removeObject("FCPlaneCdG")
+        except Exception:
+            None
 
         boundBoxLX  = self.maxBdX - self.minBdX
         boundBoxLY  = self.maxBdY - self.minBdY
@@ -537,11 +528,13 @@ class CenterofmassWidget(QtGui.QWidget):
                 sphere.ViewObject.LineWidth = 1.0
                 FCSpring.addObject(sphere)
 
-        ### PlaneX-R
+        ### PlaneX
         plan = app.ActiveDocument.addObject('Part::Plane', 'PlaneX')
         plan.Length = boundBoxLZ
-        plan.Width = boundBoxLX
-        plan.Placement = plr
+        plan.Width = boundBoxLY
+        plp = app.Placement()
+        plp.Base = app.Vector(self.TotalCdG[0], boundBoxLY/2., boundBoxLZ/2.)
+        plan.Placement = plp
         plan.Placement.Rotation = plan.Placement.Rotation.multiply(app.Rotation(0.0, -90.0, 0.0))
         plan.Placement = plan.Placement.multiply(
             app.Placement(app.Vector(-float(plan.Length) / 2.0, -float(plan.Width) / 2.0, 0.0),
@@ -552,11 +545,12 @@ class CenterofmassWidget(QtGui.QWidget):
         plan.ViewObject.Transparency = 90
         plan.ViewObject.LineWidth = 1.0
         FCSpring.addObject(plan)
-        ### PlaneY-V
+        ### PlaneY
         plan = app.ActiveDocument.addObject('Part::Plane', 'PlaneY')
-        plan.Length = boundBoxLY
+        plan.Length = boundBoxLX
         plan.Width = boundBoxLZ
-        plan.Placement = plr
+        plp.Base = app.Vector(boundBoxLX/2., self.TotalCdG[1], boundBoxLZ/2.)
+        plan.Placement = plp
         plan.Placement.Rotation = plan.Placement.Rotation.multiply(app.Rotation(0.0, 0.0, 90.0))
         plan.Placement = plan.Placement.multiply(
             app.Placement(app.Vector(-float(plan.Length) / 2.0, -float(plan.Width) / 2.0, 0.0),
@@ -567,20 +561,33 @@ class CenterofmassWidget(QtGui.QWidget):
         plan.ViewObject.Transparency = 90
         plan.ViewObject.LineWidth = 1.0
         FCSpring.addObject(plan)
-        ### PlaneZ-B
+        ### PlaneZ
         plan = app.ActiveDocument.addObject('Part::Plane', 'PlaneZ')
         plan.Length = boundBoxLX
         plan.Width = boundBoxLY
-        plan.Placement = plr
+        plp.Base = app.Vector(boundBoxLX/2., boundBoxLY/2., self.TotalCdG[2])
+        plan.Placement = plp
         plan.Placement = plan.Placement.multiply(
             app.Placement(app.Vector(-float(plan.Length) / 2.0, -float(plan.Width) / 2.0, 0.0),
                           app.Rotation(app.Vector(0.0, 0.0, 0.0), 0.0), app.Vector(0.0, 0.0, 0.0)))
 
-        plan.ViewObject.LineColor = (1.0, 1.0, 1.0)
+        plan.ViewObject.LineColor = (1.0, 0.66667, 0.0)
         plan.ViewObject.ShapeColor = (0.0, 0.0, 0.6)
         plan.ViewObject.Transparency = 90
         plan.ViewObject.LineWidth = 1.0
         FCSpring.addObject(plan)
+        ### BoundingBox
+        plr = FreeCAD.Placement()
+        plr.Base = FreeCAD.Vector( self.minBdX, self.minBdY, self.minBdZ)
+        BBoxSolid = App.ActiveDocument.addObject("Part::Box","BBoxSolid")
+        BBoxSolid.Placement.Base = plr.Base
+        BBoxSolid.Label = "BBoxSolid"
+        BBoxSolid.Length = boundBoxLX
+        BBoxSolid.Width  = boundBoxLY
+        BBoxSolid.Height = boundBoxLZ
+        BBoxSolid.ViewObject.ShapeColor = (0.5, 0.5, 0.5)
+        BBoxSolid.ViewObject.Transparency = 90
+        FCSpring.addObject(BBoxSolid)
 
         doc.recompute()
 
