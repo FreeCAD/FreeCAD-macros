@@ -33,11 +33,15 @@ import os
 
 from PySide import QtCore, QtGui
 
-from freecad import app
-from freecad import gui
+import FreeCAD
+import FreeCADGui
 import DraftVecUtils
 import Material
 import MaterialEditor
+
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 g_column_width = 310
 g_win_width = 330  # width of our window
@@ -45,8 +49,7 @@ g_win_height = 430  # height of our window
 g_footer = 140
 
 # Find FreeCAD's root window
-g_freecad_root_window = gui.getMainWindow()
-
+g_freecad_root_window = FreeCADGui.getMainWindow()
 
 class CenterofmassWindow(QtGui.QMainWindow):
 
@@ -143,16 +146,29 @@ class CenterofmassWidget(QtGui.QWidget):
         font.setWeight(10)
         font.setBold(True)
 
-        sel = gui.Selection.getSelection()
+        sel = FreeCADGui.Selection.getSelection()
+        objs  = []
         self.solid_count = 0
         for s in range(len(sel)):
-            if not hasattr(sel[s], 'Shape'):
-                error_dialog(u'invalid selection (select a solid)')
+            if hasattr(sel[s], 'Shape'):
+                if sel[s].Shape.Volume == 0:
+                    error_dialog(u'invalid selection (select a solid or a mesh)')
+                    self.destroy()
+                else:
+                    self.solid_count += 1
+                    if sel[s].InList and sel[s].InList[0].TypeId == 'PartDesign::Body':
+                        objs.append(sel[s].InList[0].Shape)
+                    else:
+                        objs.append(sel[s].Shape)
+            elif hasattr(sel[s], 'Mesh'):
+                if sel[s].Mesh.Volume == 0:
+                    error_dialog(u'invalid selection (select a solid or a mesh)')
+                    self.destroy()
+                else:
+                    self.solid_count += 1
+                    objs.append(sel[s].Mesh)
             else:
-                self.solid_count += 1
-
-            if sel[s].Shape.Volume == 0:
-                error_dialog(u'invalid selection (select a solid)')
+                error_dialog(u'invalid selection (select a solid or a mesh)')
                 self.destroy()
 
         if self.solid_count == 0:
@@ -231,6 +247,7 @@ class CenterofmassWidget(QtGui.QWidget):
             self.materials[sol].label.setText(
                 '{} : {}'.format(sol + 1, sel[sol].Label))
 
+
             self.materials[sol].spin.setGeometry(
                 QtCore.QRect(xpos + g_column_width - 2 * margin - spinWidth,
                              ypos,
@@ -255,17 +272,32 @@ class CenterofmassWidget(QtGui.QWidget):
             #QtCore.QObject.connect(self.materials[sol].combo, QtCore.SIGNAL('currentIndexChanged(QString)'), self.materials[sol].on_comboMaterial_Changed)
             self.materials[sol].combo.currentIndexChanged.connect(self.materials[sol].on_comboMaterial_Changed)
 
-            self.volumes[sol] = sel[sol].Shape.Volume
+            self.volumes[sol] = objs[sol].Volume
 
             # Find the center of mass depending of the type of object.
-            if sel[sol].InList and sel[sol].InList[0].TypeId == 'PartDesign::Body':
-                self.centerofmasses[sol] = sel[sol].InList[0].Shape.CenterOfMass
-            else:
-                try:
-                    self.centerofmasses[sol] = sel[sol].Shape.CenterOfMass
-                except:
-                    self.centerofmasses[sol] = sel[sol].Shape.Solids[0].CenterOfMass
+            if hasattr(objs[sol], "CenterOfMass"):
+                self.centerofmasses[sol] = objs[sol].CenterOfMass
+            elif hasattr(objs[sol], "Solids"):
+                self.centerofmasses[sol] = objs[sol].Solids[0].CenterOfMass
+            #estimate cdg of a mesh
+            elif hasattr(objs[sol],"Points"):
+                self.centerofmasses[sol] = app.Vector(0,0,0)
+                for f in objs[sol].Facets:
+                    currentVolume = (f.Points[0][0]*f.Points[1][1]*f.Points[2][2]
+                        - f.Points[0][0]*f.Points[2][1]*f.Points[1][2]
+                        - f.Points[1][0]*f.Points[0][1]*f.Points[2][2]
+                        + f.Points[1][0]*f.Points[2][1]*f.Points[0][2]
+                        + f.Points[2][0]*f.Points[0][1]*f.Points[1][2]
+                        - f.Points[2][0]*f.Points[1][1]*f.Points[0][2]) / 6.
+                    self.centerofmasses[sol][0] += ((f.Points[0][0] + f.Points[1][0] + f.Points[2][0]) / 4.) * currentVolume;
+                    self.centerofmasses[sol][1] += ((f.Points[0][1] + f.Points[1][1] + f.Points[2][1]) / 4.) * currentVolume;
+                    self.centerofmasses[sol][2] += ((f.Points[0][2] + f.Points[1][2] + f.Points[2][2]) / 4.) * currentVolume;
 
+                self.centerofmasses[sol][0] /= self.volumes[sol]
+                self.centerofmasses[sol][1] /= self.volumes[sol]
+                self.centerofmasses[sol][2] /= self.volumes[sol]
+
+            #2: an array is selected
             if hasattr(sel[sol], 'ArrayType'):
                 if sel[sol].ArrayType == 'polar' and sel[sol].NumberPolar > 0:
                     self.centerofmasses[sol] = sel[sol].Center
@@ -298,18 +330,18 @@ class CenterofmassWidget(QtGui.QWidget):
                             axis.normalize()
                     self.centerofmasses[sol] += float(sel[sol].Spacing) * axis * (float(sel[sol].Amount - 1) / 2.)
 
-            if sel[sol].Shape.BoundBox.XMin < self.minBdX:
-                self.minBdX = sel[sol].Shape.BoundBox.XMin
-            if sel[sol].Shape.BoundBox.YMin < self.minBdY:
-                self.minBdY = sel[sol].Shape.BoundBox.YMin
-            if sel[sol].Shape.BoundBox.ZMin < self.minBdZ:
-                self.minBdZ = sel[sol].Shape.BoundBox.ZMin
-            if sel[sol].Shape.BoundBox.XMax > self.maxBdX:
-                self.maxBdX = sel[sol].Shape.BoundBox.XMax
-            if sel[sol].Shape.BoundBox.YMax > self.maxBdY:
-                self.maxBdY = sel[sol].Shape.BoundBox.YMax
-            if sel[sol].Shape.BoundBox.ZMax > self.maxBdZ:
-                self.maxBdZ = sel[sol].Shape.BoundBox.ZMax
+            if objs[sol].BoundBox.XMin < self.minBdX:
+                self.minBdX = objs[sol].BoundBox.XMin
+            if objs[sol].BoundBox.YMin < self.minBdY:
+                self.minBdY = objs[sol].BoundBox.YMin
+            if objs[sol].BoundBox.ZMin < self.minBdZ:
+                self.minBdZ = objs[sol].BoundBox.ZMin
+            if objs[sol].BoundBox.XMax > self.maxBdX:
+                self.maxBdX = objs[sol].BoundBox.XMax
+            if objs[sol].BoundBox.YMax > self.maxBdY:
+                self.maxBdY = objs[sol].BoundBox.YMax
+            if objs[sol].BoundBox.ZMax > self.maxBdZ:
+                self.maxBdZ = objs[sol].BoundBox.ZMax
 
         self.calc = QtGui.QPushButton(self)
         self.calc.setGeometry(QtCore.QRect(10, g_win_height - margin - 100, 40, 40))
@@ -474,14 +506,13 @@ class CenterofmassWidget(QtGui.QWidget):
 
     def on_pushButton_ComputeCDG(self):
         self.massTot = 0
+        self.TotalCdG=app.Vector(0,0,0)
         for sol in range(self.solid_count):
             volumeInUnit = self.convertVolume(self.volumes[sol])
             self.masses[sol] = volumeInUnit * self.materials[sol].spin.value()
             self.massTot += self.masses[sol]
         for sol in range(self.solid_count):
-            self.TotalCdG[0] += 1 / self.massTot * self.masses[sol] * self.centerofmasses[sol][0]
-            self.TotalCdG[1] += 1 / self.massTot * self.masses[sol] * self.centerofmasses[sol][1]
-            self.TotalCdG[2] += 1 / self.massTot * self.masses[sol] * self.centerofmasses[sol][2]
+            self.TotalCdG += 1 / self.massTot * self.masses[sol] * self.centerofmasses[sol]
         self.resultMasseTot.setText('{:.6}'.format(self.massTot))
         self.resultCdGX.setText('{:.4}'.format(self.convertLength(self.TotalCdG[0])))
         self.resultCdGY.setText('{:.4}'.format(self.convertLength(self.TotalCdG[1])))
@@ -528,6 +559,7 @@ class CenterofmassWidget(QtGui.QWidget):
                 sphere.ViewObject.LineWidth = 1.0
                 FCSpring.addObject(sphere)
 
+#TODO : strange behavior of planes. Sometimes not centered of the cdg
         ### PlaneX
         plan = app.ActiveDocument.addObject('Part::Plane', 'PlaneX')
         plan.Length = boundBoxLZ
@@ -615,6 +647,7 @@ class CenterofmassWidget(QtGui.QWidget):
                 f.write('Number\tLabel\tMaterial\tVolume (%s)\tDensity (%s)\tWeight (%s)\tCenter of mass X (%s)\tCenter of mass Y (%s)\tCenter of mass Z (%s)\n' % (
                     volU, densityU, massU, lengthU, lengthU, lengthU))
                 for sol in range(self.solid_count):
+                    objectName = sel[sol].Label
                     f.write('%d\t%s\t%s\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\n' % (
                         sol + 1, sel[sol].Label, self.materials[sol].combo.currentText(),
                         self.convertVolume(self.volumes[sol]),
@@ -639,7 +672,7 @@ class CenterofmassWidget(QtGui.QWidget):
         filename, filter = QtGui.QFileDialog.getOpenFileName(
             parent=self,
             caption='Open file',
-            dir=app.getUserMacroDir(False),
+            dir=app.getUserMacroDir(),
             filter='*.csv')
         app.Console.PrintMessage('reading densities from %s' % filename)
         # open csv file
