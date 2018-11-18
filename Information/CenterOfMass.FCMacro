@@ -15,8 +15,8 @@ from __future__ import division
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Center of mass computation for multiple solids'
 __Author__ = 'schupin'
-__Version__ = '0.2.0'
-__Date__ = '2018-11-10'
+__Version__ = '0.2.1'
+__Date__ = '2018-11-18'
 __License__ = ''
 __Web__ = ''
 __Wiki__ = ''
@@ -344,8 +344,6 @@ class CenterofmassWidget(QtGui.QWidget):
         scroll.setFixedHeight(250)
         layout.addWidget(scroll)
 
-#        FreeCAD.Console.PrintMessage(solidLayout.verticalSpacing())
-
         self.calc = QtGui.QPushButton(self)
         self.calc.setObjectName('compute')
         self.calc.clicked.connect(self.on_pushButton_ComputeCDG)
@@ -580,49 +578,48 @@ class CenterofmassWidget(QtGui.QWidget):
                 sphere.ViewObject.LineWidth = 1.0
                 FCSpring.addObject(sphere)
 
-#TODO : strange behavior of planes. Sometimes not centered of the cdg
-        ### PlaneX
-        plan = FreeCAD.ActiveDocument.addObject('Part::Plane', 'PlaneX')
+        ### PlaneYZ
+        plan = FreeCAD.ActiveDocument.addObject('Part::Plane', 'PlaneYZ')
         plan.Length = boundBoxLZ
         plan.Width = boundBoxLY
         plp = FreeCAD.Placement()
-        plp.Base = FreeCAD.Vector(self.TotalCdG[0], boundBoxLY/2., boundBoxLZ/2.)
+        plp.Base = FreeCAD.Vector(self.TotalCdG[0], self.TotalCdG[1]-boundBoxLY/2., self.TotalCdG[2] - boundBoxLZ/2.)
         plan.Placement = plp
         plan.Placement.Rotation = plan.Placement.Rotation.multiply(FreeCAD.Rotation(0.0, -90.0, 0.0))
-        plan.Placement = plan.Placement.multiply(
-            FreeCAD.Placement(FreeCAD.Vector(-float(plan.Length) / 2.0, -float(plan.Width) / 2.0, 0.0),
-                          FreeCAD.Rotation(FreeCAD.Vector(0.0, 0.0, 0.0), 0.0), FreeCAD.Vector(0.0, 0.0, 0.0)))
+        plan.Placement.Base.x = self.TotalCdG[0]        
+        plan.Placement.Base.y = self.minBdY
+        plan.Placement.Base.z = self.minBdZ
 
         plan.ViewObject.LineColor = (1.0, 0.66667, 0.0)
         plan.ViewObject.ShapeColor = (0.6, 0.0, 0.0)
         plan.ViewObject.Transparency = 90
         plan.ViewObject.LineWidth = 1.0
         FCSpring.addObject(plan)
-        ### PlaneY
-        plan = FreeCAD.ActiveDocument.addObject('Part::Plane', 'PlaneY')
+        ### PlaneXZ
+        plan = FreeCAD.ActiveDocument.addObject('Part::Plane', 'PlaneXZ')
         plan.Length = boundBoxLX
         plan.Width = boundBoxLZ
-        plp.Base = FreeCAD.Vector(boundBoxLX/2., self.TotalCdG[1], boundBoxLZ/2.)
+        plp.Base = FreeCAD.Vector(self.TotalCdG[0]-boundBoxLX/2., self.TotalCdG[1], self.TotalCdG[2]-boundBoxLZ/2.)
         plan.Placement = plp
         plan.Placement.Rotation = plan.Placement.Rotation.multiply(FreeCAD.Rotation(0.0, 0.0, 90.0))
-        plan.Placement = plan.Placement.multiply(
-            FreeCAD.Placement(FreeCAD.Vector(-float(plan.Length) / 2.0, -float(plan.Width) / 2.0, 0.0),
-                          FreeCAD.Rotation(FreeCAD.Vector(0.0, 0.0, 0.0), 0.0), FreeCAD.Vector(0.0, 0.0, 0.0)))
+        plan.Placement.Base.x = self.minBdX      
+        plan.Placement.Base.y = self.TotalCdG[1]  
+        plan.Placement.Base.z = self.minBdZ
 
         plan.ViewObject.LineColor = (1.0, 0.66667, 0.0)
         plan.ViewObject.ShapeColor = (0.0, 0.6, 0.0)
         plan.ViewObject.Transparency = 90
         plan.ViewObject.LineWidth = 1.0
         FCSpring.addObject(plan)
-        ### PlaneZ
-        plan = FreeCAD.ActiveDocument.addObject('Part::Plane', 'PlaneZ')
+        ### PlaneXY
+        plan = FreeCAD.ActiveDocument.addObject('Part::Plane', 'PlaneXY')
         plan.Length = boundBoxLX
         plan.Width = boundBoxLY
-        plp.Base = FreeCAD.Vector(boundBoxLX/2., boundBoxLY/2., self.TotalCdG[2])
+        plp.Base = FreeCAD.Vector(self.TotalCdG[0] - boundBoxLX/2., self.TotalCdG[1] - boundBoxLY/2., self.TotalCdG[2])
         plan.Placement = plp
-        plan.Placement = plan.Placement.multiply(
-            FreeCAD.Placement(FreeCAD.Vector(-float(plan.Length) / 2.0, -float(plan.Width) / 2.0, 0.0),
-                          FreeCAD.Rotation(FreeCAD.Vector(0.0, 0.0, 0.0), 0.0), FreeCAD.Vector(0.0, 0.0, 0.0)))
+        plan.Placement.Base.x = self.minBdX
+        plan.Placement.Base.y = self.minBdY
+        plan.Placement.Base.z = self.TotalCdG[2]
 
         plan.ViewObject.LineColor = (1.0, 0.66667, 0.0)
         plan.ViewObject.ShapeColor = (0.0, 0.0, 0.6)
