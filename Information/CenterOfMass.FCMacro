@@ -15,7 +15,7 @@ from __future__ import division
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Center of mass computation for multiple solids'
 __Author__ = 'schupin'
-__Version__ = '0.1.2'
+__Version__ = '0.2.0'
 __Date__ = '2018-11-10'
 __License__ = ''
 __Web__ = ''
@@ -45,7 +45,7 @@ sys.setdefaultencoding('utf8')
 
 g_column_width = 310
 g_win_width = 500  # width of our window
-g_win_height = 430  # height of our window
+g_win_height = 450  # height of our window
 g_footer = 140
 
 # Find FreeCAD's root window
@@ -187,7 +187,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.setObjectName('CenterofmassWidget')
 
         self.label_MLU = QtGui.QLabel(self)
-        self.label_MLU.setText('unit')
+        self.label_MLU.setText('Density unit')
 
         self.comboUnit = QtGui.QComboBox(self)
         self.comboUnit.setToolTip('Unit of density')
@@ -218,6 +218,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.maxBdZ = -1e8
 
         layout = QtGui.QVBoxLayout(self)
+        layout.setSpacing(0)
 
         solidGoupBox = QtGui.QGroupBox('Density of selected solids')
         solidLayout = QtGui.QGridLayout()
@@ -240,8 +241,6 @@ class CenterofmassWidget(QtGui.QWidget):
                 material_database=self.material_database,
             )
 
-            #self.materials[sol].label.setGeometry(QtCore.QRect(xpos, ypos, labelWidth, 25))
-            # self.materials[sol].label.setObjectName('label_{}'.format(sol))
             self.materials[sol].label.setText(
                 '{} : {}'.format(sol + 1, sel[sol].Label))
 
@@ -256,8 +255,6 @@ class CenterofmassWidget(QtGui.QWidget):
             self.materials[sol].spin.setToolTip(
                 'density of ' + sel[sol].Label + ' (in ' + self.comboUnit.currentText() +')')
 
-            #self.materials[sol].combo.setGeometry(
-            #    QtCore.QRect(xpos + labelWidth, ypos, g_column_width - labelWidth - spinWidth - 2 * margin, 25))
             self.materials[sol].combo.addItem('custom')
             for m in sorted(self.material_database):
                 self.materials[sol].combo.addItem(m)
@@ -344,7 +341,7 @@ class CenterofmassWidget(QtGui.QWidget):
         scroll = QtGui.QScrollArea()
         scroll.setWidget(solidGoupBox)
         scroll.setWidgetResizable(False)
-        scroll.setFixedHeight(200)
+        scroll.setFixedHeight(250)
         layout.addWidget(scroll)
 
 #        FreeCAD.Console.PrintMessage(solidLayout.verticalSpacing())
@@ -358,7 +355,6 @@ class CenterofmassWidget(QtGui.QWidget):
         self.calc.setIcon(QtGui.QIcon(icon_path))
         self.calc.setIconSize(QtCore.QSize(35, 35))
         self.calc.setStyleSheet('QPushButton{border: 0px solid;}')
-        # self.calc.setText('compute')
 
         self.export = QtGui.QPushButton(self)
         self.export.setEnabled(False)
@@ -369,7 +365,6 @@ class CenterofmassWidget(QtGui.QWidget):
         self.export.setIcon(QtGui.QIcon(icon_path))
         self.export.setIconSize(QtCore.QSize(35, 35))
         self.export.setStyleSheet('QPushButton{border: 0px solid;}')
-        # self.export.setText('export')
 
         self.readDensities = QtGui.QPushButton(self)
         self.readDensities.setObjectName('import')
@@ -379,7 +374,6 @@ class CenterofmassWidget(QtGui.QWidget):
         self.readDensities.setIcon(QtGui.QIcon(icon_path))
         self.readDensities.setIconSize(QtCore.QSize(35, 35))
         self.readDensities.setStyleSheet('QPushButton{border: 0px solid;}')
-        # self.readDensities.setText('import')
 
         self.editMat = QtGui.QPushButton(self)
         self.editMat.setObjectName('editMaterial')
@@ -399,13 +393,13 @@ class CenterofmassWidget(QtGui.QWidget):
         buttonLayout.addWidget(self.label_MLU)
         buttonLayout.addWidget(self.comboUnit)
         buttonGroupBox.setLayout(buttonLayout)
+        buttonGroupBox.setFixedHeight(70)
         layout.addWidget(buttonGroupBox)
 
         self.label_Mass = QtGui.QLabel(self)
         self.label_Mass.setObjectName('label_Mass')
         self.label_Mass.setText('Total mass')
         self.resultMasseTot = QtGui.QLineEdit(self)
-        self.resultMasseTot.setGeometry(QtCore.QRect(90, g_win_height - margin - 60, 150, 25))
         self.resultMasseTot.setObjectName('total weight')
         self.resultMasseTot.setReadOnly(True)
         self.resultMasseTot.setPlaceholderText('no computation done')
@@ -426,6 +420,7 @@ class CenterofmassWidget(QtGui.QWidget):
         massLayout.addWidget(self.resultMasseTot)
         massLayout.addWidget(self.showCdg)
         massGroupBox.setLayout(massLayout)
+        massGroupBox.setFixedHeight(50)
         layout.addWidget(massGroupBox)
 
         self.label_CdG = QtGui.QLabel(self)
@@ -457,6 +452,7 @@ class CenterofmassWidget(QtGui.QWidget):
         cdgLayout.addWidget(self.resultCdGY)
         cdgLayout.addWidget(self.resultCdGZ)
         cdgGroupBox.setLayout(cdgLayout)
+        cdgGroupBox.setFixedHeight(50)
         layout.addWidget(cdgGroupBox)
 
     def on_pushButton_EditMat(self):
