@@ -9,16 +9,19 @@
 # An import button allows you to quickly load saved densities (even if it's
 # not a .csv file from the macro, as soon as there is a column named "Density"
 # it will be loaded.)
+#
+# Icons import.png, compute.png, save.png, material.png, and com.png are
+# from https://www.freepik.com/.
 
 from __future__ import division
 
 __Name__ = 'CenterOfMass'
-__Comment__ = 'Center of mass computation for multiple solids'
+__Comment__ = 'Computation of the center of mass for multiple solids'
 __Author__ = 'schupin'
 __Version__ = '0.2.1'
 __Date__ = '2018-11-18'
-__License__ = ''
-__Web__ = ''
+__License__ = 'LGPL-3.0-or-later'
+__Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = ''
 __Icon__ = ''
 __Help__ = 'Select or more bodies and launch'
@@ -122,7 +125,6 @@ class CenterofmassWidget(QtGui.QWidget):
     def __init__(self, parent=None):
         super(CenterofmassWidget, self).__init__(parent)
         self.parent = parent
-        #print('\033[1;35m%%%%% self.parent: {}\033[0m'.format(self.parent)) # DEBUG
         self.solid_count = 0
         self.TotalCdG = [0, 0, 0]
 
@@ -724,9 +726,6 @@ class CenterofmassWidget(QtGui.QWidget):
                                 self.materials[matLoaded].combo.findText('default'))
                             FreeCAD.Console.PrintWarning('Unable to find a "Density" column in the file --> Material set to "default"')
                     matLoaded += 1
-
-                #content = list(row[i] for i in included_cols)
-                #print content
 
 
 def error_dialog(msg):
