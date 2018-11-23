@@ -339,14 +339,15 @@ class CenterofmassWidget(QtGui.QWidget):
         layout.addWidget(scroll)
 
         macro_dir = FreeCAD.getUserMacroDir()
-        path = str(macro_dir.replace("\\","/"))
+        icon_dir = os.path.join(macro_dir, "CenterOfMass")
+        #path = str(macro_dir.replace("\\","/"))                              # convert the "\" to "/"
 
         self.calc = QtGui.QPushButton(self)
         self.calc.setObjectName('compute')
         self.calc.clicked.connect(self.on_pushButton_ComputeCDG)
         self.calc.setToolTip(u'compute centerOfMass')
         macro_dir = FreeCAD.getUserMacroDir()
-        self.calc.setIcon(QtGui.QIcon(path + "CenterOfMass/compute.png"))
+        self.calc.setIcon(QtGui.QIcon(os.path.join(icon_dir, "compute.png")))
         self.calc.setIconSize(QtCore.QSize(35, 35))
         self.calc.setStyleSheet('QPushButton{border: 0px solid;}')
 
@@ -355,7 +356,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.export.setObjectName('export')
         self.export.clicked.connect(self.on_pushButton_Export)
         self.export.setToolTip(u'export values to a .csv file')
-        self.export.setIcon(QtGui.QIcon(path + "CenterOfMass/save.png"))
+        self.export.setIcon(QtGui.QIcon(os.path.join(icon_dir, "save.png")))
         self.export.setIconSize(QtCore.QSize(35, 35))
         self.export.setStyleSheet('QPushButton{border: 0px solid;}')
 
@@ -363,7 +364,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.readDensities.setObjectName('import')
         self.readDensities.clicked.connect(self.on_pushButton_Import)
         self.readDensities.setToolTip(u'import densities from a .csv file')
-        self.readDensities.setIcon(QtGui.QIcon(path + "CenterOfMass/import.png"))
+        self.readDensities.setIcon(QtGui.QIcon(os.path.join(icon_dir , "import.png")))
         self.readDensities.setIconSize(QtCore.QSize(35, 35))
         self.readDensities.setStyleSheet('QPushButton{border: 0px solid;}')
 
@@ -371,7 +372,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.editMat.setObjectName('editMaterial')
         self.editMat.clicked.connect(self.on_pushButton_EditMat)
         self.editMat.setToolTip('Edit Material list')
-        self.editMat.setIcon(QtGui.QIcon(path + "CenterOfMass/material.png"))
+        self.editMat.setIcon(QtGui.QIcon(os.path.join(icon_dir, "material.png")))
         self.editMat.setIconSize(QtCore.QSize(35, 35))
         self.editMat.setStyleSheet('QPushButton{border: 0px solid;}')
 
@@ -401,7 +402,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.showCdg.clicked.connect(self.on_pushButton_ShowCdG)
         self.showCdg.setToolTip('show center of mass')
         self.showCdg.setEnabled(False)
-        self.showCdg.setIcon(QtGui.QIcon(path + "CenterOfMass/com.png"))
+        self.showCdg.setIcon(QtGui.QIcon(os.path.join(icon_dir, "com.png")))
         self.showCdg.setIconSize(QtCore.QSize(30, 30))
 
         massGroupBox = QtGui.QGroupBox()
@@ -641,8 +642,8 @@ class CenterofmassWidget(QtGui.QWidget):
             os.path.expanduser('~'),
             '*.csv *.txt;Cvs (*.csv);;TXT (*.txt)')
         if SaveName == '':
-            FreeCAD.Console.PrintMessage('Process aborted' + '\n')
-            error_dialog('Process aborted')
+            FreeCAD.Console.PrintMessage('Saving file canceled' + '\n')
+            error_dialog('saving file canceled')
         else:
             FreeCAD.Console.PrintMessage('Saving ' + SaveName + '\n')
 
@@ -684,38 +685,43 @@ class CenterofmassWidget(QtGui.QWidget):
             caption='Open file',
             dir=FreeCAD.getUserMacroDir(),
             filter='*.csv')
-        FreeCAD.Console.PrintMessage('reading densities from %s' % filename)
+
+        if filename == "":
+            FreeCAD.Console.PrintMessage('importing file canceled' + '\n')
+            error_dialog('importing file canceled')
+        else:
+            FreeCAD.Console.PrintMessage('reading densities from %s' % filename)
         # open csv file
-        with open(filename, 'r') as csvfile:
-            reader = csv.DictReader(csvfile, delimiter='\t')
+            with open(filename, 'r') as csvfile:
+                reader = csv.DictReader(csvfile, delimiter='\t')
 
-            densityUnits = ['', ' (kg/m^3)', ' (g/dm^3)', ' (g/cm^3)', 'g/mm^3', ' (oz/in^3)', ' (lb/in^3)', ' (lb/ft^3)',
-                            ' (lb/yd^3)']
+                densityUnits = ['', ' (kg/m^3)', ' (g/dm^3)', ' (g/cm^3)', 'g/mm^3', ' (oz/in^3)', ' (lb/in^3)', ' (lb/ft^3)',
+                                ' (lb/yd^3)']
 
-            matLoaded = 0
-            for row in reader:
-                if matLoaded < self.solid_count:
-                    try:
-                        self.materials[matLoaded].combo.setCurrentIndex(
-                            self.materials[matLoaded].combo.findText(row['Material']))
-                    except:
-                        FreeCAD.Console.PrintWarning('Unknown material or unable to find a "Material" column in the file --> Material set to "custom"')
-                        self.materials[matLoaded].combo.setCurrentIndex(
-                            self.materials[matLoaded].combo.findText('custom'))
-
-                    if self.materials[matLoaded].combo.currentText() == 'custom':
+                matLoaded = 0
+                for row in reader:
+                    if matLoaded < self.solid_count:
                         try:
-                            for u in range(len(densityUnits)):
-                                try:
-                                    self.materials[matLoaded].spin.setValue(float(row['Density' + densityUnits[u]]))
-                                except:
-                                    pass
-
-                        except:
                             self.materials[matLoaded].combo.setCurrentIndex(
-                                self.materials[matLoaded].combo.findText('default'))
-                            FreeCAD.Console.PrintWarning('Unable to find a "Density" column in the file --> Material set to "default"')
-                    matLoaded += 1
+                                self.materials[matLoaded].combo.findText(row['Material']))
+                        except:
+                            FreeCAD.Console.PrintWarning('Unknown material or unable to find a "Material" column in the file --> Material set to "custom"')
+                            self.materials[matLoaded].combo.setCurrentIndex(
+                                self.materials[matLoaded].combo.findText('custom'))
+
+                        if self.materials[matLoaded].combo.currentText() == 'custom':
+                            try:
+                                for u in range(len(densityUnits)):
+                                    try:
+                                        self.materials[matLoaded].spin.setValue(float(row['Density' + densityUnits[u]]))
+                                    except:
+                                        pass
+
+                            except:
+                                self.materials[matLoaded].combo.setCurrentIndex(
+                                    self.materials[matLoaded].combo.findText('default'))
+                                FreeCAD.Console.PrintWarning('Unable to find a "Density" column in the file --> Material set to "default"')
+                        matLoaded += 1
 
 
 def error_dialog(msg):
