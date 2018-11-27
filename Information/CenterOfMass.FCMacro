@@ -10,8 +10,8 @@
 # not a .csv file from the macro, as soon as there is a column named "Density"
 # it will be loaded.)
 #
-# Icons import.png, compute.png, save.png, material.png, and com.png are
-# from https://www.freepik.com/.
+# Icons Macro_CenterOfMass_import.png, Macro_CenterOfMass_compute.png, Macro_CenterOfMass_save.png,
+# Macro_CenterOfMass_material.png, and Macro_CenterOfMass_com.png are from https://www.freepik.com/.
 
 from __future__ import division
 from __future__ import unicode_literals
@@ -19,7 +19,7 @@ from __future__ import unicode_literals
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Computation of the center of mass for multiple solids'
 __Author__ = 'schupin'
-__Version__ = '0.2.2'
+__Version__ = '0.2.3'
 __Date__ = '2018-11-22'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
