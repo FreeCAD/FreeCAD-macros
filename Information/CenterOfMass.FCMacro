@@ -29,7 +29,7 @@ __Help__ = 'Select or more bodies and launch'
 __Status__ = 'alpha'
 __Requires__ = 'freecad 0.18'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?p=265270#p265270'
-__Files__ = 'CenterOfMass/import.png,CenterOfMass/compute.png,CenterOfMass/save.png,CenterOfMass/material.png,CenterOfMass/com.png'
+__Files__ = 'CenterOfMass/Macro_CenterOfMass_import.png,CenterOfMass/Macro_CenterOfMass_compute.png,CenterOfMass/Macro_CenterOfMass_save.png,CenterOfMass/Macro_CenterOfMass_material.png,CenterOfMass/Macro_CenterOfMass_com.png'
 
 import csv
 import glob
