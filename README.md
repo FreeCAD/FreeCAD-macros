@@ -47,7 +47,7 @@ This repository hosts FreeCAD macros that volunteers have vetted and added for u
     __Author__ = 'comma-separated list of authors'
     __Version__ = 'major.minor.patch'
     __Date__ = 'YYYY-MM-DD'
-    __License__ = 'License identifier from https://spdx.org/licenses/, e.g. LGPL-3.0-or-later, MIT, CC0-1.0'
+    __License__ = 'License identifier from https://spdx.org/licenses/, e.g. LGPL-2.0-or-later as FreeCAD, MIT, CC0-1.0'
     __Web__ = 'Associated web page'
     __Wiki__ = 'Associated wiki page'
     __Icon__ = 'MyMacro.svg, please put an svg file along side the macro, respecting the macro filename'

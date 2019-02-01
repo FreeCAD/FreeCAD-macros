@@ -1,0 +1,161 @@
+# -*- coding: utf-8 -*-
+# créer un cercle à partir de 3 points séléctionnés
+# avec comme options le cercle peut être construit sur un plans au choix
+# à la coordonnée d'une des trois formes sélectionnées au choix
+# et création du point central O/N
+# la formule provient de
+# http://www-obs.univ-lyon1.fr/labo/fc/Ateliers_archives/ateliers_2005-06/cercle_3pts.pdf
+# lire la note dans le pdf, sur l'ordre de sélection des points,
+# si la formule renvoie une erreur (exemple les 3 points dans le même alignement)
+
+__Name__ = 'Draft Circle 3 Points'
+__Comment__ = 'Create a circle from three points'
+__Author__ = 'Mario52'
+__Version__ = '1.0.1'
+__Date__ = '2019-02-01'
+__License__ = 'LGPL-2.0-or-later'
+__Web__ = 'https://www.freecadweb.org/wiki/Macro_Draft_Circle_3_Points'
+__Wiki__ = 'https://www.freecadweb.org/wiki/Macro_Draft_Circle_3_Points'
+__Icon__ = ''
+__Help__ = 'Select three shapes and run to create a circle passing through the bounding box center of the three shapes'
+__Status__ = ''
+__Requires__ = ''
+__Communication__ = ''
+__Files__ = ''
+
+from math import sqrt
+
+from PyQt4 import QtCore, QtGui
+import FreeCAD as app
+import FreeCADGui as gui
+import Draft, Part, PartGui, FreeCADGui
+from FreeCAD import Base
+
+def errorDialog(msg):
+    # Create a simple dialog QMessageBox
+    # The first argument indicates the icon used: one of QtGui.QMessageBox.{NoIcon, Information, Warning, Critical, Question}
+    diag = QtGui.QMessageBox(QtGui.QMessageBox.Critical,u"Error Message",msg)
+    diag.setWindowModality(QtCore.Qt.ApplicationModal)
+    diag.exec_()
+
+def affiche(pl, x,y,z,rayon,r,v,b,afficherPoint):
+    pl.Base=app.Vector(x,y,z)
+    Draft.makeCircle((rayon),placement=pl,face=False,support=None)
+    gui.activeDocument().activeObject().LineColor = (r,v,b)
+    if afficherPoint:
+        Draft.makePoint(x,y,z)
+    diag = QtGui.QMessageBox(QtGui.QMessageBox.Information,u"Coordinates",u"Coordinates X : "+str(x)+"\r\n"+u"Coordinates Y : "+str(y)+"\n"+u"Coordinates Z : "+str(z)+"\nRayon\t     : "+str(rayon))
+    diag.setWindowModality(QtCore.Qt.ApplicationModal)
+    diag.exec_()
+
+# prendre les objets selectionnes
+sel = gui.Selection.getSelection()
+
+# S'il y a 3 points sélectionnés alors..
+if len(sel)==3:
+    i = 0
+    ta = [0] * 9
+    for obj in sel:
+        x = obj.Shape.BoundBox.Center
+        ta[i + 0] = x.x
+        ta[i + 1] = x.y
+        ta[i + 2] = x.z
+        i += 3
+
+    # mode by default vueChoix = 0 and alignerSur = 0
+    vueChoix=0    # choice of the top view = 1 XY, view Front = 2 ZX, Right view = 3 ZY
+    alignerSur=0    # Aligns the circle shaped the choice (1,2 or 3) or Z = 0
+    afficherPoint = True    # Displays the center point of the circle
+
+    # Affectation des variables
+    if vueChoix==3:
+        # View of right ZY (Red)
+        z_point_1=ta[0]
+        x_point_1=ta[1]
+        y_point_1=ta[2]
+
+        z_point_2=ta[3]
+        x_point_2=ta[4]
+        y_point_2=ta[5]
+
+        z_point_3=ta[6]
+        x_point_3=ta[7]
+        y_point_3=ta[8]
+
+    elif vueChoix==2:
+        # Front view ZX (Green)
+        y_point_1=ta[0]
+        z_point_1=ta[1]
+        x_point_1=ta[2]
+
+        y_point_2=ta[3]
+        z_point_2=ta[4]
+        x_point_2=ta[5]
+
+        y_point_3=ta[6]
+        z_point_3=ta[7]
+        x_point_3=ta[8]
+
+    else:
+        # Top view XY (blue)
+        x_point_1=ta[0]
+        y_point_1=ta[1]
+        z_point_1=ta[2]
+
+        x_point_2=ta[3]
+        y_point_2=ta[4]
+        z_point_2=ta[5]
+
+        x_point_3=ta[6]
+        y_point_3=ta[7]
+        z_point_3=ta[8]
+
+    # Calculation of coordinates of the center of the circle
+    try:
+        centreX =((x_point_3**2-x_point_2**2+y_point_3**2-y_point_2**2)/(2*(y_point_3-y_point_2))-(x_point_2**2-x_point_1**2+y_point_2**2-y_point_1**2)/(2*(y_point_2-y_point_1)))/((x_point_3-x_point_2)/(y_point_3-y_point_2)-(x_point_2-x_point_1)/(y_point_2-y_point_1))
+        centreY =-(x_point_2-x_point_1)/(y_point_2-y_point_1)*centreX+(x_point_2**2-x_point_1**2+y_point_2**2-y_point_1**2)/(2*(y_point_2-y_point_1))
+        rayon =sqrt((x_point_1-centreX)**2+(y_point_1-centreY)**2)
+    except:
+        errorDialog(u"Impossible calculation too aligned elements")
+    else:
+       # Definition of the coordinate Z
+        centreZ=0
+        # Création du cercle
+        pl=app.Placement()
+        if vueChoix==1:    # Plan XY Dessus
+            pl.Rotation.Q=(0,0,0,1.0)
+            if alignerSur==1:
+                affiche(pl, centreX,centreY,z_point_1,rayon,0.0,0.0,1.0,afficherPoint)
+            elif alignerSur==2:
+                affiche(pl, centreX,centreY,z_point_2,rayon,0.0,0.0,1.0,afficherPoint)
+            elif alignerSur==3:
+                affiche(pl, centreX,centreY,z_point_3,rayon,0.0,0.0,1.0,afficherPoint)
+        elif vueChoix==2: # Plan XZ Face
+            pl.Rotation.Q=(1,0,0,1.0)
+            if alignerSur==1:
+                affiche(pl, centreY,z_point_1,centreX,rayon,0.0,1.0,0.0,afficherPoint)
+            elif alignerSur==2:
+                affiche(pl, centreY,z_point_2,centreX,rayon,0.0,1.0,0.0,afficherPoint)
+            elif alignerSur==3:
+                affiche(pl, centreY,z_point_3,centreX,rayon,0.0,1.0,0.0,afficherPoint)
+        elif vueChoix==3: # Plan YZ Droite
+            pl.Rotation.Q=(0,1,0,1.0)
+            if alignerSur==1:
+                affiche(pl, z_point_1,centreX,centreY,rayon,1.0,0.0,0.0,afficherPoint)
+            elif alignerSur==2:
+                affiche(pl, z_point_2,centreX,centreY,rayon,1.0,0.0,0.0,afficherPoint)
+            elif alignerSur==3:
+                affiche(pl, z_point_3,centreX,centreY,rayon,1.0,0.0,0.0,afficherPoint)
+        else:    # modifier pour avoir XYZ
+            # si les coordonnées Z sont égales alors le cercle s'aligne à Z
+            if z_point_1==z_point_2 and z_point_2==z_point_3:
+                centreZ=z_point_1
+                affiche(pl, centreX,centreY,z_point_1,rayon,0.0,0.0,0.0,afficherPoint)
+            else:
+                # Si une coordonnée est différente alors Z=0
+                affiche(pl, centreX,centreY,0,rayon,0.0,0.0,0.0,afficherPoint)
+
+else:
+    # We need three points in the selection.
+    errorDialog(u"Select 3 points and repeat")
+
