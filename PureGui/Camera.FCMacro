@@ -34,8 +34,8 @@ __Name__ = 'Camera'
 __Comment__ = 'Mario52'
 __Author__ = ''
 # Version 0.0.11 corresponds to Mario52's version 00.11.
-__Version__ = '0.0.12'
-__Date__ = '2018-01-13'
+__Version__ = '0.0.13'
+__Date__ = '2018-02-01'
 __License__ = ''
 __Web__ = ''
 __Wiki__ = 'http://www.freecadweb.org/wiki/index.php?title=Macro_FCCamera'
@@ -44,7 +44,7 @@ __Help__ = ''
 __Status__ = ''
 __Requires__ = ''
 __Communication__ = ''
-__Files__ = 'Camera/accept.png,Camera/align_object_to_view.png,Camera/align_to_axis.png,Camera/align_to_face.png,Camera/axis_rotation_d.png,Camera/axis_rotation_x.png,Camera/axis_rotation_y.png,Camera/axis_rotation_z.png,Camera/create_plane_of_view.png,Camera/detect_orientation.png,Camera/quit.png,Camera/reset.png,Camera/save_view.png'
+__Files__ = 'Camera.png,Camera/accept.png,Camera/align_object_to_view.png,Camera/align_to_axis.png,Camera/align_to_face.png,Camera/axis_rotation_d.png,Camera/axis_rotation_x.png,Camera/axis_rotation_y.png,Camera/axis_rotation_z.png,Camera/create_plane_of_view.png,Camera/detect_orientation.png,Camera/quit.png,Camera/reset.png,Camera/save_view.png'
 
 import math
 import os
