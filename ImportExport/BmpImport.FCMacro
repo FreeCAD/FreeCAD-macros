@@ -55,7 +55,7 @@ from time import sleep
 
 from PySide import QtCore, QtGui
 
-from freecad import app
+import FreeCAD as app
 import Part
 from FreeCAD import Base
 import PartGui

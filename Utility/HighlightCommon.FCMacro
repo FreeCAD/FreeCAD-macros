@@ -20,8 +20,8 @@ __Files__ = ''
 from PySide import QtCore
 from PySide import QtGui
 
-from freecad import app
-from freecad import gui
+import FreeCAD as app
+import FreeCADGui as gui
 
 
 def error_dialog(msg):

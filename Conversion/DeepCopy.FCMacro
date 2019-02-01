@@ -11,8 +11,8 @@ __Status__ = 'Stable'
 __Requires__ = 'FreeCAD >= v0.17'
 __Files__ = 'DeepCopy.svg'
 
-from freecad import app
-from freecad import gui
+import FreeCAD as app
+import FreeCADGui as gui
 
 
 def deep_copy(doc):

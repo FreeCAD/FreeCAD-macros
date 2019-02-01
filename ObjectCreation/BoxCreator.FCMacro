@@ -22,8 +22,8 @@ __Files__ = 'boxcreator/__init__.py,boxcreator/boxcreator.py'
 
 from PySide import QtCore, QtGui
 
-from freecad import app
-from freecad import gui
+import FreeCAD as app
+import FreeCADGui as gui
 
 from boxcreator import boxcreator
 
