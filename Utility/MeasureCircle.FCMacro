@@ -1,17 +1,29 @@
 __Name__ = 'Measure Circle'
 __Comment__ = 'Compute the radius of a circle by 3 points or a circular edge'
+__Author__ = 'peepsalot, galou_breizh'
+__Version__ = '0.10.0'
+__Date__ = '2019-02-19'
+__License__ = 'LGPL-2.0-or-later'
 __Web__ = 'http://www.freecadweb.org/wiki/Macro_MeasureCircle'
 __Wiki__ = 'http://www.freecadweb.org/wiki/Macro_MeasureCircle'
 __Icon__ = 'MeasureCircle.svg'
 __Help__ = 'Make a selection of 3 points or an edge and launch, or launch first'
-__Author__ = 'peepsalot, galou_breizh'
-__Version__ = '0.9'
 __Status__ = 'Beta'
-__Requires__ = ''
+__Requires__ = 'FreeCAD >= 0.18'
+__Communication__ = ''
+__Files__ = 'MeasureCircle.png'
 
-import FreeCAD as App
-import FreeCADGui as Gui
+import FreeCAD as app
+import FreeCADGui as gui
 import Part
+
+
+def get_global_placement(obj):
+    try:
+        # If obj is part of a Part or Body.
+        return obj.getParentGeoFeatureGroup().getGlobalPlacement()
+    except AttributeError:
+        return app.Placement()
 
 
 class MeasureCircle:
@@ -19,8 +31,6 @@ class MeasureCircle:
 
     This class will report the computed radius and center of a circle given 3
     vertices or a circular edge.
-    A line is drawn from the center of the circle to the first vertex, which
-    may be used for future measurements.
 
     Just select the vertices and the result will be shown in the Report View.
     Edges may also be selected and count as two vertices.
@@ -31,88 +41,115 @@ class MeasureCircle:
     def __init__(self):
         self.points = []
         self.curve = None
-        self.observer_added = False
-        self.getElementsFromSelectionEx()
+        self.observer_needed = False
+        self.get_elements_from_selection_ex()
         # We add the observer only if necessary.
-        self.observer_added = (self.curve is None)
-        if self.observer_added:
-            Gui.Selection.addObserver(self)
-            App.Console.PrintMessage(
-                'Select {} vertices on a circle or an arc of circle\n'.format(
+        self.observer_needed = (self.curve is None)
+        if self.observer_needed:
+            gui.Selection.addObserver(self)
+            app.Console.PrintMessage(
+                'Select {} vertices on a circle\n'.format(
                     3 - len(self.points)))
 
     def addSelection(self, doc, obj, sub, pos):
-        o = App.getDocument(doc).getObject(obj)
+        """Callback of the selection observer
+
+        Do not rename.
+        """
+        o = app.getDocument(doc).getObject(obj)
         # Get the shape of selected object, if any.
         try:
             shape = o.Shape
         except AttributeError:
-            App.Console.PrintMessage('Object is not a shape\n')
+            app.Console.PrintMessage('Object is not a shape\n')
             return
         # Get the selected subshape.
         try:
             subshape = getattr(shape, sub)
         except:
+            app.Console.PrintMessage(
+                '"{}" is not a subshape of "{}"\n'.format(sub, shape))
             return
         if subshape.ShapeType == 'Vertex':
-            self.addPoint(subshape)
+            self.add_point(o, subshape)
         elif subshape.ShapeType == 'Edge':
-            self.onEdge(subshape)
+            self.on_edge(o, subshape)
         # Exit if we have enough points.
         if len(self.points) >= 3:
-            self.onThreePoints()
+            self.on_three_points()
 
-    def getElementsFromSelectionEx(self):
-        for sel_object in Gui.Selection.getSelectionEx():
+    def get_elements_from_selection_ex(self):
+        for sel_object in gui.Selection.getSelectionEx():
+            obj = sel_object.Object
             for subobject in sel_object.SubObjects:
                 if type(subobject) == Part.Vertex:
-                    self.addPoint(subobject)
+                    self.add_point(obj, subobject)
                 elif type(subobject) == Part.Edge:
-                    self.onEdge(subobject)
+                    self.on_edge(obj, subobject)
                 # Exit if we have enough points.
                 if len(self.points) >= 3:
-                    self.onThreePoints()
+                    self.on_three_points()
                     return
 
-    def addPoint(self, v):
-        for p in self.points:
-            if p.Point == v.Point:
-                # Don't allow duplicate points.
-                return
-        self.points.append(v)
+    def add_point(self, obj, v):
+        """Add a point at the location of the selected vertex
 
-    def onEdge(self, edge):
+        obj is the object the vertex belongs to. If obj belongs to a body, the
+        body placement must be taken into account.
+        """
+        placement = get_global_placement(obj)
+        point = placement.multVec(v.Point)
+        if point in self.points:
+            # Don't allow duplicate points.
+            app.Console.PrintWarning('Point already chosen, ignoring\n')
+            return
+        self.points.append(point)
+
+    def on_edge(self, obj, edge):
+        """Add either two points or a circle
+
+        obj is the object the edge belongs to. If obj belongs to a body, the
+        body placement must be taken into account.
+        """
         curve_type = type(edge.Curve)
         if curve_type == Part.Circle:
-            self.onCircle(edge.Curve)
-        elif curve_type == Part.Line:
-            self.addPoint(edge.Vertexes[0])
-            self.addPoint(edge.Vertexes[1])
+            self.on_circle(obj, edge)
+        elif curve_type == Part.LineSegment:
+            self.add_point(obj, edge.Vertexes[0])
+            self.add_point(obj, edge.Vertexes[1])
 
     def finish(self):
         if self.curve:
             c = self.curve
             # line = Part.makeLine(c.Center, c.Center + c.XAxis * c.Radius)
-            # obj = App.ActiveDocument.addObject('Part::Feature', 'Radius')
+            # obj = app.ActiveDocument.addObject('Part::Feature', 'Radius')
             # obj.Shape = line
-            App.Console.PrintMessage('Diameter: {} mm\n'.format(2 * c.Radius))
-            App.Console.PrintMessage('Radius: {} mm\n'.format(c.Radius))
-            App.Console.PrintMessage(
+            app.Console.PrintMessage('Diameter: {} mm\n'.format(2 * c.Radius))
+            app.Console.PrintMessage('Radius: {} mm\n'.format(c.Radius))
+            app.Console.PrintMessage(
                 'Center: (X, Y, Z) = ({}, {}, {})\n'.format(
-                    *list(c.Center)))
-        if self.observer_added:
-            Gui.Selection.removeObserver(self)
+                    *list(c.Location)))
+        if self.observer_needed:
+            gui.Selection.removeObserver(self)
 
-    def onCircle(self, curve):
-        self.curve = curve
+    def on_circle(self, obj, edge):
+        """Add a circle and finish
+
+        obj is the object the curve belongs to. If obj belongs to a body, the
+        body placement must be taken into account.
+        """
+        placement = get_global_placement(obj)
+        edge = edge.copy()
+        edge.Placement = edge.Placement.multiply(placement)
+        self.curve = edge.Curve
         self.finish()
 
-    def onThreePoints(self):
-        v1 = self.points[0].Point
-        v2 = self.points[1].Point
-        v3 = self.points[2].Point
+    def on_three_points(self):
+        v1 = self.points[0]
+        v2 = self.points[1]
+        v3 = self.points[2]
         self.curve = Part.Arc(v1, v2, v3).toShape().Curve
         self.finish()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     MeasureCircle()
