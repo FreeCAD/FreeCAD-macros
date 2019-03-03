@@ -10,8 +10,8 @@
 # not a .csv file from the macro, as soon as there is a column named "Density"
 # it will be loaded.)
 #
-# Icons Macro_CenterOfMass_import.png, Macro_CenterOfMass_compute.png, Macro_CenterOfMass_save.png,
-# Macro_CenterOfMass_material.png, and Macro_CenterOfMass_com.png are from https://www.freepik.com/.
+# Icons import.png, compute.png, save.png, material.png, and com.png are
+# from https://www.freepik.com/.
 
 from __future__ import division
 from __future__ import unicode_literals
@@ -19,8 +19,8 @@ from __future__ import unicode_literals
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Computation of the center of mass for multiple solids'
 __Author__ = 'schupin'
-__Version__ = '0.2.3'
-__Date__ = '2018-11-22'
+__Version__ = '0.3.0'
+__Date__ = '2019-03-03'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -29,7 +29,7 @@ __Help__ = 'Select or more bodies and launch'
 __Status__ = 'alpha'
 __Requires__ = 'freecad 0.18'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?p=265270#p265270'
-__Files__ = 'CenterOfMass/Macro_CenterOfMass_import.png,CenterOfMass/Macro_CenterOfMass_compute.png,CenterOfMass/Macro_CenterOfMass_save.png,CenterOfMass/Macro_CenterOfMass_material.png,CenterOfMass/Macro_CenterOfMass_com.png'
+__Files__ = 'CenterOfMass/import.png,CenterOfMass/compute.png,CenterOfMass/save.png,CenterOfMass/material.png,CenterOfMass/com.png'
 
 import csv
 import glob
@@ -44,8 +44,11 @@ import Material
 import MaterialEditor
 
 import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
+if sys.version_info.major >= 3:
+    unicode = str
+else:
+    reload(sys)
+    sys.setdefaultencoding('utf8')
 
 g_column_width = 310
 g_win_width = 500  # width of our window
@@ -201,7 +204,6 @@ class CenterofmassWidget(QtGui.QWidget):
         self.comboUnit.addItem('lb/in^3')
         self.comboUnit.addItem('lb/ft^3')
         self.comboUnit.addItem('lb/yd^3')
-        # QtCore.QObject.connect(self.comboUnit, QtCore.SIGNAL('currentIndexChanged(QString)'),self.on_comboUnit_Changed)
         self.comboUnit.currentIndexChanged.connect(self.on_comboUnit_Changed)
 
         lengthU = self.comboUnit.currentText().split('/')[1].split('^')[0]
@@ -253,7 +255,6 @@ class CenterofmassWidget(QtGui.QWidget):
             for m in sorted(self.material_database):
                 self.materials[sol].combo.addItem(m)
             self.materials[sol].combo.setCurrentIndex(self.materials[sol].combo.findText('default'))
-            #QtCore.QObject.connect(self.materials[sol].combo, QtCore.SIGNAL('currentIndexChanged(QString)'), self.materials[sol].on_comboMaterial_Changed)
             self.materials[sol].combo.currentIndexChanged.connect(self.materials[sol].on_comboMaterial_Changed)
 
             self.volumes[sol] = objs[sol].Volume
@@ -454,36 +455,48 @@ class CenterofmassWidget(QtGui.QWidget):
                 if self.materials[sol].combo.findText(m) == -1:
                     self.materials[sol].combo.addItem(m)
 
-    def add_cards_from_a_dir(self, materials_cards, mat_dir, icon):
-        mat_file_extension = '.FCMat'
-        dir_path_list = glob.glob(mat_dir + '/*' + mat_file_extension)
-        for a_path in dir_path_list:
-            materials_cards[a_path] = Material.importFCMat(a_path)
+    def getMaterialResources(self):
+        self.fem_prefs = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Material/Resources")
+        use_built_in_materials = self.fem_prefs.GetBool("UseBuiltInMaterials", True)
+        use_mat_from_config_dir = self.fem_prefs.GetBool("UseMaterialsFromConfigDir", True)
+        use_mat_from_custom_dir = self.fem_prefs.GetBool("UseMaterialsFromCustomDir", True)
+        if use_mat_from_custom_dir:
+            custom_mat_dir = self.fem_prefs.GetString("CustomMaterialsDir", "")
+        # later found cards with same name will override cards
+        # FreeCAD returns paths with / at the end, thus not os.sep is needed on first +
+        self.resources = []
+        if use_built_in_materials:
+            self.resources.append(FreeCAD.getResourceDir() + "Mod" + os.sep + "Material" + os.sep + "StandardMaterial")
+        if use_mat_from_config_dir:
+            self.resources.append(FreeCAD.ConfigGet("UserAppData") + "Material")
+        if use_mat_from_custom_dir:
+            custom_mat_dir = self.fem_prefs.GetString("CustomMaterialsDir", "")
+            if os.path.exists(custom_mat_dir):
+                self.resources.append(custom_mat_dir)
+        self.outputResources()
+
+    def outputResources(self):
+        print('locations to look for material cards:')
+        for path in self.resources:
+            print('  ' + path)
+        print('\n')
 
     def loadMaterials(self):
+        self.getMaterialResources()
         materials_cards = {}
-        fem_prefs = FreeCAD.ParamGet('User parameter:BaseApp/Preferences/Mod/Material/Resources')
-
-        use_built_in_materials = fem_prefs.GetBool('UseBuiltInMaterials', True)
-        if use_built_in_materials:
-            system_mat_dir = FreeCAD.getResourceDir() + '/Mod/Material/StandardMaterial'
-            self.add_cards_from_a_dir(materials_cards, system_mat_dir, ':/icons/freecad.svg')
-
-        use_mat_from_config_dir = fem_prefs.GetBool('UseMaterialsFromConfigDir', True)
-        if use_mat_from_config_dir:
-            user_mat_dirname = FreeCAD.getUserAppDataDir() + 'Material'
-            self.add_cards_from_a_dir(materials_cards, user_mat_dirname, ':/icons/preferences-general.svg')
-
-        use_mat_from_custom_dir = fem_prefs.GetBool('UseMaterialsFromCustomDir', True)
-        if use_mat_from_custom_dir:
-            custom_mat_dir = fem_prefs.GetString('CustomMaterialsDir', '')
-            self.add_cards_from_a_dir(materials_cards, custom_mat_dir, ':/icons/user.svg')
+        for p in self.resources:
+            if os.path.exists(p):
+                for f in sorted(os.listdir(p)):
+                    b, e = os.path.splitext(f)
+                    if e.upper() == ".FCMAT":
+                        materials_cards[b] = p + os.sep + f
 
         for mat_card in sorted(materials_cards):
             self.material_database['default'] = 1000.0
+            import importFCMat
             try :
-                self.material_database[mat_card.split('/')[-1].split('\\')[-1].split('.FCMat')[0]] = float(
-                    materials_cards.get(mat_card).get('Density').split(' ')[0])
+                d = importFCMat.read(materials_cards[mat_card])
+                self.material_database[mat_card] = float(d.get('Density').split(' ')[0])
             except:
                 pass
 
@@ -518,11 +531,13 @@ class CenterofmassWidget(QtGui.QWidget):
 
     def on_pushButton_ComputeCDG(self):
         self.massTot = 0
+        self.volTot = 0
         self.TotalCdG=FreeCAD.Vector(0,0,0)
         for sol in range(self.solid_count):
             volumeInUnit = self.convertVolume(self.volumes[sol])
             self.masses[sol] = volumeInUnit * self.materials[sol].spin.value()
             self.massTot += self.masses[sol]
+            self.volTot += volumeInUnit
         for sol in range(self.solid_count):
             self.TotalCdG += 1 / self.massTot * self.masses[sol] * self.centerofmasses[sol]
         self.resultMasseTot.setText('{:.6}'.format(self.massTot))
@@ -648,7 +663,10 @@ class CenterofmassWidget(QtGui.QWidget):
             FreeCAD.Console.PrintMessage('Saving ' + SaveName + '\n')
 
             try:
-                f = open(SaveName, 'w') # write
+                if sys.version_info.major >= 3:
+                    f = open(SaveName, 'w', encoding="utf-8") # write
+                else:
+                    f = open(SaveName, 'w') # write
 
                 densityU = self.comboUnit.currentText()
                 volU = densityU.split('/')[1]
@@ -667,7 +685,9 @@ class CenterofmassWidget(QtGui.QWidget):
                         self.convertLength(self.centerofmasses[sol][1]),
                         self.convertLength(self.centerofmasses[sol][2])))
 
-                f.write('\nTotal\t\t\t\t\t%.6e\t%.6e\t%.6e\t%.6e\n' % (
+                f.write('\nTotal\t\t\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\n' % (
+                    self.volTot,
+                    self.massTot/self.volTot,
                     self.massTot,
                     self.convertLength(self.TotalCdG[0]),
                     self.convertLength(self.TotalCdG[1]),
@@ -692,7 +712,7 @@ class CenterofmassWidget(QtGui.QWidget):
         else:
             FreeCAD.Console.PrintMessage('reading densities from %s' % filename)
         # open csv file
-            with open(filename, 'r') as csvfile:
+            with open(filename, 'r', encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile, delimiter='\t')
 
                 densityUnits = ['', ' (kg/m^3)', ' (g/dm^3)', ' (g/cm^3)', 'g/mm^3', ' (oz/in^3)', ' (lb/in^3)', ' (lb/ft^3)',
