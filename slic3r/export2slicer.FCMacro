@@ -15,56 +15,53 @@ __Requires__ = "freecad 0.17"
 __Communication__ = "https://github.com/dlozinski"
 __Files__ = "Slic3r.png"
 
-import FreeCAD
 import Mesh
 import MeshPart
 import os
 import subprocess
 
-# Slicing program executable. One can use different slicing software here and provide proper slicer executable location
-SLICER_PATH = "slic3r"
+# Slicing program executable. One can use different slicing software here and provide proper slicer executable location and custom flags
+SLICER_CMD = ["/Applications/Slic3r.app/Contents/MacOS/Slic3r", "--gui"]
 
-# Remove --gui flag to run Slic3r in cmd mode. One can append any other flags here
-SLICER_PARAMS = ["--gui"]
+def main():
+    doc = App.ActiveDocument
+    if not doc:
+        return "No active document"
 
-doc = App.ActiveDocument
+    # Get all visible objests with shapes
+    visible_shapes = (o for o in doc.Objects if o.ViewObject.isVisible() and hasattr(o, 'Shape'))
 
-# Get all visible objests with shapes
-visible_shapes = (o for o in doc.Objects if o.ViewObject.isVisible() and hasattr(o, 'Shape')) if doc else []
+    if not visible_shapes:
+        return "No visible shapes"
 
-# Ensure to not include both parent and child objects
-objects_to_export = set()
-for o in visible_shapes:
-    if not set(o.InListRecursive).intersection(objects_to_export):
-        objects_to_export.add(o)
+    # Ensure to not include both parent and child objects
+    objects_to_export = set()
+    for o in visible_shapes:
+        if not set(o.InListRecursive).intersection(objects_to_export):
+            objects_to_export.add(o)
 
-out_dir = os.path.dirname(FreeCAD.ActiveDocument.FileName) + "/" if FreeCAD.ActiveDocument else None
-if out_dir == "/":
-	out_dir = "./"
+    out_dir = os.path.dirname(doc.FileName)
+    mesh_path = out_dir + "/meshes.amf" if out_dir else "meshes.amf"
 
-meshes = []
-mesh = None
+    # Create temporary doc to store meshes
+    tmp_doc = App.newDocument("meshes")
+    try:
+        mesh = None
+        meshes = []
+        for o in objects_to_export:
+            mesh = tmp_doc.addObject("Mesh::Feature", "Mesh")
+            mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=0.0872665, Relative=False)
+            meshes.append(mesh)
+        Mesh.export(meshes, mesh_path)
+    finally:
+        App.closeDocument("meshes")
 
-# Create temporar doc to store meshes
-tmp_doc = App.newDocument("tmp")
-try:
-    for o in objects_to_export:
-        mesh = tmp_doc.addObject("Mesh::Feature", "Mesh")
-        mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=0.0872665, Relative=False)
-        mesh.Label = "mesh-" + o.Label.replace(" ", "_")
-        mesh_path = out_dir + mesh.Label + ".amf"
-        print "Exporting amf mesh: ", mesh_path
-        Mesh.export([mesh], mesh_path)
-        meshes.append(mesh_path)
-finally:
-    App.closeDocument("tmp")
+    # Launch Slicer with meshes
+    subprocess.Popen(SLICER_CMD + [mesh_path])
 
-# Launch Slicerwith meshes
-if meshes:
-    print [SLICER_PATH] + SLICER_PARAMS + meshes
-    subprocess.Popen([SLICER_PATH] + SLICER_PARAMS + meshes)
+
+error = main()
+if error:
+    App.Console.PrintError("Error while opening in Slicer: " + error + "\n")
 else:
-    print("Nothing to do.")
-
-# Cleanup
-del doc, mesh, out_dir, visible_shapes, objects_to_export, meshes, tmp_doc
+    App.Console.PrintMessage("Objects opened in Slicer\n")
