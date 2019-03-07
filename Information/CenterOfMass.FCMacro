@@ -712,39 +712,40 @@ class CenterofmassWidget(QtGui.QWidget):
         else:
             FreeCAD.Console.PrintMessage('reading densities from %s' % filename)
         # open csv file
-            with open(filename, 'r') as csvfile:
-                if sys.version_info.major >= 3:
-                    reader = csv.DictReader(csvfile, delimiter='\t')
-                else:
-                    reader = csv.DictReader(csvfile, delimiter=str('\t').encode('utf-8'))
+            if sys.version_info.major >= 3:
+                csvfile = open(filename, 'r', encoding='utf-8')
+                reader = csv.DictReader(csvfile, delimiter='\t')
+            else:
+                csvfile = open(filename, 'r')
+                reader = csv.DictReader(csvfile, delimiter=str('\t').encode('utf-8'))
 
-                densityUnits = ['', ' (kg/m^3)', ' (g/dm^3)', ' (g/cm^3)', 'g/mm^3', ' (oz/in^3)', ' (lb/in^3)', ' (lb/ft^3)',
+            densityUnits = ['', ' (kg/m^3)', ' (g/dm^3)', ' (g/cm^3)', 'g/mm^3', ' (oz/in^3)', ' (lb/in^3)', ' (lb/ft^3)',
                                 ' (lb/yd^3)']
 
-                matLoaded = 0
-                for row in reader:
-                    if matLoaded < self.solid_count:
+            matLoaded = 0
+            for row in reader:
+                if matLoaded < self.solid_count:
+                    try:
+                        self.materials[matLoaded].combo.setCurrentIndex(
+                            self.materials[matLoaded].combo.findText(row['Material']))
+                    except:
+                        FreeCAD.Console.PrintWarning('Unknown material or unable to find a "Material" column in the file --> Material set to "custom"')
+                        self.materials[matLoaded].combo.setCurrentIndex(
+                            self.materials[matLoaded].combo.findText('custom'))
+
+                    if self.materials[matLoaded].combo.currentText() == 'custom':
                         try:
-                            self.materials[matLoaded].combo.setCurrentIndex(
-                                self.materials[matLoaded].combo.findText(row['Material']))
+                            for u in range(len(densityUnits)):
+                                try:
+                                    self.materials[matLoaded].spin.setValue(float(row['Density' + densityUnits[u]]))
+                                except:
+                                    pass
+
                         except:
-                            FreeCAD.Console.PrintWarning('Unknown material or unable to find a "Material" column in the file --> Material set to "custom"')
                             self.materials[matLoaded].combo.setCurrentIndex(
-                                self.materials[matLoaded].combo.findText('custom'))
-
-                        if self.materials[matLoaded].combo.currentText() == 'custom':
-                            try:
-                                for u in range(len(densityUnits)):
-                                    try:
-                                        self.materials[matLoaded].spin.setValue(float(row['Density' + densityUnits[u]]))
-                                    except:
-                                        pass
-
-                            except:
-                                self.materials[matLoaded].combo.setCurrentIndex(
-                                    self.materials[matLoaded].combo.findText('default'))
-                                FreeCAD.Console.PrintWarning('Unable to find a "Density" column in the file --> Material set to "default"')
-                        matLoaded += 1
+                                self.materials[matLoaded].combo.findText('default'))
+                            FreeCAD.Console.PrintWarning('Unable to find a "Density" column in the file --> Material set to "default"')
+                    matLoaded += 1
 
 
 def error_dialog(msg):
