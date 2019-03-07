@@ -39,29 +39,32 @@ for o in visible_shapes:
         objects_to_export.add(o)
 
 out_dir = os.path.dirname(FreeCAD.ActiveDocument.FileName) + "/" if FreeCAD.ActiveDocument else None
+if out_dir == "/":
+	out_dir = "./"
 
 meshes = []
 mesh = None
 
 # Create temporar doc to store meshes
 tmp_doc = App.newDocument("tmp")
-for o in objects_to_export:
-    mesh = tmp_doc.addObject("Mesh::Feature", "Mesh")
-    try:
+try:
+    for o in objects_to_export:
+        mesh = tmp_doc.addObject("Mesh::Feature", "Mesh")
         mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=0.0872665, Relative=False)
         mesh.Label = "mesh-" + o.Label.replace(" ", "_")
         mesh_path = out_dir + mesh.Label + ".amf"
         print "Exporting amf mesh: ", mesh_path
         Mesh.export([mesh], mesh_path)
         meshes.append(mesh_path)
-    finally:
-		App.closeDocument("tmp")
+finally:
+    App.closeDocument("tmp")
 
 # Launch Slicerwith meshes
 if meshes:
-	subprocess.Popen([SLICER_PATH] + SLICER_PARAMS + meshes)
+    print [SLICER_PATH] + SLICER_PARAMS + meshes
+    subprocess.Popen([SLICER_PATH] + SLICER_PARAMS + meshes)
 else:
-	print("Nothing to do.")
+    print("Nothing to do.")
 
 # Cleanup
 del doc, mesh, out_dir, visible_shapes, objects_to_export, meshes, tmp_doc
