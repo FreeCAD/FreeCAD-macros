@@ -23,6 +23,12 @@ import subprocess
 # Slicing program executable. One can use different slicing software here and provide proper slicer executable location and custom flags
 SLICER_CMD = ["/Applications/Slic3r.app/Contents/MacOS/Slic3r", "--gui"]
 
+# You can format change to stl, but then all of the objects will be marged into single geometry
+OUTPUT_FORMAT = "amf"
+
+# Angular deflection in radians. Lower value = better quality of curved shapes and bigger file size
+ANGULAR_DEFLECTION = 0.0872665
+
 def main():
     doc = App.ActiveDocument
     if not doc:
@@ -40,8 +46,10 @@ def main():
 
     if not objects_to_export:
         return "No visible objects to export"
-    out_dir = os.path.dirname(doc.FileName)
-    mesh_path = out_dir + "/meshes.amf" if out_dir else "meshes.amf"
+
+    out_dir = os.path.dirname(doc.FileName) or "."
+
+    mesh_path = "{0}/meshes.{1}".format(out_dir, OUTPUT_FORMAT)
 
     # Create temporary doc to store meshes
     tmp_doc = App.newDocument("meshes")
@@ -49,7 +57,7 @@ def main():
         meshes = []
         for o in objects_to_export:
             mesh = tmp_doc.addObject("Mesh::Feature", "Mesh")
-            mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=0.0872665, Relative=False)
+            mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=ANGULAR_DEFLECTION, Relative=False)
             meshes.append(mesh)
         Mesh.export(meshes, mesh_path)
     finally:
