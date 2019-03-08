@@ -31,8 +31,6 @@ def main():
     # Get all visible objests with shapes
     visible_shapes = (o for o in doc.Objects if o.ViewObject.isVisible() and hasattr(o, 'Shape'))
 
-    if not visible_shapes:
-        return "No visible shapes"
 
     # Ensure to not include both parent and child objects
     objects_to_export = set()
@@ -40,6 +38,8 @@ def main():
         if not set(o.InListRecursive).intersection(objects_to_export):
             objects_to_export.add(o)
 
+    if not objects_to_export:
+        return "No visible objects to export"
     out_dir = os.path.dirname(doc.FileName)
     mesh_path = out_dir + "/meshes.amf" if out_dir else "meshes.amf"
 
