@@ -19,8 +19,8 @@ from __future__ import unicode_literals
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Computation of the center of mass for multiple solids'
 __Author__ = 'schupin'
-__Version__ = '0.3.0'
-__Date__ = '2019-03-03'
+__Version__ = '0.3.1'
+__Date__ = '2019-03-07'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -712,36 +712,40 @@ class CenterofmassWidget(QtGui.QWidget):
         else:
             FreeCAD.Console.PrintMessage('reading densities from %s' % filename)
         # open csv file
-            with open(filename, 'r', encoding="utf-8") as csvfile:
+            if sys.version_info.major >= 3:
+                csvfile = open(filename, 'r', encoding='utf-8')
                 reader = csv.DictReader(csvfile, delimiter='\t')
+            else:
+                csvfile = open(filename, 'r')
+                reader = csv.DictReader(csvfile, delimiter=str('\t').encode('utf-8'))
 
-                densityUnits = ['', ' (kg/m^3)', ' (g/dm^3)', ' (g/cm^3)', 'g/mm^3', ' (oz/in^3)', ' (lb/in^3)', ' (lb/ft^3)',
+            densityUnits = ['', ' (kg/m^3)', ' (g/dm^3)', ' (g/cm^3)', 'g/mm^3', ' (oz/in^3)', ' (lb/in^3)', ' (lb/ft^3)',
                                 ' (lb/yd^3)']
 
-                matLoaded = 0
-                for row in reader:
-                    if matLoaded < self.solid_count:
+            matLoaded = 0
+            for row in reader:
+                if matLoaded < self.solid_count:
+                    try:
+                        self.materials[matLoaded].combo.setCurrentIndex(
+                            self.materials[matLoaded].combo.findText(row['Material']))
+                    except:
+                        FreeCAD.Console.PrintWarning('Unknown material or unable to find a "Material" column in the file --> Material set to "custom"')
+                        self.materials[matLoaded].combo.setCurrentIndex(
+                            self.materials[matLoaded].combo.findText('custom'))
+
+                    if self.materials[matLoaded].combo.currentText() == 'custom':
                         try:
-                            self.materials[matLoaded].combo.setCurrentIndex(
-                                self.materials[matLoaded].combo.findText(row['Material']))
+                            for u in range(len(densityUnits)):
+                                try:
+                                    self.materials[matLoaded].spin.setValue(float(row['Density' + densityUnits[u]]))
+                                except:
+                                    pass
+
                         except:
-                            FreeCAD.Console.PrintWarning('Unknown material or unable to find a "Material" column in the file --> Material set to "custom"')
                             self.materials[matLoaded].combo.setCurrentIndex(
-                                self.materials[matLoaded].combo.findText('custom'))
-
-                        if self.materials[matLoaded].combo.currentText() == 'custom':
-                            try:
-                                for u in range(len(densityUnits)):
-                                    try:
-                                        self.materials[matLoaded].spin.setValue(float(row['Density' + densityUnits[u]]))
-                                    except:
-                                        pass
-
-                            except:
-                                self.materials[matLoaded].combo.setCurrentIndex(
-                                    self.materials[matLoaded].combo.findText('default'))
-                                FreeCAD.Console.PrintWarning('Unable to find a "Density" column in the file --> Material set to "default"')
-                        matLoaded += 1
+                                self.materials[matLoaded].combo.findText('default'))
+                            FreeCAD.Console.PrintWarning('Unable to find a "Density" column in the file --> Material set to "default"')
+                    matLoaded += 1
 
 
 def error_dialog(msg):
