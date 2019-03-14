@@ -19,7 +19,7 @@ from __future__ import unicode_literals
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Computation of the center of mass for multiple solids'
 __Author__ = 'schupin'
-__Version__ = '0.3.1'
+__Version__ = '0.3.2'
 __Date__ = '2019-03-07'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
@@ -29,7 +29,9 @@ __Help__ = 'Select or more bodies and launch'
 __Status__ = 'alpha'
 __Requires__ = 'freecad 0.18'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?p=265270#p265270'
-__Files__ = 'CenterOfMass/import.png,CenterOfMass/compute.png,CenterOfMass/save.png,CenterOfMass/material.png,CenterOfMass/com.png'
+__Files__ = 'CenterOfMass/import.png,CenterOfMass/compute.png,CenterOfMass/save.png,CenterOfMass/material.png,CenterOfMass/com.png,CenterOfMass/colorify.png'
+
+#TODO : improve load csv to be independant of selecting order (check selected label and label column)
 
 import csv
 import glob
@@ -90,12 +92,13 @@ class CenterofmassWindow(QtGui.QMainWindow):
 
 
 class MaterialWidget():
-    def __init__(self, label, spin, combo, parent, material_database):
+    def __init__(self, label, spin, combo, parent, material_database, solid):
         self.label = label
         self.spin = spin
         self.combo = combo
         self.parent = parent
         self.material_database = material_database
+        self.solid = solid
 
     def on_comboMaterial_Changed(self, txt):
         materialName = self.combo.currentText()
@@ -114,6 +117,9 @@ class MaterialWidget():
     def on_densitySpinBox_valueChanged(self, density):
         self.combo.setCurrentIndex(0)
         self.parent.on_pushButton_ComputeCDG()
+        self.solid.ViewObject.ShapeColor=(0.8,0.8,0.8)
+        defcolor = QtGui.QColor(255, 255, 255)
+        self.spin.setStyleSheet('QDoubleSpinBox {background-color: %s}'%defcolor.name())
 
 
 def convert_density(density_siunits, unit):
@@ -235,6 +241,7 @@ class CenterofmassWidget(QtGui.QWidget):
                 combo=QtGui.QComboBox(self),
                 parent=self,
                 material_database=self.material_database,
+                solid = sel[sol]
             )
 
             self.materials[sol].label.setText(
@@ -406,11 +413,20 @@ class CenterofmassWidget(QtGui.QWidget):
         self.showCdg.setIcon(QtGui.QIcon(os.path.join(icon_dir, "Macro_CenterOfMass_com.png")))
         self.showCdg.setIconSize(QtCore.QSize(30, 30))
 
+        self.colorify = QtGui.QPushButton(self)
+        self.colorify.setObjectName('colorify')
+        self.colorify.clicked.connect(self.on_pushButton_Colorify)
+        self.colorify.setToolTip('colorify shapes')
+        self.colorify.setEnabled(False)
+        self.colorify.setIcon(QtGui.QIcon(os.path.join(icon_dir, "Macro_CenterOfMass_colorify.png")))
+        self.colorify.setIconSize(QtCore.QSize(30, 30))
+
         massGroupBox = QtGui.QGroupBox()
         massLayout = QtGui.QHBoxLayout()
         massLayout.addWidget(self.label_Mass)
         massLayout.addWidget(self.resultMasseTot)
         massLayout.addWidget(self.showCdg)
+        massLayout.addWidget(self.colorify)
         massGroupBox.setLayout(massLayout)
         massGroupBox.setFixedHeight(50)
         layout.addWidget(massGroupBox)
@@ -547,6 +563,32 @@ class CenterofmassWidget(QtGui.QWidget):
 
         self.export.setEnabled(True)
         self.showCdg.setEnabled(True)
+        self.colorify.setEnabled(True)
+
+    def on_pushButton_Colorify(self):
+        import colorsys
+        for sol in range(self.solid_count):
+            density = self.materials[sol].spin.value()
+            densityU = self.comboUnit.currentText()
+            densityConverted = float(self.tu('%f %s' % (density, densityU)) / self.tu('kg/m^3'))
+            maxDensity = 21000.
+            if densityConverted > maxDensity:
+                densityConverted = 21000.
+                print("warning density exceeded maximum allowed to colorify (max allowed %f kg/m^3)" % maxDensity)
+            if densityConverted>14000:
+                h = (densityConverted-14000)*360./7000
+                s = 0.5
+            elif densityConverted>7000:
+                h = (densityConverted-7000)*360./7000
+                s = 0.75
+            else:
+                h = densityConverted*360./7000
+                s = 1.
+            v = 1.
+            rgb = colorsys.hsv_to_rgb(h, s, v)
+            FreeCAD.ActiveDocument.getObject(sel[sol].Name).ViewObject.ShapeColor=(rgb)
+            color = QtGui.QColor(int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255))
+            self.materials[sol].spin.setStyleSheet('QDoubleSpinBox {background-color: %s}'%color.name())
 
     def on_pushButton_ShowCdG(self):
         doc = FreeCAD.activeDocument()
