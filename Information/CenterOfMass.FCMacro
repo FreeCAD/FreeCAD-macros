@@ -571,23 +571,16 @@ class CenterofmassWidget(QtGui.QWidget):
             density = self.materials[sol].spin.value()
             densityU = self.comboUnit.currentText()
             densityConverted = float(self.tu('%f %s' % (density, densityU)) / self.tu('kg/m^3'))
-            maxDensity = 21000.
-            if densityConverted > maxDensity:
-                densityConverted = 21000.
-                print("warning density exceeded maximum allowed to colorify (max allowed %f kg/m^3)" % maxDensity)
-            if densityConverted>14000:
-                h = (densityConverted-14000)*360./7000
-                s = 0.5
-            elif densityConverted>7000:
-                h = (densityConverted-7000)*360./7000
-                s = 0.75
-            else:
-                h = densityConverted*360./7000
-                s = 1.
-            v = 1.
+            dThous = densityConverted // 1000
+            dHund = (densityConverted - dThous*1000) // 100
+            dTen = (densityConverted - dThous*1000 - dHund*100) // 10
+            maxD = 21000.
+            h = densityConverted/maxD
+            s = 1. - 0.5*(dHund/10.)
+            v = 1. - 0.5*(dTen/10.)
             rgb = colorsys.hsv_to_rgb(h, s, v)
             FreeCAD.ActiveDocument.getObject(sel[sol].Name).ViewObject.ShapeColor=(rgb)
-            color = QtGui.QColor(int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255))
+            color = QtGui.QColor(int(rgb[0]*255.), int(rgb[1]*255.), int(rgb[2]*255.))
             self.materials[sol].spin.setStyleSheet('QDoubleSpinBox {background-color: %s}'%color.name())
 
     def on_pushButton_ShowCdG(self):
