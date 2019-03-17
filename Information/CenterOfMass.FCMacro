@@ -19,7 +19,7 @@ from __future__ import unicode_literals
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Computation of the center of mass for multiple solids'
 __Author__ = 'schupin'
-__Version__ = '0.3.2'
+__Version__ = '0.3.3'
 __Date__ = '2019-03-07'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
@@ -30,8 +30,6 @@ __Status__ = 'alpha'
 __Requires__ = 'freecad 0.18'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?p=265270#p265270'
 __Files__ = 'CenterOfMass/Macro_CenterOfMass_import.png,CenterOfMass/Macro_CenterOfMass_compute.png,CenterOfMass/Macro_CenterOfMass_save.png,CenterOfMass/Macro_CenterOfMass_material.png,CenterOfMass/Macro_CenterOfMass_com.png,CenterOfMass/Macro_CenterOfMass_colorify.png'
-
-#TODO : improve load csv to be independant of selecting order (check selected label and label column)
 
 import csv
 import glob
@@ -745,7 +743,7 @@ class CenterofmassWidget(QtGui.QWidget):
             FreeCAD.Console.PrintMessage('importing file canceled' + '\n')
             error_dialog('importing file canceled')
         else:
-            FreeCAD.Console.PrintMessage('reading densities from %s' % filename)
+            FreeCAD.Console.PrintMessage('reading densities from %s\n' % filename)
         # open csv file
             if sys.version_info.major >= 3:
                 csvfile = open(filename, 'r', encoding='utf-8')
@@ -757,16 +755,23 @@ class CenterofmassWidget(QtGui.QWidget):
             densityUnits = ['', ' (kg/m^3)', ' (g/dm^3)', ' (g/cm^3)', 'g/mm^3', ' (oz/in^3)', ' (lb/in^3)', ' (lb/ft^3)',
                                 ' (lb/yd^3)']
 
+            selList = [0] * self.solid_count
+            for s in range(self.solid_count):
+                selList[s] = sel[s].Label
+
             matLoaded = 0
             for row in reader:
                 if matLoaded < self.solid_count:
-                    try:
-                        self.materials[matLoaded].combo.setCurrentIndex(
-                            self.materials[matLoaded].combo.findText(row['Material']))
-                    except:
-                        FreeCAD.Console.PrintWarning('Unknown material or unable to find a "Material" column in the file --> Material set to "custom"')
-                        self.materials[matLoaded].combo.setCurrentIndex(
-                            self.materials[matLoaded].combo.findText('custom'))
+                    if row['Label'] in selList:
+                        try:
+                            self.materials[matLoaded].combo.setCurrentIndex(
+                                self.materials[matLoaded].combo.findText(row['Material']))
+                        except:
+                            FreeCAD.Console.PrintWarning('Unknown material or unable to find a "Material" column in the file --> Material set to "custom"')
+                            self.materials[matLoaded].combo.setCurrentIndex(
+                                self.materials[matLoaded].combo.findText('custom'))
+                    else:
+                        FreeCAD.Console.PrintWarning('Name label in the .csv file does not fit any selected shape --> Material keep to "default"')
 
                     if self.materials[matLoaded].combo.currentText() == 'custom':
                         try:
