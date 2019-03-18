@@ -19,7 +19,7 @@ from __future__ import unicode_literals
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Computation of the center of mass for multiple solids'
 __Author__ = 'schupin'
-__Version__ = '0.3.3'
+__Version__ = '0.3.4'
 __Date__ = '2019-03-07'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
@@ -30,8 +30,6 @@ __Status__ = 'alpha'
 __Requires__ = 'freecad 0.18'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?p=265270#p265270'
 __Files__ = 'CenterOfMass/Macro_CenterOfMass_import.png,CenterOfMass/Macro_CenterOfMass_compute.png,CenterOfMass/Macro_CenterOfMass_save.png,CenterOfMass/Macro_CenterOfMass_material.png,CenterOfMass/Macro_CenterOfMass_com.png,CenterOfMass/Macro_CenterOfMass_colorify.png'
-
-#TODO : improve load csv to be independant of selecting order (check selected label and label column)
 
 import csv
 import glob
@@ -92,13 +90,14 @@ class CenterofmassWindow(QtGui.QMainWindow):
 
 
 class MaterialWidget():
-    def __init__(self, label, spin, combo, parent, material_database, solid):
+    def __init__(self, label, spin, combo, parent, material_database, solid, originColor):
         self.label = label
         self.spin = spin
         self.combo = combo
         self.parent = parent
         self.material_database = material_database
         self.solid = solid
+        self.originColor = originColor
 
     def on_comboMaterial_Changed(self, txt):
         materialName = self.combo.currentText()
@@ -117,7 +116,7 @@ class MaterialWidget():
     def on_densitySpinBox_valueChanged(self, density):
         self.combo.setCurrentIndex(0)
         self.parent.on_pushButton_ComputeCDG()
-        self.solid.ViewObject.ShapeColor=(0.8,0.8,0.8)
+        self.solid.ViewObject.ShapeColor=self.originColor
         defcolor = QtGui.QColor(255, 255, 255)
         self.spin.setStyleSheet('QDoubleSpinBox {background-color: %s}'%defcolor.name())
 
@@ -241,7 +240,8 @@ class CenterofmassWidget(QtGui.QWidget):
                 combo=QtGui.QComboBox(self),
                 parent=self,
                 material_database=self.material_database,
-                solid = sel[sol]
+                solid = sel[sol],
+                originColor = sel[sol].ViewObject.ShapeColor
             )
 
             self.materials[sol].label.setText(
@@ -571,8 +571,8 @@ class CenterofmassWidget(QtGui.QWidget):
             density = self.materials[sol].spin.value()
             densityU = self.comboUnit.currentText()
             densityConverted = float(self.tu('%f %s' % (density, densityU)) / self.tu('kg/m^3'))
-            dThous = densityConverted // 1000
-            dHund = (densityConverted - dThous*1000) // 100
+            dThous = densityConverted // 1000.
+            dHund = (densityConverted - dThous*1000.) // 100.
             dTen = (densityConverted - dThous*1000 - dHund*100) // 10
             maxD = 21000.
             h = densityConverted/maxD
