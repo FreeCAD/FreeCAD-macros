@@ -17,13 +17,14 @@
 # *0.51 : change reference face alignment so it is considered a bottom face rather than a top one
 # *0.6 : change way of reaching PartDesign Body, older has trouble with objects contained in a part
 # *0.7 : multiple objects support (LIMITATION : reference items shall all belong to first object)(LIMITATION : unexpected results may happen if selected objects are in different coordinate systems) 
+# *0.75 : adding transaction for correct undo management
 #####################################
 
 __title__   = "Straighten an object by a face and/or an edge (or 2 vertices)"
 __author__  = "openBrain"
 __license__ = "LGPL v2"
-__version__ = "0.7" # Ready for beta test
-__date__    = "2019.03"
+__version__ = "0.75" # Ready for beta test
+__date__    = "2019.04"
 
 __dbg__ = False #True for debugging
 
@@ -46,13 +47,13 @@ def cslD(msg):
         FreeCAD.Console.PrintMessage('\n')
         FreeCAD.Console.PrintMessage("Debug : " + str(msg))
 
-_0Vec_ = App.Vector(0, 0, 0)
-_XVec_ = App.Vector(1, 0, 0)
-_YVec_ = App.Vector(0, 1, 0)
-_ZVec_ = App.Vector(0, 0, 1)
+_0Vec_ = FreeCAD.Vector(0, 0, 0)
+_XVec_ = FreeCAD.Vector(1, 0, 0)
+_YVec_ = FreeCAD.Vector(0, 1, 0)
+_ZVec_ = FreeCAD.Vector(0, 0, 1)
 
 if __dbg__:  ##Clear report view in debug mode
-    Gui.getMainWindow().findChild(QtGui.QTextEdit, "Report view").clear()
+    FreeCADGui.getMainWindow().findChild(QtGui.QTextEdit, "Report view").clear()
 
 cslM("Starting Straighten Object macro")
 cslD("Getting selected objects to define targets")
@@ -157,11 +158,12 @@ if cancelOp:
 elif selError or (bool(refPt1Def) != bool(refPt2Def)) or (not (refPt1Def or refPt2Def or refFaceDef)): #if selection error or only one reference point defined or no reference face/point defined
     cslE("Selection error : see report view & documentation for more details ... Exiting")
 else:
+    FreeCAD.ActiveDocument.openTransaction("Straighten objects") #open new transaction for undo management
     cslD("Starting Transformation")
-    obj = Gui.Selection.getSelection()[0] # take as reference the first object selected for transformation
+    obj = FreeCADGui.Selection.getSelection()[0] # take as reference the first object selected for transformation
     shiftVec = _0Vec_ #no shift move by defaut
-    faceRot = App.Rotation(_ZVec_, _ZVec_) #no reference rotation by default
-    lineRot = App.Rotation(_ZVec_, _ZVec_) #no reference line by default
+    faceRot = FreeCAD.Rotation(_ZVec_, _ZVec_) #no reference rotation by default
+    lineRot = FreeCAD.Rotation(_ZVec_, _ZVec_) #no reference line by default
     normVec = _ZVec_ #normal is the Z axis by default
     rotCenter = obj.Shape.BoundBox.Center #center of rotation at object bounding box center by default
     warning = False #True if a warning appears
@@ -176,9 +178,9 @@ else:
         rotCenter = refFace.CenterOfMass #changing center of rotation to center of mass of reference face
         shiftVec -= refFace.CenterOfMass #the reference face will be centered
         normVec = refFace.normalAt(refFace.Surface.parameter(refFace.CenterOfMass)[0], refFace.Surface.parameter(refFace.CenterOfMass)[1]) #getting normal vector at face center of mass
-        faceRot = App.Rotation(normVec, -_ZVec_) #calculate needed rotation to align the reference face with Z axis
+        faceRot = FreeCAD.Rotation(normVec, -_ZVec_) #calculate needed rotation to align the reference face with Z axis
         for t in target:
-            t.Placement = App.Placement(_0Vec_, faceRot, rotCenter).multiply(t.Placement) #rotate targets to align reference face normal with Z axis
+            t.Placement = FreeCAD.Placement(_0Vec_, faceRot, rotCenter).multiply(t.Placement) #rotate targets to align reference face normal with Z axis
         cslD("Targets rotated to match reference face normal with Z axis")
     if refPt1Def: #if reference points have been defined
         cslD("Reference points are available")
@@ -190,14 +192,15 @@ else:
             warning = True
             cslW("Line reference is aligned with normal, line alignment will be ignored") #warn user about it
         else:
-            lineRot = App.Rotation(lineNorm, _XVec_) #calculate needed rotation to align with X axis
+            lineRot = FreeCAD.Rotation(lineNorm, _XVec_) #calculate needed rotation to align with X axis
             for t in target:
-                t.Placement = App.Placement(_0Vec_, lineRot, rotCenter).multiply(t.Placement) #rotate targets to align reference line with X axis
+                t.Placement = FreeCAD.Placement(_0Vec_, lineRot, rotCenter).multiply(t.Placement) #rotate targets to align reference line with X axis
             cslD("Targets rotated to match reference line with X axis")
 
     for t in target:
         t.Placement.move(shiftVec) #finally shift targets if needed
     cslD("Targets shift")
+    FreeCAD.ActiveDocument.commitTransaction() #commit transaction
     if warning:
         cslW("Marco terminated with warning(s), see report view & documentation for more details")
     else :
