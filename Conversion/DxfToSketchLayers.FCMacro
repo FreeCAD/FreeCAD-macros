@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
-#
-from __future__ import division
 
 __Name__ = 'DXF to Sketch Layers'
 __Comment__ = 'DXF loader to a sketch for each layer or color'
 __Author__ = 'Julian Todd'
-__Version__ = '1.0.1'
-__Date__ = '2019-02-21'
+__Version__ = '1.0.2'
+__Date__ = '2019-04-30'
 __License__ = 'LGPL-2.0-or-later'
-__Web__ = 'https://github.com/goatchurchprime/transition-CAM'
+__Web__ = 'https://github.com/goatchurchprime/transition-CAM/dxfimporting/Macro_DXF_to_Sketch_layers.FCMacro'
 __Wiki__ = ''
 __Icon__ = ''
 __Help__ = ''
@@ -17,462 +15,216 @@ __Requires__ = 'FreeCAD >= 0.17'
 __Communication__ = ''
 __Files__ = ''
 
-import math
-
-# Operate the File Open UI and doit
+# This should be a general function available to all macros
+# (Taken from https://stackoverflow.com/questions/12332975/installing-python-module-within-code )
 from PySide import QtGui
+def import_and_install(packagename):
+    try:
+        _encoding = QtGui.QApplication.UnicodeUTF8
+        def tr(context, text):
+            return QtGui.QApplication.translate(context, text, None, _encoding)
+    except AttributeError:
+        def tr(context, text):
+            return QtGui.QApplication.translate(context, text, None)
 
-try:
-  _encoding = QtGui.QApplication.UnicodeUTF8
-  def tr(context, text):
-    return QtGui.QApplication.translate(context, text, None, _encoding)
-except AttributeError:
-  def tr(context, text):
-    return QtGui.QApplication.translate(context, text, None)
+    import importlib
+    try:
+        importlib.import_module(packagename)
+    except ImportError:
+        cmdlist = ["pip", "install", packagename, "--user"]
+        answer = QtGui.QMessageBox.question(None,
+                    tr(__Name__, 'Install %s?' % packagename),
+        	    tr(__Name__, 'Install %s by executing "%s"?' % (packagename, " ".join(cmdlist))))
+        if answer == QtGui.QMessageBox.StandardButton.Yes:
+            import subprocess
+            proc = subprocess.Popen(cmdlist, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = proc.communicate()
+            print(out.decode())
+            print(err.decode())
+        else:
+            raise
+    globals()[packagename] = importlib.import_module(packagename)
 
-# Make sure ezdxf is loaded, or possibly pip install it if not (is this the
-# best way, until it is part of the FreeCAD package?)
-try:
-    import ezdxf
-except ImportError:
-    answer = QtGui.QMessageBox.question(
-        None,
-        tr('DxfToSketchLayers', 'Install ezdxf?'),
-        tr('DxfToSketchLayers',
-           'Install ezdxf with pip by running "import pip; pip.main([\'install\', \'ezdxf\'])"?'))
-    if answer == QtGui.QMessageBox.StandardButton.Yes:
-        import pip
-        pip.main(['install', 'ezdxf'])
-        import ezdxf
-    else:
-        raise
 
-import Draft
-import FreeCAD as app
-import FreeCADGui as gui
-import Part
+#
+# Imports and start of code
+#
+import_and_install("ezdxf")
+from PySide import QtGui
+import math
+import Draft, Part
 from FreeCAD import Vector
-
-# DXF unwrapping and colour converting.
-g_dxf_colors = [
-    '#000000',
-    '#FF0000',
-    '#FFFF00',
-    '#00FF00',
-    '#00FFFF',
-    '#0000FF',
-    '#FF00FF',
-    '#000000',
-    '#808080',
-    '#C0C0C0',
-    '#FF0000',
-    '#FF7F7F',
-    '#CC0000',
-    '#CC6666',
-    '#990000',
-    '#994C4C',
-    '#7F0000',
-    '#7F3F3F',
-    '#4C0000',
-    '#4C2626',
-    '#FF3F00',
-    '#FF9F7F',
-    '#CC3300',
-    '#CC7F66',
-    '#992600',
-    '#995F4C',
-    '#7F1F00',
-    '#7F4F3F',
-    '#4C1300',
-    '#4C2F26',
-    '#FF7F00',
-    '#FFBF7F',
-    '#CC6600',
-    '#CC9966',
-    '#994C00',
-    '#99724C',
-    '#7F3F00',
-    '#7F5F3F',
-    '#4C2600',
-    '#4C3926',
-    '#FFBF00',
-    '#FFDF7F',
-    '#CC9900',
-    '#CCB266',
-    '#997200',
-    '#99854C',
-    '#7F5F00',
-    '#7F6F3F',
-    '#4C3900',
-    '#4C4226',
-    '#FFFF00',
-    '#FFFF7F',
-    '#CCCC00',
-    '#CCCC66',
-    '#999900',
-    '#99994C',
-    '#7F7F00',
-    '#7F7F3F',
-    '#4C4C00',
-    '#4C4C26',
-    '#BFFF00',
-    '#DFFF7F',
-    '#99CC00',
-    '#B2CC66',
-    '#729900',
-    '#85994C',
-    '#5F7F00',
-    '#6F7F3F',
-    '#394C00',
-    '#424C26',
-    '#7FFF00',
-    '#BFFF7F',
-    '#66CC00',
-    '#99CC66',
-    '#4C9900',
-    '#72994C',
-    '#3F7F00',
-    '#5F7F3F',
-    '#264C00',
-    '#394C26',
-    '#3FFF00',
-    '#9FFF7F',
-    '#33CC00',
-    '#7FCC66',
-    '#269900',
-    '#5F994C',
-    '#1F7F00',
-    '#4F7F3F',
-    '#134C00',
-    '#2F4C26',
-    '#00FF00',
-    '#7FFF7F',
-    '#00CC00',
-    '#66CC66',
-    '#009900',
-    '#4C994C',
-    '#007F00',
-    '#3F7F3F',
-    '#004C00',
-    '#264C26',
-    '#00FF3F',
-    '#7FFF9F',
-    '#00CC33',
-    '#66CC7F',
-    '#009926',
-    '#4C995F',
-    '#007F1F',
-    '#3F7F4F',
-    '#004C13',
-    '#264C2F',
-    '#00FF7F',
-    '#7FFFBF',
-    '#00CC66',
-    '#66CC99',
-    '#00994C',
-    '#4C9972',
-    '#007F3F',
-    '#3F7F5F',
-    '#004C26',
-    '#264C39',
-    '#00FFBF',
-    '#7FFFDF',
-    '#00CC99',
-    '#66CCB2',
-    '#009972',
-    '#4C9985',
-    '#007F5F',
-    '#3F7F6F',
-    '#004C39',
-    '#264C42',
-    '#00FFFF',
-    '#7FFFFF',
-    '#00CCCC',
-    '#66CCCC',
-    '#009999',
-    '#4C9999',
-    '#007F7F',
-    '#3F7F7F',
-    '#004C4C',
-    '#264C4C',
-    '#00BFFF',
-    '#7FDFFF',
-    '#0099CC',
-    '#66B2CC',
-    '#007299',
-    '#4C8599',
-    '#005F7F',
-    '#3F6F7F',
-    '#00394C',
-    '#26424C',
-    '#007FFF',
-    '#7FBFFF',
-    '#0066CC',
-    '#6699CC',
-    '#004C99',
-    '#4C7299',
-    '#003F7F',
-    '#3F5F7F',
-    '#00264C',
-    '#26394C',
-    '#0042FF',
-    '#7F9FFF',
-    '#0033CC',
-    '#667FCC',
-    '#002699',
-    '#4C5F99',
-    '#001F7F',
-    '#3F4F7F',
-    '#00134C',
-    '#262F4C',
-    '#0000FF',
-    '#7F7FFF',
-    '#0000CC',
-    '#6666CC',
-    '#000099',
-    '#4C4C99',
-    '#00007F',
-    '#3F3F7F',
-    '#00004C',
-    '#26264C',
-    '#3F00FF',
-    '#9F7FFF',
-    '#3200CC',
-    '#7F66CC',
-    '#260099',
-    '#5F4C99',
-    '#1F007F',
-    '#4F3F7F',
-    '#13004C',
-    '#2F264C',
-    '#7F00FF',
-    '#BF7FFF',
-    '#6600CC',
-    '#9966CC',
-    '#4C0099',
-    '#724C99',
-    '#3F007F',
-    '#5F3F7F',
-    '#26004C',
-    '#39264C',
-    '#BF00FF',
-    '#DF7FFF',
-    '#9900CC',
-    '#B266CC',
-    '#720099',
-    '#854C99',
-    '#5F007F',
-    '#6F3F7F',
-    '#39004C',
-    '#42264C',
-    '#FF00FF',
-    '#FF7FFF',
-    '#CC00CC',
-    '#CC66CC',
-    '#990099',
-    '#994C99',
-    '#7F007F',
-    '#7F3F7F',
-    '#4C004C',
-    '#4C264C',
-    '#FF00BF',
-    '#FF7FDF',
-    '#CC0099',
-    '#CC66B2',
-    '#990072',
-    '#994C85',
-    '#7F005F',
-    '#7F3F0B',
-    '#4C0039',
-    '#4C2642',
-    '#FF007F',
-    '#FF7FBF',
-    '#CC0066',
-    '#CC6699',
-    '#99004C',
-    '#994C72',
-    '#7F003F',
-    '#7F3F5F',
-    '#4C0026',
-    '#4C2639',
-    '#FF003F',
-    '#FF7F9F',
-    '#CC0033',
-    '#CC667F',
-    '#990026',
-    '#994C5F',
-    '#7F001F',
-    '#7F3F4F',
-    '#4C0013',
-    '#4C262F',
-    '#333333',
-    '#5B5B5B',
-    '#848484',
-    '#ADADAD',
-    '#D6D6D6',
-    '#FFFFFF']
+import FreeCAD
+import FreeCADGui
 
 
-def get_layer_color(entity, dfile, blockcolnum):
-    if entity.dxf.color == 256:
-        layer = dfile.layers.get(entity.dxf.layer)
-        colnum = layer.get_dxf_attrib('color', 0)
-    elif entity.dxf.color == 0:
+#
+# DXF unwrapping and colour converting.  (Would like this in a separate file.)
+#
+dxfcolors = ['#000000', '#FF0000', '#FFFF00', '#00FF00', '#00FFFF', '#0000FF', '#FF00FF', '#000000', '#808080', '#C0C0C0', '#FF0000', '#FF7F7F', '#CC0000', '#CC6666', '#990000', '#994C4C', '#7F0000', '#7F3F3F', '#4C0000', '#4C2626', '#FF3F00', '#FF9F7F', '#CC3300', '#CC7F66', '#992600', '#995F4C', '#7F1F00', '#7F4F3F', '#4C1300', '#4C2F26', '#FF7F00', '#FFBF7F', '#CC6600', '#CC9966', '#994C00', '#99724C', '#7F3F00', '#7F5F3F', '#4C2600', '#4C3926', '#FFBF00', '#FFDF7F', '#CC9900', '#CCB266', '#997200', '#99854C', '#7F5F00', '#7F6F3F', '#4C3900', '#4C4226', '#FFFF00', '#FFFF7F', '#CCCC00', '#CCCC66', '#999900', '#99994C', '#7F7F00', '#7F7F3F', '#4C4C00', '#4C4C26', '#BFFF00', '#DFFF7F', '#99CC00', '#B2CC66', '#729900', '#85994C', '#5F7F00', '#6F7F3F', '#394C00', '#424C26', '#7FFF00', '#BFFF7F', '#66CC00', '#99CC66', '#4C9900', '#72994C', '#3F7F00', '#5F7F3F', '#264C00', '#394C26', '#3FFF00', '#9FFF7F', '#33CC00', '#7FCC66', '#269900', '#5F994C', '#1F7F00', '#4F7F3F', '#134C00', '#2F4C26', '#00FF00', '#7FFF7F', '#00CC00', '#66CC66', '#009900', '#4C994C', '#007F00', '#3F7F3F', '#004C00', '#264C26', '#00FF3F', '#7FFF9F', '#00CC33', '#66CC7F', '#009926', '#4C995F', '#007F1F', '#3F7F4F', '#004C13', '#264C2F', '#00FF7F', '#7FFFBF', '#00CC66', '#66CC99', '#00994C', '#4C9972', '#007F3F', '#3F7F5F', '#004C26', '#264C39', '#00FFBF', '#7FFFDF', '#00CC99', '#66CCB2', '#009972', '#4C9985', '#007F5F', '#3F7F6F', '#004C39', '#264C42', '#00FFFF', '#7FFFFF', '#00CCCC', '#66CCCC', '#009999', '#4C9999', '#007F7F', '#3F7F7F', '#004C4C', '#264C4C', '#00BFFF', '#7FDFFF', '#0099CC', '#66B2CC', '#007299', '#4C8599', '#005F7F', '#3F6F7F', '#00394C', '#26424C', '#007FFF', '#7FBFFF', '#0066CC', '#6699CC', '#004C99', '#4C7299', '#003F7F', '#3F5F7F', '#00264C', '#26394C', '#0042FF', '#7F9FFF', '#0033CC', '#667FCC', '#002699', '#4C5F99', '#001F7F', '#3F4F7F', '#00134C', '#262F4C', '#0000FF', '#7F7FFF', '#0000CC', '#6666CC', '#000099', '#4C4C99', '#00007F', '#3F3F7F', '#00004C', '#26264C', '#3F00FF', '#9F7FFF', '#3200CC', '#7F66CC', '#260099', '#5F4C99', '#1F007F', '#4F3F7F', '#13004C', '#2F264C', '#7F00FF', '#BF7FFF', '#6600CC', '#9966CC', '#4C0099', '#724C99', '#3F007F', '#5F3F7F', '#26004C', '#39264C', '#BF00FF', '#DF7FFF', '#9900CC', '#B266CC', '#720099', '#854C99', '#5F007F', '#6F3F7F', '#39004C', '#42264C', '#FF00FF', '#FF7FFF', '#CC00CC', '#CC66CC', '#990099', '#994C99', '#7F007F', '#7F3F7F', '#4C004C', '#4C264C', '#FF00BF', '#FF7FDF', '#CC0099', '#CC66B2', '#990072', '#994C85', '#7F005F', '#7F3F0B', '#4C0039', '#4C2642', '#FF007F', '#FF7FBF', '#CC0066', '#CC6699', '#99004C', '#994C72', '#7F003F', '#7F3F5F', '#4C0026', '#4C2639', '#FF003F', '#FF7F9F', '#CC0033', '#CC667F', '#990026', '#994C5F', '#7F001F', '#7F3F4F', '#4C0013', '#4C262F', '#333333', '#5B5B5B', '#848484', '#ADADAD', '#D6D6D6', '#FFFFFF']
+def getlayercol(e, dfile, blockcolnum):
+    if e.dxf.color == 256:
+        layer = dfile.layers.get(e.dxf.layer)
+        colnum = layer.get_dxf_attrib("color", 0)
+    elif e.dxf.color == 0:
         colnum = blockcolnum
     else:
-        colnum = entity.dxf.color
-    return (entity.dxf.layer, g_dxf_colors[colnum])
+        colnum = e.dxf.color
+    return (e.dxf.layer, dxfcolors[colnum])
 
-
-def make_entity_groups_recurse(entitygroupdict, dfile, entities, blockcolnum):
+def makeentitygroupsrecurse(entitygroupdict, dfile, entities, blockcolnum):
     for e in entities:
         if e.dxftype() == 'INSERT':
-            # app.Console.PrintMessage('INSERT translate', e.dxf.insert, 'rotate', e.dxf.rotation, 'scale', e.dxf.xscale, e.dxf.yscale)
+            print("INSERT translate", e.dxf.insert, "rotate", e.dxf.rotation, "scale", e.dxf.xscale, e.dxf.yscale)
             lblockcolnum = dfile.layers.get(e.dxf.layer).get_color()
-            make_entity_groups_recurse(entitygroupdict,
-                                       dfile,
-                                       list(dfile.blocks[e.dxf.name]),
-                                       lblockcolnum)
+            makeentitygroupsrecurse(entitygroupdict, dfile, list(dfile.blocks[e.dxf.name]), lblockcolnum)
         elif e.dxftype() == 'MTEXT':
-            # Not implemented yet.
             pass
         elif e.dxftype() == 'TEXT':
-            # Not implemented yet.
             pass
         else:
-            layercol = get_layer_color(e, dfile, blockcolnum)
+            layercol = getlayercol(e, dfile, blockcolnum)
             entitygroupdict.setdefault(layercol, []).append(e)
     return entitygroupdict
 
-
-def make_entity_groups(dfile):
-    entitygroupdict = {}
-    make_entity_groups_recurse(entitygroupdict, dfile, dfile.entities, 1)
-    entitygroups = entitygroupdict.items()
-    layernameorder = dict((n, i) for i, n in enumerate(l.dxf.name for l in dfile.layers))
-    entitygroups.sort(key=lambda g:layernameorder[g[0][0]])
+def makeentitygroups(dfile):
+    entitygroupdict = { }
+    makeentitygroupsrecurse(entitygroupdict, dfile, dfile.entities, 1)
+    entitygroups = list(entitygroupdict.items())
+    layernameorder = dict((n, i)  for i, n in enumerate(l.dxf.name  for l in dfile.layers))
+    entitygroups.sort(key=lambda X:layernameorder[X[0][0]])
     return entitygroups
 
 
-def make_sketches(add_object_func, entitygroups):
-    """Create sketches and inject dxf geometry directly into it"""
+# See also arbitrary axis algorithm in http://paulbourke.net/dataformats/dxf/dxf10.html
+# Seems to flip rotation around Y-axis, so only invert the X
+def arcextrusionfac(e):
+    if max(abs(e.dxf.extrusion[0]), abs(e.dxf.extrusion[1]), abs(abs(e.dxf.extrusion[2]) - 1)) > 1e-5:
+        print("Unknown arc extrusion", e.dxf.extrusion)
+    return 1 if e.dxf.extrusion[2] >= 0 else -1
+
+
+#
+# Function to create sketches and inject dxf geometry directly into it 
+#
+
+def MakeSketches(addObjectFunc, entitygroups):
     cnorm = Vector(0, 0, 1)
-    sketches = []
+    sketches = [ ]
     for (layer, col), entities in entitygroups:
         slayer = str(layer)
         if len(slayer) <= 1:
-            # Sketcher name is '_' if it's a 1 character number
-            slayer = 'layer_' + slayer
-        sketch = add_object_func('Sketcher::SketchObject', slayer)
+            slayer = "layer_"+slayer  # Sketcher name is '_' if it's a 1 character number
+        sketch = addObjectFunc("Sketcher::SketchObject", slayer)
         if sketch.ViewObject is not None:
             sketch.ViewObject.Visibility = True
-            sketch.ViewObject.LineColor = (int(col[1:3], 16) / 255.0,
-                                           int(col[3:5], 16) / 255.0,
-                                           int(col[5:7], 16) / 255.0)
-        app.Console.PrintMessage(tr('DxfToSketchLayers',
-                                    'Making sketch {} {}\n'.format(layer, col)))
+            sketch.ViewObject.LineColor = (int(col[1:3],16)/255.0, int(col[3:5],16)/255.0, int(col[5:7],16)/255.0)
+        print("Making sketch", layer, col)
         sketches.append(sketch)
         for e in entities:
             try:
-                if e.dxftype() == 'LINE':
+                if e.dxftype() == "LINE":
                     if e.dxf.start != e.dxf.end:
                         p0 = Vector(e.dxf.start[0], e.dxf.start[1])
                         p1 = Vector(e.dxf.end[0], e.dxf.end[1])
                         sketch.addGeometry(Part.LineSegment(p0, p1))
-
-                elif e.dxftype() == 'CIRCLE':
-                    cen = Vector(e.dxf.center[0], e.dxf.center[1])
+                
+                elif e.dxftype() == "CIRCLE":
+                    exfac = arcextrusionfac(e)
+                    cen = Vector(e.dxf.center[0]*exfac, e.dxf.center[1])
                     sketch.addGeometry(Part.Circle(cen, cnorm, e.dxf.radius))
-
-                elif e.dxftype() == 'ARC':
-                    cen = Vector(e.dxf.center[0], e.dxf.center[1])
+                    
+                elif e.dxftype() == "ARC":
+                    exfac = arcextrusionfac(e)
+                    cen = Vector(e.dxf.center[0]*exfac, e.dxf.center[1])
                     circ = Part.Circle(cen, cnorm, e.dxf.radius)
-                    sketch.addGeometry(
-                        Part.ArcOfCircle(circ,
-                                         math.radians(e.dxf.start_angle),
-                                         math.radians(e.dxf.end_angle)))
-                elif e.dxftype() == 'SPLINE':
-                    cps = [Vector(x[0], x[1]) for x in e.control_points]
-                    bspl = Part.BSplineCurve(cps,
-                                             None,
-                                             None,
-                                             False,
-                                             e.dxf.degree,
-                                             None,
-                                             e.closed)
-                    sketch.addGeometry(bspl)
+                    a0, a1 = e.dxf.start_angle, e.dxf.end_angle
+                    if exfac == -1:
+                        a0, a1 = 180-a1, 180-a0
+                    sketch.addGeometry(Part.ArcOfCircle(circ, math.radians(a0), math.radians(a1)))
 
-                elif e.dxftype() == 'LWPOLYLINE':
+                elif e.dxftype() == "SPLINE":
+                    cps = [Vector(x[0], x[1])  for x in list(e.control_points)]
+                    bspl = Part.BSplineCurve(cps,None,None,False,e.dxf.degree,None,e.closed)
+                    sketch.addGeometry(bspl)
+                    
+                elif e.dxftype() == "LWPOLYLINE":
                     def lwpgeo(p0, p1, bulge):
                         if bulge != 0:
                             lv = p1 - p0
                             b = abs(bulge)
-                            d = lv.Length / 2
-                            bd = b * d
-                            r = (bd + d / b) / 2
+                            d = lv.Length/2
+                            bd = b*d
+                            r = (bd + d/b)/2
                             sb = (1 if bulge >= 0 else -1)
-                            pf = (r - bd) / (d * 2)
+                            pf = (r - bd)/(d*2)
                             cnorm = Vector(0, 0, 1)
-                            lvperp = lv.cross(cnorm) * sb
-                            cen = p0 + lv * 0.5 - lvperp * pf
+                            lvperp = lv.cross(cnorm)*sb
+                            cen = p0 + lv*0.5 - lvperp*pf
                             circ = Part.Circle(cen, cnorm, r)
                             mang = math.atan2(lvperp.y, lvperp.x)
-                            th2 = math.asin(d / r)
-                            return(Part.ArcOfCircle(circ, mang - th2, mang + th2))
+                            th2 = math.asin(d/r)
+                            return(Part.ArcOfCircle(circ, mang-th2, mang+th2))
                         else:
                             return Part.LineSegment(p0, p1)
-
+                            
                     p0 = Vector(e[0][0], e[0][1])
                     for i in range(1, len(e)):
                         p1 = Vector(e[i][0], e[i][1])
-                        sketch.addGeometry(lwpgeo(p0, p1, e[i - 1][4]))
+                        sketch.addGeometry(lwpgeo(p0, p1, e[i-1][4]))
                         p0 = p1
                     if e.closed:
                         sketch.addGeometry(lwpgeo(p0, Vector(e[0][0], e[0][1]), e[-1][4]))
-
-                elif e.dxftype() == 'POLYLINE':
-                    # You can't cheat and use a BSplineCurve of degree 1 here,
-                    # unfortunately.
-                    p0 = Vector(e[0].dxf.location[0], e[0].dxf.location[1])
+                
+                elif e.dxftype() == "POLYLINE": 
+                    p0s = Vector(e[0].dxf.location[0], e[0].dxf.location[1])
+                    p0 = p0s
                     for i in range(1, len(e)):
                         p1 = Vector(e[i].dxf.location[0], e[i].dxf.location[1])
                         if p0 != p1:
                             sketch.addGeometry(Part.LineSegment(p0, p1))
                         p0 = p1
+                    if e.is_closed and p0s != p0:
+                        sketch.addGeometry(Part.LineSegment(p0, p0s))
+                        
                 else:
-                    app.Console.PrintWarning(
-                        tr('DxfToSketchLayers',
-                           'Unknown DXF type "' + e.dxftype() + '"\n'))
-
+                    print("unknown", e.dxftype())
+                    
             except Part.OCCError as err:
-                app.Console.PrintWarning(
-                    tr('DxfToSketchLayers',
-                       'Unhandled error with entity {}: {}\n'.format(e, err)))
+                print(e, err)
     return sketches
 
 
+
+#
+# Main entry which finds or creates the document and body
+#
 def main():
     """Main entry which finds or creates the document and body"""
-    fname, fnamefilter = QtGui.QFileDialog.getOpenFileName(
-        parent=gui.getMainWindow(), caption='Read a DXF file', filter='*.dxf')
+    fname, fnamefilter = QtGui.QFileDialog.getOpenFileName(parent=FreeCADGui.getMainWindow(), caption='Read a DXF file', filter='*.dxf')
     if fname:
-        app.Console.PrintMessage('Parsing file {}'.format(fname))
+        FreeCAD.Console.PrintMessage('Parsing file {}'.format(fname))
         dfile = ezdxf.readfile(fname)
-        entitygroups = make_entity_groups(dfile)
-        doc = app.activeDocument()
-        if doc is None:
-            doc = app.newDocument()
-        # Get the active body, if any.
-        obj = gui.activeDocument().ActiveView.getActiveObject('pdbody')
-        try:
-            # Sketches will be added to the active body.
-            add_object_func = obj.newObject
-        except AttributeError:
-            # Sketches will be added to the document directly.
-            add_object_func = doc.addObject
 
-        sketches = make_sketches(add_object_func, entitygroups)
+        unitfacmap = {4:1.0} # 4->mm
+        unitfac = unitfacmap[dfile.header['$INSUNITS']]  
+        fac = dfile.header['$DIMALTF']
+        print("Factor multiply requested (not implemented)", fac, unitfac)
+
+        entitygroups = makeentitygroups(dfile)
+        doc = FreeCAD.activeDocument()
+        if doc is None:
+            doc = FreeCAD.newDocument()
+        # Get the active body, if any.
+        obj = FreeCADGui.activeDocument().ActiveView.getActiveObject('pdbody')
+        try:
+            addObjectFunc = obj.newObject
+        except AttributeError:
+            addObjectFunc = doc.addObject
+
+        sketches = MakeSketches(addObjectFunc, entitygroups)
         doc.recompute()
 
 if __name__ == '__main__':
     main()
+
