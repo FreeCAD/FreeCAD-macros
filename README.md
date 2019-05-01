@@ -9,10 +9,11 @@ This repository hosts FreeCAD macros that volunteers have vetted and added for u
 - The most ideal way to submit a macro is to post it to the [FreeCAD Python Scripting and Macros subforum](https://forum.freecadweb.org/viewforum.php?f=22) for review. After a green light is given then:  
 
 - Fork this repository
-- Clone your fork locally `git clone https://github.com/your-gh-username/FreeCAD-addons`
-- Setup the upstream `git remote add upstream https://github.com/FreeCAD/FreeCAD-addons`
+- Clone your fork locally `git clone https://github.com/your-gh-username/FreeCAD-macros`
+- Go to the newly-created local repository `cd FreeCAD-macros`
+- Setup the upstream `git remote add upstream https://github.com/FreeCAD/FreeCAD-macros`
 - Create a branch to work in `git checkout -b your_branch`
-- Follow our [guidelines](https://github.com/FreeCAD/FreeCAD-addons/README.md#guidelines-for-submitting-a-macro) below on how to add a macro
+- Follow our [guidelines](https://github.com/FreeCAD/FreeCAD-macros/README.md#guidelines-for-submitting-a-macro) below on how to add a macro
 - When you're ready to push your changes: `git push -u origin your_branch`
 - Create a PR (pull request) against upstream
 - Achieve global fame once PR is merged
