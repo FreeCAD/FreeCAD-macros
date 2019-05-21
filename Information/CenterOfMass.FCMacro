@@ -19,8 +19,8 @@ from __future__ import unicode_literals
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Computation of the center of mass for multiple solids'
 __Author__ = 'schupin'
-__Version__ = '0.3.4'
-__Date__ = '2019-03-07'
+__Version__ = '0.3.5'
+__Date__ = '2019-05-21'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -270,7 +270,10 @@ class CenterofmassWidget(QtGui.QWidget):
             if hasattr(objs[sol], "CenterOfMass"):
                 self.centerofmasses[sol] = objs[sol].CenterOfMass
             elif hasattr(objs[sol], "Solids"):
-                self.centerofmasses[sol] = objs[sol].Solids[0].CenterOfMass
+                self.centerofmasses[sol] = FreeCAD.Vector(0,0,0)
+                for hds_sol in objs[sol].Solids:
+                    self.centerofmasses[sol] += hds_sol.CenterOfMass
+                self.centerofmasses[sol] /= objs[sol].Solids.__len__()
             #estimate cdg of a mesh
             elif hasattr(objs[sol],"Points"):
                 self.centerofmasses[sol] = FreeCAD.Vector(0,0,0)
@@ -292,7 +295,10 @@ class CenterofmassWidget(QtGui.QWidget):
             #2: an array is selected
             if hasattr(sel[sol], 'ArrayType'):
                 if sel[sol].ArrayType == 'polar' and sel[sol].NumberPolar > 0:
-                    self.centerofmasses[sol] = sel[sol].Center
+                    self.centerofmasses[sol] = FreeCAD.Vector(0,0,0)
+                    for hds_sol in sel[sol].Shape.Solids:
+                        self.centerofmasses[sol] += hds_sol.CenterOfMass
+                    self.centerofmasses[sol] /= sel[sol].Shape.Solids.__len__()
                 else:
                     xvector = sel[sol].IntervalX
                     yvector = sel[sol].IntervalY
@@ -347,17 +353,17 @@ class CenterofmassWidget(QtGui.QWidget):
         layout.addWidget(scroll)
 
         macro_dir = FreeCAD.getUserMacroDir()
-        icon_dir = os.path.join(macro_dir, "CenterOfMass")
+        icon_dir = os.path.join(macro_dir, "CenterOfMass/")
         self.setWindowIcon(QtGui.QIcon(icon_dir+'Macro_CenterOfMass.png'))
 
         self.calc = QtGui.QPushButton(self)
         self.calc.setObjectName('compute')
         self.calc.clicked.connect(self.on_pushButton_ComputeCDG)
         self.calc.setToolTip(u'compute centerOfMass')
-        macro_dir = FreeCAD.getUserMacroDir()
+
         self.calc.setIcon(QtGui.QIcon(os.path.join(icon_dir, "Macro_CenterOfMass_compute.png")))
         self.calc.setIconSize(QtCore.QSize(35, 35))
-        self.calc.setStyleSheet('QPushButton{border: 0px solid;}')
+#        self.calc.setStyleSheet('QPushButton{border: 0px solid;}')
 
         self.export = QtGui.QPushButton(self)
         self.export.setEnabled(False)
@@ -366,7 +372,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.export.setToolTip(u'export values to a .csv file')
         self.export.setIcon(QtGui.QIcon(os.path.join(icon_dir, "Macro_CenterOfMass_save.png")))
         self.export.setIconSize(QtCore.QSize(35, 35))
-        self.export.setStyleSheet('QPushButton{border: 0px solid;}')
+#        self.export.setStyleSheet('QPushButton{border: 0px solid;}')
 
         self.readDensities = QtGui.QPushButton(self)
         self.readDensities.setObjectName('import')
@@ -374,7 +380,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.readDensities.setToolTip(u'import densities from a .csv file')
         self.readDensities.setIcon(QtGui.QIcon(os.path.join(icon_dir , "Macro_CenterOfMass_import.png")))
         self.readDensities.setIconSize(QtCore.QSize(35, 35))
-        self.readDensities.setStyleSheet('QPushButton{border: 0px solid;}')
+#        self.readDensities.setStyleSheet('QPushButton{border: 0px solid;}')
 
         self.editMat = QtGui.QPushButton(self)
         self.editMat.setObjectName('editMaterial')
@@ -382,7 +388,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.editMat.setToolTip('Edit Material list')
         self.editMat.setIcon(QtGui.QIcon(os.path.join(icon_dir, "Macro_CenterOfMass_material.png")))
         self.editMat.setIconSize(QtCore.QSize(35, 35))
-        self.editMat.setStyleSheet('QPushButton{border: 0px solid;}')
+#        self.editMat.setStyleSheet('QPushButton{border: 0px solid;}')
 
         buttonGroupBox = QtGui.QGroupBox()
         buttonLayout = QtGui.QHBoxLayout()
