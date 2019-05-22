@@ -19,8 +19,8 @@ from __future__ import unicode_literals
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Computation of the center of mass for multiple solids'
 __Author__ = 'schupin'
-__Version__ = '0.3.5'
-__Date__ = '2019-05-21'
+__Version__ = '0.3.6'
+__Date__ = '2019-05-22'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -30,6 +30,11 @@ __Status__ = 'alpha'
 __Requires__ = 'freecad 0.18'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?p=265270#p265270'
 __Files__ = 'CenterOfMass/Macro_CenterOfMass_import.png,CenterOfMass/Macro_CenterOfMass_compute.png,CenterOfMass/Macro_CenterOfMass_save.png,CenterOfMass/Macro_CenterOfMass_material.png,CenterOfMass/Macro_CenterOfMass_com.png,CenterOfMass/Macro_CenterOfMass_colorify.png'
+
+#todo :
+#   - bug : doesn't work within a moved part container
+#   - addition : add a "set default density" button
+#   - addition : add a custom radius button to inflate the spheres
 
 import csv
 import glob
@@ -352,7 +357,7 @@ class CenterofmassWidget(QtGui.QWidget):
         scroll.setFixedHeight(250)
         layout.addWidget(scroll)
 
-        macro_dir = FreeCAD.getUserMacroDir()
+        macro_dir = FreeCAD.getUserMacroDir(True)
         icon_dir = os.path.join(macro_dir, "CenterOfMass/")
         self.setWindowIcon(QtGui.QIcon(icon_dir+'Macro_CenterOfMass.png'))
 
@@ -621,7 +626,7 @@ class CenterofmassWidget(QtGui.QWidget):
                                          self.centerofmasses[sol][1],
                                          self.centerofmasses[sol][2])
                 sphere.Placement = plrSol
-                sphere.Radius = 0.0075 * (max(boundBoxLX, max(boundBoxLY, boundBoxLZ)))
+                sphere.Radius = 0.01 * (max(boundBoxLX, max(boundBoxLY, boundBoxLZ)))*self.masses[sol]/self.massTot
                 sphere.ViewObject.ShapeColor = (0.0, 0.6, 0.0)
                 sphere.ViewObject.Transparency = 5
                 sphere.ViewObject.LineWidth = 1.0
@@ -744,7 +749,6 @@ class CenterofmassWidget(QtGui.QWidget):
         filename, filter = QtGui.QFileDialog.getOpenFileName(
             parent=self,
             caption='Open file',
-            dir=FreeCAD.getUserMacroDir(),
             filter='*.csv')
 
         if filename == "":
