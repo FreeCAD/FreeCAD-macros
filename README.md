@@ -19,10 +19,18 @@ This repository hosts FreeCAD macros that volunteers have vetted and added for u
 - Achieve global fame once PR is merged
 
 ## Guidelines for submitting a macro
-1. Please add a complete description how to use the macro near the top of your macro as normal Python comments.
-2. Please follow the `CamelCase.FCMacro` convention for the macro name (other associated files except the macro icon don't need to follow this convention). Please don't start your macro name with `Macro` or `FC` or similar (we already know it's a macro for FreeCAD).
-3. Also, if possible, start the macro name with the type of object it's working on, e.g. use `ViewRotation` instead of `RotateView`, so that all macros related to `View` will be together when sorting alphabetically.
-4. Please add the following metadata in your macro after step 1.
+
+### Macro description
+Please add a complete description how to use the macro near the top of your macro as normal Python comments.  
+
+### CamelCase macro name
+Please follow the `CamelCase.FCMacro` convention for the macro name (other associated files except the macro icon don't need to follow this convention). Please don't start your macro name with `Macro` or `FC` or similar (we already know it's a macro for FreeCAD).  
+
+### Macro name specifics
+Also, if possible, start the macro name with the type of object it's working on, e.g. use `ViewRotation` instead of `RotateView`, so that all macros related to `View` will be together when sorting alphabetically.  
+
+### Macro metadata
+Please add the following metadata in your macro after the Macro description (mentioned above)    
     Macro metadata:
     ```python
     __Name__ = ''
