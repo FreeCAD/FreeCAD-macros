@@ -9,7 +9,7 @@ To integrate your macro please make sure the following steps are complete:
 - [ ] Your macro is named [appropriately](README.md#macro-name-specifics).  
 - [ ] Your macro contains a [Metadata section](README.md#macro-metadata) that immediately follows the header description.  
 - [ ] Your macro is Python3/Qt5 compliant and tested on the latest FreeCAD stable and development releases.  
-- [ ] You're including documentation on how your macro works (bonus: screenshots and/or animated gifs)  
+- [ ] You're including documentation on how your macro works (bonus: screenshots and/or video on the Wiki)  
 - [ ] Commit message is [well-written](https://chris.beams.io/posts/git-commit/)  
 - [ ] Commit message is titled in the following way `[MacroName] - Short description`.  
 
