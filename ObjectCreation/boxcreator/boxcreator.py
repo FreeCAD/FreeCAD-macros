@@ -1,4 +1,3 @@
-from __future__ import division
 
 import FreeCAD
 import Draft
@@ -40,6 +39,7 @@ def create_box(materialWidth, boxWidth, boxHeight, boxLength, notchWidth, drawSi
 
     Draft.rotate([line1, line2, line3, line4], 270.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 1.0, 0.0), copy=False)
 
+    doc.recompute()
     lines = [line1, line2, line3, line4]
     if drawSides[2]:
         side3 = extrudeLines('left', lines, materialWidth)
@@ -68,6 +68,7 @@ def create_box(materialWidth, boxWidth, boxHeight, boxLength, notchWidth, drawSi
 
     Draft.rotate([line1, line2, line3, line4], 90.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(1.0, 0.0, 0.0), copy=False)
 
+    doc.recompute()
     lines = [line1, line2, line3, line4]
     if drawSides[4]:
         side5 = extrudeLines('front', lines, materialWidth)
@@ -123,11 +124,14 @@ def draw_bottom(partname, materialWidth, boxWidth, boxLength, notchWidth, drawSi
     Draft.move(lines4, FreeCAD.Vector(0.0, boxLength, 0.0), copy=False)
     lines.extend(lines4)
 
+    doc = FreeCAD.activeDocument()
+    doc.recompute()
     side1 = extrudeLines(partname, lines, materialWidth)
     return side1
 
 
 def notch_line(length, notchWidth, materialWidth, inside=False, drawNotches=True):
+    doc = FreeCAD.activeDocument()
     if not drawNotches:
         if inside:
             len2 = length - 2 * materialWidth
@@ -137,6 +141,7 @@ def notch_line(length, notchWidth, materialWidth, inside=False, drawNotches=True
         points = [FreeCAD.Vector(0.0, 0.0, 0.0),
                   FreeCAD.Vector(len2, 0.0, 0.0)]
         line = Draft.makeWire(points, closed=False, face=False, support=None)
+        doc.recompute()
         return line
 
     nrNotches = int((length - 2 * materialWidth) / (notchWidth * 2))
@@ -158,6 +163,7 @@ def notch_line(length, notchWidth, materialWidth, inside=False, drawNotches=True
     points.append(FreeCAD.Vector(x - notchWidth + edgeLen, 0, 0))
     line = Draft.makeWire(points, closed=False, face=False, support=None)
     Draft.autogroup(line)
+    doc.recompute()
     return line
 
 
@@ -180,6 +186,8 @@ def notch_holes(length, notchWidth, materialWidth, overhang, drawHoles=True, ove
               FreeCAD.Vector(length + overhangRight, 0, 0)]
     ohline = Draft.makeWire(points, closed=False, face=False, support=None)
     lines.append(ohline)
+    doc = FreeCAD.activeDocument()
+    doc.recompute()
     return lines
 
 
