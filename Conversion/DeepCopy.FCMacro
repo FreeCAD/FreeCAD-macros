@@ -11,8 +11,8 @@ __Status__ = 'Stable'
 __Requires__ = 'FreeCAD >= v0.17'
 __Files__ = 'DeepCopy.svg'
 
-from freecad import app
-from freecad import gui
+import FreeCAD as app
+import FreeCADGui as gui
 
 
 def deep_copy(doc):
@@ -36,7 +36,7 @@ def deep_copy_part(doc, part):
 
 def get_all_subobjects(o):
     """Recursively get all subobjects
-    
+
     Subobjects of objects having a Shape attribute are not included otherwise each
     single feature of the object would be copied. The result is that bodies,
     compounds, and the result of boolean operations will be converted into a

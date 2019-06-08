@@ -1,0 +1,1353 @@
+# -*- coding: utf-8 -*-
+"""
+***************************************************************************
+*   Copyright (c) 2015 2016 2017 2018  <mario52>                          *
+*                                                                         *
+*   This file is a supplement to the FreeCAD CAx development system.      *
+*                                                                         *
+*   This program is free software; you can redistribute it and/or modify  *
+*   it under the terms of the GNU Lesser General Public License (LGPL)    *
+*   as published by the Free Software Foundation; either version 2 of     *
+*   the License, or (at your option) any later version.                   *
+*   for detail see the LICENCE text file.                                 *
+*                                                                         *
+*   This software is distributed in the hope that it will be useful,      *
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+*   GNU Library General Public License for more details.                  *
+*                                                                         *
+*   You should have received a copy of the GNU Library General Public     *
+*   License along with this macro; if not, write to the Free Software     *
+*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
+*   USA                                                                   *
+***************************************************************************
+*           WARNING! All changes in this file will be lost and            *
+*                  may cause malfunction of the program                   *
+***************************************************************************
+"""
+# This macro can rotate the screen in a defined angle and a defined axis and
+# creates a plan to face the screen to create a form in the specified plan
+# positions the selected face facing the screen, to detect the position of the
+# camera, align view to face or to axis, align the object to view.
+
+__Name__ = 'Camera'
+__Comment__ = 'Mario52'
+__Author__ = ''
+# Version 0.0.11 corresponds to Mario52's version 00.11.
+__Version__ = '0.0.13'
+__Date__ = '2018-02-01'
+__License__ = ''
+__Web__ = ''
+__Wiki__ = 'http://www.freecadweb.org/wiki/index.php?title=Macro_FCCamera'
+__Icon__ = ''
+__Help__ = ''
+__Status__ = ''
+__Requires__ = ''
+__Communication__ = ''
+__Files__ = 'Camera.png,Camera/accept.png,Camera/align_object_to_view.png,Camera/align_to_axis.png,Camera/align_to_face.png,Camera/axis_rotation_d.png,Camera/axis_rotation_x.png,Camera/axis_rotation_y.png,Camera/axis_rotation_z.png,Camera/create_plane_of_view.png,Camera/detect_orientation.png,Camera/quit.png,Camera/reset.png,Camera/save_view.png'
+
+import math
+import os
+import time
+from math import radians, degrees, sqrt, pi, sin, cos, asin
+from decimal import *
+
+import FreeCAD as App
+import Draft, Part, PartGui, FreeCADGui, DraftVecUtils
+
+import PySide                    #  PySide
+from PySide import QtCore, QtGui #  PySide
+from FreeCAD import Base
+from FreeCAD import Vector
+import pivy
+from pivy import coin
+
+global pathFile ; pathFile  = ""
+global valeur   ; valeur    = 0.0
+global valeurV  ; valeurV   = 0.0
+global Rname    ; Rname     = ["","",""]
+global RnameCube; RnameCube = ""
+global RnameCompound; RnameCompound = ""
+global datExtract; datExtract = ""
+
+global positionX ; positionX = 0.0
+global positionY ; positionY = 0.0
+global positionZ ; positionZ = 0.0
+global vertexeS  ; vertexeS  = Vector(0.0,0.0,0.0)
+global bounBoxCenter; bounBoxCenter = Vector(0.0,0.0,0.0)
+
+global dim_Horizont ; dim_Horizont = 0
+global dim_Vertical ; dim_Vertical = 0
+global ori_Vertical ; ori_Vertical = 0
+global ori_Horizont ; ori_Horizont = 0
+global numberPhoto  ; numberPhoto  = 0.0
+global valueTest    ; valueTest    = 0.0
+
+global formatFichier; formatFichier= ".png"
+global s            ; s = ""
+
+global Nameelement2; Nameelement2 = ""  # new selection
+global vueView     ; vueView      = 0   # passe vue
+
+
+def icon_path(filename):
+    """Full path of a file given relative to the macro specific folder
+
+    For example, icon_path('save_view.png') will return
+    $HOME/.FreeCAD/Macro/Camera/save_view.png where $HOME/.FreeCAD/Macro is the
+    path where your macros are saved.
+    """
+    macro_dir = App.getUserMacroDir(False)
+    icon_dir = os.path.join(macro_dir, __Name__)
+    return os.path.join(icon_dir, filename)
+
+doc = App.ActiveDocument
+if doc == None:
+    doc = App.newDocument()
+
+activeView = FreeCADGui.activeDocument().activeView()
+mainWindow = FreeCADGui.getMainWindow()
+mdi = mainWindow.findChild(QtGui.QMdiArea)
+mwActive = mdi.activeSubWindow()
+
+dim_Horizont = ori_Horizont = mwActive.width()
+dim_Vertical = ori_Vertical = mwActive.height()
+
+try:
+    _fromUtf8 = QtCore.QString.fromUtf8
+except AttributeError:
+    def _fromUtf8(s):
+        return s
+
+try:
+    _encoding = QtGui.QApplication.UnicodeUTF8
+    def _translate(context, text, disambig):
+        return QtGui.QApplication.translate(context, text, disambig, _encoding)
+except AttributeError:
+    def _translate(context, text, disambig):
+        return QtGui.QApplication.translate(context, text, disambig)
+
+class SelObserver:                                               # SelObserver
+    def addSelection(self,document, object, element, position):  # Selection SelObserver
+        global positionX
+        global positionY
+        global positionZ
+        global vertexeS
+        global bounBoxCenter
+
+        positionX = position[0]
+        positionY = position[1]
+        positionZ = position[2]
+
+        bounBoxCenter = Vector(0.0,0.0,0.0)
+
+        if (element[:4] == "Edge"):
+            vertex = App.ActiveDocument.getObject(object).Shape.Edges[int(element[4:])-1].Vertexes
+            bounBoxCenter = App.ActiveDocument.getObject(object).Shape.Edges[int(element[4:])-1].BoundBox.Center
+            try:
+                vertexeS = vertex[1].Point.sub(vertex[0].Point)
+            except Exception:
+                vertexeS = Vector(0.0,0.0,0.0)
+        else:
+            vertexeS = Vector(0.0,0.0,0.0)
+            try:
+                bounBoxCenter = App.ActiveDocument.getObject(object).Shape.Edges[int(element[4:])-1].BoundBox.Center
+            except Exception:
+                bounBoxCenter = App.Vector(positionX, positionY, positionZ)
+
+def datExtract(data):
+# return a string
+    data = str(data)
+    a    = ""
+    for i in data:
+        if i in ("0123456789e.- "):
+            a+=i
+    a = a.strip(" ")
+    a = a.split(" ")
+    return a
+
+def centerBoundBoxGlobal():
+
+    doc = App.activeDocument()
+    objs0  = doc.findObjects()
+    pointMilieu = []
+
+    if len(objs0) != 0:
+        xMin = yMin = zMin = 0.0
+        xMax = yMax = zMax = 0.0
+        for objs in objs0:
+            try:
+                if objs.ViewObject.Visibility:
+                    if hasattr(objs, "Shape"):
+                        s = objs.Shape
+                    elif hasattr(objs, "Mesh"):      # upgrade with wmayer thanks #http://forum.freecadweb.org/viewtopic.php?f=13&t=22331
+                        s = objs.Mesh
+                    elif hasattr(objs, "Points"):
+                        s = objs.Points
+
+                    boundBox_ = s.BoundBox
+                    extractValue = datExtract(boundBox_)
+
+                    if float(extractValue[0]) < xMin:
+                        xMin = float(extractValue[0])
+                    if float(extractValue[1]) < yMin:
+                        yMin = float(extractValue[1])
+                    if float(extractValue[2]) < zMin:
+                        zMin = float(extractValue[2])
+
+                    if float(extractValue[3]) > xMax:
+                        xMax = float(extractValue[3])
+                    if float(extractValue[4]) > yMax:
+                        yMax = float(extractValue[4])
+                    if float(extractValue[5]) > zMax:
+                        zMax = float(extractValue[5])
+            except Exception:
+                None
+        #### diagonale et pointMilieu
+        points=[App.Vector(xMin, yMin, zMin),App.Vector(xMax, yMax, zMax)]    #diagonal
+        diagonal = Draft.makeWire(points,closed=False,face=False,support=None)        #create diagonal line
+        try:
+            pointMilieu = diagonal.Shape.copy().discretize(3)                             #cut line for search center
+        except Exception:
+            None
+        doc.removeObject(diagonal.Name)
+        #Draft.makePoint(pointMilieu[1])
+        try:
+            return pointMilieu[1]
+        except Exception:
+            return App.Vector(0.0,0.0,0.0)
+    else:
+        return App.Vector(0.0,0.0,0.0)
+
+def To_Face_Or_To_Axis(ToFace):         # 1=NormalAt 0=Axis   #Align Face selected to Face or to Axis
+    global vueView
+    global Nameelement2
+    global vertexeS
+
+    try:
+        SubElement = FreeCADGui.Selection.getSelectionEx()
+        Nameelement = SubElement[0].SubElementNames[0]
+        if Nameelement != Nameelement2:
+            vueView = 0
+        Nameelement2 = Nameelement
+
+        if ToFace == 1:
+            v = Gui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0)         # NormalAt
+            App.Console.PrintMessage("NormalAt     : ")
+        else:
+            try:
+                v=Gui.Selection.getSelectionEx()[0].SubObjects[0].Surface.Axis        # Axis
+                App.Console.PrintMessage("Surface Axis : ")
+            except Exception:
+                v=vertexeS                                                            # Axis Edges
+                App.Console.PrintMessage("Axis Edges   : ")
+
+        if vueView == 0:
+            r=App.Rotation(App.Vector(0,0,1),v)
+            App.Console.PrintMessage("0,0,1"+"\n")
+        elif vueView == 1:
+            r=App.Rotation(App.Vector(0,0,-1),v)
+            App.Console.PrintMessage("0,0,-1"+"\n")
+        elif vueView == 2:
+            r=App.Rotation(App.Vector(0,1,0),v)
+            App.Console.PrintMessage("0,1,0"+"\n")
+        elif vueView == 3:
+            r=App.Rotation(App.Vector(0,-1,0),v)
+            App.Console.PrintMessage("0,-1,0"+"\n")
+        elif vueView == 4:
+            r=App.Rotation(App.Vector(1,0,0),v)
+            App.Console.PrintMessage("1,0,0"+"\n")
+        elif vueView == 5:
+            r=App.Rotation(App.Vector(-1,0,0),v)
+            App.Console.PrintMessage("-1,0,0"+"\n")
+            vueView = -1
+
+        Gui.ActiveDocument.ActiveView.setCameraOrientation(r.Q)#
+        vueView += 1
+    except:
+        App.Console.PrintError("Select a face"+"\n")
+
+class Ui_MainWindow(object):
+    def setupUi(self, MainWindow):
+        global pathFile
+        global valeur
+        global ori_Horizont
+        global ori_Vertical
+        global numberPhoto
+
+        self.window = MainWindow
+
+        MainWindow.setObjectName(_fromUtf8("MainWindow"))
+        MainWindow.resize(209, 500)
+        MainWindow.setMaximumSize(QtCore.QSize(209, 500))
+        self.centralWidget = QtGui.QWidget(MainWindow)
+        self.centralWidget.setObjectName(_fromUtf8("centralWidget"))
+
+        #################################################################################
+        self.FontImpost    = "Arial"
+        self.fontGlobal_08 = QtGui.QFont()            # pour compatibilite Windows Linux
+        self.fontGlobal_08.setFamily(self.FontImpost) # pour compatibilite Windows Linux
+        self.fontGlobal_08.setPointSize(8)            # pour compatibilite Windows Linux
+        #self.xxxx.setFont(self.fontGlobal_08)        # pour W L
+        #self.xxxx.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))  # Bold
+        #################################################################################
+
+        ### ---graphicsView---
+        self.graphicsView = QtGui.QGraphicsView(self.centralWidget)
+        self.graphicsView.setGeometry(QtCore.QRect(20, 10, 171, 101))
+        self.graphicsView.setFrameShape(QtGui.QFrame.StyledPanel)
+        self.graphicsView.setObjectName(_fromUtf8("graphicsView"))
+        pic = QtGui.QPixmap(icon_path('axis_rotation_x.png'))
+        self.scene = QtGui.QGraphicsScene()
+        self.scene.addPixmap(QtGui.QPixmap(pic))
+        self.graphicsView.setScene(ui.scene)
+        ### ---graphicsView---
+
+        self.groupBox_01 = QtGui.QGroupBox(self.centralWidget)
+        self.groupBox_01.setGeometry(QtCore.QRect(10, 120, 191, 151))
+        self.groupBox_01.setFont(self.fontGlobal_08)        # pour compatibilite W L
+        self.groupBox_01.setObjectName(_fromUtf8("groupBox_01"))
+
+        self.label_02 = QtGui.QLabel(self.groupBox_01)
+        self.label_02.setGeometry(QtCore.QRect(10, 20, 181, 16))
+        self.label_02.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.label_02.setObjectName(_fromUtf8("label_02"))
+
+        self.RB_Angle_X = QtGui.QRadioButton(self.groupBox_01)
+        self.RB_Angle_X.setGeometry(QtCore.QRect(10, 90, 31, 20))
+        self.RB_Angle_X.setFont(self.fontGlobal_08)         # pour compatibilite W L
+        self.RB_Angle_X.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))   # Bold
+        self.RB_Angle_X.setStyleSheet("color : #ff0000")                                # Color text
+        self.RB_Angle_X.setMouseTracking(True)
+        self.RB_Angle_X.setChecked(True)
+        self.RB_Angle_X.setObjectName(_fromUtf8("RB_Angle_X"))
+        self.RB_Angle_X.setToolTip(u"Rotation of the camera on the X axis")
+        self.RB_Angle_X.clicked.connect(self.on_RB_Angle_X_clicked)
+
+        self.label_03 = QtGui.QLabel(self.groupBox_01)
+        self.label_03.setGeometry(QtCore.QRect(10, 70, 161, 16))
+        self.label_03.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.label_03.setObjectName(_fromUtf8("label_03"))
+
+        self.RB_Angle_Y = QtGui.QRadioButton(self.groupBox_01)
+        self.RB_Angle_Y.setGeometry(QtCore.QRect(65, 90, 31, 20))
+        self.RB_Angle_Y.setFont(self.fontGlobal_08)         # pour compatibilite W L
+        self.RB_Angle_Y.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))  # Bold
+        self.RB_Angle_Y.setStyleSheet("color : #008700")                         # Color text
+        self.RB_Angle_Y.setObjectName(_fromUtf8("RB_Angle_Y"))
+        self.RB_Angle_Y.setToolTip(u"Rotation of the camera on the Y axis")
+        self.RB_Angle_Y.clicked.connect(self.on_RB_Angle_Y_clicked)
+
+        self.RB_Angle_Z = QtGui.QRadioButton(self.groupBox_01)
+        self.RB_Angle_Z.setGeometry(QtCore.QRect(115, 90, 31, 20))
+        self.RB_Angle_Z.setFont(self.fontGlobal_08)         # pour compatibilite W L
+        self.RB_Angle_Z.setStyleSheet("color : #0000ff")                         # Color text
+        self.RB_Angle_Z.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))  # Bold
+        self.RB_Angle_Z.setObjectName(_fromUtf8("RB_Angle_Z"))
+        self.RB_Angle_Z.setToolTip(u"Rotation of the camera on the Z axis")
+        self.RB_Angle_Z.clicked.connect(self.on_RB_Angle_Z_clicked)
+
+        self.RB_Direction = QtGui.QRadioButton(self.groupBox_01)
+        self.RB_Direction.setGeometry(QtCore.QRect(160, 90, 31, 20))
+        self.RB_Direction.setFont(self.fontGlobal_08)       # pour compatibilite W L
+        self.RB_Direction.setStyleSheet("color : #000066")                         # Color text
+        self.RB_Direction.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))  # Bold
+        self.RB_Direction.setObjectName(_fromUtf8("RB_Direction"))
+        self.RB_Direction.setToolTip(u"Rotation of the camera on the Direction axis" + "\n"
+                                     u"to edge selected or point selected" + "\n"
+                                     u"If the point are selected the mouse coordinates are used")
+        self.RB_Direction.clicked.connect(self.on_RB_Direction_clicked)
+
+        self.DS_Angle = QtGui.QDoubleSpinBox(self.groupBox_01)
+        self.DS_Angle.setGeometry(QtCore.QRect(8, 40, 171, 22))
+        self.DS_Angle.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.DS_Angle.setAlignment(QtCore.Qt.AlignCenter)
+        self.DS_Angle.setDecimals(10)
+        self.DS_Angle.setMinimum(-359.0)
+        self.DS_Angle.setMaximum(359.0)
+        self.DS_Angle.setSingleStep(1.0)
+        self.DS_Angle.setObjectName(_fromUtf8("DS_Angle"))
+        self.DS_Angle.setToolTip(u"Enter the angle of rotation in degrees.\n"
+" The given angle is added to the angle of the current view")
+        self.DS_Angle.valueChanged.connect(self.on_DS_Angle_valueChanged) #connection DS_Angle
+
+        self.PB_Accept_View = QtGui.QPushButton(self.groupBox_01)
+        self.PB_Accept_View.setGeometry(QtCore.QRect(10, 110, 171, 28))
+        self.PB_Accept_View.setFont(self.fontGlobal_08)     # pour compatibilite W L
+        icon1 = QtGui.QIcon()
+        icon1.addPixmap(QtGui.QPixmap(icon_path('accept.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.PB_Accept_View.setIcon(icon1)
+        self.PB_Accept_View.setToolTip(u"Accept the view given")
+        self.PB_Accept_View.setObjectName(_fromUtf8("PB_Accept_View"))
+        self.PB_Accept_View.clicked.connect(self.on_PB_Accept_View_clicked)
+
+        self.groupBox_02 = QtGui.QGroupBox(self.centralWidget)
+        self.groupBox_02.setGeometry(QtCore.QRect(10, 280, 191, 181))
+        #self.groupBox_02.setVisible(False)
+        self.groupBox_02.setFont(self.fontGlobal_08)        # pour compatibilite W L
+        self.groupBox_02.setObjectName(_fromUtf8("groupBox_02"))
+
+        self.PB_Detect_Camera = QtGui.QPushButton(self.groupBox_02)
+        self.PB_Detect_Camera.setGeometry(QtCore.QRect(10, 20, 171, 28))
+        self.PB_Detect_Camera.setFont(self.fontGlobal_08)   # pour compatibilite W L
+        icon2 = QtGui.QIcon()
+        icon2.addPixmap(QtGui.QPixmap(icon_path('detect_orientation.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.PB_Detect_Camera.setIcon(icon2)
+        self.PB_Detect_Camera.setObjectName(_fromUtf8("PB_Detect_Camera"))
+        self.PB_Detect_Camera.setToolTip(u"Detect the position of the camera\n"
+" The returned value is the value provided by the function getCameraOrientation()")
+        self.PB_Detect_Camera.clicked.connect(self.on_PB_Detect_Camera_clicked)
+
+        self.PB_To_Face = QtGui.QPushButton(self.groupBox_02)
+        self.PB_To_Face.setGeometry(QtCore.QRect(10, 70, 81, 28))
+        self.PB_To_Face.setFont(self.fontGlobal_08)         # pour compatibilite W L
+        icon3 = QtGui.QIcon()
+        icon3.addPixmap(QtGui.QPixmap(icon_path('align_to_face.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.PB_To_Face.setIcon(icon3)
+        self.PB_To_Face.setObjectName(_fromUtf8("PB_To_Face"))
+        self.PB_To_Face.setToolTip("Align the view to the selected face \n"
+"Click and repeat the click for NormalAt : \n"
+"(0,0,1) (0,0,-1) (0,1,0) (0,-1,0) (1,0,0) (-1,0,0)")
+        self.PB_To_Face.clicked.connect(self.on_PB_To_Face_clicked) # align view to face Face
+
+        self.label_04 = QtGui.QLabel(self.groupBox_02)
+        self.label_04.setGeometry(QtCore.QRect(10, 50, 161, 20))
+        self.label_04.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.label_04.setObjectName(_fromUtf8("label_04"))
+
+        self.PB_To_Axis = QtGui.QPushButton(self.groupBox_02)
+        self.PB_To_Axis.setGeometry(QtCore.QRect(100, 70, 81, 28))
+        self.PB_To_Axis.setFont(self.fontGlobal_08)         # pour compatibilite W L
+        icon4 = QtGui.QIcon()
+        icon4.addPixmap(QtGui.QPixmap(icon_path('align_to_axis.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.PB_To_Axis.setIcon(icon4)
+        self.PB_To_Axis.setObjectName(_fromUtf8("PB_To_Axis"))
+        self.PB_To_Axis.setToolTip("Align the view to Axis face selected \n"
+"Click and repeat the click for Surface Axis : \n"
+"(0,0,1) (0,0,-1) (0,1,0) (0,-1,0) (1,0,0) (-1,0,0)")
+        self.PB_To_Axis.clicked.connect(self.on_PB_To_Axis_clicked) # Align view to face Axis
+
+        self.PB_Align_O_To_View = QtGui.QPushButton(self.groupBox_02)
+        self.PB_Align_O_To_View.setGeometry(QtCore.QRect(10, 105, 171, 28))
+        self.PB_Align_O_To_View.setFont(self.fontGlobal_08) # pour compatibilite W L
+        icon5 = QtGui.QIcon()
+        icon5.addPixmap(QtGui.QPixmap(icon_path('align_object_to_view.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.PB_Align_O_To_View.setIcon(icon5)
+        self.PB_Align_O_To_View.setObjectName(_fromUtf8("PB_Align_O_To_View"))
+        self.PB_Align_O_To_View.setToolTip("Align the object selected to the actual view \n"
+"The changed values are : Rotation Axis((X, Y, Z), Angle) \n"
+"Same Euler angles : Yaw, Pitch, Roll \n The Translation is not modify")
+        self.PB_Align_O_To_View.clicked.connect(self.on_PB_Align_O_To_View_clicked) # Align object to view
+
+        self.PB_Create_Plane = QtGui.QPushButton(self.groupBox_02)
+        self.PB_Create_Plane.setGeometry(QtCore.QRect(10, 140, 171, 28))
+        self.PB_Create_Plane.setFont(self.fontGlobal_08)    # pour compatibilite W L
+        icon6 = QtGui.QIcon()
+        icon6.addPixmap(QtGui.QPixmap(icon_path('create_plane_of_view.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.PB_Create_Plane.setIcon(icon6)
+        self.PB_Create_Plane.setObjectName(_fromUtf8("PB_Create_Plane"))
+        self.PB_Create_Plane.setToolTip("A circular plane is created facing the screen to mouse click coordinates on an object \n"
+"The radius of the plane is equal to the maximum dimension of BoundBox  \n"
+"If no object is selected, the plane is created to 0, 0, 0 coordinates with a radius of 20 mm")
+        self.PB_Create_Plane.clicked.connect(self.on_PB_Create_Plane_clicked) # create plane
+
+        #####
+        self.groupBox_03 = QtGui.QGroupBox(self.centralWidget)
+        self.groupBox_03.setGeometry(QtCore.QRect(10, 280, 191, 212))
+        self.groupBox_03.setVisible(False)
+        self.groupBox_03.setFont(self.fontGlobal_08)        # pour compatibilite W L
+        self.groupBox_03.setObjectName(_fromUtf8("groupBox_02"))
+
+        self.comboBox_01 = QtGui.QComboBox(self.groupBox_03)
+        self.comboBox_01.setGeometry(QtCore.QRect(10, 20, 171, 22))
+        self.comboBox_01.setFont(self.fontGlobal_08)        # pour  W L
+#        self.comboBox_01.setCurrentIndex(0)
+        self.comboBox_01.setObjectName(_fromUtf8("comboBox_01"))
+        self.comboBox_01.addItem(_fromUtf8("Actual"))
+        self.comboBox_01.addItem(_fromUtf8("Icon 16 x 16"))
+        self.comboBox_01.addItem(_fromUtf8("Icon 32 x 32"))
+        self.comboBox_01.addItem(_fromUtf8("Icon 64 x 64"))
+        self.comboBox_01.addItem(_fromUtf8("Icon 128 x 128"))
+        self.comboBox_01.addItem(_fromUtf8("CGA 320 x 200"))
+        self.comboBox_01.addItem(_fromUtf8("QVGA 320 x 240"))
+        self.comboBox_01.addItem(_fromUtf8("VGA 640 x 480"))
+        self.comboBox_01.addItem(_fromUtf8("SVGA 800 x 600"))
+        self.comboBox_01.addItem(_fromUtf8("XGA 1024 x 768"))
+        self.comboBox_01.addItem(_fromUtf8("XGA+ 1152 x 864"))
+        self.comboBox_01.addItem(_fromUtf8("SXGA 1280 x 1024"))
+        self.comboBox_01.addItem(_fromUtf8("SXGA+ 1400 x 1050"))
+        self.comboBox_01.addItem(_fromUtf8("UXGA 1600 x 1200"))
+        self.comboBox_01.addItem(_fromUtf8("QXGA 2048 x 1536"))
+        self.comboBox_01.addItem(_fromUtf8("Free"))
+        QtCore.QObject.connect(self.comboBox_01, QtCore.SIGNAL("currentIndexChanged(QString)"), self.SIGNAL_comboBox_01_Changed)
+
+        self.DS_01_X = QtGui.QSpinBox(self.groupBox_03)
+        self.DS_01_X.setGeometry(QtCore.QRect(10, 50, 61, 22))
+        self.DS_01_X.setFont(self.fontGlobal_08)            # pour  W L
+        self.DS_01_X.setMinimum(1)
+        self.DS_01_X.setMaximum(ori_Horizont)
+        self.DS_01_X.setSingleStep(1)
+        self.DS_01_X.setValue(ori_Horizont)
+        self.DS_01_X.setObjectName(_fromUtf8("DS_01_X"))
+        self.DS_01_X.setToolTip(u"Value X")
+        self.DS_01_X.valueChanged.connect(self.on_DS_01_X_valueChanged) #connection doubleSpinBox
+
+        self.label_05 = QtGui.QLabel(self.groupBox_03)
+        self.label_05.setGeometry(QtCore.QRect(80, 55, 11, 16))
+        self.label_05.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.label_05.setObjectName(_fromUtf8("label_05"))
+        self.label_05.setStyleSheet("color : #ff0000")                         # Color text
+        self.label_05.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))  # Bold
+
+        self.DS_02_Y = QtGui.QSpinBox(self.groupBox_03)
+        self.DS_02_Y.setGeometry(QtCore.QRect(105, 50, 61, 22))
+        self.DS_02_Y.setFont(self.fontGlobal_08)            # pour  W L
+        self.DS_02_Y.setMinimum(1)
+        self.DS_02_Y.setMaximum(ori_Vertical)
+        self.DS_02_Y.setSingleStep(1)
+        self.DS_02_Y.setValue(ori_Vertical)
+        self.DS_02_Y.setObjectName(_fromUtf8("DS_02_Y"))
+        self.DS_02_Y.setToolTip(u"Value Y")
+        self.DS_02_Y.valueChanged.connect(self.on_DS_02_Y_valueChanged) #connection doubleSpinBox
+
+        self.label_06 = QtGui.QLabel(self.groupBox_03)
+        self.label_06.setGeometry(QtCore.QRect(175, 55, 11, 16))
+        self.label_06.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.label_06.setObjectName(_fromUtf8("label_06"))
+        self.label_06.setStyleSheet("color : #008700")                         # Color text
+        self.label_06.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))  # Bold
+
+        self.comboBox_02 = QtGui.QComboBox(self.groupBox_03)
+        self.comboBox_02.setGeometry(QtCore.QRect(10, 80, 171, 22))
+        self.comboBox_02.setFont(self.fontGlobal_08)        # pour  W L
+        self.comboBox_02.setObjectName(_fromUtf8("comboBox_02"))
+        self.comboBox_02.addItem(_fromUtf8("BMP *.bmp"))
+        self.comboBox_02.addItem(_fromUtf8("ICO *.ico"))
+        self.comboBox_02.addItem(_fromUtf8("JPEG *.jpeg"))
+        self.comboBox_02.addItem(_fromUtf8("JPG *.jpg"))
+        self.comboBox_02.addItem(_fromUtf8("PNG *.png"))
+        self.comboBox_02.addItem(_fromUtf8("PPM *.ppm"))
+        self.comboBox_02.addItem(_fromUtf8("TIF *.tif"))
+        self.comboBox_02.addItem(_fromUtf8("TIFF *.tiff"))
+        self.comboBox_02.addItem(_fromUtf8("XBM *.xbm"))
+        self.comboBox_02.addItem(_fromUtf8("XPM *.xpm"))
+        #self.comboBox_02.addItem(_fromUtf8("GIF *.gif"))
+        QtCore.QObject.connect(self.comboBox_02, QtCore.SIGNAL("currentIndexChanged(QString)"), self.SIGNAL_comboBox_02_Changed)
+
+        self.label_07 = QtGui.QLabel(self.groupBox_03)
+        self.label_07.setGeometry(QtCore.QRect(10, 105, 136, 16))
+        self.label_07.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.label_07.setObjectName(_fromUtf8("label_07"))
+
+        self.PB_Photo_Adjust = QtGui.QPushButton(self.groupBox_03)
+        self.PB_Photo_Adjust.setGeometry(QtCore.QRect(150, 105, 31, 16))
+        self.PB_Photo_Adjust.setFont(self.fontGlobal_08)    # pour compatibilite W L
+        self.PB_Photo_Adjust.setVisible(False)
+        self.PB_Photo_Adjust.setToolTip(u"Adjust the number image to 360 degrees")
+        self.PB_Photo_Adjust.setObjectName(_fromUtf8("PB_Photo_Adjust"))
+        self.PB_Photo_Adjust.clicked.connect(self.on_PB_Photo_Adjust_clicked)
+
+        self.label_08 = QtGui.QLabel(self.groupBox_03)
+        self.label_08.setGeometry(QtCore.QRect(10, 120, 171, 16))
+        self.label_08.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.label_08.setObjectName(_fromUtf8("label_08"))
+
+        self.groupBox_03_B = QtGui.QGroupBox(self.groupBox_03)
+        self.groupBox_03_B.setGeometry(QtCore.QRect(5, 139, 180, 36))
+        self.groupBox_03_B.setFont(self.fontGlobal_08)      # pour compatibilite W L
+        self.groupBox_03_B.setObjectName(_fromUtf8("groupBox_03_B"))
+        self.groupBox_03_B.setToolTip(u"Choice of property backGround image" + "\n"
+                                      u"It is possible that the backGround does not appear in the desired color" + "\n"
+                                      u"in this case do a test in FreeCAD :" + "\n"
+                                      u"Menu > Tools > Save picture > Extended > Image properties")
+
+        self.RB_01_Actual = QtGui.QRadioButton(self.groupBox_03_B)
+        self.RB_01_Actual.setGeometry(QtCore.QRect(10, 15, 36, 17))
+        self.RB_01_Actual.setFont(self.fontGlobal_08)       # pour compatibilite W L
+        self.RB_01_Actual.setChecked(True)
+        self.RB_01_Actual.setObjectName(_fromUtf8("RB_01_Actual"))
+        self.RB_01_Actual.setToolTip(u"BackGround image in Actual color")
+
+        self.RB_02_White = QtGui.QRadioButton(self.groupBox_03_B)
+        self.RB_02_White.setGeometry(QtCore.QRect(55, 15, 36, 17))
+        self.RB_02_White.setFont(self.fontGlobal_08)        # pour compatibilite W L
+        self.RB_02_White.setObjectName(_fromUtf8("RB_02_White"))
+        self.RB_02_White.setToolTip(u"BackGround image in White")
+
+        self.RB_03_Black = QtGui.QRadioButton(self.groupBox_03_B)
+        self.RB_03_Black.setGeometry(QtCore.QRect(100, 15, 36, 17))
+        self.RB_03_Black.setFont(self.fontGlobal_08)        # pour compatibilite W L
+        self.RB_03_Black.setObjectName(_fromUtf8("RB_03_Black"))
+        self.RB_03_Black.setToolTip(u"BackGround image in Black")
+
+        self.RB_04_Transparent = QtGui.QRadioButton(self.groupBox_03_B)
+        self.RB_04_Transparent.setGeometry(QtCore.QRect(145, 15, 36, 17))
+        self.RB_04_Transparent.setFont(self.fontGlobal_08)  # pour compatibilite W L
+        self.RB_04_Transparent.setObjectName(_fromUtf8("RB_04_Transparent"))
+        self.RB_04_Transparent.setToolTip(u"BackGround image in Transparent")
+
+        self.PB_Photo_Launch = QtGui.QPushButton(self.groupBox_03)
+        self.PB_Photo_Launch.setGeometry(QtCore.QRect(10, 180, 52, 23))
+        self.PB_Photo_Launch.setFont(self.fontGlobal_08)    # pour compatibilite W L
+        self.PB_Photo_Launch.setIcon(QtGui.QIcon(icon_path('save_view.png')))
+        self.PB_Photo_Launch.setToolTip(u"Launch the creation files")
+        self.PB_Photo_Launch.setObjectName(_fromUtf8("PB_Photo_Launch"))
+        self.PB_Photo_Launch.clicked.connect(self.on_PB_Photo_Launch_clicked)
+
+        self.PB_Photo_Reset = QtGui.QPushButton(self.groupBox_03)
+        self.PB_Photo_Reset.setGeometry(QtCore.QRect(71, 180, 52, 23))
+        self.PB_Photo_Reset.setFont(self.fontGlobal_08)     # pour compatibilite W L
+        self.PB_Photo_Reset.setIcon(QtGui.QIcon(icon_path('reset.png')))
+        self.PB_Photo_Reset.setToolTip(u"Refresh alls")
+        self.PB_Photo_Reset.setObjectName(_fromUtf8("PB_Photo_Reset"))
+        self.PB_Photo_Reset.clicked.connect(self.on_PB_Photo_Reset_clicked)
+
+        self.PB_Photo_Quit = QtGui.QPushButton(self.groupBox_03)
+        self.PB_Photo_Quit.setGeometry(QtCore.QRect(130, 180, 52, 23))
+        self.PB_Photo_Quit.setFont(self.fontGlobal_08)      # pour compatibilite W L
+        self.PB_Photo_Quit.setIcon(QtGui.QIcon(icon_path('save_view.png')))
+        self.PB_Photo_Quit.setToolTip(u"Quit the photo panel")
+        self.PB_Photo_Quit.setObjectName(_fromUtf8("PB_Photo_Launch"))
+        self.PB_Photo_Quit.clicked.connect(self.on_PB_Photo_Quit_clicked)
+        #####
+
+        self.PB_Reset = QtGui.QPushButton(self.centralWidget)
+        self.PB_Reset.setGeometry(QtCore.QRect(10, 465, 60, 28))
+        self.PB_Reset.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        icon7 = QtGui.QIcon()
+        icon7.addPixmap(QtGui.QPixmap(icon_path('reset.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.PB_Reset.setIcon(icon7)
+        self.PB_Reset.setObjectName(_fromUtf8("PB_Reset"))
+        self.PB_Reset.setToolTip("Refresh alls")
+        self.PB_Reset.clicked.connect(self.on_PB_Reset_clicked) # refresh
+
+        self.PB_Photo = QtGui.QPushButton(self.centralWidget)
+        self.PB_Photo.setGeometry(QtCore.QRect(76, 465, 60, 28))
+        self.PB_Photo.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        icon1 = QtGui.QIcon()
+        icon1.addPixmap(QtGui.QPixmap(icon_path('save_view.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.PB_Photo.setIcon(icon1)
+        self.PB_Photo.setToolTip(u"Create serial photo for create animation" + "\n"
+                                 u"Give the angle rotation desired" + "\n"
+                                 u"Number image = 360 / Angle degrees rotation" + "\n" + "\n"
+                                 u"Modify your window 3DView to the desirate dimension" + "\n"
+                                 u"Click the Accept the rotation for verify if the object rotation is good")
+        self.PB_Photo.setObjectName(_fromUtf8("PB_Photo"))
+        self.PB_Photo.clicked.connect(self.on_PB_Photo_clicked)
+
+        self.PB_Quit = QtGui.QPushButton(self.centralWidget)
+        self.PB_Quit.setGeometry(QtCore.QRect(142, 465, 60, 28))
+        self.PB_Quit.setFont(self.fontGlobal_08)            # pour compatibilite W L
+        icon8 = QtGui.QIcon()
+        icon8.addPixmap(QtGui.QPixmap(icon_path('quit.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.PB_Quit.setIcon(icon8)
+        self.PB_Quit.setObjectName(_fromUtf8("PB_Quit"))
+        self.PB_Quit.setToolTip("Quit FCCamera")
+        self.PB_Quit.clicked.connect(self.on_PB_Quit_clicked)
+
+        MainWindow.setCentralWidget(self.centralWidget)
+
+        self.retranslateUi(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    def retranslateUi(self, MainWindow):
+        MainWindow.setWindowTitle("FCCamera")
+        MainWindow.setWindowIcon(QtGui.QIcon(icon_path('save_view.png')))
+        MainWindow.setWindowFlags(PySide.QtCore.Qt.WindowStaysOnTopHint)
+        global numberPhoto
+        global ori_Horizont
+        global ori_Vertical
+
+        self.groupBox_01.setTitle("Camera of Axis (" + __Version__ + ")")
+        self.label_02.setText("Angle rotation Axis in degrees")
+        self.label_03.setText("Axe of rotation")
+        self.RB_Angle_X.setText("X")
+        self.RB_Angle_Y.setText("Y")
+        self.RB_Angle_Z.setText("Z")
+        self.RB_Direction.setText("D")
+        self.PB_Accept_View.setText("Accept the rotation")
+
+        self.groupBox_02.setTitle("Virtual")
+        self.PB_Detect_Camera.setText("Detect camera orientation")
+        self.PB_To_Face.setText("To Face.")
+        self.label_04.setText("Align view to face selected.")
+        self.PB_To_Axis.setText("To Axis.")
+        self.PB_Align_O_To_View.setText("Align Object to View")
+        self.PB_Create_Plane.setText("Create plane of view.")
+
+        ##### Photo
+        self.groupBox_03.setTitle("Photo")
+        self.comboBox_01.setCurrentIndex(0)
+        self.comboBox_01.setItemText(0 ,"Actual")
+        self.comboBox_01.setItemText(1 ,"Icon 16 x 16")
+        self.comboBox_01.setItemText(2 ,"Icon 32 x 32")
+        self.comboBox_01.setItemText(3 ,"Icon 64 x 64")
+        self.comboBox_01.setItemText(4 ,"Icon 128 x 128")
+        self.comboBox_01.setItemText(5 ,"CGA 320 x 200")
+        self.comboBox_01.setItemText(6 ,"QVGA 320 x 240")
+        self.comboBox_01.setItemText(7 ,"VGA 640 x 480")
+        self.comboBox_01.setItemText(8 ,"SVGA 800 x 600")
+        self.comboBox_01.setItemText(9 ,"XGA 1024 x 768")
+        self.comboBox_01.setItemText(10 ,"XGA+ 1152 x 864")
+        self.comboBox_01.setItemText(11,"SXGA 1280 x 1024")
+        self.comboBox_01.setItemText(12,"SXGA+ 1400 x 1050")
+        self.comboBox_01.setItemText(13,"UXGA 1600 x 1200")
+        self.comboBox_01.setItemText(14,"QXGA 2048 x 1536")
+        self.comboBox_01.setItemText(15,"Free")
+        self.label_05.setText("X")
+        self.label_06.setText("Y")
+        self.comboBox_02.setCurrentIndex(4)
+        self.comboBox_02.setItemText(0,"BMP *.bmp")
+        self.comboBox_02.setItemText(1,"ICO *.ico")
+        self.comboBox_02.setItemText(2,"JPEG *.jpeg")
+        self.comboBox_02.setItemText(3,"JPG *.jpg")
+        self.comboBox_02.setItemText(4,"PNG *.png")
+        self.comboBox_02.setItemText(5,"PPM *.ppm")
+        self.comboBox_02.setItemText(6,"TIF *.tif")
+        self.comboBox_02.setItemText(7,"TIFF *.tiff")
+        self.comboBox_02.setItemText(8,"XBM *.xbm")
+        self.comboBox_02.setItemText(9,"XPM *.xpm")
+        #self.comboBox_02.setItemText(10,"GIF *.gif")
+
+        self.label_07.setText("Number images : " + str(numberPhoto))
+        self.PB_Photo_Adjust.setText("Adj.")
+        self.label_08.setText("")
+#        self.label_09.setText("")
+        self.groupBox_03_B.setTitle("BackGround image")
+        self.RB_01_Actual.setText("Cu")
+        self.RB_02_White.setText("Wh")
+        self.RB_03_Black.setText("Bl")
+        self.RB_04_Transparent.setText("Tr")
+        self.PB_Photo_Launch.setText("Launch")
+        self.PB_Photo_Reset.setText("Reset")
+        self.PB_Photo_Quit.setText("Return")
+        ##### Photo
+
+        self.PB_Reset.setText("Reset")
+        self.PB_Photo.setText("Photo")
+        self.PB_Quit.setText("Quit")
+
+    def on_RB_Angle_X_clicked(self):
+        pic = QtGui.QPixmap(icon_path('axis_rotation_x.png'))
+        self.scene = QtGui.QGraphicsScene()
+        self.scene.addPixmap(QtGui.QPixmap(pic))
+        self.graphicsView.setScene(ui.scene)
+
+    def on_RB_Angle_Y_clicked(self):
+        pic = QtGui.QPixmap(icon_path('axis_rotation_y.png'))
+        self.scene = QtGui.QGraphicsScene()
+        self.scene.addPixmap(QtGui.QPixmap(pic))
+        self.graphicsView.setScene(ui.scene)
+
+    def on_RB_Angle_Z_clicked(self):
+        pic = QtGui.QPixmap(icon_path('axis_rotation_z.png'))
+        self.scene = QtGui.QGraphicsScene()
+        self.scene.addPixmap(QtGui.QPixmap(pic))
+        self.graphicsView.setScene(ui.scene)
+
+    def on_RB_Direction_clicked(self):
+        pic = QtGui.QPixmap(icon_path('axis_rotation_d.png'))
+        self.scene = QtGui.QGraphicsScene()
+        self.scene.addPixmap(QtGui.QPixmap(pic))
+        self.graphicsView.setScene(ui.scene)
+
+    def on_DS_Angle_valueChanged(self,value): # connection DS_Angle value donnee en degres
+        global valeur
+        global numberPhoto
+        global valueTest
+
+        valeur = 0.0
+        valeur = math.radians(value)         # valeur en degres convertie en radian
+        self.DS_Angle.setStyleSheet("color : Base")
+        self.label_07.setStyleSheet("color : Base")
+
+        try:                                 # section value for angle photo
+            numberPhoto = 360.0 / value
+            if abs(float(360.0 / value)) - int(abs(numberPhoto)) != 0.0:
+                self.PB_Photo_Adjust.setVisible(True)
+                self.label_08.setVisible(True)
+                numberPhoto = (abs(360.0 /value))
+                self.label_07.setStyleSheet("color : Red")
+                self.PB_Photo_Adjust.setStyleSheet("background-color : #ff0000")
+
+                valueTest = abs(int(value))
+                while ((value + valueTest) < (361 + value)) and ((value - valueTest) < (361 + value)):
+                    if abs(float(360.0 / valueTest)) - int(abs(float(360.0 / valueTest))) == 0.0:
+                        if self.DS_Angle.value() < 0:
+                            self.label_08.setText("Ideal angle : " + str(-valueTest) + " = " + str(abs(int(360.0 / valueTest))) + " images")
+                        else:
+                            self.label_08.setText("Ideal angle : " + str(valueTest) + " = " + str(abs(int(360.0 / valueTest))) + " images")
+                        self.label_08.setStyleSheet("color : #008700")
+                        break
+                    if self.DS_Angle.value() < 0:
+                        valueTest -= 1
+                    else:
+                        valueTest += 1
+                    FreeCADGui.updateGui()
+                self.PB_Photo_Adjust.setToolTip(u"Click to adjust the number images to 360 degrees" + "\n"
+                                                u"detected " + str(numberPhoto) + " = " + str(int(numberPhoto)) + " images" + "\n"
+                                                u"ideal choice angle : " + str(valueTest) + " degrees = " + str(abs(int(360.0 / valueTest))) + " images" + "\n" )
+
+            else:
+                numberPhoto = int(abs(360.0 / value))
+                self.label_07.setStyleSheet("color : Base")
+                self.label_08.setVisible(False)
+                self.label_08.setText("")
+                self.PB_Photo_Adjust.setVisible(False)
+                self.PB_Photo_Adjust.setStyleSheet("color : Base")
+                self.PB_Photo_Adjust.setToolTip(u"Adjust the number image to 360 degrees")
+        except Exception:
+            numberPhoto = 0
+
+        self.PB_Photo.setToolTip(u"Create serial photo for create animation" + "\n"
+                                 u"Give the angle rotation desired" + "\n"
+                                 u"Number image = 360 / " + str(math.degrees(valeur)) + " = " + str(numberPhoto))
+        self.label_07.setText("Number image : " + str(numberPhoto))
+
+    def on_PB_Detect_Camera_clicked(self):         # detection Orientation camera
+        global vertexeS
+
+        try:
+            plan = FreeCADGui.ActiveDocument.ActiveView.getCameraOrientation()
+
+            cam=Gui.ActiveDocument.ActiveView.getCameraNode()
+            App.Console.PrintMessage("___Camera_Detection_____________________"+"\n")
+            App.Console.PrintMessage("position       : " + str(cam.position.getValue().getValue()) + "\n")
+
+            first = App.Vector(cam.position.getValue().getValue())
+            distance_3DView_to_Axis = math.sqrt(first.x*first.x + first.y*first.y + first.z*first.z)
+
+            App.Console.PrintMessage("               : (position = Distance Center 3DView to Axis base = " + str(distance_3DView_to_Axis) + ")" + "\n")
+            App.Console.PrintMessage("orientation    : " + str(FreeCADGui.ActiveDocument.ActiveView.getCameraOrientation().Axis)+" , "+str(FreeCADGui.ActiveDocument.ActiveView.getCameraOrientation().Angle) + "\n")
+            App.Console.PrintMessage("nearDistance   : " + str(cam.nearDistance.getValue()) + "\n")
+            App.Console.PrintMessage("farDistance    : " + str(cam.farDistance.getValue()) + "\n")
+            App.Console.PrintMessage("aspectRatio    : " + str(cam.aspectRatio.getValue()) + "\n")
+            App.Console.PrintMessage("focalDistance  : " + str(cam.focalDistance.getValue()) + "\n")
+            App.Console.PrintMessage("height         : " + str(cam.height.getValue()) + "\n" + "\n")
+
+            App.Console.PrintMessage("___Camera_Orientation____________________"+"\n")
+            App.Console.PrintMessage("Radians XYZ Q  : " + str(plan)+"\n")
+
+            extractValue = datExtract(plan)
+            xP = float(extractValue[0])
+            yP = float(extractValue[1])
+            zP = float(extractValue[2])
+            qP = float(extractValue[3])
+
+            App.Console.PrintMessage("Degrees XYZ    : " + str(degrees(xP)) + " , " +str(degrees(yP)) + " , " + str(degrees(zP)) +"\n")
+            App.Console.PrintMessage("Degrees Q      : " + str(degrees(qP)) +"\n"+"\n")
+
+            App.Console.PrintMessage("Radians Axis.xyz A : " + str(plan.Axis) + " , " + str(plan.Angle) +"\n")
+            App.Console.PrintMessage("Degrees Axis.x : " + str(degrees(plan.Axis.x)) +"\n")
+            App.Console.PrintMessage("Degrees Axis.y : " + str(degrees(plan.Axis.y)) +"\n")
+            App.Console.PrintMessage("Degrees Axis.z : " + str(degrees(plan.Axis.z)) +"\n")
+            App.Console.PrintMessage("Degrees Angle  : " + str(degrees(plan.Angle)) +"\n")
+
+            #http://forum.freecadweb.org/viewtopic.php?f=13&t=14213
+            App.Console.PrintMessage("Direction      : " + str(cam.orientation.getValue().multVec(coin.SbVec3f(0,0,-1)).getValue()) + "\n")
+            if (vertexeS[0] + vertexeS[1] + vertexeS[2]) != 0.0:
+                App.Console.PrintMessage("Direction edge : " + str(vertexeS) + "\n")
+            App.Console.PrintMessage("___FCCamera______________________________"+"\n\n")
+            App.ActiveDocument.recompute()
+        except Exception:
+            App.Console.PrintError("Not Document open" + "\n")
+
+    def on_PB_Accept_View_clicked(self):        # Accept Rotation Camera to Axis
+        global valeur
+        global vertexeS
+        global ori_Horizont
+        global ori_Vertical
+        global bounBoxCenter
+
+        if (valeur != 0):
+
+            Xv = 0.0; Yv = 0.0; Zv = 0.0
+            try:
+                activeView = FreeCADGui.activeDocument().activeView()
+                cam = Gui.ActiveDocument.ActiveView.getCameraNode()
+                rot = coin.SbRotation()
+
+                if self.RB_Direction.isChecked():
+                    cam.position.setValue(App.Vector(bounBoxCenter))     # boundBox edge selected
+                else:
+    #                activeView.fitAll()                                     # boundBox all center
+                    cam.position.setValue(centerBoundBoxGlobal())            # boundBox all center calculated
+
+                #####
+                if self.RB_Angle_X.isChecked():
+                    Xv = 1.0
+                    App.Console.PrintMessage("(X ")
+                else:
+                    App.Console.PrintMessage("(- ")
+                if self.RB_Angle_Y.isChecked():
+                    Yv = 1.0
+                    App.Console.PrintMessage("Y ")
+                else:
+                    App.Console.PrintMessage("- ")
+                if self.RB_Angle_Z.isChecked():
+                    Zv = 1.0
+                    App.Console.PrintMessage("Z ")
+                else:
+                    App.Console.PrintMessage("- ")
+
+                if self.RB_Direction.isChecked():
+                    if (vertexeS[0] + vertexeS[1] + vertexeS[2]) != 0.0:
+                        Xv = vertexeS[0]
+                        Yv = vertexeS[1]
+                        Zv = vertexeS[2]
+                        App.Console.PrintMessage("D)" + "\n")
+                    else:
+                        Xv = bounBoxCenter[0]
+                        Yv = bounBoxCenter[1]
+                        Zv = bounBoxCenter[2]
+                        if (Xv + Yv + Zv) == 0.0:
+                            App.Console.PrintMessage("!)" + "\n")
+                            App.Console.PrintError("Not axis selected (edge) for rotation" + "\n"
+                                                   "or Direction is nul" + "\n")
+                    Gui.updateGui()
+                else:
+                    App.Console.PrintMessage("-) " + "\n")
+                #####
+
+                rot.setValue(coin.SbVec3f(Xv,Yv,Zv),valeur)
+                nrot = cam.orientation.getValue() * rot
+                cam.orientation = nrot
+
+                App.Console.PrintMessage(str(valeur)+" rad. , "+str(math.degrees(valeur))+" deg."+"\n")
+                App.Console.PrintMessage("FCCamera_________________________________"+"\n\n")
+            except Exception:
+                App.Console.PrintError("Not Document open"+"\n")
+        else:
+            App.Console.PrintError("Value angle egal zero select one Value"+"\n")
+            self.DS_Angle.setStyleSheet("color : #ff0000")
+
+    #### photo ################################################
+    def SIGNAL_comboBox_01_Changed(self,text):
+        global dim_Horizont
+        global dim_Vertical
+        global ori_Horizont
+        global ori_Vertical
+
+        if   text == "Actual":
+            dim_Horizont = ori_Horizont
+            dim_Vertical = ori_Vertical
+        if   text == "Icon 16 x 16":
+            dim_Horizont = 16
+            dim_Vertical = 16
+        elif text == "Icon 32 x 32":
+            dim_Horizont = 32
+            dim_Vertical = 32
+        elif text == "Icon 64 x 64":
+            dim_Horizont = 64
+            dim_Vertical = 64
+        elif text == "Icon 128 x 128":
+            dim_Horizont = 128
+            dim_Vertical = 128
+        elif text == "CGA 320 x 200":
+            dim_Horizont = 320
+            dim_Vertical = 200
+        elif text == "QVGA 320 x 240":
+            dim_Horizont = 320
+            dim_Vertical = 240
+        elif text == "VGA 640 x 480":
+            dim_Horizont = 640
+            dim_Vertical = 480
+        elif text == "SVGA 800 x 600":
+            dim_Horizont = 800
+            dim_Vertical = 600
+        elif text == "XGA 1024 x 768":
+            dim_Horizont = 1024
+            dim_Vertical = 768
+        elif text == "XGA+ 1152 x 864":
+            dim_Horizont = 1152
+            dim_Vertical = 864
+        elif text == "SXGA 1280 x 1024":
+            dim_Horizont = 1280
+            dim_Vertical = 1024
+        elif text == "SXGA+ 1400 x 1050":
+            dim_Horizont = 1400
+            dim_Vertical = 1050
+        elif text == "UXGA 1600 x 1200":
+            dim_Horizont = 1600
+            dim_Vertical = 1200
+        elif text == "QXGA 2048 x 1536":
+            dim_Horizont = 2048
+            dim_Vertical = 1536
+        elif text == "Free":
+            None
+
+        self.DS_01_X.setValue(dim_Horizont)
+        self.DS_02_Y.setValue(dim_Vertical)
+
+        activeView = FreeCADGui.activeDocument().activeView()
+        mainWindow = FreeCADGui.getMainWindow()
+        mdi = mainWindow.findChild(QtGui.QMdiArea)
+        mwActive = mdi.activeSubWindow()
+        mwActive.setGeometry(0, 0, dim_Horizont, dim_Vertical)
+
+    def SIGNAL_comboBox_02_Changed(self,text):
+        global formatFichier
+
+        if   text == "BMP *.bmp":
+            formatFichier = ".bmp"
+        elif text == "ICO *.ico":
+            formatFichier = ".ico"
+        elif text == "JPEG *.jpeg":
+            formatFichier = ".jpeg"
+        elif text == "JPG *.jpg":
+            formatFichier = ".jpg"
+        elif text == "PNG *.png":
+            formatFichier = ".png"
+        elif text == "PPM *.ppm":
+            formatFichier = ".ppm"
+        elif text == "TIF *.tif":
+            formatFichier = ".tif"
+        elif text == "TIFF *.tiff":
+            formatFichier = ".tiff"
+        elif text == "XBM *.xbm":
+            formatFichier = ".xbm"
+        elif text == "XPM *.xpm":
+            formatFichier = ".xpm"
+
+    def on_DS_01_X_valueChanged(self, value):
+        global dim_Horizont
+        global dim_Vertical
+
+        dim_Horizont = value
+
+        self.DS_01_X.setValue(dim_Horizont)
+        #self.comboBox_01.setCurrentIndex(15)
+
+        activeView = FreeCADGui.activeDocument().activeView()
+        mainWindow = FreeCADGui.getMainWindow()
+        mdi = mainWindow.findChild(QtGui.QMdiArea)
+        mwActive = mdi.activeSubWindow()
+        mwActive.setGeometry(0, 0, dim_Horizont, dim_Vertical)     #
+
+    def on_DS_02_Y_valueChanged(self, value):
+        global dim_Horizont
+        global dim_Vertical
+
+        dim_Vertical = value
+
+        self.DS_02_Y.setValue(dim_Vertical)
+        #self.comboBox_01.setCurrentIndex(15)
+
+        activeView = FreeCADGui.activeDocument().activeView()
+        mainWindow = FreeCADGui.getMainWindow()
+        mdi = mainWindow.findChild(QtGui.QMdiArea)
+        mwActive = mdi.activeSubWindow()
+        mwActive.setGeometry(0, 0, dim_Horizont, dim_Vertical)     #
+
+    def on_PB_Photo_Launch_clicked(self):
+        global pathFile
+        global dim_Horizont
+        global dim_Vertical
+        global formatFichier
+        global valeur
+
+        if (valeur != 0):
+            SaveName, Filter = PySide.QtGui.QFileDialog.getSaveFileName(None, "Save a files ", pathFile,  "*" + formatFichier) # PySide
+
+            if SaveName == "":
+                App.Console.PrintMessage("Process aborted" + "\n")
+            else:
+                pathFile = SaveName[:SaveName.rfind("/") + 1]
+                App.Console.PrintMessage("Registration of " + SaveName[:-4] + "_Animate_..." + "\n")
+                SaveName = SaveName[:-4]
+                try:
+                    Xv = 0.0;Yv = 0.0;Zv = 0.0
+
+                    #####
+                    if self.RB_Angle_X.isChecked():
+                        Xv = 1.0
+                    elif self.RB_Angle_Y.isChecked():
+                        Yv = 1.0
+                    elif self.RB_Angle_Z.isChecked():
+                        Zv = 1.0
+                    elif self.RB_Direction.isChecked():
+                        if (vertexeS[0] + vertexeS[1] + vertexeS[2]) != 0.0:
+                            Xv = vertexeS[0]
+                            Yv = vertexeS[1]
+                            Zv = vertexeS[2]
+                        else:
+                            App.Console.PrintError("Not axis selected (edge) for rotation" + "\n"
+                                                   "or Direction is nul" + "\n")
+                    #####
+                    if (Xv + Yv + Zv) != 0.0:
+                        try:
+                            fileCount = 0
+                            activeView = FreeCADGui.activeDocument().activeView()
+                            cam = Gui.ActiveDocument.ActiveView.getCameraNode()
+
+                            for i in range(int(360.0 / abs(math.degrees(valeur)))):
+                                Gui.updateGui()
+
+                                if self.RB_Direction.isChecked():
+                                    cam.position.setValue(App.Vector(bounBoxCenter))     # boundBox edge selected
+                                else:
+#                                    activeView.fitAll()                                     # boundBox all center
+                                    cam.position.setValue(centerBoundBoxGlobal())            # boundBox all center calculated
+
+                                cam = Gui.ActiveDocument.ActiveView.getCameraNode()
+                                rot = coin.SbRotation()
+                                rot.setValue(coin.SbVec3f(Xv,Yv,Zv),valeur)
+                                nrot = cam.orientation.getValue() * rot
+                                cam.orientation = nrot
+
+                                fileCount += 1
+                                if self.RB_01_Actual.isChecked():
+                                    fileName = SaveName + "_Animate_" + '%03d_%03d' % (fileCount, math.degrees(valeur)*fileCount) + "_Cu" + formatFichier
+                                    activeView.saveImage(fileName, dim_Horizont, dim_Vertical, "Current")
+                                elif self.RB_02_White.isChecked():
+                                    fileName = SaveName + "_Animate_" + '%03d_%03d' % (fileCount, math.degrees(valeur)*fileCount) + "_Wh" + formatFichier
+                                    activeView.saveImage(fileName, dim_Horizont, dim_Vertical, "White")
+                                elif self.RB_03_Black.isChecked():
+                                    fileName = SaveName + "_Animate_" + '%03d_%03d' % (fileCount, math.degrees(valeur)*fileCount) + "_Bl" + formatFichier
+                                    activeView.saveImage(fileName, dim_Horizont, dim_Vertical, "Black")
+                                elif self.RB_04_Transparent.isChecked():
+                                    fileName = SaveName + "_Animate_" + '%03d_%03d' % (fileCount, math.degrees(valeur)*fileCount) + "_Tr" + formatFichier
+                                    activeView.saveImage(fileName, dim_Horizont, dim_Vertical, "Transparent")
+#                                App.Console.PrintMessage(fileName + "\n")
+
+                        except Exception:
+                            App.Console.PrintError("Error Creation File"+"\n")
+                        App.Console.PrintMessage("End photos"+"\n")
+                except Exception:                                                     # if error detected to write
+                    App.Console.PrintError("Error write file "+SaveName+"\n")         # detect error ... display the text in red (PrintError)
+        else:
+            App.Console.PrintError("Give angle value for rotation")
+            App.Console.PrintMessage(" (Actual 3Dview = X " + str(dim_Horizont) + ", Y " + str(dim_Vertical) + ") " + "\n")
+            self.DS_Angle.setStyleSheet("color : #ff0000")
+
+    def on_PB_Photo_Adjust_clicked(self):
+        global valueTest
+
+        if self.DS_Angle.value() < 0:
+            self.DS_Angle.setValue(-valueTest)
+        else:
+            self.DS_Angle.setValue(valueTest)
+
+        self.PB_Photo_Adjust.setVisible(False)
+        self.label_08.setVisible(False)
+        self.label_08.setText("")
+#        self.label_08.setStyleSheet("color : Base")
+
+    def on_PB_Photo_Quit_clicked(self):
+        global ori_Horizont
+        global ori_Vertical
+
+        self.PB_Photo.setText("Photo")
+        self.groupBox_03.setVisible(False)
+        self.groupBox_02.setVisible(True)
+        self.comboBox_02.setCurrentIndex(4)
+        self.comboBox_01.setCurrentIndex(0)
+
+        self.PB_Photo.setVisible(True)
+        self.PB_Reset.setVisible(True)
+        self.PB_Quit.setVisible(True)
+
+        self.comboBox_01.setCurrentIndex(0)
+        try:
+            activeView = FreeCADGui.activeDocument().activeView()
+            mainWindow = FreeCADGui.getMainWindow()
+            mdi = mainWindow.findChild(QtGui.QMdiArea)
+            mwActive = mdi.activeSubWindow()
+            mwActive.setGeometry(0, 0, ori_Horizont, ori_Vertical)
+        except Exception:
+            App.Console.PrintError('No opened document\n')
+
+    def on_PB_Photo_Reset_clicked(self):  # Reset photo
+        global ui
+        ui.on_PB_Reset_clicked()
+
+    def on_PB_Photo_clicked(self):  # Create photo
+        global ui
+        global valeur
+        global ori_Horizont
+        global ori_Vertical
+        global dim_Horizont
+        global dim_Vertical
+        global numberPhoto
+
+        try:
+            self.groupBox_02.setVisible(False)
+            self.groupBox_03.setVisible(True)
+
+            self.PB_Photo.setVisible(False)
+            self.PB_Reset.setVisible(False)
+            self.PB_Quit.setVisible(False)
+            self.PB_Photo.setText("Reset")
+        except Exception:
+            App.Console.PrintError("Not Document open" + "\n")
+
+    #### photo #############################################################
+
+    def on_PB_Align_O_To_View_clicked(self):  #Align and Fix Object to View
+
+        sel = FreeCADGui.Selection.getSelection()
+        if (len(sel)==0):
+            App.Console.PrintError("Select one object"+"\n")
+        else:
+            Nameelement = sel[0].Name
+            App.Console.PrintMessage(str(Nameelement)+"\n")
+            pl = App.Placement()
+            pl.Rotation = FreeCADGui.ActiveDocument.ActiveView.getCameraOrientation()
+            pl.Base = sel[0].Placement.Base
+            App.ActiveDocument.getObject(Nameelement).Placement=pl
+
+    def on_PB_Create_Plane_clicked(self):     # Create plane
+        global positionX                      # create plans coordinate mouse
+        global positionY
+        global positionZ
+
+        rayon = 20                            # Radius of plane
+        selEx = FreeCADGui.Selection.getSelectionEx()
+        objs = [selobj.Object for selobj in selEx]
+        if len(objs) != 0.0:                    # radius = > BounBox length
+            s = objs[0].Shape
+            boundBox_ = s.BoundBox
+            boundBoxLX = boundBox_.XLength
+            boundBoxLY = boundBox_.YLength
+            boundBoxLZ = boundBox_.ZLength
+
+            rayon = boundBoxLX
+            if rayon < boundBoxLY:
+                rayon = boundBoxLY
+            elif rayon < boundBoxLZ:
+                rayon = boundBoxLZ
+
+        try:
+            radiusP = rayon                       # Radius of plane
+            FcPlane = doc.addObject("App::DocumentObjectGroup","FcPlane")
+            App.Console.PrintMessage("Create plane ("+str(radiusP)+" mm)"+"\n")
+
+            plan = FreeCADGui.ActiveDocument.ActiveView.getCameraOrientation()
+            App.Console.PrintMessage(str(plan)+"\n")
+            App.Console.PrintMessage(str(positionX)+" "+str(positionY)+" "+str(positionZ)+"\n")
+
+            extractValue = datExtract(plan)
+            xP = float(extractValue[0])
+            yP = float(extractValue[1])
+            zP = float(extractValue[2])
+            qP = float(extractValue[3])
+
+            pl = App.Placement()
+            pl.Rotation.Q = (xP,yP,zP,qP)         # rotation of object
+
+            pl.Base = App.Vector(positionX,positionY,positionZ) # here coordinates XYZ of plan
+
+    #        Draft.makeRectangle(length=radiusP,height=radiusP,placement=pl,face=False,support=None)
+            points=[App.Vector(-(radiusP*1.5),0,0),App.Vector((radiusP*1.5),0,0)]
+            mire01 = Draft.makeWire(points,closed=False,placement=pl,face=False,support=None)
+            FreeCADGui.ActiveDocument.getObject(App.ActiveDocument.ActiveObject.Name).LineColor = (1.0,0.0,0.0)
+            FcPlane.addObject(mire01)  # contener character
+
+            points=[App.Vector(0,-(radiusP*1.5),0),App.Vector(0,(radiusP*1.5),0)]
+            mire02 = Draft.makeWire(points,closed=False,placement=pl,face=False,support=None)
+            FreeCADGui.ActiveDocument.getObject(App.ActiveDocument.ActiveObject.Name).LineColor = (1.0,0.0,0.0)
+            FcPlane.addObject(mire02)  # contener character
+
+            cercle = Draft.makeCircle(radius=radiusP,placement=pl,face=False,support=None)
+            Rnameplane = App.ActiveDocument.ActiveObject.Name
+
+            App.ActiveDocument.ActiveObject.Label   = "PlaneC"
+            App.ActiveDocument.getObject(Rnameplane).MakeFace = True
+            FreeCADGui.ActiveDocument.getObject(Rnameplane).LineColor = (1.0,0.0,0.0)
+            FreeCADGui.ActiveDocument.getObject(Rnameplane).ShapeColor = (0.0,0.66666669,1.0)
+            FreeCADGui.ActiveDocument.getObject(Rnameplane).Transparency = 80
+            FreeCADGui.ActiveDocument.getObject(Rnameplane).GridSize = '10 mm'
+    #        FreeCADGui.ActiveDocument.getObject(Rnameplane).GridSnap = True
+            FreeCADGui.ActiveDocument.getObject(Rnameplane).ShowGrid = True
+
+            FcPlane.addObject(cercle)  # contener character
+            App.ActiveDocument.recompute()
+
+            positionX = 0.0
+            positionY = 0.0
+            positionZ = 0.0
+        except Exception:
+            App.Console.PrintError("Not Document open" + "\n")
+
+    def on_PB_To_Face_clicked(self):        # view to face selected Face
+        To_Face_Or_To_Axis(1)
+
+    def on_PB_To_Axis_clicked(self):        # view to face selected Axis
+        To_Face_Or_To_Axis(0)
+
+    def on_PB_Reset_clicked(self):          # Refresh
+        global valeur
+        global positionX
+        global positionY
+        global positionZ
+        global vueView
+        global fileCount
+        global numberPhoto
+        global ori_Horizont
+        global ori_Vertical
+
+        try:
+            Gui.activeDocument().activeView().viewTop()
+            Gui.SendMsgToActiveView("ViewFit")
+            valeur = 0.0
+            fileCount = 0
+            self.DS_Angle.setProperty("value", 0.0)
+
+            positionX = 0.0
+            positionY = 0.0
+            positionZ = 0.0
+            vueView   = 0
+
+            self.RB_Angle_X.setChecked(True)
+            pic = QtGui.QPixmap(icon_path('axis_rotation_x.png'))
+            self.scene = QtGui.QGraphicsScene()
+            self.scene.addPixmap(QtGui.QPixmap(pic))
+            self.graphicsView.setScene(ui.scene)
+
+            activeView = FreeCADGui.activeDocument().activeView()
+            mainWindow = FreeCADGui.getMainWindow()
+            mdi = mainWindow.findChild(QtGui.QMdiArea)
+            mwActive = mdi.activeSubWindow()
+            mwActive.setGeometry(0, 0, ori_Horizont, ori_Vertical)     #
+            self.comboBox_01.setCurrentIndex(0)
+            self.DS_01_X.setValue(ori_Horizont)
+            self.DS_02_Y.setValue(ori_Vertical)
+            centerBoundBoxGlobal()
+            self.RB_01_Actual.setChecked(True)
+            App.Console.PrintMessage("Refresh (3Dview = X " + str(ori_Horizont) + ", Y " + str(ori_Vertical) + ") " + "\n")
+            numberPhoto = 0
+            self.label_07.setText("Number image : " + str(numberPhoto))
+        except Exception:
+            App.Console.PrintError("Not Document open" + "\n")
+
+    def on_PB_Quit_clicked(self): # quit
+        global s
+        global ori_Horizont
+        global ori_Vertical
+
+        try:
+            activeView = FreeCADGui.activeDocument().activeView()
+            mainWindow = FreeCADGui.getMainWindow()
+            mdi = mainWindow.findChild(QtGui.QMdiArea)
+            mwActive = mdi.activeSubWindow()
+            mwActive.setGeometry(0, 0, ori_Horizont, ori_Vertical)     #
+        except Exception:
+            None
+
+        App.Console.PrintMessage("Fin FCCamera" + "\n")
+        FreeCADGui.Selection.removeObserver(s)    # desinstalle la fonction residente
+        self.window.close()
+
+##Start#####
+
+#Gui.ActiveDocument.ActiveView.setAxisCross(True) # GuiAxis true
+
+s=SelObserver()                                   # installe the function in resident mode SelObserver
+FreeCADGui.Selection.addObserver(s)               # installe the function in resident mode SelObserver
+
+MainWindow = QtGui.QMainWindow()
+ui = Ui_MainWindow()
+ui.setupUi(MainWindow)
+MainWindow.show()
+
+

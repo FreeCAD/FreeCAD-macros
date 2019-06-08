@@ -403,8 +403,8 @@ class CenterofmassWidget(QtGui.QWidget):
         layout.addWidget(scroll)
 
         macro_dir = FreeCAD.getUserMacroDir(True)
-        icon_dir = os.path.join(macro_dir, "CenterOfMass/")
-        self.setWindowIcon(QtGui.QIcon(icon_dir+'Macro_CenterOfMass.png'))
+        icon_dir = os.path.join(macro_dir, "CenterOfMass")
+        self.setWindowIcon(QtGui.QIcon(os.path.join(icon_dir, 'Macro_CenterOfMass.png')))
 
         self.calc = QtGui.QPushButton(self)
         self.calc.setObjectName('compute')
@@ -732,7 +732,7 @@ class CenterofmassWidget(QtGui.QWidget):
         plp.Base = FreeCAD.Vector(self.TotalCdG[0], self.TotalCdG[1]-boundBoxLY/2., self.TotalCdG[2] - boundBoxLZ/2.)
         plan.Placement = plp
         plan.Placement.Rotation = plan.Placement.Rotation.multiply(FreeCAD.Rotation(0.0, -90.0, 0.0))
-        plan.Placement.Base.x = self.TotalCdG[0]        
+        plan.Placement.Base.x = self.TotalCdG[0]
         plan.Placement.Base.y = self.minBdY
         plan.Placement.Base.z = self.minBdZ
 
@@ -748,8 +748,8 @@ class CenterofmassWidget(QtGui.QWidget):
         plp.Base = FreeCAD.Vector(self.TotalCdG[0]-boundBoxLX/2., self.TotalCdG[1], self.TotalCdG[2]-boundBoxLZ/2.)
         plan.Placement = plp
         plan.Placement.Rotation = plan.Placement.Rotation.multiply(FreeCAD.Rotation(0.0, 0.0, 90.0))
-        plan.Placement.Base.x = self.minBdX      
-        plan.Placement.Base.y = self.TotalCdG[1]  
+        plan.Placement.Base.x = self.minBdX
+        plan.Placement.Base.y = self.TotalCdG[1]
         plan.Placement.Base.z = self.minBdZ
 
         plan.ViewObject.LineColor = (1.0, 0.66667, 0.0)

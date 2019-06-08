@@ -35,8 +35,8 @@ __Files__ = 'SketcherClipView.svg'
 from pivy import coin
 
 import freecad as fc
-from freecad import app
-from freecad import gui
+import FreeCAD as app
+import FreeCADGui as gui
 from PySide import QtCore
 
 
