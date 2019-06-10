@@ -13,18 +13,18 @@
 #
 #####################################
 
-    __Name__ = 'SimpleProperties'
-    __Comment__ = 'Gives basic properties of object (volume, boundbox, ...)'
-    __Author__ = 'openBrain'
-    __Version__ = '0.7'
-    __Date__ = '2019-06-10'
-    __License__ = 'LGPL v2'
-    __Web__ = 'https://www.freecadweb.org/wiki/Macro_SimpleProperties'
-    __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_SimpleProperties'
-    __Icon__ = ''
-    __Help__ = 'Select an object and run the macro'
-    __Status__ = 'Beta'
-    __Requires__ = 'FreeCAD >= 0.17'
+__Name__ = 'SimpleProperties'
+__Comment__ = 'Gives basic properties of object (volume, boundbox, ...)'
+__Author__ = 'openBrain'
+__Version__ = '0.7'
+__Date__ = '2019-06-10'
+__License__ = 'LGPL v2'
+__Web__ = 'https://www.freecadweb.org/wiki/Macro_SimpleProperties'
+__Wiki__ = 'https://www.freecadweb.org/wiki/Macro_SimpleProperties'
+__Icon__ = ''
+__Help__ = 'Select an object and run the macro'
+__Status__ = 'Beta'
+__Requires__ = 'FreeCAD >= 0.17'
 
 __dbg__ = False #True for debugging
 SIGNUM = '%.3g' #Set the display format of numbers
