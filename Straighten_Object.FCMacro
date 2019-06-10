@@ -26,7 +26,7 @@ __license__ = "LGPL v2"
 __version__ = "0.75" # Ready for beta test
 __date__    = "2019.04"
 
-__dbg__ = False #True for debugging
+__dbg__ = True #True for debugging
 
 from PySide import QtGui
 
@@ -122,6 +122,7 @@ if not(selError or cancelOp): #if a valid selection is available
     refPt1Def = False #true if one reference point is found selected
     refPt2Def = False #true if another reference point is found selected
 
+    cslD("Subobjects : " +str(FreeCADGui.Selection.getSelectionEx()[0].SubElementNames))
     for selItem in FreeCADGui.Selection.getSelectionEx()[0].SubObjects: #going through selected items of first object
         if isinstance(selItem, Part.Face): #if it's a face
             if not refFaceDef: #if reference face not yet defined
