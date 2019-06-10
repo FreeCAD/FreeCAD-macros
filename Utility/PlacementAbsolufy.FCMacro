@@ -6,25 +6,25 @@
 # This macro will reset position of all part containers to document origin while keeping the absolute object positions
 #
 # Version history :
-# *0.1 : alpha release, almost no test performed
 # *0.2 : some typo improvement + commenting for official PR
+# *0.1 : alpha release, almost no test performed
 #
 #####################################
 
-    __Name__ = 'PlacementAbsolufy'
-    __Comment__ = 'Reset part containers to global origin while keeping object positions'
-    __Author__ = 'openBrain'
-    __Version__ = '0.2'
-    __Date__ = '2019-06-10'
-    __License__ = 'LGPL v2'
-    __Web__ = 'https://www.freecadweb.org/wiki/Macro_PlacementAbsolufy'
-    __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_PlacementAbsolufy'
-    __Icon__ = ''
-    __Help__ = 'Run the macro with model active in the GUI'
-    __Status__ = 'Alpha'
-    __Requires__ = 'FreeCAD >= 0.17'
-    __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=3&t=36869'
-    __Files__ = ''
+__Name__ = 'PlacementAbsolufy'
+__Comment__ = 'Reset part containers to global origin while keeping object positions'
+__Author__ = 'openBrain'
+__Version__ = '0.2'
+__Date__ = '2019-06-10'
+__License__ = 'LGPL v2'
+__Web__ = 'https://www.freecadweb.org/wiki/Macro_PlacementAbsolufy'
+__Wiki__ = 'https://www.freecadweb.org/wiki/Macro_PlacementAbsolufy'
+__Icon__ = ''
+__Help__ = 'Run the macro with model active in the GUI'
+__Status__ = 'Alpha'
+__Requires__ = 'FreeCAD >= 0.17'
+__Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=3&t=36869'
+__Files__ = ''
 
 currState = {} #initialize a dictionary to store current object placements
 
