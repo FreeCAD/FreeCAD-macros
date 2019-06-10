@@ -3,7 +3,7 @@
 # Copyright (c) openBrain 2019
 # Licensed under LGPL v2
 #
-# This macro will unmap a sketch from eg. a face and make its placement absolute in the body. It proposes 3 options (forcely the first if sketch not in a body) :
+# This FreeCAD macro will unmap a sketch from eg. a face and make its placement absolute in the body. It proposes 3 options (forcely the first if sketch not in a body) :
 # * "Raw" mode => the sketch placement is made absolute in the body referential, nothing more
 # * "DP@Face mode" => a datum plane is created where the mapping face is, then the sketch is attached to it respecting its attachment offset
 # * "DP@Sketch" mode => a datum place is created where the sketch is (including attachment offset), then the sketch is attached to its origin
@@ -11,15 +11,16 @@
 # Main use of the macro is to make design more robust to topological naming issue
 #
 # Version history :
-# *0.5 : beta release
+# *0.6.1 : minor changes after PR review
 # *0.6 : some typo improvement + commenting for official PR
+# *0.5 : beta release
 #
 #####################################
 
     __Name__ = 'SketchUnmap'
     __Comment__ = 'Unmap a sketch & makes its placement absolute"'
     __Author__ = 'openBrain'
-    __Version__ = '0.6'
+    __Version__ = '0.6.1'
     __Date__ = '2019-06-10'
     __License__ = 'LGPL v2'
     __Web__ = 'https://www.freecadweb.org/wiki/Macro_SketchUnmap'
@@ -29,7 +30,7 @@
     __Status__ = 'Beta'
     __Requires__ = 'FreeCAD >= 0.17'
     __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=36078'
-    __Files__ = ''
+#    __Files__ = ''
 
 __dbg__ = False  #True for debugging
 
@@ -113,5 +114,5 @@ else:
         sk.Support = [(newDP,'')] ##Sketch is mapped to plane reseting its attachment offset
         sk.AttachmentOffset = App.Placement(_0Vec_, App.Rotation(_ZVec_, 0))
     App.ActiveDocument.commitTransaction() #Commit transaction for undo management
-    cslM("Unmap Sketch Macro ended correctly")
+    cslM("SketchUnmap Macro ended correctly")
         
