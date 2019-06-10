@@ -62,7 +62,8 @@ if __dbg__:  ##Clear report view in debug mode
 cslM("Starting SketchUnmap macro")
 cslD("Checking selection")
 
-if (len(Gui.Selection.getSelection()) != 1 or str(Gui.Selection.getSelection()[0]) != '<Sketcher::SketchObject>'): ##If selection is wrong, print error message and exit
+##If selection is wrong, print error message and exit
+if (len(Gui.Selection.getSelection()) != 1 or str(Gui.Selection.getSelection()[0]) != '<Sketcher::SketchObject>'):
     cslE("You must select a sketch that you want to unmap (and only one) ... Exiting")
 else:
     cslD("Selection OK")
