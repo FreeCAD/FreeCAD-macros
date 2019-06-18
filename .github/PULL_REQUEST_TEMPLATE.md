@@ -3,11 +3,11 @@ To integrate your macro please make sure the following steps are complete:
 
 - [ ] Please check this box if you're not submitting a new macro.   
 - [ ] Are you submitting a new macro ?  
-- [ ] Have you followed the ['How to submit a macro'](README.md#how-to-submit-a-macro) section of the README.md ?  
-- [ ] Your macro has a [Description](README.md#macro-description) in its header.  
-- [ ] Your macro has a [CamelCase name](README.md#camelcase-macro-name).  
-- [ ] Your macro is named [appropriately](README.md#macro-name-specifics).  
-- [ ] Your macro contains a [Metadata section](README.md#macro-metadata) that immediately follows the header description.  
+- [ ] Have you followed the ['How to submit a macro'](../README.md#how-to-submit-a-macro) section of the README.md ?  
+- [ ] Your macro has a [Description](../README.md#macro-description) in its header.  
+- [ ] Your macro has a [CamelCase name](../README.md#camelcase-macro-name).  
+- [ ] Your macro is named [appropriately](../README.md#macro-name-specifics).  
+- [ ] Your macro contains a [Metadata section](../README.md#macro-metadata) that immediately follows the header description.  
 - [ ] Your macro is Python3/Qt5 compliant and tested on the latest FreeCAD stable and development releases.  
 - [ ] You're including documentation on how your macro works (bonus: screenshots and/or video on the Wiki)  
 - [ ] Commit message is [well-written](https://chris.beams.io/posts/git-commit/)  
