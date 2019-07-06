@@ -5,4 +5,4 @@ Calculates brick, cement and sand cost of objects with IFCType or IFCRole = 'Wal
 The default function estimates the cost all Wall objects in the current document
 
 # Screenshot
-![](main.png)
+![](https://raw.githubusercontent.com/QuantumNovice/FreeCAD-macros/master/Cost%20Estimation/BrickWallEstimate.PNG)
