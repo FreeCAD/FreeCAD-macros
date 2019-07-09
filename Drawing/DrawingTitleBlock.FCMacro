@@ -10,7 +10,7 @@ from __future__ import unicode_literals
 *   it under the terms of the GNU Lesser General Public License (LGPL)    *
 *   as published by the Free Software Foundation; either version 2 of     *
 *   the License, or (at your option) any later version.                   *
-*   for detail see the LICENCE text file.                                 *
+*   for detail see the LICENSE text file.                                 *
 *                                                                         *
 *   This software is distributed in the hope that it will be useful,      *
 *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
@@ -458,8 +458,8 @@ class Ui_MainWindow(object):
         self.pushButton10.setGeometry(QtCore.QRect(0, 18, 75, 23))
         self.pushButton10.setToolTip("Create the symbol EU or US"+"\n"
                                      "This button is Independent of the Write button"+"\n"
-                                     "If you desire modify the symbol in the cartouche,"+"\n"
-                                     "delete the inadequate symbol manualy.")
+                                     "If you desire to modify the symbol in the cartouche,"+"\n"
+                                     "delete the inadequate symbol manually.")
         self.pushButton10.setEnabled(False)
         self.pushButton10.setObjectName(_fromUtf8("pushButton10"))
         self.pushButton10.clicked.connect(self.on_pushButton10_clicked)     #connection pushButton10
