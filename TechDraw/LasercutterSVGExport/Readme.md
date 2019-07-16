@@ -15,6 +15,9 @@ I have created a script that is doing this task:
 ![alt text](LasercutterSVGExport_screenshot.png "Screenshot")
 
 ## Installation
+In FreeCAD, select the Addon manager from tools menu. Go to the Macros tab and find LasercutterSVGExport in the list. Click Install.  
+
+or  
 Copy LasercutterSVGExport.FCMacro to your FreeCAD Macro directory (on Linux: ~/.FreeCAD/Macro)  
 In menu Macro select Macros...  
 Execute LasercutterSVGExport.FCMacro 
@@ -29,6 +32,9 @@ Execute LasercutterSVGExport.FCMacro
 * In the TechDraw workbench, select Export page as SVG
 
 ## Discussion
-[https://forum.freecadweb.org/viewtopic.php?f=35&t=31869]
+[Dedicated FreeCAD forum discussion thread](https://forum.freecadweb.org/viewtopic.php?f=35&t=31869)
+
+## License
+GNU Lesser General Public License v3.0
 
 
