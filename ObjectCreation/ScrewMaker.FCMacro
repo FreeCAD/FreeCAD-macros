@@ -13,7 +13,7 @@ fixed bool type error. (int is not anymore accepted at linux)
 fixed starting point of real thread at some screw types.
 
 Version 1.8 from July 2014
-first approch for a faster real thread
+first approach for a faster real thread
 
 Version 1.9 / 2.0 July 2015
 new calculation of starting point of thread
@@ -238,7 +238,7 @@ iso4017length = {
   '200':(199.1, 200.9)
   }
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso4017range = {
   'M1.6':  ('2', '16'),
@@ -341,7 +341,7 @@ iso8676length = {
   '500':(496.85, 503.15)
   }
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso8676range = {
   'M8x1':      ('16', '80'),
@@ -445,7 +445,7 @@ iso4014length = {
   '500':(496.85, 503.15),
   }
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso4014range = {
   'M1.6':('12', '16'),
@@ -490,7 +490,7 @@ en1662def={
   '(M14)':(2.00, 50.0, 34.0, 40.0,  0.0, 2.1, 28.6, 26.4, 19.86, 12.9, 5.6, 2.1, 0.6, 18.0),
   'M16':(2.00, 55.0, 38.0, 44.0, 57.0, 2.4, 32.8, 30.6, 23.15, 15.2, 6.8, 3.2, 0.6, 21.0)}
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 en1662range = {
   'M5': ('10', '50'),
@@ -933,7 +933,7 @@ iso7046range = {
   'M8': ('10', '60'),
   'M10':('12', '60')}
 
-# ISO 2010, ISO 7047 definitions Class A: Raised Countersunk head srews
+# ISO 2010, ISO 7047 definitions Class A: Raised Countersunk head screws
 # ISO 2010 slotted screws (common head style)   range = iso2009range
 # ISO 7047  with type H or type Z cross recess  range = iso7046range
 # Parameters P, a, b, dk_theo, dk_mean, k, r, x to be read from iso2009def
@@ -1052,7 +1052,7 @@ iso7045length = {
   '60':(59.05, 60.95)
   }
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso7045range = {
   'M1.6':('3', '16'),
@@ -1100,7 +1100,7 @@ iso14584def={
   'M10': (1.50, 38.0, 20.0, 18.3,  2.3, 5.00, 1.2, 19.5, 3.80, 'T50', 8.95, 3.8)}
 
 
-# range of typical srew lengths
+# range of typical screw lengths
 #    min_length,  max_length
 iso14584range = {
   'M2':  ('3', '20'),
@@ -4360,7 +4360,7 @@ class Screw(object):
     rect_helix.translate(FreeCAD.Vector(0.0, 0.0,- P))
     # Part.show(rect_helix)
 
-    # rect_ring, nedded for cutting the Shell_helix
+    # rect_ring, needed for cutting the Shell_helix
     pr5 = (r +H*1.1, 0.0, P*1.1)
     pr6 = (r, 0.0, P*1.1)
     pr7 = (r, 0.0, -P*1.1)
