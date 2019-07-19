@@ -12,7 +12,7 @@ except:
 traj = Part.Wire([shape1])
 section = Part.Wire([shape2])
 
-# create Part objec in the current document
+# create Part object in the current document
 myObject=App.ActiveDocument.addObject("Part::Feature","Sweep")
 
 # variable makeSolid = 1 to create solid, 0 to create surfaces
