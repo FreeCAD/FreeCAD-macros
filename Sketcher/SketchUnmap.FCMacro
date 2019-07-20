@@ -113,8 +113,7 @@ else:
         newDP.Support = None ##Plane is placed absolute
         newDP.MapMode = 'Deactivated'
         newDP.Placement = skNatPl #Plane placement is set to former sketch one
-        sk.Support = [(newDP,'')] ##Sketch is mapped to plane reseting its attachment offset
+        sk.Support = [(newDP,'')] ##Sketch is mapped to plane resetting its attachment offset
         sk.AttachmentOffset = App.Placement(_0Vec_, App.Rotation(_ZVec_, 0))
     App.ActiveDocument.commitTransaction() #Commit transaction for undo management
     cslM("SketchUnmap Macro ended correctly")
-        
