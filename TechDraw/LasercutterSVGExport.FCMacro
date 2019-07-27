@@ -3,15 +3,15 @@
 __Name__ = 'LasercutterSVGExport'
 __Comment__ = 'Creates contour lines for all selected objects and arranges them on a TechDraw page'
 __Author__ = 'christi'
-__Version__ = '0.3'
-__Date__ = '2018-10-28'
+__Version__ = '0.4'
+__Date__ = '2019-07-14'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = ''
 __Icon__ = ''
-__Help__ = 'https://github.com/chbergmann/LasercutterSVGExport'
+__Help__ = 'LasercutterSVGExport/Readme.md'
 __Status__ = 'Alpha'
-__Requires__ = 'FreeCAD >= v0.17'
+__Requires__ = 'FreeCAD >= v0.18'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=15&t=31796'
 __Files__ = ''
 
@@ -104,24 +104,21 @@ def selected_to_techdraw(cutterDiameter):
     y = float(techdraw.Template.Height)
 
     for sel in selection:
-        # rotate biggest face into xy-plane        
-        clone = Draft.clone(sel)
-        clone.Label = sel.Label + "_clone"
-        clone.ViewObject.Visibility=False
-        doc.recompute()
-        face = get_biggest_face(clone)
-        rotate_face_up(clone, face)
-        rotate_biggest_side_up(clone, face)
-
         # create a contour line object for every selected object
         offset = doc.addObject("Part::Offset", sel.Label + "_offset")
-        offset.Source = clone
+        offset.Source = sel
         offset.Value = cutterDiameter / 2
         offset.Mode = 0
         offset.Join = 2
         offset.Intersection = False
         offset.SelfIntersection = False
         offset.ViewObject.Visibility=False
+        
+        # rotate biggest face into xy-plane   
+        doc.recompute()
+        face = get_biggest_face(offset)
+        rotate_face_up(offset, face)
+        rotate_biggest_side_up(offset, face)
 
         group.addObject(offset)
         doc.recompute()
@@ -145,8 +142,8 @@ def selected_to_techdraw(cutterDiameter):
         doc.recompute()
         view.ScaleType = u"Custom"
         view.Scale = 1.00
-        view.X = x + bbox.XLength / 2 - bbox.Center.x
-        view.Y = y + bbox.YLength - (bbox.YLength / 2 - bbox.Center.y)
+        view.X = x + bbox.XLength / 2
+        view.Y = y + bbox.YLength - (bbox.YLength / 2)
         x = x + bbox.XLength + cutterDiameter
 
     doc.recompute()
@@ -172,11 +169,12 @@ def rotate_face_up(part_feature, face):
 
 
 def rotate_biggest_side_up(part_feature, face):
-    xmin = part_feature.Shape.BoundBox.XLength
+    bbox = part_feature.Shape.BoundBox
+    xmin = bbox.XLength
     anglemax = 0.0
     angle = 0.0
     while angle < 180:
-        Draft.rotate([part_feature], 22.5, FreeCAD.Vector(0.0,0.0,0.0), axis=FreeCAD.Vector(0.0,0.0,1.0), copy=False)
+        Draft.rotate([part_feature], 22.5, FreeCAD.Vector(bbox.XMin, bbox.YMin, bbox.ZMin), axis=FreeCAD.Vector(0.0,0.0,1.0), copy=False)
         angle = angle + 22.5
 
         if xmin > part_feature.Shape.BoundBox.XLength:
