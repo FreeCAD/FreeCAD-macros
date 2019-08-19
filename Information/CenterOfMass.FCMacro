@@ -9,7 +9,7 @@
 #    propose different units.)
 #
 # Options:
-$ * You can also display where is the center of mass.
+# * You can also display where is the center of mass.
 # * An import button allows you to quickly load saved densities (even if it's
 #   not a .csv file from the macro, as soon as there is a column named "Density"
 #   it will be loaded.)
