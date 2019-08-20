@@ -605,7 +605,7 @@ class CenterofmassWidget(QtGui.QWidget):
     def setalltodefaultdensity_stateChanged(self, state):
         for sol in range(self.solid_count):
             self.materials[sol].combo.setCurrentIndex(0)
-            self.materials[sol].combo.setCurrentText('default');
+            self.materials[sol].combo.setCurrentText('default')
         self.allToDefaultDensityCheckBox.setChecked(False)
 
     def on_comboUnit_Changed(self, txt):
