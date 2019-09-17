@@ -11,7 +11,8 @@ To integrate your macro please make sure the following steps are complete:
 - [ ] Your macro is Python3/Qt5 compliant and tested on the latest FreeCAD stable and development releases.  
 - [ ] You're including documentation on how your macro works (bonus: screenshots and/or video on the Wiki)  
 - [ ] Commit message is [well-written](https://chris.beams.io/posts/git-commit/)  
-- [ ] Commit message is titled in the following way `[MacroName] - Short description`.  
+- [ ] Commit message is titled in the following way `[MacroName] Short description`.
+- [ ] Optional, write or update the changelog in the macro, from latest to oldest.
 
 And please remember to update the Wiki with the features added or changed once this PR is merged.  
 **Note**: If you don't have wiki access, then please mention your contribution on the [0.19 Changelog Forum Thread](https://forum.freecadweb.org/viewtopic.php?f=10&t=34586).
