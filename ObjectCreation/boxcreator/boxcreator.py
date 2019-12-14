@@ -1,5 +1,6 @@
 
 import FreeCAD
+from FreeCAD import Vector
 import Draft
 import BOPTools.JoinFeatures
 
@@ -7,75 +8,41 @@ import BOPTools.JoinFeatures
 #drawSides = [top, bottom, left, right, front, back]
 #overhangTop = [top left, top right, top front, top back]
 #overhangBottom = [bottom left, bottom right, bottom front, bottom back]
-def create_box(materialWidth, boxWidth, boxHeight, boxLength, notchWidth, drawSides=[True, True, True, True, True, True], overhangTop=[0.0, 0.0, 0.0, 0.0], overhangBottom=[0.0, 0.0, 0.0, 0.0]):
-    doc = FreeCAD.activeDocument()
+def create_box(materialWidth, 
+               boxWidth, boxHeight, boxLength, 
+               notchWidth, 
+               drawSides=[True, True, True, True, True, True], 
+               overhangTop=[0.0, 0.0, 0.0, 0.0], 
+               overhangBottom=[0.0, 0.0, 0.0, 0.0],
+               doc = FreeCAD.activeDocument()):
+    
     boxobjects = []
 
     # top and bottom side
     if drawSides[1]:
-        side1 = draw_bottom('bottom', materialWidth, boxWidth, boxLength, notchWidth, drawSides, overhangBottom)
+        side1 = draw_bottom(doc, 'bottom', materialWidth, boxWidth, boxLength, notchWidth, drawSides, overhangBottom)
         boxobjects.append(side1)
 
     if drawSides[0]:
-        side2 = draw_bottom('top', materialWidth, boxWidth, boxLength, notchWidth, drawSides, overhangTop)
+        side2 = draw_bottom(doc, 'top', materialWidth, boxWidth, boxLength, notchWidth, drawSides, overhangTop)
         Draft.move([side2], FreeCAD.Vector(0.0, 0.0, boxHeight - materialWidth), copy=False)
         boxobjects.append(side2)
 
-    # left and right side
-    line1 = notch_line(boxHeight, notchWidth, materialWidth, True, drawSides[5])
-    Draft.move([line1], FreeCAD.Vector(materialWidth, boxLength - materialWidth, 0.0), copy=False)
-
-    line2 = notch_line(boxLength, notchWidth, materialWidth, True, drawSides[1])
-    Draft.rotate([line2], 90.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move([line2], FreeCAD.Vector(materialWidth, materialWidth, 0.0), copy=False)
-
-    line3 = notch_line(boxHeight, notchWidth, materialWidth, True, drawSides[4])
-    Draft.rotate([line3], 180.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move([line3], FreeCAD.Vector(boxHeight - materialWidth, materialWidth, 0.0), copy=False)
-
-    line4 = notch_line(boxLength, notchWidth, materialWidth, True, drawSides[0])
-    Draft.rotate([line4], 270.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move([line4], FreeCAD.Vector(boxHeight - materialWidth, boxLength - materialWidth, 0.0), copy=False)
-
-    Draft.rotate([line1, line2, line3, line4], 270.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 1.0, 0.0), copy=False)
-
-    doc.recompute()
-    lines = [line1, line2, line3, line4]
     if drawSides[2]:
-        side3 = extrudeLines('left', lines, materialWidth)
+        side3 = draw_left(doc, 'left', materialWidth, boxHeight, boxLength, notchWidth, drawSides)
         boxobjects.append(side3)
-
+        
     if drawSides[3]:
-        side4 = extrudeLines('right', lines, materialWidth)
+        side4 = draw_left(doc, 'right', materialWidth, boxHeight, boxLength, notchWidth, drawSides)
         Draft.move([side4], FreeCAD.Vector(boxWidth - materialWidth, 0.0, 0.0), copy=False)
         boxobjects.append(side4)
 
-    # front and back side
-    line1 = notch_line(boxWidth, notchWidth, materialWidth, False, drawSides[0])
-    Draft.move([line1], FreeCAD.Vector(0.0, boxHeight - materialWidth, 0.0), copy=False)
-
-    line2 = notch_line(boxHeight, notchWidth, materialWidth, True, drawSides[3])
-    Draft.rotate([line2], 90.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move([line2], FreeCAD.Vector(boxWidth, materialWidth, 0.0), copy=False)
-
-    line3 = notch_line(boxWidth, notchWidth, materialWidth, False, drawSides[1])
-    Draft.rotate([line3], 180.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move([line3], FreeCAD.Vector(boxWidth, materialWidth, 0.0), copy=False)
-
-    line4 = notch_line(boxHeight, notchWidth, materialWidth, True, drawSides[2])
-    Draft.rotate([line4], 270.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move([line4], FreeCAD.Vector(0.0, boxHeight - materialWidth, 0.0), copy=False)
-
-    Draft.rotate([line1, line2, line3, line4], 90.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(1.0, 0.0, 0.0), copy=False)
-
-    doc.recompute()
-    lines = [line1, line2, line3, line4]
     if drawSides[4]:
-        side5 = extrudeLines('front', lines, materialWidth)
+        side5 = draw_front(doc, 'front', materialWidth, boxWidth, boxHeight, notchWidth, drawSides)
         boxobjects.append(side5)
-
+    
     if drawSides[5]:
-        side6 = extrudeLines('back', lines, materialWidth)
+        side6 = draw_front(doc, 'back', materialWidth, boxWidth, boxHeight, notchWidth, drawSides)
         Draft.move([side6], FreeCAD.Vector(0.0, boxLength - materialWidth, 0.0), copy=False)
         boxobjects.append(side6)
 
@@ -83,11 +50,12 @@ def create_box(materialWidth, boxWidth, boxHeight, boxLength, notchWidth, drawSi
     comp1.Links = boxobjects
 
     doc.recompute()
+    return comp1
 
 
 #drawSides = [top, bottom, left, right, front, back]
 #overhang = [left, right, front, back]
-def draw_bottom(partname, materialWidth, boxWidth, boxLength, notchWidth, drawSides=[True, True, True, True, True, True], overhang=[0.0, 0.0, 0.0, 0.0]):
+def draw_bottom(doc, partname, materialWidth, boxWidth, boxLength, notchWidth, drawSides=[True, True, True, True, True, True], overhang=[0.0, 0.0, 0.0, 0.0]):
     lines = []
 
     if overhang[2] > 0:
@@ -124,10 +92,59 @@ def draw_bottom(partname, materialWidth, boxWidth, boxLength, notchWidth, drawSi
     Draft.move(lines4, FreeCAD.Vector(0.0, boxLength, 0.0), copy=False)
     lines.extend(lines4)
 
-    doc = FreeCAD.activeDocument()
     doc.recompute()
     side1 = extrudeLines(partname, lines, materialWidth)
     return side1
+
+
+def draw_left(doc, partname, materialWidth, boxHeight, boxLength, notchWidth, drawSides=[True, True, True, True, True, True]):
+    line1 = notch_line(boxHeight, notchWidth, materialWidth, True, drawSides[5])
+    Draft.move([line1], FreeCAD.Vector(materialWidth, boxLength - materialWidth, 0.0), copy=False)
+
+    line2 = notch_line(boxLength, notchWidth, materialWidth, True, drawSides[1])
+    Draft.rotate([line2], 90.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
+    Draft.move([line2], FreeCAD.Vector(materialWidth, materialWidth, 0.0), copy=False)
+
+    line3 = notch_line(boxHeight, notchWidth, materialWidth, True, drawSides[4])
+    Draft.rotate([line3], 180.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
+    Draft.move([line3], FreeCAD.Vector(boxHeight - materialWidth, materialWidth, 0.0), copy=False)
+
+    line4 = notch_line(boxLength, notchWidth, materialWidth, True, drawSides[0])
+    Draft.rotate([line4], 270.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
+    Draft.move([line4], FreeCAD.Vector(boxHeight - materialWidth, boxLength - materialWidth, 0.0), copy=False)
+
+    Draft.rotate([line1, line2, line3, line4], 270.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 1.0, 0.0), copy=False)
+    doc.recompute()
+    
+    lines = [line1, line2, line3, line4]
+
+    side3 = extrudeLines(partname, lines, materialWidth)
+    return side3
+
+
+def draw_front(doc, partname, materialWidth, boxWidth, boxHeight, notchWidth, drawSides=[True, True, True, True, True, True]):
+    line1 = notch_line(boxWidth, notchWidth, materialWidth, False, drawSides[0])
+    Draft.move([line1], FreeCAD.Vector(0.0, boxHeight - materialWidth, 0.0), copy=False)
+
+    line2 = notch_line(boxHeight, notchWidth, materialWidth, True, drawSides[3])
+    Draft.rotate([line2], 90.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
+    Draft.move([line2], FreeCAD.Vector(boxWidth, materialWidth, 0.0), copy=False)
+
+    line3 = notch_line(boxWidth, notchWidth, materialWidth, False, drawSides[1])
+    Draft.rotate([line3], 180.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
+    Draft.move([line3], FreeCAD.Vector(boxWidth, materialWidth, 0.0), copy=False)
+
+    line4 = notch_line(boxHeight, notchWidth, materialWidth, True, drawSides[2])
+    Draft.rotate([line4], 270.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
+    Draft.move([line4], FreeCAD.Vector(0.0, boxHeight - materialWidth, 0.0), copy=False)
+
+    Draft.rotate([line1, line2, line3, line4], 90.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(1.0, 0.0, 0.0), copy=False)
+
+    doc.recompute()
+    lines = [line1, line2, line3, line4]
+
+    side5 = extrudeLines(partname, lines, materialWidth)
+    return side5
 
 
 def notch_line(length, notchWidth, materialWidth, inside=False, drawNotches=True):
@@ -214,3 +231,50 @@ def extrudeLines(extrudename, lines, materialWidth):
     f.TaperAngleRev = 0
     f.Base.ViewObject.hide()
     return f
+
+
+def create_compartment(box, 
+                       direction, 
+                       offset, 
+                       materialWidth, 
+                       notchWidth, 
+                       drawSides=[True, True, True, True, True, True],
+                       doc = FreeCAD.activeDocument()):
+    
+    cpos = direction * offset
+    mybox = None
+    if len(box) == 1 and hasattr(box[0], 'Links'):
+        parts = box[0].Links
+        mybox = box[0]
+    elif isinstance(box, list):
+        parts = box
+    else:
+        parts = [box]
+        
+    boxsize = Vector(0, 0, 0)
+    for side in parts:
+        if hasattr(side, 'Shape'):
+            bbox = side.Shape.BoundBox
+            if bbox.XLength > boxsize.x: boxsize.x = bbox.XLength
+            if bbox.YLength > boxsize.y: boxsize.y = bbox.YLength
+            if bbox.ZLength > boxsize.z: boxsize.z = bbox.ZLength
+            
+    if direction == Vector(1, 0, 0):
+        compartment = draw_left(doc, 'compartmentX', materialWidth, boxsize.z, boxsize.y, notchWidth, drawSides)
+    elif direction == Vector(0, 1, 0):
+        compartment = draw_front(doc, 'compartmentY', materialWidth, boxsize.x, boxsize.z, notchWidth, drawSides)
+    elif direction == Vector(0, 0, 1):
+        compartment = draw_bottom(doc, 'compartmentZ', materialWidth, boxsize.x, boxsize.y, notchWidth, drawSides)
+    else:
+        return None
+    
+    Draft.move([compartment], cpos, copy=False)
+            
+    if mybox:
+        compartment.adjustRelativeLinks(mybox)
+        mybox.ViewObject.dropObject(compartment,None,'',[])
+        doc.recompute()
+        return mybox
+    
+    doc.recompute()
+    return compartment
