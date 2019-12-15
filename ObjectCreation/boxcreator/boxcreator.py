@@ -25,7 +25,7 @@ def create_box(materialWidth,
 
     if drawSides[0]:
         side2 = draw_bottom(doc, 'top', materialWidth, boxWidth, boxLength, notchWidth, drawSides, overhangTop)
-        Draft.move([side2], FreeCAD.Vector(0.0, 0.0, boxHeight - materialWidth), copy=False)
+        side2.Placement.Base.z += boxHeight - materialWidth
         boxobjects.append(side2)
 
     if drawSides[2]:
@@ -59,62 +59,66 @@ def draw_bottom(doc, partname, materialWidth, boxWidth, boxLength, notchWidth, d
     lines = []
 
     if overhang[2] > 0:
-        lines1 = notch_holes(boxWidth, notchWidth, materialWidth, overhang[2], drawSides[4], overhang[0], overhang[1])
+        lines += notch_holes(boxWidth, notchWidth, materialWidth, Vector(0,0,0), overhang[2], drawSides[4], overhang[0], overhang[1])
     else:
-        lines1 = [notch_line(boxWidth, notchWidth, materialWidth, False, drawSides[4])]
-
-    lines.extend(lines1)
+        lines.append(notch_line(boxWidth, notchWidth, materialWidth, Vector(0,0,0), False, False, drawSides[4]))
 
     if overhang[1] > 0:
-        lines2 = notch_holes(boxLength, notchWidth, materialWidth, overhang[1], drawSides[3], overhang[2], overhang[3])
+        lines2 = notch_holes(boxLength, notchWidth, materialWidth, Vector(0,0,90), overhang[1], drawSides[3], overhang[2], overhang[2])
+        for line in lines2:
+            line.Placement.Base.x += boxWidth
+            lines.append(line)
     else:
-        lines2 = [notch_line(boxLength, notchWidth, materialWidth, False, drawSides[3])]
-
-    Draft.rotate(lines2, 90.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move(lines2, FreeCAD.Vector(boxWidth, 0.0, 0.0), copy=False)
-    lines.extend(lines2)
+        lines2 = notch_line(boxLength, notchWidth, materialWidth, Vector(0,0,90), False, False, drawSides[3])
+        lines2.Placement.Base.x += boxWidth    
+        lines.append(lines2)
 
     if overhang[3] > 0:
-        lines3 = notch_holes(boxWidth, notchWidth, materialWidth, overhang[3], drawSides[5], overhang[1], overhang[0])
+        lines3 = notch_holes(boxWidth, notchWidth, materialWidth, Vector(0,0,180), overhang[3], drawSides[5], overhang[1], overhang[0])
+        for line in lines3:
+            line.Placement.Base.x += boxWidth
+            line.Placement.Base.y += boxLength
+            lines.append(line)
     else:
-        lines3 = [notch_line(boxWidth, notchWidth, materialWidth, False, drawSides[5])]
-
-    Draft.rotate(lines3, 180.0, FreeCAD.Vector(boxWidth / 2, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move(lines3, FreeCAD.Vector(0.0, boxLength, 0.0), copy=False)
-    lines.extend(lines3)
+        lines3 = notch_line(boxWidth, notchWidth, materialWidth, Vector(0,0,180), False, False, drawSides[5])
+        lines3.Placement.Base.x += boxWidth
+        lines3.Placement.Base.y += boxLength
+        lines.append(lines3)
 
     if overhang[0] > 0:
-        lines4 = notch_holes(boxLength, notchWidth, materialWidth, overhang[0], drawSides[2], overhang[3], overhang[2])
+        lines4 = notch_holes(boxLength, notchWidth, materialWidth, Vector(0,0,270), overhang[0], drawSides[2], overhang[3], overhang[3])
+        for line in lines4:
+            line.Placement.Base.y += boxLength
+            lines.append(line)
     else:
-        lines4 = [notch_line(boxLength, notchWidth, materialWidth, False, drawSides[2])]
-
-    Draft.rotate(lines4, 270.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move(lines4, FreeCAD.Vector(0.0, boxLength, 0.0), copy=False)
-    lines.extend(lines4)
+        lines4 = notch_line(boxLength, notchWidth, materialWidth, Vector(0,0,270), False, False, drawSides[2])
+        lines4.Placement.Base.y += boxLength
+        lines.append(lines4)
 
     doc.recompute()
     side1 = extrudeLines(partname, lines, materialWidth)
     return side1
 
 
+#drawSides = [top, bottom, left, right, front, back]
 def draw_left(doc, partname, materialWidth, boxHeight, boxLength, notchWidth, drawSides=[True, True, True, True, True, True]):
-    line1 = notch_line(boxHeight, notchWidth, materialWidth, True, drawSides[5])
-    Draft.move([line1], FreeCAD.Vector(materialWidth, boxLength - materialWidth, 0.0), copy=False)
+    line1 = notch_line(boxLength, notchWidth, materialWidth, Vector(0, 270, 90), drawSides[4], drawSides[5], drawSides[1])
+    if drawSides[1]:
+        line1.Placement.Base.z += materialWidth
 
-    line2 = notch_line(boxLength, notchWidth, materialWidth, True, drawSides[1])
-    Draft.rotate([line2], 90.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move([line2], FreeCAD.Vector(materialWidth, materialWidth, 0.0), copy=False)
+    line2 = notch_line(boxHeight, notchWidth, materialWidth, Vector(90, 90, 90), drawSides[1], drawSides[0], drawSides[4])
+    if drawSides[4]:
+        line2.Placement.Base.y += materialWidth
 
-    line3 = notch_line(boxHeight, notchWidth, materialWidth, True, drawSides[4])
-    Draft.rotate([line3], 180.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move([line3], FreeCAD.Vector(boxHeight - materialWidth, materialWidth, 0.0), copy=False)
+    line3 = notch_line(boxLength, notchWidth, materialWidth, Vector(0, 90, 90), drawSides[4], drawSides[5], drawSides[0])
+    line3.Placement.Base.z += boxHeight
+    if drawSides[0]:
+        line3.Placement.Base.z -= materialWidth
 
-    line4 = notch_line(boxLength, notchWidth, materialWidth, True, drawSides[0])
-    Draft.rotate([line4], 270.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move([line4], FreeCAD.Vector(boxHeight - materialWidth, boxLength - materialWidth, 0.0), copy=False)
-
-    Draft.rotate([line1, line2, line3, line4], 270.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 1.0, 0.0), copy=False)
-    doc.recompute()
+    line4 = notch_line(boxHeight, notchWidth, materialWidth, Vector(90, 270, 90), drawSides[1], drawSides[0], drawSides[5])
+    line4.Placement.Base.y += boxLength
+    if drawSides[5]:
+        line4.Placement.Base.y -= materialWidth
     
     lines = [line1, line2, line3, line4]
 
@@ -123,22 +127,20 @@ def draw_left(doc, partname, materialWidth, boxHeight, boxLength, notchWidth, dr
 
 
 def draw_front(doc, partname, materialWidth, boxWidth, boxHeight, notchWidth, drawSides=[True, True, True, True, True, True]):
-    line1 = notch_line(boxWidth, notchWidth, materialWidth, False, drawSides[0])
-    Draft.move([line1], FreeCAD.Vector(0.0, boxHeight - materialWidth, 0.0), copy=False)
+    line1 = notch_line(boxWidth, notchWidth, materialWidth, Vector(270, 0, 0), False, False, drawSides[1])
+    if drawSides[1]:
+        line1.Placement.Base.z += materialWidth
 
-    line2 = notch_line(boxHeight, notchWidth, materialWidth, True, drawSides[3])
-    Draft.rotate([line2], 90.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move([line2], FreeCAD.Vector(boxWidth, materialWidth, 0.0), copy=False)
+    line2 = notch_line(boxHeight, notchWidth, materialWidth, Vector(90, 0, 270), drawSides[0], drawSides[1], drawSides[2])
+    line2.Placement.Base.z += boxHeight
 
-    line3 = notch_line(boxWidth, notchWidth, materialWidth, False, drawSides[1])
-    Draft.rotate([line3], 180.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move([line3], FreeCAD.Vector(boxWidth, materialWidth, 0.0), copy=False)
+    line3 = notch_line(boxWidth, notchWidth, materialWidth, Vector(90, 0, 0), False, False, drawSides[0])
+    line3.Placement.Base.z += boxHeight
+    if drawSides[0]:
+        line3.Placement.Base.z -= materialWidth
 
-    line4 = notch_line(boxHeight, notchWidth, materialWidth, True, drawSides[2])
-    Draft.rotate([line4], 270.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(0.0, 0.0, 1.0), copy=False)
-    Draft.move([line4], FreeCAD.Vector(0.0, boxHeight - materialWidth, 0.0), copy=False)
-
-    Draft.rotate([line1, line2, line3, line4], 90.0, FreeCAD.Vector(0.0, 0.0, 0.0), axis=FreeCAD.Vector(1.0, 0.0, 0.0), copy=False)
+    line4 = notch_line(boxHeight, notchWidth, materialWidth, Vector(90, 0, 90), drawSides[1], drawSides[0], drawSides[3])
+    line4.Placement.Base.x += boxWidth
 
     doc.recompute()
     lines = [line1, line2, line3, line4]
@@ -147,28 +149,32 @@ def draw_front(doc, partname, materialWidth, boxWidth, boxHeight, notchWidth, dr
     return side5
 
 
-def notch_line(length, notchWidth, materialWidth, inside=False, drawNotches=True):
+def notch_line(length, notchWidth, materialWidth, rotation=Vector(0,0,0), insideLeft=False, insideRight=False, drawNotches=True):
     doc = FreeCAD.activeDocument()
     if not drawNotches:
-        if inside:
-            len2 = length - 2 * materialWidth
-        else:
-            len2 = length
+        if insideLeft:  x = materialWidth
+        else:           x = 0
+        
+        if insideRight: y = length - materialWidth
+        else:           y = length
 
-        points = [FreeCAD.Vector(0.0, 0.0, 0.0),
-                  FreeCAD.Vector(len2, 0.0, 0.0)]
+        points = rotatePoints([FreeCAD.Vector(x, 0.0, 0.0),
+                               FreeCAD.Vector(y, 0.0, 0.0)],
+                               rotation)
+                     
         line = Draft.makeWire(points, closed=False, face=False, support=None)
         doc.recompute()
         return line
 
     nrNotches = int((length - 2 * materialWidth) / (notchWidth * 2))
     edgeLen = (length - (notchWidth * (nrNotches * 2 - 1))) / 2
-    if inside:
-        edgeLen = edgeLen - materialWidth
-
-    points = [FreeCAD.Vector(0, 0, 0)]
-    x = edgeLen
-
+    x = 0
+    if insideLeft:
+        x = materialWidth
+        edgeLen -= materialWidth
+        
+    points = [FreeCAD.Vector(x, 0, 0)]
+    x += edgeLen
     for count in range(0, nrNotches):
         points.append(FreeCAD.Vector(x, 0, 0))
         points.append(FreeCAD.Vector(x, materialWidth, 0))
@@ -177,30 +183,44 @@ def notch_line(length, notchWidth, materialWidth, inside=False, drawNotches=True
         points.append(FreeCAD.Vector(x, 0, 0))
         x = x + notchWidth
 
+    if insideLeft and not insideRight:
+        edgeLen += materialWidth
+        
     points.append(FreeCAD.Vector(x - notchWidth + edgeLen, 0, 0))
-    line = Draft.makeWire(points, closed=False, face=False, support=None)
+    line = Draft.makeWire(rotatePoints(points, rotation), closed=False, face=False, support=None)
     Draft.autogroup(line)
     doc.recompute()
     return line
 
 
-def notch_holes(length, notchWidth, materialWidth, overhang, drawHoles=True, overhangLeft=0, overhangRight=0):
+def draw_holes(length, notchWidth, materialWidth, rotation):
+    lines = []
     nrNotches = int((length - 2 * materialWidth) / (notchWidth * 2))
     x = (length - (notchWidth * (nrNotches * 2 - 1))) / 2
+    for count in range(0, nrNotches):
+        points = [FreeCAD.Vector(x, 0, 0), FreeCAD.Vector(x, materialWidth, 0), FreeCAD.Vector(x + notchWidth, materialWidth, 0), FreeCAD.Vector(x + notchWidth, 0, 0)]
+        points = rotatePoints(points, rotation)
+        line = Draft.makeWire(points, closed=True, face=False, support=None)
+        line.Label = "hole"
+        Draft.autogroup(line)
+        lines.append(line)
+        x = x + notchWidth * 2
+        
+    return lines
+
+
+def notch_holes(length, notchWidth, materialWidth, rotation=Vector(0,0,0), overhang=0, drawHoles=True, overhangLeft=0, overhangRight=0):
+    
     lines = []
 
     if drawHoles:
-        for count in range(0, nrNotches):
-            points = [FreeCAD.Vector(x, 0, 0), FreeCAD.Vector(x, materialWidth, 0), FreeCAD.Vector(x + notchWidth, materialWidth, 0), FreeCAD.Vector(x + notchWidth, 0, 0)]
-            line = Draft.makeWire(points, closed=True, face=False, support=None)
-            Draft.autogroup(line)
-            lines.append(line)
-            x = x + notchWidth * 2
+        lines = draw_holes(length, notchWidth, materialWidth, rotation)
 
     points = [FreeCAD.Vector(-overhangLeft, 0, 0),
               FreeCAD.Vector(-overhangLeft, -overhang, 0),
               FreeCAD.Vector(length + overhangRight, -overhang, 0),
               FreeCAD.Vector(length + overhangRight, 0, 0)]
+    points = rotatePoints(points, rotation)
     ohline = Draft.makeWire(points, closed=False, face=False, support=None)
     lines.append(ohline)
     doc = FreeCAD.activeDocument()
@@ -233,6 +253,26 @@ def extrudeLines(extrudename, lines, materialWidth):
     return f
 
 
+def rotatePoints(plist, axisdegree):
+    newlist = []
+    for v in plist:
+        if axisdegree.z != 0:
+            rota = FreeCAD.Rotation(Vector(0, 0, 1), axisdegree.z)
+            v = rota.multVec(v)
+                  
+        if axisdegree.y != 0:
+            rota = FreeCAD.Rotation(Vector(0, 1, 0), axisdegree.y)
+            v = rota.multVec(v)
+            
+        if axisdegree.x != 0:
+            rota = FreeCAD.Rotation(Vector(1, 0, 0), axisdegree.x)
+            v = rota.multVec(v)
+        
+        newlist.append(v)
+        
+    return newlist
+
+
 def create_compartment(box, 
                        direction, 
                        offset, 
@@ -259,16 +299,51 @@ def create_compartment(box,
             if bbox.YLength > boxsize.y: boxsize.y = bbox.YLength
             if bbox.ZLength > boxsize.z: boxsize.z = bbox.ZLength
             
+    holes = []
     if direction == Vector(1, 0, 0):
+        if boxsize.z == 0 or boxsize.y == 0:
+            FreeCAD.Console.PrintError("select a box first !\n")
+            return
         compartment = draw_left(doc, 'compartmentX', materialWidth, boxsize.z, boxsize.y, notchWidth, drawSides)
+        if drawSides[4] or drawSides[5]:
+            holes += draw_holes(boxsize.y, notchWidth, materialWidth, Vector(0,0,90))
+        if drawSides[2] or drawSides[3]:
+            holes += draw_holes(boxsize.z, notchWidth, materialWidth, Vector(90,0,90))
+        
+        for h in holes:
+            h.Placement.Base.x += offset + materialWidth
+            
     elif direction == Vector(0, 1, 0):
+        if boxsize.z == 0 or boxsize.x == 0:
+            FreeCAD.Console.PrintError("select a box first !\n")
+            return
         compartment = draw_front(doc, 'compartmentY', materialWidth, boxsize.x, boxsize.z, notchWidth, drawSides)
+        if drawSides[0] or drawSides[1]:
+            holes += draw_holes(boxsize.x, notchWidth, materialWidth, Vector(0,0,0))
+        if drawSides[2] or drawSides[3]:
+            holes += draw_holes(boxsize.z, notchWidth, materialWidth, Vector(0,0,0))
+        
+        for h in holes:
+            h.Placement.Base.y += offset
     elif direction == Vector(0, 0, 1):
+        if boxsize.x == 0 or boxsize.y == 0:
+            FreeCAD.Console.PrintError("select a box first !\n")
+            return
         compartment = draw_bottom(doc, 'compartmentZ', materialWidth, boxsize.x, boxsize.y, notchWidth, drawSides)
+        if drawSides[0] or drawSides[1]:
+            holes += draw_holes(boxsize.x, notchWidth, materialWidth, Vector(0,0,0))
+        if drawSides[4] or drawSides[5]:
+            holes += draw_holes(boxsize.y, notchWidth, materialWidth, Vector(0,0,90))
+        
+        for h in holes:
+            h.Placement.Base.z += offset + materialWidth
     else:
         return None
     
-    Draft.move([compartment], cpos, copy=False)
+    Draft.move([compartment], cpos, copy=False)    
+    
+    doc.recompute()
+    addLinesToBoxSide(parts, holes)            
             
     if mybox:
         compartment.adjustRelativeLinks(mybox)
@@ -278,3 +353,18 @@ def create_compartment(box,
     
     doc.recompute()
     return compartment
+
+
+def addLinesToBoxSide(box, holes):
+    epsilon = 1e-7
+    for side in box:
+        if hasattr(side, 'Base') and hasattr(side.Base, 'Objects'):
+            outline = side.Base
+            obox = outline.Shape.BoundBox
+            
+            for h in holes:
+                h.ViewObject.hide()
+                hbox = h.Shape.BoundBox                
+                if (hbox.XLength < epsilon and obox.XLength < epsilon) or (hbox.YLength < epsilon and obox.YLength < epsilon) or (hbox.ZLength < epsilon and obox.ZLength < epsilon):
+                    outline.Objects += [h]                  
+                    outline.Proxy.execute(outline)

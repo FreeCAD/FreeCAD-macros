@@ -305,8 +305,9 @@ class Ui_Dialog(object):
                      self.checkBoxBack.isChecked()]
         offset = self.compartmentOffset.value()
         compartment = boxcreator.create_compartment(box, direction, offset, materialWidth, notchWidth, drawSides)
-        gui.Selection.clearSelection()
-        gui.Selection.addSelection(compartment)
+        if compartment:
+            gui.Selection.clearSelection()
+            gui.Selection.addSelection(compartment)
 
 
 d = QtGui.QWidget()
