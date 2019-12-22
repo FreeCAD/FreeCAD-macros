@@ -1,17 +1,22 @@
 # -*- coding: utf-8 -*-
 #
-# You have to select one or multiple solids and then you launch the macro.
-# You'll have a window listing the solids. You can put the density of your
-# material or choose in a huge list of predefined materials.
-# If you know your densities in another unit system, I used FreeCAD convert
-# system to propose differents units.
-# You can also display where is the center of mass.
-# An import button allows you to quickly load saved densities (even if it's
-# not a .csv file from the macro, as soon as there is a column named "Density"
-# it will be loaded.)
+# Usage:
+# 1. select one or multiple solids
+# 2. launch the macro.
+# 3. You'll have a window listing the solids. You can put the density of your
+#    material or choose from a large list of predefined materials. (If you know
+#    your densities in another unit system, I used FreeCAD convert system to
+#    propose different units.)
 #
+# Options:
+# * You can also display where is the center of mass.
+# * An import button allows you to quickly load saved densities (even if it's
+#   not a .csv file from the macro, as soon as there is a column named "Density"
+#   it will be loaded.)
+#
+# Attribution:
 # Icons import.png, compute.png, save.png, material.png, and com.png are
-# from https://www.freepik.com/.
+# from https://www.freepik.com/
 
 from __future__ import division
 from __future__ import unicode_literals
@@ -231,12 +236,12 @@ class CenterofmassWidget(QtGui.QWidget):
         self.maxBdZ = -1e8
 
         layout = QtGui.QVBoxLayout(self)
-        layout.setSpacing(0)        
+        layout.setSpacing(0)
 
         self.label_Title = QtGui.QLabel(self)
         self.label_Title.setObjectName('label_title')
         self.label_Title.setText('Density of selected solids      Default Density: ')
-        
+
         self.defaultDensitySpin = QtGui.QDoubleSpinBox(self)
         self.defaultDensitySpin.setMinimum(1.0)
         self.defaultDensitySpin.setMaximum(25000.0)
@@ -247,11 +252,11 @@ class CenterofmassWidget(QtGui.QWidget):
         self.defaultDensitySpin.setObjectName('doubleSpinBox_DefaultDensity')
         densityU = self.comboUnit.currentText()
         self.defaultDensitySpin.setToolTip('set default density (in ' + densityU + ')')
-        
+
         self.allToDefaultDensityCheckBox = QtGui.QCheckBox(self)
         self.allToDefaultDensityCheckBox.setToolTip('set all solids to default density')
         self.allToDefaultDensityCheckBox.stateChanged.connect(self.setalltodefaultdensity_stateChanged)
-        
+
         titleLayoutBox = QtGui.QGroupBox()
         titleLayout = QtGui.QHBoxLayout()
         titleLayout.addWidget(self.label_Title)
@@ -259,14 +264,14 @@ class CenterofmassWidget(QtGui.QWidget):
         titleLayout.addWidget(self.allToDefaultDensityCheckBox)
         titleLayoutBox.setLayout(titleLayout)
         titleLayoutBox.setFixedHeight(50)
-        layout.addWidget(titleLayoutBox)        
+        layout.addWidget(titleLayoutBox)
 
         solidGroupBox = QtGui.QGroupBox()
         solidLayout = QtGui.QGridLayout()
         solidLayout.setVerticalSpacing(0)
-        
+
         self.loadMaterials()
-        
+
         for sol in range(self.solid_count):
             self.materials[sol] = MaterialWidget(
                 label=QtGui.QLabel(self),
@@ -361,7 +366,7 @@ class CenterofmassWidget(QtGui.QWidget):
                             axis = sel[sol].Direction
                             axis.normalize()
                     self.centerofmasses[sol] += float(sel[sol].Spacing) * axis * (float(sel[sol].Amount - 1) / 2.)
-                
+
             if objs[sol].BoundBox.XMin < self.minBdX:
                 self.minBdX = objs[sol].BoundBox.XMin
             if objs[sol].BoundBox.YMin < self.minBdY:
@@ -374,7 +379,7 @@ class CenterofmassWidget(QtGui.QWidget):
                 self.maxBdY = objs[sol].BoundBox.YMax
             if objs[sol].BoundBox.ZMax > self.maxBdZ:
                 self.maxBdZ = objs[sol].BoundBox.ZMax
-            
+
 # translation for part containers
             for lis in sel[sol].InList:
                 if hasattr(lis,'Placement'):
@@ -390,8 +395,8 @@ class CenterofmassWidget(QtGui.QWidget):
                     if lis.Placement.Base[2]>0:
                         self.maxBdZ += lis.Placement.Base[2]
                     if lis.Placement.Base[2]<0:
-                        self.minBdZ += lis.Placement.Base[2]                        
-                        
+                        self.minBdZ += lis.Placement.Base[2]
+
             solidLayout.addWidget(self.materials[sol].label, sol, 0)
             solidLayout.addWidget(self.materials[sol].combo, sol, 1)
             solidLayout.addWidget(self.materials[sol].spin, sol, 2)
@@ -467,7 +472,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.showCdg.setEnabled(False)
         self.showCdg.setIcon(QtGui.QIcon(os.path.join(icon_dir, "Macro_CenterOfMass_com.png")))
         self.showCdg.setIconSize(QtCore.QSize(30, 30))
-        
+
         self.changeRadius = QtGui.QSlider(self)
         self.changeRadius.setObjectName('changeRadius')
         self.changeRadius.valueChanged.connect(self.on_pushButton_changeRadius)
@@ -596,13 +601,13 @@ class CenterofmassWidget(QtGui.QWidget):
         tu = FreeCAD.Units.parseQuantity
         if defDensity<self.defaultDensitySpin.maximum() and defDensity>self.defaultDensitySpin.minimum():
             self.material_database['default'] = float(tu('{}'.format(defDensity)+self.comboUnit.currentText()) / tu('kg/m^3'))
-    
+
     def setalltodefaultdensity_stateChanged(self, state):
         for sol in range(self.solid_count):
             self.materials[sol].combo.setCurrentIndex(0)
-            self.materials[sol].combo.setCurrentText('default');                    
+            self.materials[sol].combo.setCurrentText('default')
         self.allToDefaultDensityCheckBox.setChecked(False)
-        
+
     def on_comboUnit_Changed(self, txt):
         densityU = self.comboUnit.currentText()
         lengthU = densityU.split('/')[1].split('^')[0]
@@ -619,7 +624,7 @@ class CenterofmassWidget(QtGui.QWidget):
             self.materials[sol].spin.setSingleStep(convert_density(100, densityU))
             self.materials[sol].combo.setCurrentIndex(0)
             self.materials[sol].combo.setCurrentIndex(prevMaterial)
-        
+
         prevDensity = self.defaultDensitySpin.value()
         self.defaultDensitySpin.setToolTip('default density (in ' + densityU + ')')
         self.defaultDensitySpin.setSingleStep(convert_density(100, densityU))
@@ -627,8 +632,8 @@ class CenterofmassWidget(QtGui.QWidget):
         self.defaultDensitySpin.setMaximum(1e10)
         self.defaultDensitySpin.setValue(convert_density(self.material_database.get('default', -10.0), densityU))
         self.defaultDensitySpin.setMinimum(convert_density(1, densityU))
-        self.defaultDensitySpin.setMaximum(convert_density(25000, densityU))        
-        
+        self.defaultDensitySpin.setMaximum(convert_density(25000, densityU))
+
         self.on_pushButton_ComputeCDG()
 
     def on_pushButton_ComputeCDG(self):
@@ -655,18 +660,18 @@ class CenterofmassWidget(QtGui.QWidget):
         doc = FreeCAD.activeDocument()
         boundBoxLX  = self.maxBdX - self.minBdX
         boundBoxLY  = self.maxBdY - self.minBdY
-        boundBoxLZ  = self.maxBdZ - self.minBdZ        
+        boundBoxLZ  = self.maxBdZ - self.minBdZ
         radiusCOM = (1+self.changeRadius.value())/100.
         try:
             doc.getObject('CenterOfMass').Radius = radiusCOM * (max(boundBoxLX, max(boundBoxLY, boundBoxLZ)))
             if self.solid_count > 1:
                 for sol in range(self.solid_count):
-                    doc.getObject('CenterOfMass_' + sel[sol].Label).Radius = radiusCOM * (max(boundBoxLX, max(boundBoxLY, boundBoxLZ)))*math.pow(self.masses[sol]/self.massTot, 1./3.)         
+                    doc.getObject('CenterOfMass_' + sel[sol].Label).Radius = radiusCOM * (max(boundBoxLX, max(boundBoxLY, boundBoxLZ)))*math.pow(self.masses[sol]/self.massTot, 1./3.)
         except Exception:
             None
-        
+
         doc.recompute()
-        
+
     def on_pushButton_Colorify(self):
         import colorsys
         for sol in range(self.solid_count):
@@ -786,7 +791,7 @@ class CenterofmassWidget(QtGui.QWidget):
         FCSpring.addObject(BBoxSolid)
 
         doc.recompute()
-        
+
         self.changeRadius.setEnabled(True)
 
     def on_pushButton_Export(self):
