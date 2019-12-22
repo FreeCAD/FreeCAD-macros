@@ -4220,7 +4220,7 @@ class Screw(object):
 
     #rotations = int(rots)-1
     halfrots_int = int(halfrots)
-    rotations = (halfrots_int / 2)-1
+    rotations = int(halfrots_int / 2)-1
     if halfrots_int % 2 == 1:
       #FreeCAD.Console.PrintMessage("got half turn: " + str(halfrots_int) + "\n")
       halfturn = True
@@ -4279,7 +4279,7 @@ class Screw(object):
 
     i = 1
     for i in range(rotations-2):
-       TheShell.translate(FreeCAD.Vector(0.0, 0.0,- P))
+       TheShell.translate(FreeCAD.Vector(0.0, 0.0, -P))
 
        for flaeche in TheShell.Faces:
          TheFaces.append(flaeche)
@@ -4288,7 +4288,7 @@ class Screw(object):
     # Make separate faces for the tip of the screw
     botFaces = []
     for i in range(rotations-2, rotations, 1):
-       TheShell.translate(FreeCAD.Vector(0.0, 0.0,- P))
+       TheShell.translate(FreeCAD.Vector(0.0, 0.0, -P))
 
        for flaeche in TheShell.Faces:
          botFaces.append(flaeche)
