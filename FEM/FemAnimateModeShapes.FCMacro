@@ -3,17 +3,13 @@
 # bits taken from:
 #./Mod/Fem/femguiobjects/_ViewProviderFemResultMechanical.py:
 
-import sys
 import math
-#sys.path.append('/usr/lib/freecad/lib')
-#sys.path.append('/usr/share/freecad/')
-#sys.path.append('/usr/lib/freecad-python2/lib')
+import os
+
 import FreeCAD, FreeCADGui, time
-import pysideuic
 import PySide
 from PySide import QtGui
 from PySide import QtCore
-from PyQt4 import uic
 
 '''
 see:
@@ -56,9 +52,10 @@ loops
 '''
 
 class mac():
-    def __init__(self): 
+    def __init__(self):
         self.startAnimate = False
-        self.UI = "animate.ui"
+        self.UI = os.path.join(FreeCAD.getUserMacroDir(True),
+                                    'fem_animate_mode_shapes.ui')
         self.console = FreeCAD.Console
         self.inc = 1
 
@@ -72,7 +69,7 @@ class mac():
         self.messageBox()
 
     def myConnect(self):
-#        print "myConnect" 
+#        print "myConnect"
         QtCore.QObject.connect(self.form.startEndButton, QtCore.SIGNAL("clicked()"),         \
       lambda dummy="", name='startEndButton': self.valueChanged(self, dummy, name))
         QtCore.QObject.connect(self.form.amplitude,QtCore.SIGNAL("valueChanged(int)"),         \
@@ -85,13 +82,6 @@ class mac():
       lambda dummy="", name='frames': self.valueChanged(self, dummy, name))
         QtCore.QObject.connect(self.form.loops, QtCore.SIGNAL("valueChanged(int)"),         \
       lambda dummy="", name='loops': self.valueChanged(self, dummy, name))
-
-    def printV(self):
-        print "amplitude: ",   self.form.amplitude.value()
-        print "factor: ",   self.form.factor.value()
-        print "steps: ",   self.form.steps.value()
-        print "frames: ",   self.form.frames.value()
-        print "loops: ",   self.form.loops.value()
 
     def valueChanged(self, dummy, value, myType):
 # value - the value of the thing
@@ -160,7 +150,7 @@ class mac():
                      done = True
                      break
                  time.sleep(1./numberFrames) # modify the time here
-           if done: break 
+           if done: break
         self.form.startEndButton.setText("Start Animation");
         self.startAnimate = False
 
