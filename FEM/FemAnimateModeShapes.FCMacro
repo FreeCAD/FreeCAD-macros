@@ -1,160 +1,160 @@
-#forum.freecadweb.org/viewtopic.php?t=2159
-#
-# bits taken from:
-#./Mod/Fem/femguiobjects/_ViewProviderFemResultMechanical.py:
+"""FreeCAD macro to animate mode shapes.
+
+These are the steps used to generate the data to be animated, these are the
+usual steps:
+- click on "CalculiXccxTools"
+- select "Frequency"
+- select "Write .inp file"
+- select "Run CalculiX"
+
+These are the steps to prepare for and perform the animation:
+- open "Macro" in the ToolBar.
+- select "Macros..." and choose "FemAnimateModeShapes.py" and "execute". A
+  widget "Animate" will be generated in a separate window.
+- Double-click on a set of results "CalculiX_frequency_mode_7", for example.
+  This panel must be visible for the animation to work, Note (1).
+- select "Abs displacement", for example.
+- click the radio button "Displacement/Show"
+- click on "Start Animation" in the widget.
+
+The entries in the widget are:
+- "scale" - scale for the displacements, 1 to 999, this may be a problem if the
+  displacements are very large/small before scaling.
+- "factor" - enter the value for the scale, this is linked to "scale"
+- "number of steps..." - the number of steps in 1 vibratory cycle, if this
+  value is increased the apparent speed of the animation will slow down.
+- "steps/second" - the number of steps displayed per second, if this value is
+  increased the animation will speed up.
+- "number of cycles" - the number of cycles in the animation.
+- "Start Animation" - starts the animation, this changes to "Stop Animation"
+  during the animation.
+
+Note(1) - if you click on "Results_mesh001", and start animation you may
+  possibly be animating the wrong mode shape.
+"""
 
 import math
 import os
+import time
 
-import FreeCAD, FreeCADGui, time
-import PySide
 from PySide import QtGui
-from PySide import QtCore
 
-'''
-see:
-https://github.com/FreeCAD/FreeCAD-macros
+import FreeCAD as app
+import FreeCADGui as gui
 
-Macro description
+__Name__ = 'Animate Mode Shapes for FEM'
+__Comment__ = 'Animate mode shapes after running CalculiX'
+__Author__ = 'mac_the_bike,galou'
+__Version__ = '1.0.0'
+__Date__ = '2019-12-24'
+__License__ = 'LGPL-2.0-or-later'
+__Web__ = 'https://forum.freecadweb.org/viewtopic.php?t=39081'
+__Wiki__ = ''
+__Icon__ = ''
+__Help__ = ''
+__Status__ = ''
+__Requires__ = ''
+__Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
+__Files__ = 'fem_animate_mode_shapes.ui'
 
-CamelCase macro name
-Please follow the CamelCase.FCMacro convention for the macro name (other associated files except the macro icon don't need to follow this convention). Please don't start your macro name with Macro or FC or similar (we already know it's a macro for FreeCAD).
+# Items in the widget window:
+# - startEndButton
+# - amplitude
+# - factor
+# - steps
+# - steps/second is coded as frames/second
+# - loops
 
-Macro name specifics
-Also, if possible, start the macro name with the type of object it's working on, e.g. use ViewRotation instead of RotateView, so that all macros related to View will be together when sorting alphabetically.
 
-Macro metadata
-
-    __Name__ = ''
-    __Comment__ = ''
-    __Author__ = ''
-    __Version__ = ''
-    __Date__ = ''
-    __License__ = ''
-    __Web__ = ''
-    __Wiki__ = ''
-    __Icon__ = ''
-    __Help__ = ''
-    __Status__ = ''
-    __Requires__ = ''
-    __Communication__ = ''
-    __Files__ = ''
-'''
-'''
-items in the widget window:
-startEndButton
-amplitude
-factor
-steps
-steps/second is codes as frames/second
-loops
-
-'''
-
-class mac():
+class FemAnimateModeShapes():
     def __init__(self):
-        self.startAnimate = False
-        self.UI = os.path.join(FreeCAD.getUserMacroDir(True),
+        self.do_animation = False
+        self.ui_file = os.path.join(app.getUserMacroDir(True),
                                     'fem_animate_mode_shapes.ui')
-        self.console = FreeCAD.Console
-        self.inc = 1
+        self.inc = 1  # TODO: find a better name and use.
 
-        self.f,self.w = FreeCAD.Gui.PySideUic.loadUiType(self.UI)
-        self.form = self.f()
-        self.widget = self.w()
+        f, w = gui.PySideUic.loadUiType(self.ui_file)
+        self.form = f()
+        self.widget = w()
         self.form.setupUi(self.widget)
         self.widget.show()
-#        print "f and w: ", self.f, self.w
-        self.myConnect()
-        self.messageBox()
+        self._connect_widgets()
+        self.box = self._message_box()
 
-    def myConnect(self):
-#        print "myConnect"
-        QtCore.QObject.connect(self.form.startEndButton, QtCore.SIGNAL("clicked()"),         \
-      lambda dummy="", name='startEndButton': self.valueChanged(self, dummy, name))
-        QtCore.QObject.connect(self.form.amplitude,QtCore.SIGNAL("valueChanged(int)"),         \
-      lambda dummy="", name='amplitude': self.valueChanged(self, dummy, name))
-        QtCore.QObject.connect(self.form.factor,QtCore.SIGNAL("valueChanged(double)"),         \
-      lambda dummy="", name='factor': self.valueChanged(self, dummy, name))
-        QtCore.QObject.connect(self.form.steps,QtCore.SIGNAL("valueChanged(int)"),         \
-      lambda dummy="", name='steps': self.valueChanged(self, dummy, name))
-        QtCore.QObject.connect(self.form.frames,QtCore.SIGNAL("valueChanged(int)"),         \
-      lambda dummy="", name='frames': self.valueChanged(self, dummy, name))
-        QtCore.QObject.connect(self.form.loops, QtCore.SIGNAL("valueChanged(int)"),         \
-      lambda dummy="", name='loops': self.valueChanged(self, dummy, name))
+    def _connect_widgets(self):
+        self.form.startEndButton.clicked.connect(self.start_stop)
+        self.form.amplitude.valueChanged.connect(self._on_amplitude_changed)
+        self.form.factor.valueChanged.connect(self._on_factor_changed)
+        # The following is necessary to have the dialog appear.
+        # TODO: explain or fix
+        self.form.steps.valueChanged.connect(lambda dummy: self._on_step_changed(dummy))
 
-    def valueChanged(self, dummy, value, myType):
-# value - the value of the thing
-# myType - the char string
+    def start(self):
+        self.do_animation = True
+        self._do_animate()
 
-# the only actions are:
-        if myType == "startEndButton":
-            if not self.startAnimate:
-                self.startAnimate = True
-                self.myInternalAnimate()
-            else:
-              self.startAnimate = False
-# set the amplitude
-        elif myType == "amplitude":
-         if self.inc == 0:
-           self.form.factor.setValue(self.form.amplitude.value())
-         self.inc = 1 - self.inc
-# set the factor
-        elif myType == "factor":
-         if self.inc == 0:
-            self.form.amplitude.setValue(int(self.form.factor.value()))
-         self.inc = 1 - self.inc
+    def start_stop(self):
+        if self.do_animation:
+            self.do_animation = False
         else:
-            pass
-        self.widget.update()
-        return
+            self.do_animation = True
+            self._do_animate()
 
-    def messageBox(self):
-            box = QtGui.QMessageBox()
-            box.setWindowTitle('No Results')
-            box.setText("Select a case and select a displacement type, e.g. Abs")
-            box.setInformativeText("Tick the displacement radio button")
-            box.setStandardButtons(QtGui.QMessageBox.Ok)
-            box.setDefaultButton(QtGui.QMessageBox.Save)
-            self.box = box
+    def _on_amplitude_changed(self):
+        if self.inc == 0:
+            self.form.factor.setValue(self.form.amplitude.value())
+        self.inc = 1 - self.inc
 
-    def myAnimate(self):
-        self.startAnimate = True
-        self.myInternalAnimate()
+    def _on_factor_changed(self):
+        if self.inc == 0:
+            self.form.amplitude.setValue(int(self.form.factor.value()))
+        self.inc = 1 - self.inc
 
-    def myInternalAnimate(self):
-        if not self.startAnimate: return
-        try:
-            mesh_obj = FreeCAD.FEM_dialog["result_obj"]
-            mesh_obj.Mesh.ViewObject.applyDisplacement(math.sin(0.0) * self.form.factor.value())
-            self.form.startEndButton.setText("Stop Animation");
-        except:
-#            "no results"
-            result = self.box.exec_()
-            self.startAnimate = False
+    def _on_step_changed(self, dummy):
+        pass
+
+    def _message_box(self):
+        box = QtGui.QMessageBox()
+        box.setWindowTitle('No Results')
+        box.setText('Select a case and select a displacement type, e.g. Abs')
+        box.setInformativeText('Tick the displacement radio button')
+        box.setStandardButtons(QtGui.QMessageBox.Ok)
+        box.setDefaultButton(QtGui.QMessageBox.Save)
+        return box
+
+    def _do_animate(self):
+        if not self.do_animation:
             return
-            pass
-        prevFactor = FreeCAD.FEM_dialog["disp_factor"]
-        numberFrames = self.form.frames.value()
+        try:
+            mesh_obj = app.FEM_dialog['result_obj']
+            mesh_obj.Mesh.ViewObject.applyDisplacement(0)
+        except:
+            self.box.exec_()
+            self.do_animation = False
+            return
+
+        self.form.startEndButton.setText('Stop Animation')
+
+        frame_count = self.form.frames.value()
         steps = self.form.steps.value()
         loops = self.form.loops.value()
-        inc = math.pi/steps*2.
+        inc = 2 * math.pi / steps
 
         done = False
-        for lo in range(0, loops):
-           for st in range(0,steps):
-# self.form.factor.value(): this is the value of the scale factor.
-                 mesh_obj.Mesh.ViewObject.applyDisplacement(math.sin(inc*st) * self.form.factor.value())
-                 FreeCADGui.updateGui()
-                 if not self.startAnimate:
-                     done = True
-                     break
-                 time.sleep(1./numberFrames) # modify the time here
-           if done: break
-        self.form.startEndButton.setText("Start Animation");
-        self.startAnimate = False
+        for lo in range(loops):
+            for st in range(steps):
+                mesh_obj.Mesh.ViewObject.applyDisplacement(
+                    math.sin(inc * st) * self.form.factor.value())
+                gui.updateGui()
+                if not self.do_animation:
+                    done = True
+                    break
+                time.sleep(1. / frame_count)
+            if done:
+                break
+        self.form.startEndButton.setText('Start Animation')
+        self.do_animation = False
 
-#---------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-  b = mac()
+    FemAnimateModeShapes()
