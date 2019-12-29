@@ -27,6 +27,8 @@
 #
 # Changelog
 # ---------
+# - v 1.5:
+#   - Fix position of base.
 # - v 1.4:
 #   - Fixing bugs related to size of top and base
 #   - Adding code to keep dialog upfront main window (thanks mario52 !)
@@ -37,18 +39,20 @@
 
 __Name__ = 'GT2/GT3/GT5 Timing Gear Creator'
 __Comment__ = 'GT2/GT3/GT5 Gear Creator Macro (any gear size from 5 to 360 teeth)'
-__Author__ = 'eaguirre'
-__Version__ = '1.4'
-__Date__ = '2019-04-30'
+__Author__ = 'eaguirre,galou'
+__Version__ = '1.5.0'
+__Date__ = '2019-12-29'
 __License__ = 'LGPL-2.0-or-later'
 __Web__ = 'http://www.emilioaguirre.com'
-__Wiki__ = 'http://www.freecadweb.org/wiki/Macro_Title_Of_macro'
-__Icon__ = ''
+__Wiki__ = ''
+__Icon__ = 'TimingGear.png'
 __Help__ = ''
 __Status__ = ''
 __Requires__ = 'FreeCAD ?.??'
 __Communication__ = 'info_at_emilioaguirre.com,https://github.com/FreeCAD/FreeCAD-macros/issues://forum.freecadweb.org/viewtopic.php?t=35899'
 __Files__ = 'TimingGear.png'
+
+# TODO: Fix segfault when clicking a second time on "Create".
 
 import math
 
@@ -434,16 +438,16 @@ class TimingGearWindow(object):
                 sketch_gear.addGeometry(Part.ArcOfCircle(t[i], t[i+1], t[i+2]))
         sketch_gear.addGeometry(Part.LineSegment(gear[-1], gear[0]))
 
-    def create_key(self, d, z):
-        y2 = d + self.t2
-        yb = _circle_intersect_vline(-self.key_b/2, d)
+    def create_key(self, r, z):
+        y2 = r + self.t2
+        yb = _circle_intersect_vline(-self.key_b/2, r)
         pt = _polar(90, yb, app.Vector(0, 0, z))
         c1 = _polar(180, self.key_b/2, pt)
         c4 = _polar(0, self.key_b, c1)
         pt = _polar(90, y2, app.Vector(0, 0, z))
         c2 = _polar(180, self.key_b/2, pt)
         c3 = _polar(0, self.key_b, c2)
-        c5 = _polar(270, d, app.Vector(0, 0, z))
+        c5 = _polar(270, r, app.Vector(0, 0, z))
         return [c1, c2, c3, c4, c5]
 
     def create(self, data):
@@ -460,37 +464,35 @@ class TimingGearWindow(object):
         sketch_gear.ViewObject.hide()
         sketch_gear.Support = (gear.Origin.OriginFeatures[3], [''])  # The XY Plane.
         sketch_gear.MapMode = 'FlatFace'
-        sketch_gear.Placement = app.Placement(
+        sketch_gear.AttachmentOffset = app.Placement(
             app.Vector(0, 0, 0),
             app.Rotation(0, 0, 0, 1))
 
         self.create_gear(sketch_gear, data)
 
-        d = self.shaft_diameter / 2
+        r = self.shaft_diameter / 2
         if self.with_shaft:
             if self.circular_shaft:
                 if self.with_key:
-                    c = self.create_key(d, 0)
-                    keyLst = []
-                    keyLst.append(Part.LineSegment(c[0], c[1]))
-                    keyLst.append(Part.LineSegment(c[1], c[2]))
-                    keyLst.append(Part.LineSegment(c[2], c[3]))
-                    sketch_gear.addGeometry(keyLst, False)
+                    c = self.create_key(r, 0)
+                    key_lst = []
+                    key_lst.append(Part.LineSegment(c[0], c[1]))
+                    key_lst.append(Part.LineSegment(c[1], c[2]))
+                    key_lst.append(Part.LineSegment(c[2], c[3]))
+                    sketch_gear.addGeometry(key_lst, False)
                     sketch_gear.addGeometry(Part.ArcOfCircle(c[3], c[4], c[0]))
                 else:
                     sketch_gear.addGeometry(Part.Circle(app.Vector(0, 0, 0),
                                                         app.Vector(0, 0, 1),
-                                                        d))
+                                                        r))
             else:
                 ProfileLib.RegularPolygon.makeRegularPolygon(
                     sketch_gear, 6, app.Vector(0, 0, 0),
-                    app.Vector(d, 0, 0), False)
+                    app.Vector(r, 0, 0), False)
 
         pad = gear.newObject('PartDesign::Pad', 'Pad')
         pad.Profile = sketch_gear
         pad.Length = self.gear_height
-        doc.recompute()
-        doc_gui.resetEdit()
 
         # Add base to the Gear
         if self.with_base:
@@ -498,29 +500,28 @@ class TimingGearWindow(object):
             sketch_base.ViewObject.hide()
             sketch_base.Support = (gear.Origin.OriginFeatures[3], [''])  # The XY Plane.
             sketch_base.MapMode = 'FlatFace'
-            sketch_base.Placement = app.Placement(
-                app.Vector(0, 0, 0),
+            sketch_base.AttachmentOffset = app.Placement(
+                app.Vector(0, 0, -self.base_height),
                 app.Rotation(0, 0, 0, 1))
-            doc.recompute()
 
             sketch_base.addGeometry(Part.Circle(
-                app.Vector(0, 0, -self.base_height),
+                app.Vector(0, 0, 0),
                 app.Vector(0, 0, 1),
                 self.base_diameter))
             if self.with_shaft:
                 if self.circular_shaft:
                     if self.with_key:
-                        c = self.create_key(d, -self.base_height)
-                        keyLst = []
-                        keyLst.append(Part.LineSegment(c[0], c[1]))
-                        keyLst.append(Part.LineSegment(c[1], c[2]))
-                        keyLst.append(Part.LineSegment(c[2], c[3]))
-                        sketch_base.addGeometry(keyLst, False)
+                        c = self.create_key(r, -self.base_height)
+                        key_lst = []
+                        key_lst.append(Part.LineSegment(c[0], c[1]))
+                        key_lst.append(Part.LineSegment(c[1], c[2]))
+                        key_lst.append(Part.LineSegment(c[2], c[3]))
+                        sketch_base.addGeometry(key_lst, False)
                         sketch_base.addGeometry(Part.ArcOfCircle(c[3], c[4], c[0]))
                     else:
                         sketch_base.addGeometry(Part.Circle(app.Vector(0, 0, 0),
-                                 app.Vector(0, 0, 1),
-                                 d))
+                                                            app.Vector(0, 0, 1),
+                                                            r))
                 else:
                     ProfileLib.RegularPolygon.makeRegularPolygon(
                         sketch_base, 6, app.Vector(0, 0, -self.base_height),
@@ -529,51 +530,44 @@ class TimingGearWindow(object):
             pad_base = gear.newObject('PartDesign::Pad', 'PadBase')
             pad_base.Profile = sketch_base
             pad_base.Length = self.base_height
-            doc.recompute()
-
-            doc_gui.resetEdit()
 
         # Add Top to the Gear
         if self.with_top:
             sketch_top = gear.newObject('Sketcher::SketchObject', 'SketchTop')
             sketch_top.Support = (gear.Origin.OriginFeatures[3], [''])  # The XY Plane.
             sketch_top.MapMode = 'FlatFace'
-            sketch_top.Placement = app.Placement(
+            sketch_top.AttachmentOffset = app.Placement(
                 app.Vector(0, 0, self.gear_height),
                 app.Rotation(0, 0, 0, 1))
-            doc.recompute()
 
             sketch_top.addGeometry(Part.Circle(app.Vector(0, 0, 0),
-                                                  app.Vector(0, 0, 1),
-                                                  self.top_diameter))
+                                               app.Vector(0, 0, 1),
+                                               self.top_diameter))
             if self.with_shaft:
                 if self.circular_shaft:
                     if self.with_key:
-                        c = self.create_key(d, 0)
-                        keyLst = []
-                        keyLst.append(Part.LineSegment(c[0], c[1]))
-                        keyLst.append(Part.LineSegment(c[1], c[2]))
-                        keyLst.append(Part.LineSegment(c[2], c[3]))
-                        sketch_top.addGeometry(keyLst, False)
+                        c = self.create_key(r, 0)
+                        key_lst = []
+                        key_lst.append(Part.LineSegment(c[0], c[1]))
+                        key_lst.append(Part.LineSegment(c[1], c[2]))
+                        key_lst.append(Part.LineSegment(c[2], c[3]))
+                        sketch_top.addGeometry(key_lst, False)
                         sketch_top.addGeometry(Part.ArcOfCircle(c[3], c[4], c[0]))
                     else:
                         sketch_top.addGeometry(Part.Circle(
                             app.Vector(0, 0, 0),
                             app.Vector(0, 0, 1),
-                            d))
+                            r))
                 else:
                     ProfileLib.RegularPolygon.makeRegularPolygon(
                         sketch_top, 6, app.Vector(0, 0, 0),
-                        app.Vector(d, 0, 0), False)
+                        app.Vector(r, 0, 0), False)
 
             pad_top = gear.newObject('PartDesign::Pad', 'PadTop')
             pad_top.Profile = sketch_top
             pad_top.Length = self.top_height
-            doc.recompute()
 
-            pad_top.ViewObject.hide()
-            doc_gui.resetEdit()
-
+        doc.recompute()
         gui.SendMsgToActiveView('ViewFit')
         progress_bar.stop()
 
