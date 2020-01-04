@@ -96,7 +96,7 @@ def draw_bottom(doc, partname, materialWidth, boxWidth, boxLength, notchWidth, d
         lines.append(lines4)
 
     doc.recompute()
-    side1 = extrudeLines(partname, lines, materialWidth)
+    side1 = extrudeLines(doc, partname, lines, materialWidth)
     return side1
 
 
@@ -122,7 +122,7 @@ def draw_left(doc, partname, materialWidth, boxHeight, boxLength, notchWidth, dr
     
     lines = [line1, line2, line3, line4]
 
-    side3 = extrudeLines(partname, lines, materialWidth)
+    side3 = extrudeLines(doc, partname, lines, materialWidth)
     return side3
 
 
@@ -145,12 +145,11 @@ def draw_front(doc, partname, materialWidth, boxWidth, boxHeight, notchWidth, dr
     doc.recompute()
     lines = [line1, line2, line3, line4]
 
-    side5 = extrudeLines(partname, lines, materialWidth)
+    side5 = extrudeLines(doc, partname, lines, materialWidth)
     return side5
 
 
 def notch_line(length, notchWidth, materialWidth, rotation=Vector(0,0,0), insideLeft=False, insideRight=False, drawNotches=True):
-    doc = FreeCAD.activeDocument()
     if not drawNotches:
         if insideLeft:  x = materialWidth
         else:           x = 0
@@ -163,7 +162,6 @@ def notch_line(length, notchWidth, materialWidth, rotation=Vector(0,0,0), inside
                                rotation)
                      
         line = Draft.makeWire(points, closed=False, face=False, support=None)
-        doc.recompute()
         return line
 
     nrNotches = int((length - 2 * materialWidth) / (notchWidth * 2))
@@ -189,7 +187,6 @@ def notch_line(length, notchWidth, materialWidth, rotation=Vector(0,0,0), inside
     points.append(FreeCAD.Vector(x - notchWidth + edgeLen, 0, 0))
     line = Draft.makeWire(rotatePoints(points, rotation), closed=False, face=False, support=None)
     Draft.autogroup(line)
-    doc.recompute()
     return line
 
 
@@ -223,14 +220,11 @@ def notch_holes(length, notchWidth, materialWidth, rotation=Vector(0,0,0), overh
     points = rotatePoints(points, rotation)
     ohline = Draft.makeWire(points, closed=False, face=False, support=None)
     lines.append(ohline)
-    doc = FreeCAD.activeDocument()
-    doc.recompute()
     return lines
 
 
-def extrudeLines(extrudename, lines, materialWidth):
-    doc = FreeCAD.activeDocument()
-
+def extrudeLines(doc, extrudename, lines, materialWidth):
+    doc.recompute()
     j = BOPTools.JoinFeatures.makeConnect(name='Outline')
     j.Objects = lines
     j.Proxy.execute(j)
@@ -304,7 +298,7 @@ def create_compartment(box,
         if boxsize.z == 0 or boxsize.y == 0:
             FreeCAD.Console.PrintError("select a box first !\n")
             return
-        compartment = draw_left(doc, 'compartmentX', materialWidth, boxsize.z, boxsize.y, notchWidth, drawSides)
+        compartment = draw_left(doc, 'compartmentX' + str(offset), materialWidth, boxsize.z, boxsize.y, notchWidth, drawSides)
         if drawSides[4] or drawSides[5]:
             holes += draw_holes(boxsize.y, notchWidth, materialWidth, Vector(0,0,90))
         if drawSides[2] or drawSides[3]:
@@ -317,23 +311,34 @@ def create_compartment(box,
         if boxsize.z == 0 or boxsize.x == 0:
             FreeCAD.Console.PrintError("select a box first !\n")
             return
-        compartment = draw_front(doc, 'compartmentY', materialWidth, boxsize.x, boxsize.z, notchWidth, drawSides)
+        compartment = draw_left(doc, 'compartmentY' + str(offset), materialWidth, boxsize.z, boxsize.x, notchWidth, drawSides)
+        doc.recompute()
+        Draft.rotate([compartment],270.0,FreeCAD.Vector(0, 0, 0),axis=FreeCAD.Vector(0.0, 0.0, 1.0),copy=False)
+        doc.recompute()
+        Draft.move([compartment],Vector(0, materialWidth, 0), copy=False)    
+        doc.recompute()
         if drawSides[0] or drawSides[1]:
             holes += draw_holes(boxsize.x, notchWidth, materialWidth, Vector(0,0,0))
         if drawSides[2] or drawSides[3]:
-            holes += draw_holes(boxsize.z, notchWidth, materialWidth, Vector(0,0,0))
+            holes += draw_holes(boxsize.z, notchWidth, materialWidth, Vector(0,270,0))
         
         for h in holes:
             h.Placement.Base.y += offset
+            
     elif direction == Vector(0, 0, 1):
         if boxsize.x == 0 or boxsize.y == 0:
             FreeCAD.Console.PrintError("select a box first !\n")
             return
-        compartment = draw_bottom(doc, 'compartmentZ', materialWidth, boxsize.x, boxsize.y, notchWidth, drawSides)
+        compartment = draw_left(doc, 'compartmentZ' + str(offset), materialWidth, boxsize.x, boxsize.y, notchWidth, drawSides)
+        doc.recompute()
+        Draft.rotate([compartment],270.0,FreeCAD.Vector(boxsize.x, 0, 0),axis=FreeCAD.Vector(0.0, 1.0, 0.0),copy=False)
+        doc.recompute()
+        Draft.move([compartment],Vector(0, 0, boxsize.x), copy=False)   
+        doc.recompute() 
         if drawSides[0] or drawSides[1]:
-            holes += draw_holes(boxsize.x, notchWidth, materialWidth, Vector(0,0,0))
+            holes += draw_holes(boxsize.x, notchWidth, materialWidth, Vector(270,0,0))
         if drawSides[4] or drawSides[5]:
-            holes += draw_holes(boxsize.y, notchWidth, materialWidth, Vector(0,0,90))
+            holes += draw_holes(boxsize.y, notchWidth, materialWidth, Vector(0,270,90))
         
         for h in holes:
             h.Placement.Base.z += offset + materialWidth
