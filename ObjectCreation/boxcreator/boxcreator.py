@@ -311,7 +311,9 @@ def create_compartment(box,
         if boxsize.z == 0 or boxsize.x == 0:
             FreeCAD.Console.PrintError("select a box first !\n")
             return
-        compartment = draw_left(doc, 'compartmentY' + str(offset), materialWidth, boxsize.z, boxsize.x, notchWidth, drawSides)
+        
+        sides = [drawSides[0], drawSides[1], drawSides[4], drawSides[5], drawSides[2], drawSides[3]]
+        compartment = draw_left(doc, 'compartmentY' + str(offset), materialWidth, boxsize.z, boxsize.x, notchWidth, sides)
         doc.recompute()
         Draft.rotate([compartment],270.0,FreeCAD.Vector(0, 0, 0),axis=FreeCAD.Vector(0.0, 0.0, 1.0),copy=False)
         doc.recompute()
@@ -329,7 +331,9 @@ def create_compartment(box,
         if boxsize.x == 0 or boxsize.y == 0:
             FreeCAD.Console.PrintError("select a box first !\n")
             return
-        compartment = draw_left(doc, 'compartmentZ' + str(offset), materialWidth, boxsize.x, boxsize.y, notchWidth, drawSides)
+        
+        sides = [drawSides[2], drawSides[3], drawSides[0], drawSides[1], drawSides[4], drawSides[5]]
+        compartment = draw_left(doc, 'compartmentZ' + str(offset), materialWidth, boxsize.x, boxsize.y, notchWidth, sides)
         doc.recompute()
         Draft.rotate([compartment],270.0,FreeCAD.Vector(boxsize.x, 0, 0),axis=FreeCAD.Vector(0.0, 1.0, 0.0),copy=False)
         doc.recompute()

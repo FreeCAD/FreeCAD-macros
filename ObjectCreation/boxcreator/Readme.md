@@ -15,3 +15,5 @@ Execute boxcreatorGUI.py
 ### Manual Installation
 Copy the .py files to your FreeCAD Macro directory (on Linux: ~/.FreeCAD/Macro)  
 
+## Support for Compartments
+![alt text](boxcreator_screenshot2.jpg "Screenshot")
