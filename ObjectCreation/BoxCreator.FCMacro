@@ -3,8 +3,8 @@
 __Name__ = 'BoxCreator'
 __Comment__ = 'Creates a box with interlocked notches'
 __Author__ = 'christi'
-__Version__ = '1.3'
-__Date__ = '2020-01-18'
+__Version__ = '1.3.1'
+__Date__ = '2020-01-24'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://github.com/chbergmann/boxcreator'
 __Wiki__ = ''
@@ -17,32 +17,34 @@ __Files__ = 'boxcreator/__init__.py,boxcreator/boxcreator.py,boxcreator/boxcreat
 
 
 import os
+
 import FreeCAD as app
 import FreeCADGui as gui
 from PySide import QtGui
 from FreeCAD import Vector
+
 from boxcreator import boxcreator
 
 
-class Boxcreator_Ui_Dialog():
+class BoxcreatorDialog():
+    """Show a dialog for BoxCreator"""
     def __init__(self):
-        self.ui_file = os.path.join(app.getUserMacroDir(True), 'boxcreator/boxcreator.ui')
+        self.ui_file = os.path.join(app.getUserMacroDir(True),
+                                    'boxcreator/boxcreator.ui')
         f, w = gui.PySideUic.loadUiType(self.ui_file)
         self.form = f()
         self.widget = w()
         self.form.setupUi(self.widget)
         self.widget.show()
         self._connect_widgets()
-        print(self.ui_file)
-        
+
     def _connect_widgets(self):
         self.form.pushButtonCreate.pressed.connect(self.createBox)
         self.form.pushButton_CompartX.pressed.connect(self.compartmentX)
         self.form.pushButton_CompartY.pressed.connect(self.compartmentY)
         self.form.pushButton_CompartZ.pressed.connect(self.compartmentZ)
-    
+
     def createBox(self):
-        print("click")
         boxWidth = self.form.doubleSpinBoxWidth.value()
         boxHeight = self.form.doubleSpinBoxHeight.value()
         boxLength = self.form.doubleSpinBoxLength.value()
@@ -71,7 +73,7 @@ class Boxcreator_Ui_Dialog():
         gui.Selection.clearSelection()
         gui.Selection.addSelection(box)
         gui.SendMsgToActiveView('ViewFit')
-        
+
     def compartmentX(self):
         self.createCompartment(Vector(1,0,0))
 
@@ -99,4 +101,4 @@ class Boxcreator_Ui_Dialog():
 
 
 if __name__ == '__main__':
-    Boxcreator_Ui_Dialog()
+    d = BoxcreatorDialog()
