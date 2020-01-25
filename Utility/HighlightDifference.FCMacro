@@ -1,21 +1,26 @@
 # -*- coding: utf-8 -*-
+"""
+Compute the difference between two shapes. Additions are marked red, removals
+are marked green. Both original parts will be half transparent. The volume of
+the additions and removals are printed in the console.
+"""
 
 from __future__ import unicode_literals
 
 __Name__ = 'Highlight Difference'
 __Comment__ = 'Compute the difference between two shapes'
 __Author__ = 'galou and other contributors'
-__Version__ = '2.0.0'
-__Date__ = '2018-05-29'
+__Version__ = '2.0.1'
+__Date__ = '2020-01-25'
 __License__ = 'CC0-1.0'
 __Web__ = 'https://freecadweb.org/wiki/Macro_HighlightDifference'
 __Wiki__ = 'https://freecadweb.org/wiki/Macro_HighlightDifference'
-__Icon__ = ''
+__Icon__ = 'HighlightDifference.png'
 __Help__ = 'Select two objects and run'
 __Status__ = 'Production'
 __Requires__ = 'FreeCAD V0.17+'
 __Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
-__Files__ = ''
+__Files__ = 'HighlightDifference.png'
 
 from PySide import QtCore
 from PySide import QtGui

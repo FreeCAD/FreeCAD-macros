@@ -5,17 +5,17 @@ from __future__ import unicode_literals
 __Name__ = 'Highlight Common parts'
 __Comment__ = 'Compute the common parts between selected shapes'
 __Author__ = 'JMG, galou and other contributors'
-__Version__ = '2.0.0'
-__Date__ = '2018-05-29'
+__Version__ = '2.0.1'
+__Date__ = '2020-01-25'
 __License__ = 'CC0-1.0'
 __Web__ = 'https://freecadweb.org/wiki/Macro_HighlightCommon'
 __Wiki__ = 'https://freecadweb.org/wiki/Macro_HighlightCommon'
-__Icon__ = ""
+__Icon__ = 'HighlightCommon.png'
 __Help__ = 'Select at least two objects and run'
 __Status__ = 'Production'
 __Requires__ = 'FreeCAD V0.17+'
 __Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
-__Files__ = ''
+__Files__ = 'HighlightCommon.png'
 
 from PySide import QtCore
 from PySide import QtGui
