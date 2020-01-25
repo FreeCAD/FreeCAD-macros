@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 __Name__ = 'Highlight Common parts'
 __Comment__ = 'Compute the common parts between selected shapes'
 __Author__ = 'JMG, galou and other contributors'
-__Version__ = '2.0.1'
+__Version__ = '2.1.0'
 __Date__ = '2020-01-25'
 __License__ = 'CC0-1.0'
 __Web__ = 'https://freecadweb.org/wiki/Macro_HighlightCommon'
@@ -17,19 +17,23 @@ __Requires__ = 'FreeCAD V0.17+'
 __Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
 __Files__ = 'HighlightCommon.png'
 
-from PySide import QtCore
-from PySide import QtGui
+try:
+    from PySide2 import QtCore
+    from PySide2.QtWidgets import QMessageBox
+except ImportError:
+    from PySide import QtCore
+    from PySide.QtGui import QMessageBox
 
 import FreeCAD as app
 import FreeCADGui as gui
 
 
 def error_dialog(msg):
-    """Create a simple dialog QMessageBox with an error message"""
+    """Create a simple dialog QMessageBox with an error message."""
     app.Console.PrintError(msg + '\n')
-    diag = QtGui.QMessageBox(QtGui.QMessageBox.Icon.Critical,
-                             'Error in macro HighlightCommon',
-                             msg)
+    diag = QMessageBox(QMessageBox.Icon.Critical,
+                       'Error in macro HighlightCommon',
+                       msg)
     diag.setWindowModality(QtCore.Qt.ApplicationModal)
     diag.exec_()
 
@@ -41,7 +45,7 @@ def main():
 
     object_list = []
     for obj in gui.Selection.getSelection():
-        if not obj in object_list:
+        if obj not in object_list:
             object_list.append(obj)
 
     for i, object_a in enumerate(object_list):
@@ -71,6 +75,7 @@ def main():
                     'No intersection between {} and {}\n'.format(
                         label_a,
                         label_b))
+
 
 if __name__ == '__main__':
     main()
