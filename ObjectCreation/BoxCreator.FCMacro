@@ -3,8 +3,8 @@
 __Name__ = 'BoxCreator'
 __Comment__ = 'Creates a box with interlocked notches'
 __Author__ = 'christi'
-__Version__ = '1.3.1'
-__Date__ = '2020-01-24'
+__Version__ = '1.3.2'
+__Date__ = '2020-02-08'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://github.com/chbergmann/boxcreator'
 __Wiki__ = ''
@@ -59,7 +59,7 @@ class BoxcreatorDialog():
         overhangTop = [self.form.overhangTopLeft.value(),
                        self.form.overhangTopRight.value(),
                        self.form.overhangTopFront.value(),
-                       self.form.overhangTopRight.value()]
+                       self.form.overhangTopBack.value()]
         overhangBottom = [self.form.overhangBotLeft.value(),
                           self.form.overhangBotRight.value(),
                           self.form.overhangBotFront.value(),
@@ -69,7 +69,7 @@ class BoxcreatorDialog():
             # we bail out without doing anything
             return
 
-        box = boxcreator.create_box(materialWidth, boxWidth, boxHeight, boxLength, notchWidth, drawSides, overhangTop, overhangBottom)
+        box = boxcreator.create_box(materialWidth, boxWidth, boxHeight, boxLength, notchWidth, drawSides, overhangTop, overhangBottom, app.activeDocument())
         gui.Selection.clearSelection()
         gui.Selection.addSelection(box)
         gui.SendMsgToActiveView('ViewFit')
@@ -94,7 +94,8 @@ class BoxcreatorDialog():
                      self.form.checkBoxFront.isChecked(),
                      self.form.checkBoxBack.isChecked()]
         offset = self.form.compartmentOffset.value()
-        compartment = boxcreator.create_compartment(box, direction, offset, materialWidth, notchWidth, drawSides)
+        boxsize = Vector(self.form.doubleSpinBoxWidth.value(), self.form.doubleSpinBoxLength.value(), self.form.doubleSpinBoxHeight.value())
+        compartment = boxcreator.create_compartment(box, direction, offset, materialWidth, notchWidth, drawSides, boxsize, app.activeDocument())
         if compartment:
             gui.Selection.clearSelection()
             gui.Selection.addSelection(compartment)
