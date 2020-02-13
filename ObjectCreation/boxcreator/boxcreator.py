@@ -273,6 +273,7 @@ def create_compartment(box,
                        materialWidth, 
                        notchWidth, 
                        drawSides=[True, True, True, True, True, True],
+                       boxsize = Vector(0, 0, 0),
                        doc = app.activeDocument()):
     
     cpos = direction * offset
@@ -285,13 +286,13 @@ def create_compartment(box,
     else:
         parts = [box]
         
-    boxsize = Vector(0, 0, 0)
-    for side in parts:
-        if hasattr(side, 'Shape'):
-            bbox = side.Shape.BoundBox
-            if bbox.XLength > boxsize.x: boxsize.x = bbox.XLength
-            if bbox.YLength > boxsize.y: boxsize.y = bbox.YLength
-            if bbox.ZLength > boxsize.z: boxsize.z = bbox.ZLength
+    if boxsize == Vector(0, 0, 0):
+        for side in parts:
+            if hasattr(side, 'Shape'):
+                bbox = side.Shape.BoundBox
+                if bbox.XLength > boxsize.x: boxsize.x = bbox.XLength
+                if bbox.YLength > boxsize.y: boxsize.y = bbox.YLength
+                if bbox.ZLength > boxsize.z: boxsize.z = bbox.ZLength
             
     holes = []
     if direction == Vector(1, 0, 0):
