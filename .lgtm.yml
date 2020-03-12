@@ -1,6 +1,8 @@
-path_classifiers:
-  extraction:
-    python:
-      index:
-        filters:
-          - include: "*.FCMacro"
+extraction:
+  python:
+    python_setup:
+      version: 3
+      setup_py: false
+    index:
+      filters:
+        - include: "*.FCMacro"
