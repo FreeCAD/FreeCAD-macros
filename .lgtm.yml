@@ -5,4 +5,4 @@ extraction:
       setup_py: false
     index:
       filters:
-        - include: "*.FCMacro"
+        - include: "**/*.FCMacro"
