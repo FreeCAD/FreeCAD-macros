@@ -9,18 +9,21 @@
 # This mainly aims at documenting the model.
 #
 # Version history :
+# *0.6 : introduce last fork string definition, add new style
 # *0.5 : beta release
 #
 #####################################
 
-__Name__ = 'FCTree2Ascii'
+# -*- coding: utf-8 -*-
+
+__Name__ = 'TreeToAscii'
 __Comment__ = 'Prints the Tree of selected object(s) as ASCII art'
 __Author__ = 'openBrain'
-__Version__ = '0.5'
-__Date__ = '2020-03-19'
+__Version__ = '0.6'
+__Date__ = '2020-03-23'
 __License__ = 'LGPL v2'
-__Web__ = 'https://www.freecadweb.org/wiki/Macro_FCTree2Ascii'
-__Wiki__ = 'https://www.freecadweb.org/wiki/Macro_FCTree2Ascii'
+__Web__ = 'https://www.freecadweb.org/wiki/Macro_TreeToAscii'
+__Wiki__ = 'https://www.freecadweb.org/wiki/Macro_TreeToAscii'
 __Icon__ = ''
 __Help__ = 'Select object(s) you want to print the tree then run'
 __Status__ = 'Beta'
@@ -34,11 +37,12 @@ from PySide import QtGui, QtCore  # Special FreeCAD's PySide, which may be PySid
 PREF_PATH = 'User parameter:BaseApp/Preferences/Mod/TreeToAscii'
 PREF_PATTERN = 'TreePattern'
 PREF_STYLE = 'TreeStyle'
-STYLES = {  # defines styles as NAME : [ fork str, branch str]
-    'Modern' : [' ├ ', ' │ '],  # Unicode U+251C, Unicode U+2502
-    'ASCII' : [' \\_', ' | ']
+STYLES = {  # defines styles as NAME : [ branch str, fork str, opt:last fork str]
+    'Modern' : [' │ ', ' ├ ', ' └ '],  # Unicode U+251C, Unicode U+2502
+    'Baroque' : [' │  ', ' ├─ ',  ' └─ '],
+    'ASCII' : [' | ', ' \\_']
     }
-DEF_PATTERN = '{LBL} ({NAM})'
+DEF_PATTERN = '{LBL} ({SNAM})'
 DEF_STYLE = list(STYLES.keys())[0]
 
 g_ascii_tree=""
@@ -55,9 +59,13 @@ def printChildren(objs=None, level=0, baseline=''):
             "BTYP" : obj.TypeId.partition('::')[0],
             "STYP" : obj.TypeId.rpartition('::')[-1]
         }
-        fork_str = STYLES[gen_style.currentText()][0]
-        branch_str = STYLES[gen_style.currentText()][1]
-        g_ascii_tree += baseline + fork_str
+        branch_str = STYLES[gen_style.currentText()][0]
+        fork_str = STYLES[gen_style.currentText()][1]
+        last_fork_str = STYLES[gen_style.currentText()][-1]
+        if cnt == len(objs):
+            g_ascii_tree += baseline + last_fork_str
+        else:
+            g_ascii_tree += baseline + fork_str
         try:
             g_ascii_tree += gen_pattern.text().format(**data)
         except (ValueError, IndexError, KeyError):
@@ -65,7 +73,7 @@ def printChildren(objs=None, level=0, baseline=''):
             return
         g_ascii_tree += '\n'
         if cnt == len(objs):
-            baselinechi = baseline + '   '
+            baselinechi = baseline + ' '*len(branch_str)
         else:
             baselinechi = baseline + branch_str
         printChildren(obj.ViewObject.claimChildren(), level + 1, baselinechi)
