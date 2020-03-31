@@ -3,223 +3,105 @@
 __Name__ = 'BoxCreator'
 __Comment__ = 'Creates a box with interlocked notches'
 __Author__ = 'christi'
-__Version__ = '1.2'
-__Date__ = '2019-06-04'
+__Version__ = '1.3.3'
+__Date__ = '2020-03-10'
 __License__ = 'LGPL-3.0-or-later'
-__Web__ = 'https://github.com/chbergmann/boxcreator'
+__Web__ = 'https://forum.freecadweb.org/viewtopic.php?t=31795'
 __Wiki__ = ''
 __Icon__ = ''
 __Help__ = 'Try it out and play with it. It should be self explanatory'
 __Status__ = 'Beta'
 __Requires__ = 'FreeCAD >= v0.17'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?p=264483'
-__Files__ = 'boxcreator/__init__.py,boxcreator/boxcreator.py'
+__Files__ = 'boxcreator/__init__.py,boxcreator/boxcreator.py,boxcreator/boxcreator.ui'
 
-# Form implementation generated from reading ui file 'boxcreator.ui'
-#
-# Created: Thu Oct 25 21:10:42 2018
-#      by: pyside-uic 0.2.15 running on PySide 1.2.2
 
-from PySide import QtCore, QtGui
+import os
 
 import FreeCAD as app
 import FreeCADGui as gui
+from PySide import QtGui  # Special FreeCAD's PySide.
+from FreeCAD import Vector
 
 from boxcreator import boxcreator
 
 
-class Ui_Dialog(object):
-    def setupUi(self, Dialog):
-        Dialog.setObjectName('Dialog')
-        Dialog.resize(252, 607)
-        Dialog.setWindowTitle('Box Creator')
-        self.gridLayout = QtGui.QGridLayout(Dialog)
-        self.gridLayout.setObjectName('gridLayout')
-        self.checkBoxBottom = QtGui.QCheckBox(Dialog)
-        self.checkBoxBottom.setText('bottom')
-        self.checkBoxBottom.setChecked(True)
-        self.checkBoxBottom.setObjectName('checkBoxBottom')
-        self.gridLayout.addWidget(self.checkBoxBottom, 6, 2, 1, 1)
-        self.checkBoxRight = QtGui.QCheckBox(Dialog)
-        self.checkBoxRight.setText('right')
-        self.checkBoxRight.setChecked(True)
-        self.checkBoxRight.setObjectName('checkBoxRight')
-        self.gridLayout.addWidget(self.checkBoxRight, 8, 2, 1, 1)
-        self.label = QtGui.QLabel(Dialog)
-        self.label.setText('Width')
-        self.label.setObjectName('label')
-        self.gridLayout.addWidget(self.label, 0, 0, 1, 1)
-        self.doubleSpinBoxWidth = QtGui.QDoubleSpinBox(Dialog)
-        self.doubleSpinBoxWidth.setDecimals(2)
-        self.doubleSpinBoxWidth.setMinimum(0.0)
-        self.doubleSpinBoxWidth.setMaximum(999999.0)
-        self.doubleSpinBoxWidth.setValue(40.0)
-        self.doubleSpinBoxWidth.setObjectName('doubleSpinBoxWidth')
-        self.gridLayout.addWidget(self.doubleSpinBoxWidth, 0, 2, 1, 1)
-        self.label_2 = QtGui.QLabel(Dialog)
-        self.label_2.setText('Height')
-        self.label_2.setObjectName('label_2')
-        self.gridLayout.addWidget(self.label_2, 1, 0, 1, 1)
-        self.doubleSpinBoxHeight = QtGui.QDoubleSpinBox(Dialog)
-        self.doubleSpinBoxHeight.setMaximum(999999.0)
-        self.doubleSpinBoxHeight.setValue(50.0)
-        self.doubleSpinBoxHeight.setObjectName('doubleSpinBoxHeight')
-        self.gridLayout.addWidget(self.doubleSpinBoxHeight, 1, 2, 1, 1)
-        self.labelLength = QtGui.QLabel(Dialog)
-        self.labelLength.setText('Length')
-        self.labelLength.setObjectName('labelLength')
-        self.gridLayout.addWidget(self.labelLength, 2, 0, 1, 1)
-        self.doubleSpinBoxMaterialWidth = QtGui.QDoubleSpinBox(Dialog)
-        self.doubleSpinBoxMaterialWidth.setMaximum(999999.0)
-        self.doubleSpinBoxMaterialWidth.setValue(3.0)
-        self.doubleSpinBoxMaterialWidth.setObjectName('doubleSpinBoxMaterialWidth')
-        self.gridLayout.addWidget(self.doubleSpinBoxMaterialWidth, 4, 2, 1, 1)
-        self.doubleSpinBoxLength = QtGui.QDoubleSpinBox(Dialog)
-        self.doubleSpinBoxLength.setMaximum(999999.0)
-        self.doubleSpinBoxLength.setValue(30.0)
-        self.doubleSpinBoxLength.setObjectName('doubleSpinBoxLength')
-        self.gridLayout.addWidget(self.doubleSpinBoxLength, 2, 2, 1, 1)
-        self.labelNotchWidth = QtGui.QLabel(Dialog)
-        self.labelNotchWidth.setText('Notch Width')
-        self.labelNotchWidth.setObjectName('labelNotchWidth')
-        self.gridLayout.addWidget(self.labelNotchWidth, 3, 0, 1, 2)
-        self.doubleSpinBoxNotchWidth = QtGui.QDoubleSpinBox(Dialog)
-        self.doubleSpinBoxNotchWidth.setMaximum(999999.0)
-        self.doubleSpinBoxNotchWidth.setValue(8.0)
-        self.doubleSpinBoxNotchWidth.setObjectName('doubleSpinBoxNotchWidth')
-        self.gridLayout.addWidget(self.doubleSpinBoxNotchWidth, 3, 2, 1, 1)
-        self.labelMatWidth = QtGui.QLabel(Dialog)
-        self.labelMatWidth.setText('Material Width')
-        self.labelMatWidth.setObjectName('labelMatWidth')
-        self.gridLayout.addWidget(self.labelMatWidth, 4, 0, 1, 2)
-        self.pushButtonCreate = QtGui.QPushButton(Dialog)
-        self.pushButtonCreate.setText('Create Box')
-        self.pushButtonCreate.setObjectName('pushButtonCreate')
-        self.gridLayout.addWidget(self.pushButtonCreate, 23, 0, 1, 3)
-        spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-        self.gridLayout.addItem(spacerItem, 5, 0, 1, 1)
-        self.checkBoxBack = QtGui.QCheckBox(Dialog)
-        self.checkBoxBack.setText('back')
-        self.checkBoxBack.setChecked(True)
-        self.checkBoxBack.setObjectName('checkBoxBack')
-        self.gridLayout.addWidget(self.checkBoxBack, 10, 2, 1, 1)
-        self.overhangTopLeft = QtGui.QDoubleSpinBox(Dialog)
-        self.overhangTopLeft.setMaximum(999999.0)
-        self.overhangTopLeft.setObjectName('overhangTopLeft')
-        self.gridLayout.addWidget(self.overhangTopLeft, 13, 2, 1, 1)
-        self.checkBoxTop = QtGui.QCheckBox(Dialog)
-        self.checkBoxTop.setText('top')
-        self.checkBoxTop.setChecked(True)
-        self.checkBoxTop.setObjectName('checkBoxTop')
-        self.gridLayout.addWidget(self.checkBoxTop, 6, 0, 1, 1)
-        self.checkBoxLeft = QtGui.QCheckBox(Dialog)
-        self.checkBoxLeft.setText('left')
-        self.checkBoxLeft.setChecked(True)
-        self.checkBoxLeft.setObjectName('checkBoxLeft')
-        self.gridLayout.addWidget(self.checkBoxLeft, 8, 0, 1, 1)
-        self.checkBoxFront = QtGui.QCheckBox(Dialog)
-        self.checkBoxFront.setText('front')
-        self.checkBoxFront.setChecked(True)
-        self.checkBoxFront.setObjectName('checkBoxFront')
-        self.gridLayout.addWidget(self.checkBoxFront, 10, 0, 1, 1)
-        spacerItem1 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-        self.gridLayout.addItem(spacerItem1, 12, 0, 1, 1)
-        self.labelOverhangTopLeft = QtGui.QLabel(Dialog)
-        self.labelOverhangTopLeft.setText('Overhang top left')
-        self.labelOverhangTopLeft.setObjectName('labelOverhangTopLeft')
-        self.gridLayout.addWidget(self.labelOverhangTopLeft, 13, 0, 1, 1)
-        self.labelOverhangTopBack = QtGui.QLabel(Dialog)
-        self.labelOverhangTopBack.setText('Overhang top back')
-        self.labelOverhangTopBack.setObjectName('labelOverhangTopBack')
-        self.gridLayout.addWidget(self.labelOverhangTopBack, 16, 0, 1, 1)
-        self.labelOverhangTopFront = QtGui.QLabel(Dialog)
-        self.labelOverhangTopFront.setText('Overhang top front')
-        self.labelOverhangTopFront.setObjectName('labelOverhangTopFront')
-        self.gridLayout.addWidget(self.labelOverhangTopFront, 15, 0, 1, 1)
-        self.labelOverhangTopRight = QtGui.QLabel(Dialog)
-        self.labelOverhangTopRight.setText('Overhang top right')
-        self.labelOverhangTopRight.setObjectName('labelOverhangTopRight')
-        self.gridLayout.addWidget(self.labelOverhangTopRight, 14, 0, 1, 1)
-        self.labelOverhangBotBack = QtGui.QLabel(Dialog)
-        self.labelOverhangBotBack.setText('Overhang bottom back')
-        self.labelOverhangBotBack.setObjectName('labelOverhangBotBack')
-        self.gridLayout.addWidget(self.labelOverhangBotBack, 21, 0, 1, 1)
-        self.labelOverhangBotRight = QtGui.QLabel(Dialog)
-        self.labelOverhangBotRight.setText('Overhang bottom right')
-        self.labelOverhangBotRight.setObjectName('labelOverhangBotRight')
-        self.gridLayout.addWidget(self.labelOverhangBotRight, 18, 0, 1, 1)
-        self.labelOverhangBotLeft = QtGui.QLabel(Dialog)
-        self.labelOverhangBotLeft.setText('Overhang bottom left')
-        self.labelOverhangBotLeft.setObjectName('labelOverhangBotLeft')
-        self.gridLayout.addWidget(self.labelOverhangBotLeft, 17, 0, 1, 1)
-        self.labelOverhangBotFront = QtGui.QLabel(Dialog)
-        self.labelOverhangBotFront.setText('Overhang bottom front')
-        self.labelOverhangBotFront.setObjectName('labelOverhangBotFront')
-        self.gridLayout.addWidget(self.labelOverhangBotFront, 20, 0, 1, 1)
-        spacerItem2 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-        self.gridLayout.addItem(spacerItem2, 22, 0, 1, 1)
-        self.overhangTopRight = QtGui.QDoubleSpinBox(Dialog)
-        self.overhangTopRight.setMaximum(999999.0)
-        self.overhangTopRight.setObjectName('overhangTopRight')
-        self.gridLayout.addWidget(self.overhangTopRight, 14, 2, 1, 1)
-        self.overhangTopFront = QtGui.QDoubleSpinBox(Dialog)
-        self.overhangTopFront.setMaximum(999999.0)
-        self.overhangTopFront.setObjectName('overhangTopFront')
-        self.gridLayout.addWidget(self.overhangTopFront, 15, 2, 1, 1)
-        self.overhangTopRight = QtGui.QDoubleSpinBox(Dialog)
-        self.overhangTopRight.setMaximum(999999.0)
-        self.overhangTopRight.setObjectName('overhangTopRight')
-        self.gridLayout.addWidget(self.overhangTopRight, 16, 2, 1, 1)
-        self.overhangBotLeft = QtGui.QDoubleSpinBox(Dialog)
-        self.overhangBotLeft.setMaximum(999999.0)
-        self.overhangBotLeft.setObjectName('overhangBotLeft')
-        self.gridLayout.addWidget(self.overhangBotLeft, 17, 2, 1, 1)
-        self.overhangBotRight = QtGui.QDoubleSpinBox(Dialog)
-        self.overhangBotRight.setMaximum(999999.0)
-        self.overhangBotRight.setObjectName('overhangBotRight')
-        self.gridLayout.addWidget(self.overhangBotRight, 18, 2, 1, 1)
-        self.overhangBotFront = QtGui.QDoubleSpinBox(Dialog)
-        self.overhangBotFront.setMaximum(999999.0)
-        self.overhangBotFront.setObjectName('overhangBotFront')
-        self.gridLayout.addWidget(self.overhangBotFront, 20, 2, 1, 1)
-        self.overhangBotBack = QtGui.QDoubleSpinBox(Dialog)
-        self.overhangBotBack.setMaximum(999999.0)
-        self.overhangBotBack.setObjectName('overhangBotBack')
-        self.gridLayout.addWidget(self.overhangBotBack, 21, 2, 1, 1)
+class BoxcreatorDialog():
+    """Show a dialog for BoxCreator"""
+    def __init__(self):
+        self.ui_file = os.path.join(app.getUserMacroDir(True),
+                                    'boxcreator/boxcreator.ui')
+        f, w = gui.PySideUic.loadUiType(self.ui_file)
+        self.form = f()
+        self.widget = w()
+        self.form.setupUi(self.widget)
+        self.widget.show()
+        self._connect_widgets()
 
-        self.pushButtonCreate.pressed.connect(self.createBox)
-        QtCore.QMetaObject.connectSlotsByName(Dialog)
+    def _connect_widgets(self):
+        self.form.pushButtonCreate.pressed.connect(self.createBox)
+        self.form.pushButton_CompartX.pressed.connect(self.compartmentX)
+        self.form.pushButton_CompartY.pressed.connect(self.compartmentY)
+        self.form.pushButton_CompartZ.pressed.connect(self.compartmentZ)
 
     def createBox(self):
-        boxWidth = self.doubleSpinBoxWidth.value()
-        boxHeight = self.doubleSpinBoxHeight.value()
-        boxLength = self.doubleSpinBoxLength.value()
-        notchWidth = self.doubleSpinBoxNotchWidth.value()
-        materialWidth = self.doubleSpinBoxMaterialWidth.value()
-        drawSides = [self.checkBoxTop.isChecked(),
-                     self.checkBoxBottom.isChecked(),
-                     self.checkBoxLeft.isChecked(),
-                     self.checkBoxRight.isChecked(),
-                     self.checkBoxFront.isChecked(),
-                     self.checkBoxBack.isChecked()]
-        overhangTop = [self.overhangTopLeft.value(),
-                       self.overhangTopRight.value(),
-                       self.overhangTopFront.value(),
-                       self.overhangTopRight.value()]
-        overhangBottom = [self.overhangBotLeft.value(),
-                          self.overhangBotRight.value(),
-                          self.overhangBotFront.value(),
-                          self.overhangBotBack.value()]
+        boxWidth = self.form.doubleSpinBoxWidth.value()
+        boxHeight = self.form.doubleSpinBoxHeight.value()
+        boxLength = self.form.doubleSpinBoxLength.value()
+        notchWidth = self.form.doubleSpinBoxNotchWidth.value()
+        materialWidth = self.form.doubleSpinBoxMaterialWidth.value()
+        drawSides = [self.form.checkBoxTop.isChecked(),
+                     self.form.checkBoxBottom.isChecked(),
+                     self.form.checkBoxLeft.isChecked(),
+                     self.form.checkBoxRight.isChecked(),
+                     self.form.checkBoxFront.isChecked(),
+                     self.form.checkBoxBack.isChecked()]
+        overhangTop = [self.form.overhangTopLeft.value(),
+                       self.form.overhangTopRight.value(),
+                       self.form.overhangTopFront.value(),
+                       self.form.overhangTopBack.value()]
+        overhangBottom = [self.form.overhangBotLeft.value(),
+                          self.form.overhangBotRight.value(),
+                          self.form.overhangBotFront.value(),
+                          self.form.overhangBotBack.value()]
         if (boxWidth == 0) or (boxHeight == 0) or (boxLength == 0):
             app.Console.PrintError('Error! None of the values can be 0!')
             # we bail out without doing anything
             return
 
-        box = boxcreator.create_box(materialWidth, boxWidth, boxHeight, boxLength, notchWidth, drawSides, overhangTop, overhangBottom)
+        box = boxcreator.create_box(materialWidth, boxWidth, boxHeight, boxLength, notchWidth, drawSides, overhangTop, overhangBottom, app.activeDocument())
+        gui.Selection.clearSelection()
+        gui.Selection.addSelection(box)
         gui.SendMsgToActiveView('ViewFit')
+        del self.widget
+        del self.form
+
+    def compartmentX(self):
+        self.createCompartment(Vector(1,0,0))
+
+    def compartmentY(self):
+        self.createCompartment(Vector(0,1,0))
+
+    def compartmentZ(self):
+        self.createCompartment(Vector(0,0,1))
+
+    def createCompartment(self, direction):
+        box = gui.Selection.getSelection()
+        notchWidth = self.form.doubleSpinBoxNotchWidth.value()
+        materialWidth = self.form.doubleSpinBoxMaterialWidth.value()
+        drawSides = [self.form.checkBoxTop.isChecked(),
+                     self.form.checkBoxBottom.isChecked(),
+                     self.form.checkBoxLeft.isChecked(),
+                     self.form.checkBoxRight.isChecked(),
+                     self.form.checkBoxFront.isChecked(),
+                     self.form.checkBoxBack.isChecked()]
+        offset = self.form.compartmentOffset.value()
+        boxsize = Vector(self.form.doubleSpinBoxWidth.value(), self.form.doubleSpinBoxLength.value(), self.form.doubleSpinBoxHeight.value())
+        compartment = boxcreator.create_compartment(box, direction, offset, materialWidth, notchWidth, drawSides, boxsize)
+        if compartment:
+            gui.Selection.clearSelection()
+            gui.Selection.addSelection(compartment)
 
 
-d = QtGui.QWidget()
-ui = Ui_Dialog()
-ui.setupUi(d)
-d.show()
+if __name__ == '__main__':
+    d = BoxcreatorDialog()

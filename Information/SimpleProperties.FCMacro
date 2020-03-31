@@ -13,11 +13,11 @@
 #
 #####################################
 
-__Name__ = 'SimpleProperties'
+__Name__ = 'Simple Properties'
 __Comment__ = 'Gives basic properties of object (volume, boundbox, ...)'
 __Author__ = 'openBrain'
-__Version__ = '0.7'
-__Date__ = '2019-06-10'
+__Version__ = '0.7.1'
+__Date__ = '2019-07-10'
 __License__ = 'LGPL v2'
 __Web__ = 'https://www.freecadweb.org/wiki/Macro_SimpleProperties'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_SimpleProperties'

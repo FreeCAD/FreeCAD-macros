@@ -1,5 +1,8 @@
 # FreeCAD-macros
 
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/FreeCAD/FreeCAD-macros.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/FreeCAD/FreeCAD-macros/alerts/) 
+[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/FreeCAD/FreeCAD-macros.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/FreeCAD/FreeCAD-macros/context:python)
+
 A repository of peer-reviewed FreeCAD macros.
 
 This repository hosts FreeCAD macros that volunteers have vetted and added for use to the whole community in general available through the [FreeCAD Addon Manager](https://www.freecadweb.org/wiki/AddonManager).
