@@ -5,8 +5,8 @@ from __future__ import unicode_literals
 __Name__ = 'Highlight Common parts'
 __Comment__ = 'Compute the common parts between selected shapes'
 __Author__ = 'JMG, galou and other contributors'
-__Version__ = '2.2.0'
-__Date__ = '2020-03-29'
+__Version__ = '2.2.1'
+__Date__ = '2020-04-19'
 __License__ = 'CC0-1.0'
 __Web__ = 'https://freecadweb.org/wiki/Macro_HighlightCommon'
 __Wiki__ = 'https://freecadweb.org/wiki/Macro_HighlightCommon'
@@ -17,15 +17,11 @@ __Requires__ = 'FreeCAD V0.17+'
 __Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
 __Files__ = 'HighlightCommon.png'
 
-try:
-    from PySide2 import QtCore
-    from PySide2.QtWidgets import QMessageBox
-except ImportError:
-    from PySide import QtCore
-    from PySide.QtGui import QMessageBox
+from PySide.QtGui import QMessageBox  # FreeCAD's special PySide!
 
 import FreeCAD as app
 import FreeCADGui as gui
+
 
 def main():
 
@@ -33,62 +29,64 @@ def main():
     if len(gui.Selection.getSelection()) < 2:
         app.Console.PrintError('Select at least two objects\n')
         QMessageBox(QMessageBox.Icon.Critical,
-            'Error in macro HighlightCommon',
-            'Select at least two objects').exec_()
+                    'Error in macro HighlightCommon',
+                    'Select at least two objects').exec_()
         return
 
-    # store active doc in case it may change during run
-    doc = App.ActiveDocument
-    colli_grp = None # Group object to group collisions
-    colli_max = 0 # Maximum collision volume
-    # open a transaction in undo pile
-    doc.openTransaction("Seeking collisions")
+    # Store active doc in case it may change during run.
+    doc = app.activeDocument()
+    colli_grp = None  # Group object to group collisions.
+    colli_max = 0  # Maximum collision volume.
+    # Open a transaction in undo pile.
+    doc.openTransaction('Seeking collisions')
 
-    # ensure list of unique objects
+    # Ensure list of unique objects.
     object_list = []
     for obj in gui.Selection.getSelection():
         if obj not in object_list:
             object_list.append(obj)
 
-    # going through selected objects (object A)
+    # Going through selected objects (object A).
     for i, object_a in enumerate(object_list):
         shape_a = object_a.Shape
         label_a = object_a.Label
-        # if object A has no volume (eg. a sketch)
-        # just skip it with information to user
+        # If object A has no volume (eg. a sketch)
+        # just skip it with information to user.
         if shape_a.Volume < 1e-6:
             app.Console.PrintMessage(
-                '{} has no volume ... skipping'.format(
+                '{} has no volume, skipping'.format(
                     label_a))
             continue
-        # making selected objects transparent
-        # comment this line if you don't want it
+        # Making selected objects transparent
+        # comment this line if you don't want it.
         object_a.ViewObject.Transparency = 80
 
-        # comparing object A with all
-        # following ones in the list (object B)
+        # Comparing object A with all
+        # following ones in the list (object B).
         for object_b in object_list[(i + 1):]:
             shape_b = object_b.Shape
             label_b = object_b.Label
-            # skip object B is it has no volume
+            # Skip object B is it has no volume
             # no need to warn as it has been
-            # already done as object A
+            # already done as object A.
             if shape_b.Volume < 1e-6:
                 continue
             common = shape_a.common(shape_b)
 
-            # if object A & object B have a collision
-            # display message with collision volume
-            # add a new representative shape in the group
+            # If object A & object B have a collision
+            # display a message with collision volume and
+            # add a new representative shape in the group.
             if common.Volume > 1e-6:
                 app.Console.PrintMessage(
-                    'Volume of the intersection between {} and {} : {} mm3\n'.format(
+                    'Volume of the intersection between {} and {}: {:.3f} mm³\n'.format(
                         label_a,
                         label_b,
                         common.Volume))
                 colli_max = common.Volume if common.Volume > colli_max else colli_max
-                if not colli_grp: # create group if it doesn't already exist
-                    colli_grp = doc.addObject("App::DocumentObjectGroup","Collisions")
+                if not colli_grp:
+                    # Create group if it doesn't already exist.
+                    colli_grp = doc.addObject('App::DocumentObjectGroup',
+                                              'Collisions')
                 intersection_object = doc.addObject(
                     'Part::Feature')
                 intersection_object.Label = '{} - {}'.format(
@@ -96,24 +94,24 @@ def main():
                 intersection_object.Shape = common
                 intersection_object.ViewObject.ShapeColor = (1.0, 0.0, 0.0, 1.0)
                 colli_grp.addObject(intersection_object)
-            # if no collision, just inform user
             else:
+                # If no collision, just inform the user.
                 app.Console.PrintMessage(
                     'No intersection between {} and {}\n'.format(
                         label_a,
                         label_b))
 
-    # if collisions have been found, commit the undo transaction and
-    # give summary (count + max value) to user
+    # If collisions have been found, commit the undo transaction and
+    # give a summary (count + max value) to the user.
     if colli_grp:
         doc.commitTransaction()
         app.Console.PrintWarning(
-            '{} collision(s) found between selected objects\nMaximum collision : {} mm3\n'.format(
+            '{} collision(s) found between selected objects\nMaximum collision: {:.3f} mm³\n'.format(
                 len(colli_grp.Group),
                 colli_max))
         doc.recompute()
-    # if no collision has been found, just inform the user about it
     else:
+        # If no collision has been found, just inform the user about it.
         doc.abortTransaction()
         app.Console.PrintWarning('No collision found between selected objects\n')
 
