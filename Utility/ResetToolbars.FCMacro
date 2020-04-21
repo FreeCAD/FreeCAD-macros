@@ -1,0 +1,45 @@
+# Reset Toolbars position
+# Author: Milos Petrasinovic <mpetrasinovic@protors.co>
+# PROTORS, Belgrade, Serbia
+# info@protors.co
+# 
+# --------------------
+#
+# Copyright (C) 2020 PROTORS <info@protors.co>
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as 
+# published by the Free Software Foundation, either version 3 of the 
+# License, or (at your option) any later version.
+#  
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+# --------------------
+
+__Name__ = 'ResetToolbars'
+__Comment__ = 'Reset Toolbars position'
+__Author__ = 'PROTORS'
+__Version__ = '1.0.0'
+__Date__ = '2020-04-21'
+__License__ = '	LGPL-3.0-or-later'
+__Web__ = "https://github.com/protors/ResetToolbars/"
+__Wiki__ = 'https://freecadweb.org/wiki/ResetToolbars'
+__Icon__ = 'ResetToolbars.svg'
+__Help__ = 'Open workbench in which you can not find some toolbar and run macro'
+__Status__ = 'stable'
+__Requires__ = 'Freecad >= 0.18'
+__Communication__ = 'https://github.com/protors/ResetToolbars/issues/'
+__Files__ = 'ResetToolbars.svg'
+
+from PySide import QtGui, QtCore
+
+mw = FreeCADGui.getMainWindow()
+tb = mw.findChildren(QtGui.QToolBar)
+for i in tb:
+    mw.addToolBar(QtCore.Qt.TopToolBarArea, i)
