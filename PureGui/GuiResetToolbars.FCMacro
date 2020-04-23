@@ -22,24 +22,25 @@
 #
 # --------------------
 
-__Name__ = 'ResetToolbars'
+__Name__ = 'GuiResetToolbars'
 __Comment__ = 'Reset Toolbars position'
 __Author__ = 'PROTORS'
 __Version__ = '1.0.0'
 __Date__ = '2020-04-21'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = "https://github.com/protors/ResetToolbars/"
-__Wiki__ = 'https://wiki.freecadweb.org/Macro_ResetToolbars'
-__Icon__ = 'ResetToolbars.svg'
+__Wiki__ = 'https://wiki.freecadweb.org/Macro_GuiResetToolbars'
+__Icon__ = 'GuiResetToolbars.svg'
 __Help__ = 'Run the macro within a workbench that has missing toolbar(s)'
 __Status__ = 'stable'
 __Requires__ = 'Freecad >= 0.18.4'
 __Communication__ = 'https://github.com/protors/ResetToolbars/issues/'
-__Files__ = 'ResetToolbars.svg'
+__Files__ = 'GuiResetToolbars.svg'
 
-from PySide import QtGui, QtCore
+import FreeCADGui as gui
+from PySide import QtGui, QtCore # FreeCAD's special PySide!
 
-mw = FreeCADGui.getMainWindow()
+mw = gui.getMainWindow()
 tb = mw.findChildren(QtGui.QToolBar)
 for i in tb:
     mw.addToolBar(QtCore.Qt.TopToolBarArea, i)
