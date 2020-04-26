@@ -29,7 +29,6 @@ g_output_format = "stl"
 # Angular deflection in radians. Lower value = better quality of curved shapes and bigger file size
 g_angular_deflection = 0.07
 
-
 def get_filename(doc_filename):
 	if doc_filename:
 		dirname = os.path.dirname(doc_filename)
@@ -52,9 +51,12 @@ def main():
         tmp_doc = App.newDocument("meshes")
         meshes = [m for m in doc.Objects if m.ViewObject.isVisible() and m.TypeId == 'Mesh::Feature']
         for o in objects_to_export:
-            mesh = tmp_doc.addObject("Mesh::Feature", doc.Label)
-            mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=g_angular_deflection, Relative=False)
-            meshes.append(mesh)
+            if o.TypeId == 'Mesh::Feature': 
+                meshes.append(o)
+            else:
+                mesh = tmp_doc.addObject("Mesh::Feature", doc.Label)
+                mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=g_angular_deflection, Relative=False)
+                meshes.append(mesh)
 
         if meshes:
             Mesh.export(meshes, mesh_path)
