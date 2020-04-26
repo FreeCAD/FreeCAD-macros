@@ -22,7 +22,7 @@ import MeshPart
 from SlcrDialogUtil import DialogUtil
 
 # Slicing program executable. One can use different slicing software here and provide proper slicer executable location and custom flags
-SLICER_CMD = ["/Applications/Slic3r.app/Contents/MacOS/Slic3r", "--gui"]
+SLICER_CMD = ["/Applications/Original Prusa Drivers/PrusaSlicer.app/Contents/MacOS/PrusaSlicer"]
 
 # You can format change to stl, but then all of the objects will be marged into single geometry
 OUTPUT_FORMAT = "stl"
