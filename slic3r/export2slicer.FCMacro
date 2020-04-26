@@ -15,28 +15,38 @@ __Requires__ = "freecad 0.17"
 __Communication__ = "https://github.com/dlozinski"
 __Files__ = "Slic3r.png"
 
-import Mesh
-import MeshPart
 import os
 import subprocess
+import Mesh
+import MeshPart
+from SlcrDialogUtil import DialogUtil
 
 # Slicing program executable. One can use different slicing software here and provide proper slicer executable location and custom flags
 SLICER_CMD = ["/Applications/Slic3r.app/Contents/MacOS/Slic3r", "--gui"]
 
 # You can format change to stl, but then all of the objects will be marged into single geometry
-OUTPUT_FORMAT = "amf"
+OUTPUT_FORMAT = "stl"
 
 # Angular deflection in radians. Lower value = better quality of curved shapes and bigger file size
 ANGULAR_DEFLECTION = 0.0872665
 
+
+def get_filename(doc_filename):
+	if doc_filename:
+		dirname = os.path.dirname(doc_filename)
+		filename = os.path.basename(doc_filename).partition('.')[0] + '.' + OUTPUT_FORMAT
+		file_path = os.path.join(dirname, filename)
+	else:
+		file_path = "meshes-export." + OUTPUT_FORMAT
+	return file_path
+
 def main():
     doc = App.ActiveDocument
     if not doc:
-        return "No active document"
+        raise Exception("No active document")
 
     # Get all visible objests with shapes
     visible_shapes = (o for o in doc.Objects if o.ViewObject.isVisible() and hasattr(o, 'Shape'))
-
 
     # Ensure to not include both parent and child objects
     objects_to_export = set()
@@ -44,31 +54,29 @@ def main():
         if not set(o.InListRecursive).intersection(objects_to_export):
             objects_to_export.add(o)
 
-    if not objects_to_export:
-        return "No visible objects to export"
+    mesh_path = get_filename(doc.FileName)
 
-    out_dir = os.path.dirname(doc.FileName) or "."
-
-    mesh_path = "{0}/meshes.{1}".format(out_dir, OUTPUT_FORMAT)
-
-    # Create temporary doc to store meshes
-    tmp_doc = App.newDocument("meshes")
     try:
-        meshes = []
+        # Create temporary doc to store meshes so that we don't affect current doc history
+        tmp_doc = App.newDocument("meshes")
+        meshes = [m for m in doc.Objects if m.ViewObject.isVisible() and m.TypeId == 'Mesh::Feature']
         for o in objects_to_export:
-            mesh = tmp_doc.addObject("Mesh::Feature", "Mesh")
+            mesh = tmp_doc.addObject("Mesh::Feature", doc.Label)
             mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=ANGULAR_DEFLECTION, Relative=False)
             meshes.append(mesh)
-        Mesh.export(meshes, mesh_path)
+
+        if meshes:
+            Mesh.export(meshes, mesh_path)
+        else:
+            raise Exception("No visible objects to export")
     finally:
         App.closeDocument("meshes")
 
     # Launch Slicer with meshes
     subprocess.Popen(SLICER_CMD + [mesh_path])
+    App.Console.PrintMessage("Objects opened in Slicer: " + mesh_path)
 
-
-error = main()
-if error:
-    App.Console.PrintError("Error while opening in Slicer: " + error + "\n")
-else:
-    App.Console.PrintMessage("Objects opened in Slicer\n")
+try:
+    main()
+except Exception as e:
+    DialogUtil.showErrorMessage(e)
