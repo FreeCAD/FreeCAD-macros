@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 # Opens current visible objects in Slic3r. One can use different slicing software
 
-__Title__ = "Open in Slic3r"
+__Title__ = "Export to Slicer"
 __Author__ = "Damian Łoziński"
 __Version__ = "0.1"
-__Date__ = "2019-03-06"
-__Comment__ = "Exports current visible objects to amf files and opens them in Slic3r"
+__Date__ = "2020-04-26"
+__Comment__ = "Export selected objects to amf/stl files and open it in Slicer"
 __Web__ = "https://forum.freecadweb.org/viewtopic.php?f=10&t=4686&sid=e69e70bc34c1987e215b5fc6fcb6b367&start=20"
 __Wiki__ = ""
 __Icon__ = "Export2Slicer.png"
-__Help__ = "Run this macro to open visible objects in slicer software. You may need to change slicer path"
+__Help__ = "Run this macro to selected objects in slicer software. You may need to change slicer path"
 __Status__ = ""
-__Requires__ = "freecad 0.17"
+__Requires__ = "freecad 0.17+"
 __Communication__ = "lozinski dot d at gmail dot com"
 __Files__ = "Export2Slicer.png"
 
@@ -19,22 +19,21 @@ import os
 import subprocess
 import Mesh
 import MeshPart
-from SlcrDialogUtil import DialogUtil
 
 # Slicing program executable. One can use different slicing software here and provide proper slicer executable location and custom flags
-SLICER_CMD = ["/Applications/Original Prusa Drivers/PrusaSlicer.app/Contents/MacOS/PrusaSlicer"]
+g_slicer_cmd = ["/Applications/Original Prusa Drivers/PrusaSlicer.app/Contents/MacOS/PrusaSlicer"]
 
-# You can format change to stl, but then all of the objects will be marged into single geometry
-OUTPUT_FORMAT = "stl"
+# Change to `amf` for multiple parts export
+g_output_format = "stl"
 
 # Angular deflection in radians. Lower value = better quality of curved shapes and bigger file size
-ANGULAR_DEFLECTION = 0.0872665
+g_angular_deflection = 0.07
 
 
 def get_filename(doc_filename):
 	if doc_filename:
 		dirname = os.path.dirname(doc_filename)
-		filename = os.path.basename(doc_filename).partition('.')[0] + '.' + OUTPUT_FORMAT
+		filename = os.path.basename(doc_filename).partition('.')[0] + '.' + g_output_format
 		file_path = os.path.join(dirname, filename)
 	else:
 		file_path = "meshes-export." + OUTPUT_FORMAT
@@ -45,15 +44,7 @@ def main():
     if not doc:
         raise Exception("No active document")
 
-    # Get all visible objests with shapes
-    visible_shapes = (o for o in doc.Objects if o.ViewObject.isVisible() and hasattr(o, 'Shape'))
-
-    # Ensure to not include both parent and child objects
-    objects_to_export = set()
-    for o in visible_shapes:
-        if not set(o.InListRecursive).intersection(objects_to_export):
-            objects_to_export.add(o)
-
+    objects_to_export = Gui.Selection.getSelection()
     mesh_path = get_filename(doc.FileName)
 
     try:
@@ -62,7 +53,7 @@ def main():
         meshes = [m for m in doc.Objects if m.ViewObject.isVisible() and m.TypeId == 'Mesh::Feature']
         for o in objects_to_export:
             mesh = tmp_doc.addObject("Mesh::Feature", doc.Label)
-            mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=ANGULAR_DEFLECTION, Relative=False)
+            mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=g_angular_deflection, Relative=False)
             meshes.append(mesh)
 
         if meshes:
@@ -73,10 +64,10 @@ def main():
         App.closeDocument("meshes")
 
     # Launch Slicer with meshes
-    subprocess.Popen(SLICER_CMD + [mesh_path])
-    App.Console.PrintMessage("Objects opened in Slicer: " + mesh_path)
+    subprocess.Popen(g_slicer_cmd + [mesh_path])
+    App.Console.PrintMessage("Objects exported to Slicer: {}\n".format(mesh_path))
 
 try:
     main()
 except Exception as e:
-    DialogUtil.showErrorMessage(e)
+    App.Console.PrintMessage("Exporting to slicer failed: {}\n".format(e))
