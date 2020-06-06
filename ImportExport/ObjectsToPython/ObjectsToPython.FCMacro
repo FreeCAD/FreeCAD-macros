@@ -12,8 +12,8 @@ __Icon__ = ''
 __Help__ = ''
 __Status__ = ''
 __Requires__ = 'FreeCAD >= 0.17'
-__Communication__ = ''
-__Files__ = ''
+__Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=34612'
+__Files__ = 'ObjectsToPython.py,Readme.md'
 
 VERSION_STRING = __Name__ + ' Macro v' + __Version__
 
