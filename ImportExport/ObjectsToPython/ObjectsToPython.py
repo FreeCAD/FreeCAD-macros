@@ -3,8 +3,8 @@
 __Name__ = 'Objects To Python'
 __Comment__ = 'Exports objects from a FreeCAD project to a python script'
 __Author__ = 'Christi'
-__Version__ = '0.1'
-__Date__ = '2019-03-02'
+__Version__ = '0.2'
+__Date__ = '2020-06-06'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = 'README.md'
@@ -22,18 +22,15 @@ import FreeCAD
 import FreeCADGui
 import Part
 import re
+import sys
+from FreeCAD import Vector
 
-
-def addScript(line):
-    FreeCAD.Console.PrintMessage(line)
-    FreeCAD.Console.PrintMessage("\n")
-
-
-def toScript():
-    doc =FreeCAD.ActiveDocument
-    addScript("from FreeCAD import *");
-    addScript("import Sketcher");
-    addScript("import Part");
+        
+        
+def exportObjectsToPython(doc = FreeCAD.ActiveDocument):
+    addScriptFunc("from FreeCAD import Vector, Placement, Rotation")
+    addScriptFunc("import Sketcher");
+    addScriptFunc("import Part");
     addScript("")
     objectlist = []
     skipObjects = [('App::Line', 'X_Axis'), ('App::Line', 'Y_Axis'), ('App::Line', 'Z_Axis'),
@@ -42,26 +39,51 @@ def toScript():
     
     selection = FreeCADGui.Selection.getSelection() 
     if not selection:
-        addScript("doc = App.newDocument('%s')"%doc.Name)
         selection = doc.Objects
     else:
-        addScript("doc = App.ActiveDocument")
         expandSelection(selection)
         
     for obj in doc.Objects:  
         objectlist.append(doc.getObject(obj.Name)) 
          
     for obj in selection:    
-        if (obj.TypeId, obj.Label) not in skipObjects:  
-            addScript("%s = doc.addObject('%s', '%s')"%(obj.Label, obj.TypeId, obj.Label))
+        if obj.TypeId == "Sketcher::SketchObject": 
+            addScriptFunc("")
+            addScriptFunc("def createSketch_%s(doc):"%varname(obj))
+            addObject(doc, obj, objectlist)
+            addScript("return " + varname(obj))
         
+    addScriptFunc("")
+    addScriptFunc("")
+    addScriptFunc("def make_%s():"%doc.Name)
+    if not selection:
+        addScript("doc = App.newDocument('%s')"%doc.Name)
+    else:
+        addScript("doc = App.ActiveDocument")
+    
     for obj in selection: 
         if (obj.TypeId, obj.Label) not in skipObjects:
-            addScript("")
-            addObject(doc, obj, objectlist)
+            if obj.TypeId == "Sketcher::SketchObject":
+                addScript(varname(obj) + "= createSketch_%s(doc)"%varname(obj))
+            else:
+                addScriptFunc("")
+                addObject(doc, obj, objectlist)
             
-    addScript("\ndoc.recompute()")  
+    addScript("") 
+    addScript("doc.recompute()") 
+    addScriptFunc("")
+    addScriptFunc("")
+    addScriptFunc("make_%s()"%doc.Name)
+        
+  
+def varname(obj):
+    return obj.Label.replace(" ", "_")
+      
+def addScript(line):
+    FreeCAD.Console.PrintMessage("\t" + line + "\n")
     
+def addScriptFunc(line):
+    FreeCAD.Console.PrintMessage(line + "\n")
     
 def expandSelection(selection):    
     addthis = []     
@@ -84,10 +106,12 @@ def expandSelection(selection):
             
 
 def addObject(doc, obj, objectlist): 
+    objname = varname(obj)
+    addScript("%s = doc.addObject('%s', '%s')"%(objname, obj.TypeId, objname))
     defaultobj = doc.addObject(obj.TypeId, obj.Name + "Default")
-    addProperties(obj, obj.Label, defaultobj, objectlist)
-    addProperties(obj.ViewObject, obj.Label + ".ViewObject", defaultobj.ViewObject, [])                      
-    doc.removeObject(obj.Name + "Default")             
+    addProperties(obj, objname, defaultobj, objectlist)
+    addProperties(obj.ViewObject, objname + ".ViewObject", defaultobj.ViewObject, [])                      
+    doc.removeObject(obj.Name + "Default")      
     
     
 def addProperties(obj, objname, refobj, objectlist):
@@ -123,11 +147,10 @@ def addProperties(obj, objname, refobj, objectlist):
                     addScript("%s.setExpression%s"%(objname, expression))                                   
                                                     
             elif objectToText(prop, objectlist) is not None:   
-                if defaultval is None: 
-                    addScript("%s.set('%s', '%s')"%(objname, propname, val))                    
-                elif val != defaultval:        
+                if val != defaultval:        
                     addScript("%s.%s = %s"%(objname, propname, val))   
                     
+                   
                                                                                                                             
 def objectToText(obj, objectlist = []):    
     if obj in objectlist:
@@ -150,29 +173,40 @@ def objectToText(obj, objectlist = []):
                 return "%d"%(obj)
     
             if isinstance(obj, float):
-                return "%f"%(obj)                                      
+                return floatstr(obj)                                      
             
             if isinstance(obj, FreeCAD.Base.Placement):
-                return "Placement(%s, %s)"%(obj.Base, obj.Rotation)
+                return "Placement(%s, %s)"%(objectToText(obj.Base), objectToText(obj.Rotation))
             
             if isinstance(obj, Part.Point):
-                return "Part.Point(Vector(%f,%f,%f))"%(obj.X, obj.Y, obj.Z)
+                return "Part.Point(Vector(%s, %s, %s))"%(floatstr(obj.X), floatstr(obj.Y), floatstr(obj.Z))
             
             if isinstance(obj, Part.LineSegment):
                 return "Part.LineSegment(%s, %s)"%(obj.StartPoint, obj.EndPoint)
             
             if isinstance(obj, Part.Circle):
-                return "Part.Circle(%s, %s, %f)"%(obj.Center, obj.Axis, obj.Radius)
+                return "Part.Circle(%s, %s, %s)"%(vecstr(obj.Center), obj.Axis, floatstr(obj.Radius))
             
             if isinstance(obj, Part.ArcOfCircle):
                 #return "Part.ArcOfCircle(%s, %s, %s)"%(obj.Center, obj.StartPoint, obj.EndPoint)
                 return "Part.ArcOfCircle(%s, %s, %s)"%(objectToText(obj.Circle), obj.FirstParameter, obj.LastParameter)
             
             if isinstance(obj, Part.Ellipse):
-                return "Part.Ellipse(%s, %s, %s)"%(obj.Center, obj.MajorRadius, obj.MinorRadius)
+                return "Part.Ellipse(%s, %s, %s)"%(vecstr(obj.Center), obj.MajorRadius, obj.MinorRadius)
             
             if isinstance(obj, Part.BSplineCurve):
-                return "Part.BSplineCurve(%s)"%(obj.getPoles())
+                poles = ""
+                komma = False
+                for p in obj.getPoles():
+                    if komma:
+                        poles += ", "
+                    poles += vecstr(p)
+                    komma = True
+                    
+                return "Part.BSplineCurve([%s])"%poles
+            
+            if isinstance(obj, Vector):
+                return vecstr(obj)
 
             liststart = ""
             if isinstance(obj, list):
@@ -188,7 +222,7 @@ def objectToText(obj, objectlist = []):
                 comma = False
                 for listele in obj:
                     if comma:
-                        sline = sline + " ,"
+                        sline = sline + ", "
                     else:
                         comma = True                
                 
@@ -205,10 +239,12 @@ def objectToText(obj, objectlist = []):
     
 def addSketch(obj, objname): 
     prop = obj.getPropertyByName('Geometry')  
+ 
     for geo in prop:  
-        addScript("%s.addGeometry(%s, %s)"%(objname, objectToText(geo), objectToText(geo.Construction)))  
+        objstr = objectToText(geo)
+        addScript("%s.addGeometry(%s, %s)"%(objname, objstr, objectToText(geo.Construction)))
     
-    splinecount = 0   
+    splinecount = 0
     concount = 0
     prop = obj.getPropertyByName('Constraints')
     for con in obj.Constraints:
@@ -242,25 +278,27 @@ def addSketch(obj, objname):
             conargs = "%d"%(con.First)
         elif con.Type == 'Distance':
             if con.Second == -2000:
-                conargs = "%d, %f"%(con.First, con.Value)
+                conargs = "%d, %s"%(con.First, floatstr(con.Value))
             else:
-                conargs = "%d, %d, %d, %d, %f"%(con.First, con.FirstPos, con.Second, con.SecondPos, con.Value)
+                conargs = "%d, %d, %d, %d, %s"%(con.First, con.FirstPos, con.Second, con.SecondPos, floatstr(con.Value))
         elif con.Type == 'DistanceX' or con.Type == 'DistanceY':
             if con.Second == -2000:
-                conargs = "%d, %d, %f"%(con.First, con.FirstPos, con.Value)
+                conargs = "%d, %d, %s"%(con.First, con.FirstPos, floatstr(con.Value))
             else:
-                conargs = "%d, %d, %d, %d, %f"%(con.First, con.FirstPos, con.Second, con.SecondPos, con.Value)
+                conargs = "%d, %d, %d, %d, %s"%(con.First, con.FirstPos, con.Second, con.SecondPos, floatstr(con.Value))
         elif con.Type == 'Radius':
-            conargs = "%d, %f"%(con.First, con.Value)
-        elif con.Type == 'Angle':
-            conargs = "%d, %d, %d, %d, %f"%(con.First, con.FirstPos, con.Second, con.SecondPos, con.Value)
-        elif con.Type == 'InternalAlignment':
-            contype = 'InternalAlignment:Sketcher::BSplineControlPoint'
-            conargs = "%d, %d, %d, %d"%(con.First, con.FirstPos, con.Second, splinecount)
-            splinecount = splinecount + 1
-            
-        if con.Type != 'InternalAlignment':
+            conargs = "%d, %s"%(con.First, floatstr(con.Value))
             splinecount = 0
+        elif con.Type == 'Angle':
+            conargs = "%d, %d, %d, %d, %s"%(con.First, con.FirstPos, con.Second, con.SecondPos, floatstr(con.Value))
+        elif con.Type == 'InternalAlignment':
+            if con.Second > con.First:
+                contype = 'InternalAlignment:Sketcher::BSplineControlPoint'
+                conargs = "%d, %d, %d, %d"%(con.First, con.FirstPos, con.Second, splinecount)
+                splineindex = con.Second
+                splinecount = splinecount + 1
+            else:
+                conargs = None
 
         if conargs is not None:
             addScript("%s.addConstraint(Sketcher.Constraint('%s', %s))"%(objname, contype, conargs))
@@ -269,6 +307,7 @@ def addSketch(obj, objname):
             addScript("%s.renameConstraint(%d, u'%s')"%(objname, concount, con.Name))
             
         concount = concount + 1
+    
                    
                 
 def addSpreadsheet(obj, objname): 
@@ -284,5 +323,10 @@ def addSpreadsheet(obj, objname):
     
     addScript("doc.recompute()")   
       
-        
-toScript()
+def floatstr(f):
+    return str(float("{0:.2f}".format(f)))
+     
+def vecstr(v):
+    return "Vector(" + floatstr(v.x) + ", " + floatstr(v.y) + ", " + floatstr(v.z) + ")"
+         
+exportObjectsToPython()
