@@ -63,11 +63,18 @@ def exportObjectsToPython(doc = FreeCAD.ActiveDocument):
     
     for obj in selection: 
         if (obj.TypeId, obj.Label) not in skipObjects:
+            addScriptFunc("")
             if obj.TypeId == "Sketcher::SketchObject":
-                addScript(varname(obj) + "= createSketch_%s(doc)"%varname(obj))
+                addScript(varname(obj) + " = createSketch_%s(doc)"%varname(obj))
             else:
-                addScriptFunc("")
-                addObject(doc, obj, objectlist)
+                addObject(doc, obj, objectlist)            
+                
+    for obj in selection: 
+        if obj.TypeId == 'PartDesign::Body':
+            addScriptFunc("")
+            addScript("%s.Group = %s_Group"%(varname(obj), varname(obj))) 
+            if obj.Tip:
+                addScript("%s.Tip = %s"%(varname(obj), varname(obj.Tip))) 
             
     addScript("") 
     addScript("doc.recompute()") 
@@ -117,7 +124,7 @@ def addObject(doc, obj, objectlist):
 def addProperties(obj, objname, refobj, objectlist):
     skipProperties = ["Label", "Shape", "Proxy", "AddSubShape"]
     skipObjProp = [("Sketcher::SketchObject", "Geometry"), ("Sketcher::SketchObject", "Constraints"),
-        ('PartDesign::Body', 'Origin')]
+        ('PartDesign::Body', 'Origin'), ('PartDesign::Body', 'Tip')]
     
     if obj.TypeId == "Spreadsheet::Sheet":
         addSpreadsheet(obj, objname)
@@ -135,7 +142,7 @@ def addProperties(obj, objname, refobj, objectlist):
                 refprop = refobj.getPropertyByName(propname)
                 defaultval = objectToText(refprop, objectlist)
             except:
-                defaultval = None
+                defaultval = None       
                 
             if propname == "Support":
                 val = val.replace("XY_Plane", "doc.XY_Plane")
@@ -144,13 +151,18 @@ def addProperties(obj, objname, refobj, objectlist):
                 
             if propname == "ExpressionEngine":
                 for expression in prop:
-                    addScript("%s.setExpression%s"%(objname, expression))                                   
-                                                    
+                    addScript("%s.setExpression%s"%(objname, expression))  
+                    
+            elif propname == "_Body":
+                addScript("%s_Group.append(%s)"%(val, objname))
+                          
+            elif (obj.TypeId, propname) == ('PartDesign::Body', 'Group'):
+                addScript("%s_Group = []"%(objname))
+                                                                                     
             elif objectToText(prop, objectlist) is not None:   
                 if val != defaultval:        
                     addScript("%s.%s = %s"%(objname, propname, val))   
-                    
-                   
+                                      
                                                                                                                             
 def objectToText(obj, objectlist = []):    
     if obj in objectlist:
