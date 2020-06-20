@@ -13,25 +13,24 @@ __Help__ = ''
 __Status__ = ''
 __Requires__ = 'FreeCAD >= 0.17'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=34612'
-__Files__ = 'ObjectsToPython/README.md'
+__Files__ = 'ObjectsToPython/README.md,ObjectsToPython/ObjectsToPython.ui'
 
 VERSION_STRING = __Name__ + ' Macro v' + __Version__
 
 
 import FreeCAD as app
-import FreeCADGui
+import FreeCADGui as gui
 import Part
 import re
 import sys
 from FreeCAD import Vector
 
                
-def exportObjectsToPython(doc = app.activeDocument()):
+def exportObjectsToPython(doc = app.activeDocument()):        
     addScriptFunc('from FreeCAD import Vector, Placement, Rotation')
     addScriptFunc('import Sketcher');
     addScriptFunc('import Part');
     addScriptFunc('import FreeCAD as app');
-    addScript('')
     objectlist = []
     skip_objects = [('App::Line', 'X_Axis'), ('App::Line', 'Y_Axis'), ('App::Line', 'Z_Axis'),
                    ('App::Plane', 'XY_Plane'), ('App::Plane', 'XZ_Plane'), ('App::Plane', 'YZ_Plane'),
@@ -87,10 +86,10 @@ def varname(obj):
     return obj.Label.replace(' ', '_').replace('.', '_')
       
 def addScript(line):
-    app.Console.PrintMessage('\t' + line + '\n')
+    dialog.form.textEdit.append('\t' + line)
     
 def addScriptFunc(line):
-    app.Console.PrintMessage(line + '\n')
+    dialog.form.textEdit.append(line)
     
 def expandSelection(selection):    
     addthis = []     
@@ -339,5 +338,21 @@ def floatstr(f):
      
 def vecstr(v):
     return 'Vector(' + floatstr(v.x) + ', ' + floatstr(v.y) + ', ' + floatstr(v.z) + ')'
-         
+
+class O2PDialog:
+    """Show a dialog for BoxCreator"""
+    def __init__(self):
+        self.ui_file = os.path.join(app.getUserMacroDir(True), 'ObjectsToPython/ObjectsToPython.ui')
+        f, w = gui.PySideUic.loadUiType(self.ui_file)
+        self.form = f()
+        self.widget = w()
+        self.form.setupUi(self.widget)
+        self.widget.show()
+        self.form.pushButtonClose.pressed.connect(self.form_Close)
+
+    def form_Close(self):
+	    del self.form
+	    del self.widget
+  
+dialog = O2PDialog()     
 exportObjectsToPython()

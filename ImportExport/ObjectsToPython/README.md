@@ -13,5 +13,5 @@ The macro is quite simple. It loops through the properties of all selected objec
 This macro generates python code from all selected objects in a FreeCAD project.  
 If no object is selected, all objects in the project will be selected.  
 
-The output will be written to the Report View (Menu View -> Panels -> Report View)
+A dialog will open and the output will be written into it. Press CTRL-a and CTRL-c to copy the code. 
 
