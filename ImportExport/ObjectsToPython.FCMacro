@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__Version__ = '0.3'
-__Date__ = '2020-06-20'
+__Version__ = '0.4'
+__Date__ = '2020-06-21'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = 'README.md'
@@ -83,7 +83,9 @@ def exportObjectsToPython(doc = app.activeDocument()):
         
   
 def varname(obj):
-    return obj.Label.replace(' ', '_').replace('.', '_')
+    l = obj.Label.replace(' ', '_').replace('.', '_')
+    if l[0].isdigit(): l = '_' + l
+    return l
       
 def addScript(line):
     dialog.form.textEdit.append('\t' + line)
@@ -150,14 +152,21 @@ def addProperties(obj, objname, refobj, objectlist):
                 
             if propname == 'ExpressionEngine':
                 for expression in prop:
-                    addScript("%s.setExpression%s"%(objname, expression))  
-                    
+                    addScript(objname + ".setExpression" + str(expression).replace('<', '').replace('>',''))
+
             elif propname == '_Body':
                 addScript("%s_Group.append(%s)"%(val, objname))
                           
             elif (obj.TypeId, propname) == ('PartDesign::Body', 'Group'):
                 addScript("%s_Group = []"%(objname))
-                                                                                     
+                                                
+            elif (obj.TypeId, propname) == ('App::Part', 'Group'):
+                proplist = []
+                for pn in prop:
+                    proplist.append(varname(pn))
+                    
+                addScript(objname + '.Group = ' + str(proplist))
+                                                     
             elif objectToText(prop, objectlist) is not None:   
                 if val != defaultval:        
                     addScript("%s.%s = %s"%(objname, propname, val))   
@@ -172,7 +181,7 @@ def objectToText(obj, objectlist = []):
             return str(obj.Value)
         else:     
             if isinstance(obj, str):
-                return "\"%s\""%(obj)
+                return "'" + str(obj) + "'"
                 
             if isinstance(obj, bool):
                 if obj:
@@ -326,7 +335,7 @@ def addSpreadsheet(obj, objname):
         if match:
             prop = obj.getPropertyByName(propname)
             val = objectToText(prop)
-            addScript("%s.set('%s', '%s')"%(objname, propname, val))  
+            addScript("%s.set('%s', '%s')"%(objname, propname, val.replace("'", '')))  
             alias = obj.getAlias(propname)
             if alias is not None:
                 addScript("%s.setAlias('%s', '%s')"%(objname, propname, alias))
