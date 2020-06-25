@@ -3,8 +3,8 @@
 __Name__ = 'BoxCreator'
 __Comment__ = 'Creates a box with interlocked notches'
 __Author__ = 'christi'
-__Version__ = '1.3.3'
-__Date__ = '2020-03-10'
+__Version__ = '1.3.4'
+__Date__ = '2020-06-24'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?t=31795'
 __Wiki__ = ''
@@ -73,8 +73,6 @@ class BoxcreatorDialog():
         gui.Selection.clearSelection()
         gui.Selection.addSelection(box)
         gui.SendMsgToActiveView('ViewFit')
-        del self.widget
-        del self.form
 
     def compartmentX(self):
         self.createCompartment(Vector(1,0,0))
