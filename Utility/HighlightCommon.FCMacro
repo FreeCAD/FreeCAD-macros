@@ -25,38 +25,31 @@ import FreeCADGui as gui
 
 def main():
 
-    # Return with error if less than 2 objects selected
-    if len(gui.Selection.getSelection()) < 2:
-        app.Console.PrintError('Select at least two objects\n')
-        QMessageBox(QMessageBox.Icon.Critical,
-                    'Error in macro HighlightCommon',
-                    'Select at least two objects').exec_()
-        return
-
     # Store active doc in case it may change during run.
     doc = app.activeDocument()
     colli_grp = None  # Group object to group collisions.
     colli_max = 0  # Maximum collision volume.
+
     # Open a transaction in undo pile.
     doc.openTransaction('Seeking collisions')
 
+    objectsToEnumerate = gui.Selection.getSelection()
+    if len(objectsToEnumerate) < 2:
+        objectsToEnumerate = app.ActiveDocument.Objects
+
     # Ensure list of unique objects.
     object_list = []
-    for obj in gui.Selection.getSelection():
+    for obj in objectsToEnumerate:
         if obj not in object_list:
-            object_list.append(obj)
+            if obj.isDerivedFrom("PartDesign::Body"):
+                object_list.append(obj)
 
     # Going through selected objects (object A).
     for i, object_a in enumerate(object_list):
-        shape_a = object_a.Shape
+        shape_a = object_a.Shape.copy()
+        shape_a.Placement = object_a.getGlobalPlacement()
         label_a = object_a.Label
-        # If object A has no volume (eg. a sketch)
-        # just skip it with information to user.
-        if shape_a.Volume < 1e-6:
-            app.Console.PrintMessage(
-                '{} has no volume, skipping'.format(
-                    label_a))
-            continue
+
         # Making selected objects transparent
         # comment this line if you don't want it.
         object_a.ViewObject.Transparency = 80
@@ -64,13 +57,10 @@ def main():
         # Comparing object A with all
         # following ones in the list (object B).
         for object_b in object_list[(i + 1):]:
-            shape_b = object_b.Shape
+
+            shape_b = object_b.Shape.copy()
+            shape_b.Placement = object_b.getGlobalPlacement()
             label_b = object_b.Label
-            # Skip object B is it has no volume
-            # no need to warn as it has been
-            # already done as object A.
-            if shape_b.Volume < 1e-6:
-                continue
             common = shape_a.common(shape_b)
 
             # If object A & object B have a collision
@@ -114,7 +104,6 @@ def main():
         # If no collision has been found, just inform the user about it.
         doc.abortTransaction()
         app.Console.PrintWarning('No collision found between selected objects\n')
-
 
 if __name__ == '__main__':
     main()
