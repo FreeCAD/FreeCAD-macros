@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 __Name__ = 'Highlight Common parts'
 __Comment__ = 'Compute the common parts between selected shapes'
 __Author__ = 'JMG, galou and other contributors'
-__Version__ = '2.2.1'
+__Version__ = '2.2.2'
 __Date__ = '2020-04-19'
 __License__ = 'CC0-1.0'
 __Web__ = 'https://freecadweb.org/wiki/Macro_HighlightCommon'
@@ -35,13 +35,13 @@ def main():
 
     objectsToEnumerate = gui.Selection.getSelection()
     if len(objectsToEnumerate) < 2:
-        objectsToEnumerate = app.ActiveDocument.Objects
+        objectsToEnumerate = doc.Objects
 
     # Ensure list of unique objects.
     object_list = []
     for obj in objectsToEnumerate:
         if obj not in object_list:
-            if obj.isDerivedFrom("PartDesign::Body"):
+            if obj.isDerivedFrom('PartDesign::Body'):
                 object_list.append(obj)
 
     # Going through selected objects (object A).
