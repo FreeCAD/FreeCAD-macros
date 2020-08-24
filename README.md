@@ -1,6 +1,6 @@
 # FreeCAD-macros
 
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/FreeCAD/FreeCAD-macros.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/FreeCAD/FreeCAD-macros/alerts/) 
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/FreeCAD/FreeCAD-macros.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/FreeCAD/FreeCAD-macros/alerts/)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/FreeCAD/FreeCAD-macros.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/FreeCAD/FreeCAD-macros/context:python)
 
 A repository of peer-reviewed FreeCAD macros.
@@ -9,14 +9,14 @@ This repository hosts FreeCAD macros that volunteers have vetted and added for u
 
 ## How to submit a macro
 
-- The most ideal way to submit a macro is to post it to the [FreeCAD Python Scripting and Macros subforum](https://forum.freecadweb.org/viewforum.php?f=22) for review. After a green light is given then:  
+- The best way to submit a macro is to post it to the [FreeCAD Python Scripting and Macros subforum](https://forum.freecadweb.org/viewforum.php?f=22) for review. After a green light is given then:
 
 - Fork this repository
 - Clone your fork locally `git clone https://github.com/your-gh-username/FreeCAD-macros`
 - Go to the newly-created local repository `cd FreeCAD-macros`
 - Setup the upstream `git remote add upstream https://github.com/FreeCAD/FreeCAD-macros`
 - Create a branch to work in `git checkout -b your_branch`
-- Follow our [guidelines](https://github.com/FreeCAD/FreeCAD-macros/README.md#guidelines-for-submitting-a-macro) below on how to add a macro
+- Follow our [guidelines](https://github.com/FreeCAD/FreeCAD-macros#guidelines-for-submitting-a-macro) below on how to add a macro
 - When you're ready to push your changes: `git push -u origin your_branch`
 - Create a PR (pull request) against upstream
 - Achieve global fame once PR is merged
@@ -24,16 +24,17 @@ This repository hosts FreeCAD macros that volunteers have vetted and added for u
 ## Guidelines for submitting a macro
 
 ### Macro description
-Please add a complete description how to use the macro near the top of your macro as normal Python comments.  
+Please add a complete description how to use the macro near the top of your macro as normal Python comments.
+Ideally write a Wiki page explaining what your macro does and how to use it by following the instructions on the [Wiki](https://wiki.freecadweb.org/Macro_documentation).
 
 ### CamelCase macro name
-Please follow the `CamelCase.FCMacro` convention for the macro name (other associated files except the macro icon don't need to follow this convention). Please don't start your macro name with `Macro` or `FC` or similar (we already know it's a macro for FreeCAD).  
+Please follow the `CamelCase.FCMacro` convention for the macro name (other associated files except the macro icon don't need to follow this convention). Please don't start your macro name with `Macro` or `FC` or similar (we already know it's a macro for FreeCAD).
 
 ### Macro name specifics
-Also, if possible, start the macro name with the type of object it's working on, e.g. use `ViewRotation` instead of `RotateView`, so that all macros related to `View` will be together when sorting alphabetically.  
+Also, if possible, start the macro name with the type of object it's working on, e.g. use `ViewRotation` instead of `RotateView`, so that all macros related to `View` will be together when sorting alphabetically.
 
 ### Macro metadata
-Please add the following metadata in your macro after the Macro description (mentioned above)  
+Please add the following metadata in your macro after the Macro description (mentioned above)
 
 **Macro metadata:**
 
@@ -68,7 +69,7 @@ Please add the following metadata in your macro after the Macro description (men
     __Icon__ = 'MyMacro.svg, please put an svg file along side the macro, respecting the macro filename'
     __Help__ = 'A short explanation how to use the macro, e.g. what to select before launching'
     __Status__ = 'Stable|Alpha|Beta'
-    __Requires__ = 'e.g. FreeCAD >= v0.17'
+    __Requires__ = 'e.g. FreeCAD >= v0.17, there is no programmatic use of this for now'
     __Communication__ = 'e.g. https://github.com/FreeCAD/FreeCAD-macros/issues/ if on the github'
     __Files__ = 'comma-separated list of files that should be installed together with this file, use paths relative to this file, do not include this file'
 ```
