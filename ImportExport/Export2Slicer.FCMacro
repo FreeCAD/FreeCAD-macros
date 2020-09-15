@@ -3,13 +3,13 @@
 
 __Title__ = "Export to Slicer"
 __Author__ = "Damian Łoziński"
-__Version__ = "0.1"
+__Version__ = "0.2"
 __Date__ = "2020-04-26"
 __Comment__ = "Export selected objects to amf/stl files and open it in Slicer"
 __Web__ = "https://forum.freecadweb.org/viewtopic.php?f=10&t=4686&sid=e69e70bc34c1987e215b5fc6fcb6b367&start=20"
 __Wiki__ = ""
 __Icon__ = "Export2Slicer.png"
-__Help__ = "Run this macro to selected objects in slicer software. You may need to change slicer path"
+__Help__ = "You may need to change slicer path. To do so open Tools > Edit parameters > BaseApp/Preferences/Macros/Export2Slicer"
 __Status__ = ""
 __Requires__ = "freecad 0.17+"
 __Communication__ = "lozinski dot d at gmail dot com"
@@ -20,22 +20,37 @@ import subprocess
 import Mesh
 import MeshPart
 
-# Slicing program executable. One can use different slicing software here and provide proper slicer executable location and custom flags
-g_slicer_cmd = ["/Applications/Original Prusa Drivers/PrusaSlicer.app/Contents/MacOS/PrusaSlicer"]
+MACRO_PARAMS_PATH = "User parameter:BaseApp/Preferences/Macros/Export2Slicer"
+DEFAULT_SLICER_PATH = "/Applications/Original Prusa Drivers/PrusaSlicer.app/Contents/MacOS/PrusaSlicer"
+DEFAUL_MESH_FORMAT = 'stl'
+DEFAULT_ANGULAR_DEFLECTION = 0.07
 
-# Change to `amf` for multiple parts export
-g_output_format = "stl"
+macro_params = App.ParamGet(MACRO_PARAMS_PATH)
+
+# Slicing program executable. One can use different slicing software here and provide proper slicer executable location and custom flags
+slicer_path = macro_params.GetString("SlicerPath")
+if not slicer_path:
+    macro_params.SetString("SlicerPath", DEFAULT_SLICER_PATH)
+    slicer_path = DEFAULT_SLICER_PATH
+
+output_format = macro_params.GetString("OutputFormat");
+if not output_format:
+    macro_params.SetString("OutputFormat", DEFAUL_MESH_FORMAT)
+    output_format = DEFAUL_MESH_FORMAT
 
 # Angular deflection in radians. Lower value = better quality of curved shapes and bigger file size
-g_angular_deflection = 0.07
+angular_deflection = macro_params.GetFloat("AngularDeflection")
+if not angular_deflection:
+    macro_params.SetFloat("AngularDeflection", DEFAULT_ANGULAR_DEFLECTION)
+    angular_deflection = DEFAULT_ANGULAR_DEFLECTION
 
 def get_filename(doc_filename):
 	if doc_filename:
 		dirname = os.path.dirname(doc_filename)
-		filename = os.path.basename(doc_filename).partition('.')[0] + '.' + g_output_format
+		filename = os.path.basename(doc_filename).partition('.')[0] + '.' + output_format
 		file_path = os.path.join(dirname, filename)
 	else:
-		file_path = "meshes-export." + OUTPUT_FORMAT
+		file_path = "meshes-export." + output_format
 	return file_path
 
 def main():
@@ -55,21 +70,21 @@ def main():
                 meshes.append(o)
             else:
                 mesh = tmp_doc.addObject("Mesh::Feature", doc.Label)
-                mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=g_angular_deflection, Relative=False)
+                mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=angular_deflection, Relative=False)
                 meshes.append(mesh)
 
         if meshes:
             Mesh.export(meshes, mesh_path)
         else:
-            raise Exception("No visible objects to export")
+            raise Exception("No object selected")
     finally:
         App.closeDocument("meshes")
 
     # Launch Slicer with meshes
-    subprocess.Popen(g_slicer_cmd + [mesh_path])
-    App.Console.PrintMessage("Objects exported to Slicer: {}\n".format(mesh_path))
+    subprocess.Popen((slicer_path, mesh_path))
+    App.Console.PrintMessage("Export2Slicer: Objects exported: {}\n".format(mesh_path))
 
 try:
     main()
 except Exception as e:
-    App.Console.PrintMessage("Exporting to slicer failed: {}\n".format(e))
+    App.Console.PrintMessage("Export2Slicer error: {}\n".format(e))
