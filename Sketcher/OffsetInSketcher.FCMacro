@@ -212,6 +212,7 @@ class OffsetInSketcher():
 			"""
 			  get next edge in backward direction
 			"""
+<<<<<<< HEAD
 				if not UnsortedEdges: return
 				
 				StartPt = Element.StartPoint
@@ -227,6 +228,23 @@ class OffsetInSketcher():
 						break
 					Num = Num+1
 				return """nothing found"""
+=======
+				if len(UnsortedEdges) == 0: return
+				else:
+					StartPt = Element.StartPoint
+					Num = 0
+					while Num <= len(UnsortedEdges)-1: """search backwards"""
+						El=UnsortedEdges[Num]
+						if (areEqual(El.StartPoint,StartPt)) or (areEqual(El.EndPoint ,StartPt)): """element found"""
+							if areEqual(El.StartPoint,StartPt): """swap element"""
+								El.reverse() 
+							SortedEdges.append(El)
+							UnsortedEdges.pop(Num)
+							getBackwardElem(El,UnsortedEdges)
+							break
+						Num = Num+1
+					return """nothing found"""
+>>>>>>> fe7adecad8446b91dfde033333328e2c0b3a5b13
 
 			def getForwardElem(Element,UnsortedEdges):
 			"""
