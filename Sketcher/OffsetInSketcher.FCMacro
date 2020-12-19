@@ -29,7 +29,7 @@ class OffsetDialog:
 		self.tracker.raiseTracker() 
 		self.callback = self.view.addEventCallbackPivy(SoMouseButtonEvent.getClassTypeId(), self.getPoint) 
 		self.callmouse=self.view.addEventCallbackPivy(SoLocation2Event.getClassTypeId(),self.getMousePoint) 
-		self.SelGeoId = self.getElements() # init the command
+		self.SelGeoId = self.getElements() """init the command"""
 
 	def getMousePoint(self, event_cb):
 	"""
@@ -55,7 +55,7 @@ class OffsetDialog:
 			self.view.removeEventCallbackPivy(SoLocation2Event.getClassTypeId(),self.callmouse)  
 			self.tracker.off() 
 			self.tracker.finalize()
-			OffsetInSketcher.addOffset(self.SelGeoId,self.OffsetLine) # call the command
+			OffsetInSketcher.addOffset(self.SelGeoId,self.OffsetLine) """call the command"""
 
 	def selectedGeoId(self):
 	"""
@@ -63,10 +63,10 @@ class OffsetDialog:
 	"""
 		if not Gui.Selection.getSelectionEx():
 			OffsetDialog.message('Please select elements')
-		SelEx=Gui.Selection.getSelectionEx()[0].SubElementNames # list of selected elements
+		SelEx=Gui.Selection.getSelectionEx()[0].SubElementNames """list of selected elements"""
 		SelGeoId = []
 		for El in SelEx:
-			if El.find('Edge') == 0: # El is an edge
+			if El.find('Edge') == 0: """El is an edge"""
 				Number = int(re.findall(r'\d+',El)[0])-1
 				SelGeoId.append(Number)
 		return SelGeoId
@@ -76,7 +76,7 @@ class OffsetDialog:
 	  get selected elements and offset value
 	"""
 		SelGeoId = self.selectedGeoId()
-		point = Sketch.getSketchPoint(SelGeoId[0]) # start of rubber band
+		point = Sketch.getSketchPoint(SelGeoId[0]) """start of rubber band"""
 		self.OffsetLine.append(point) 
 		self.tracker.on() 
 		self.tracker.p1(point) 
@@ -171,7 +171,7 @@ class Tools:
 		Arc = Element.Geo.clone()
 		Circle = Arc.Circle
 		ConcentricEdge = Edge(Part.ArcOfCircle(Part.Circle(Circle,Distance),Arc.FirstParameter,Arc.LastParameter))
-		if Reverse: ConcentricEdge.reverse() # change sense of rotation
+		if Reverse: ConcentricEdge.reverse() """change sense of rotation"""
 		return ConcentricEdge
 
 	def getMidPoint(Element):
@@ -191,7 +191,7 @@ class OffsetInSketcher():
 		"""
 		  returns a list of all selected lines and arcs
 		""" 
-			AllGeo = Sketch.getGeometry() # full geometry list
+			AllGeo = Sketch.getGeometry() """full geometry list"""
 			Selected = []
 			for Id in SelGeoID:
 				Goemetry = AllGeo[Id]
@@ -216,40 +216,40 @@ class OffsetInSketcher():
 				else:
 					StartPt = Element.StartPoint
 					Num = 0
-					while Num <= len(UnsortedEdges)-1: # search backward
+					while Num <= len(UnsortedEdges)-1: """search backwards"""
 						El=UnsortedEdges[Num]
-						if (areEqual(El.StartPoint,StartPt)) or (areEqual(El.EndPoint ,StartPt)): # element found
-							if areEqual(El.StartPoint,StartPt): # swap element
+						if (areEqual(El.StartPoint,StartPt)) or (areEqual(El.EndPoint ,StartPt)): """element found"""
+							if areEqual(El.StartPoint,StartPt): """swap element"""
 								El.reverse() 
 							SortedEdges.append(El)
 							UnsortedEdges.pop(Num)
 							getBackwardElem(El,UnsortedEdges)
 							break
 						Num = Num+1
-					return # nothing found
+					return """nothing found"""
 
 			def getForwardElem(Element,UnsortedEdges):
 			"""
 			  get next edge in forward direction
 			"""
-				if len(UnsortedEdges) == 0: return
-				else:
-					EndPt = Element.EndPoint # endpoint of first element in geolist
-					Num = 0
-					while Num <= len(UnsortedEdges)-1: # search forward
-						El=UnsortedEdges[Num]
-						if (areEqual(El.StartPoint,EndPt)) or (areEqual(El.EndPoint ,EndPt)): # element found
-							if areEqual(El.EndPoint,EndPt): # swap element
-								El.reverse()
-							SortedEdges.append(El)
-							UnsortedEdges.pop(Num)
-							getForwardElem(El,UnsortedEdges)
-							break
-						Num = Num+1
-					return # nothing found
+				if not UnsortedEdges: return
+				
+				EndPt = Element.EndPoint """endpoint of first element in geolist"""
+				Num = 0
+				while Num <= len(UnsortedEdges)-1: """search forward direction"""
+					El=UnsortedEdges[Num]
+					if (areEqual(El.StartPoint,EndPt)) or (areEqual(El.EndPoint ,EndPt)): """element found"""
+						if areEqual(El.EndPoint,EndPt): """swap elements"""
+							El.reverse()
+						SortedEdges.append(El)
+						UnsortedEdges.pop(Num)
+						getForwardElem(El,UnsortedEdges)
+						break
+					Num = Num+1
+				return """nothing found"""
 
 			SortedEdges = []
-			SortedEdges.append(UnsortedEdges.pop(0)) # first element in UnsortedEdges list
+			SortedEdges.append(UnsortedEdges.pop(0)) """first element in UnsortedEdges list"""
 			getBackwardElem(SortedEdges[0],UnsortedEdges)
 			SortedEdges.reverse()
 			getForwardElem(SortedEdges[-1],UnsortedEdges)
@@ -271,23 +271,23 @@ class OffsetInSketcher():
 		"""
 		  calculate  vertex between two offset edges 
 		"""
-			if  Edge0.Type == 'arc': # first edge is an arc
+			if  Edge0.Type == 'arc': """first edge is an arc"""
 				delta = Edge0.EndPoint.sub(Edge0.Center).normalize()
 				if Edge0.isNegative(): delta = delta.negative()
-			elif  Edge1.Type == 'arc': # second edge is an arc
+			elif  Edge1.Type == 'arc': """second edge is an arc"""
 				delta = Edge1.StartPoint.sub(Edge1.Center).normalize()
 				if Edge1.isNegative(): delta = delta.negative()
-			else: # both edges are lines
+			else: """both edges are lines"""
 				e0=(Edge0.EndPoint.sub(Edge0.StartPoint)).normalize()
 				e1=(Edge1.EndPoint.sub(Edge1.StartPoint)).normalize()
-				Angle = e0.getAngle(e1) # angle between edges
-				if Angle == 0.0: # edges fall in line
+				Angle = e0.getAngle(e1) """angle between edges"""
+				if Angle == 0.0: """edges fall in line"""
 					delta =e0.cross(App.Vector(0,0,1))
 				else:
 					Factor = 1.0/math.cos(Angle/2) 
-					delta=e0.sub(e1).normalize().multiply(Factor) # from point to offset point
+					delta=e0.sub(e1).normalize().multiply(Factor) """from point to offset point"""
 				if flection(Edge0.StartPoint,Edge0.EndPoint,Edge1.EndPoint):
-					delta=delta.negative() # ... if flection is negative
+					delta=delta.negative() """... if flection is negative"""
 			delta = delta.multiply(OffsetValue)
 			pt=Edge0.EndPoint.add(delta)
 			return pt
@@ -297,9 +297,11 @@ class OffsetInSketcher():
 		  calculate  offset vertex at start or end of open edge
 		"""
 			e = (Edge.EndPoint.sub(Edge.StartPoint)).normalize()
-			delta =e.cross(App.Vector(0,0,1)).multiply(OffsetValue)  # from point to offset point
-			if Start:	pt = Edge.StartPoint+delta
-			else:	pt = Edge.EndPoint+delta
+			delta =e.cross(App.Vector(0,0,1)).multiply(OffsetValue)  """from point to offset point"""
+			if Start:
+				pt = Edge.StartPoint+delta
+			else:
+				pt = Edge.EndPoint+delta
 			return pt
 
 		def createOffsetVertexes(SortedEdges):
@@ -308,12 +310,12 @@ class OffsetInSketcher():
 		"""
 			OffsetPoints = []
 			NumOfEdges = len(SortedEdges)-1
-			if areEqual(SortedEdges[0].StartPoint,SortedEdges[-1].EndPoint): # figure is closed
-				SortedEdges.append(SortedEdges[0]) # copy first edge to end
+			if areEqual(SortedEdges[0].StartPoint,SortedEdges[-1].EndPoint): """figure is closed"""
+				SortedEdges.append(SortedEdges[0]) """copy first edge to end"""
 				for i in range(NumOfEdges+1):
 					OffsetPoints.append(pointBetween(SortedEdges[i],SortedEdges[i+1]))
-				OffsetPoints.insert(0,OffsetPoints[-1]) # append last vertex at start
-			else: # figure is open
+				OffsetPoints.insert(0,OffsetPoints[-1]) """append last vertex at start"""
+			else: """figure is open"""
 				OffsetPoints.append(pointAtOpenEnd(SortedEdges[0],True))
 				for i in range(NumOfEdges):
 					OffsetPoints.append(pointBetween(SortedEdges[i],SortedEdges[i+1]))
@@ -326,16 +328,16 @@ class OffsetInSketcher():
 		"""
 			OffsetEdges = []
 			for i in range(len(OffsetPoints)-1):
-				if SortedEdges[i].Type == 'arc': # edge is an arc
+				if SortedEdges[i].Type == 'arc': """edge is an arc"""
 					Arc = SortedEdges[i]
 					Offset = OffsetValue
-					if Arc.isNegative(): # concentric arc at inner face
+					if Arc.isNegative(): """concentric arc at inner face"""
 						Offset = -OffsetValue
 					if Arc.Radius+Offset < 0.0:
-						OffsetDialog.message('Inner radius becomes negativ')
+						OffsetDialog.message('Inner radius becomes negative')
 					else: 
-						OffsetEdges.append(Tools.concentricArcOfCircle(SortedEdges[i],Offset)) # concentric arc				
-				else: # edge is a line
+						OffsetEdges.append(Tools.concentricArcOfCircle(SortedEdges[i],Offset)) """concentric arc"""				
+				else: """edge is a line"""
 					OffsetEdges.append(Edge(Part.LineSegment(OffsetPoints[i],OffsetPoints[i+1])))
 				OffsetEdges[-1 ].addGeometry()
 			return OffsetEdges
@@ -348,14 +350,14 @@ class OffsetInSketcher():
 			"""
 			  create constraint between two edges
 			"""
-				if Edge1.Type == 'arc' or Edge2.Type == 'arc': #at least one edge is an arc
-					Sketch.tangent(Edge1,Edge1.EndPointId,Edge2,Edge2.StartPointId) # tangent between arc and neighbour
-				else: # both edges are lines
-					Sketch.coincident(Edge1,Edge1.EndPointId,Edge2,Edge2.StartPointId) # coincident betwenn two lines
+				if Edge1.Type == 'arc' or Edge2.Type == 'arc': """at least one edge is an arc"""
+					Sketch.tangent(Edge1,Edge1.EndPointId,Edge2,Edge2.StartPointId) """tangent between arc and neighbour"""
+				else: """both edges are lines"""
+					Sketch.coincident(Edge1,Edge1.EndPointId,Edge2,Edge2.StartPointId) """coincident betwenn two lines"""
 
 			for i in range(len(OffsetEdges)-1):
 				constraintAtVertex(OffsetEdges[i],OffsetEdges[i+1])
-			if  areEqual(OffsetEdges[-1].EndPoint,OffsetEdges[0].StartPoint): # closed figure
+			if  areEqual(OffsetEdges[-1].EndPoint,OffsetEdges[0].StartPoint): """closed figure"""
 				constraintAtVertex(OffsetEdges[-1],OffsetEdges[0])
 
 		def createParametric(SortedEdges,OffsetEdges,OffsetValue):
@@ -366,18 +368,18 @@ class OffsetInSketcher():
 			"""
 			 constraints at first and last edge
 			"""	
-				if PtNum == 2: # at the last edge
+				if PtNum == 2: """at the last edge"""
 					DistanceLines.append(Tools.createLine(BaseEdge.EndPoint,OffsetEdge.EndPoint))
 					DistanceLines[-1 ].addGeometry(True)
-					Sketch.coincident(DistanceLines[-1 ],1,BaseEdge,BaseEdge.EndPointId) # connect vertexes at end
+					Sketch.coincident(DistanceLines[-1 ],1,BaseEdge,BaseEdge.EndPointId) """connect vertexes at end"""
 					Sketch.coincident(DistanceLines[-1 ],2,OffsetEdge,OffsetEdge.EndPointId)
 					Sketch.equal(DistanceLines[0 ],DistanceLines[-1])					
-				else: # at the first edge
+				else: """at the first edge"""
 					DistanceLines.append(Tools.createLine(BaseEdge.StartPoint,OffsetEdge.StartPoint))
 					DistanceLines[-1 ].addGeometry(True)
-					Sketch.coincident(DistanceLines[-1 ],1,BaseEdge,BaseEdge.StartPointId) # connect vertexes at start
+					Sketch.coincident(DistanceLines[-1 ],1,BaseEdge,BaseEdge.StartPointId) """connect vertexes at start"""
 					Sketch.coincident(DistanceLines[-1 ],2,OffsetEdge,OffsetEdge.StartPointId)
-				Sketch.perpendicular(OffsetEdge,DistanceLines[-1]) # distance line perpendicular to edges
+				Sketch.perpendicular(OffsetEdge,DistanceLines[-1]) """distance line perpendicular to edges"""
 				Sketch.perpendicular(BaseEdge,DistanceLines[-1])			
 
 			def parametricAtEdges(BaseEdge,OffsetEdge,OffsetValue):
@@ -385,30 +387,30 @@ class OffsetInSketcher():
 			 constraints at interior edges
 			"""
 				if OffsetEdge.Type == 'arc':
-					Sketch.coincident(BaseEdge,3,OffsetEdge,3) # connect centers
+					Sketch.coincident(BaseEdge,3,OffsetEdge,3) """connect centers"""
 				else:
 					e = (OffsetEdge.EndPoint.sub(OffsetEdge.StartPoint)).normalize()
-					delta =e.cross(App.Vector(0,0,-1)).multiply(OffsetValue)  # distance vector
+					delta =e.cross(App.Vector(0,0,-1)).multiply(OffsetValue)  """distance vector"""
 					MidPoint = Tools.getMidPoint(OffsetEdge)
 					DistanceLines.append(Tools.createLine(MidPoint,MidPoint.add(delta)))
 					DistanceLines[-1 ].addGeometry(True)
 					Sketch.symmetric(OffsetEdge,Sketch.getGeoNumber()-1)
-					if len(DistanceLines) > 1: Sketch.equal(DistanceLines[0 ],DistanceLines[-1]) # all distance lines have equal length
-					Sketch.perpendicular(OffsetEdge,DistanceLines[-1]) # distance line perpendicular to edges
+					if len(DistanceLines) > 1: Sketch.equal(DistanceLines[0 ],DistanceLines[-1]) """all distance lines have equal length"""
+					Sketch.perpendicular(OffsetEdge,DistanceLines[-1]) """distance line perpendicular to edges"""
 					Sketch.perpendicular(BaseEdge,DistanceLines[-1])
-					Sketch.pointOnObject(DistanceLines[-1],1,OffsetEdge) # distance line connected to edges
+					Sketch.pointOnObject(DistanceLines[-1],1,OffsetEdge) """distance line connected to edges"""
 					Sketch.pointOnObject(DistanceLines[-1],2,BaseEdge)
 
 			DistanceLines = []
-			if  areEqual(OffsetEdges[-1].EndPoint,OffsetEdges[0].StartPoint): # closed figure			
+			if  areEqual(OffsetEdges[-1].EndPoint,OffsetEdges[0].StartPoint): """closed figure"""			
 				parametricAtEdges(SortedEdges[0],OffsetEdges[0],OffsetValue)
 				for i in range(1,len(SortedEdges)-1):	
 					parametricAtEdges(SortedEdges[i],OffsetEdges[i],OffsetValue)
-			else: # open figure
-				parametricAtOpenEdge(SortedEdges[0],OffsetEdges[0],1,OffsetValue) # first edge
+			else: """open figure"""
+				parametricAtOpenEdge(SortedEdges[0],OffsetEdges[0],1,OffsetValue) """first edge"""
 				for i in range(1,len(SortedEdges)-1): 
 					parametricAtEdges(SortedEdges[i],OffsetEdges[i],OffsetValue)
-				parametricAtOpenEdge(SortedEdges[-1],OffsetEdges[-1],2,OffsetValue) # last edge
+				parametricAtOpenEdge(SortedEdges[-1],OffsetEdges[-1],2,OffsetValue) """last edge"""
 
 		def getOffsetValue(FirstEdge,OffsetLine):
 		"""
