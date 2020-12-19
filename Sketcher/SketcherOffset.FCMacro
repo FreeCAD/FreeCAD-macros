@@ -1,7 +1,8 @@
-__Name__   = "OffsetInSketcher"
+__Name__   = "SketcherOffset"
 __Author__  = "edi"
 __Version__ = "0.0.3"
 __License__ = 'License identifier from https://spdx.org/licenses/, e.g. LGPL-2.0-or-later as FreeCAD, MIT, CC0-1.0'
+__Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=19&t=49886'
 __Help__ = 'Select some lines in a sketch. Start the macro. Show offset value using the rubber band.'
 __Status__ = 'Stable'
 __Requires__ = 'e.g. FreeCAD >= v0.18'
@@ -13,10 +14,13 @@ if App.Version()[1].find('18') == 0: import DraftTrackers, Draft
 if App.Version()[1].find('19') == 0: import draftguitools.gui_trackers as DraftTrackers
 import re, math
 """
-   create an offset line in sketcher
- 
-  - select a chain of lines and arcs in an opened sketch
-  - show value of offset distance and appearance of offset lines using a "rubber band"
+This macro creates a line chain parallel to an existing one.
+The existing line chain may be composed of line segments and arcs of cirles. All arcs have to be tangential to their neighbours. The line chain may be open or closed.
+Existing and created line chain can be draged using the mouse holding the parallelism.
+Workflow:
+- Select lines in an opened sketch.
+- Start the macro
+- Show value of distance and side (left/right) of the created lines using the mouse.
 """ 
 class OffsetDialog:
 """ 
