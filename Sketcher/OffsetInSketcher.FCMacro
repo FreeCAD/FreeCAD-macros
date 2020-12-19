@@ -1,27 +1,27 @@
-__name__   = "OffsetInSketcher"
-__author__  = "edi"
-__version__ = "0.03"
+__Name__   = "OffsetInSketcher"
+__Author__  = "edi"
+__Version__ = "0.0.3"
 __License__ = 'License identifier from https://spdx.org/licenses/, e.g. LGPL-2.0-or-later as FreeCAD, MIT, CC0-1.0'
 __Help__ = 'Select some lines in a sketch. Start the macro. Show offset value using the rubber band.'
 __Status__ = 'Stable'
 __Requires__ = 'e.g. FreeCAD >= v0.18'
-__date__    = "17/12/2020"
+__Date__    = "2020-12-17"
 
 from PySide import QtGui
 from pivy.coin import *
 if App.Version()[1].find('18') == 0: import DraftTrackers, Draft
 if App.Version()[1].find('19') == 0: import draftguitools.gui_trackers as DraftTrackers
 import re, math
-#
-#  create an offset line in sketcher
-#
-# - select a chain of lines and arcs in an opened sketch
-# - show value of offset distance and appearance of offset lines using a "rubber band"
-#
+"""
+   create an offset line in sketcher
+ 
+  - select a chain of lines and arcs in an opened sketch
+  - show value of offset distance and appearance of offset lines using a "rubber band"
+""" 
 class OffsetDialog:
-#
-# read selected items and show the offset distance
-#
+""" 
+  read selected items and show the offset distance
+""" 
 	def __init__(self):
 		self.view = FreeCADGui.ActiveDocument.ActiveView 
 		self.OffsetLine = [] 
@@ -32,9 +32,9 @@ class OffsetDialog:
 		self.SelGeoId = self.getElements() # init the command
 
 	def getMousePoint(self, event_cb):
-	#
-	# slot: the mouse has been moved
-	#
+	"""
+	  slot: the mouse has been moved
+	"""
 		event = event_cb.getEvent()
 		if len(self.OffsetLine)==1: 
 			pos = event.getPosition() 
@@ -42,9 +42,9 @@ class OffsetDialog:
 			self.tracker.p2(point) 
 
 	def getPoint(self, event_callback):
-	#
-	# slot: a mouse button has been pressed
-	#
+	"""
+	  slot: a mouse button has been pressed
+	"""
 		event = event_callback.getEvent() 
 		if event.getState() == SoMouseButtonEvent.DOWN:
 			pos = event.getPosition() 
@@ -58,9 +58,9 @@ class OffsetDialog:
 			OffsetInSketcher.addOffset(self.SelGeoId,self.OffsetLine) # call the command
 
 	def selectedGeoId(self):
-	#
-	# returns a list containing GeoId's of selected lines and arcs
-	#
+	"""
+	  returns a list containing GeoId's of selected lines and arcs
+	"""
 		if not Gui.Selection.getSelectionEx():
 			OffsetDialog.message('Please select elements')
 		SelEx=Gui.Selection.getSelectionEx()[0].SubElementNames # list of selected elements
@@ -72,9 +72,9 @@ class OffsetDialog:
 		return SelGeoId
 
 	def getElements(self):
-	#
-	# get selected elements and offset value
-	#
+	"""
+	  get selected elements and offset value
+	"""
 		SelGeoId = self.selectedGeoId()
 		point = Sketch.getSketchPoint(SelGeoId[0]) # start of rubber band
 		self.OffsetLine.append(point) 
@@ -88,9 +88,9 @@ class OffsetDialog:
 		msgBox.exec_()
 
 class Edge:
-#
-# manage the edge-element
-#
+""" 
+  manage the edge-element
+"""
 	def __init__(self,Geometry,Number=None):
 		self.Geo = Geometry
 		self.GeoId = Number
@@ -127,9 +127,9 @@ class Edge:
 				return True
 
 class Sketch:
-#
-# manage all connections to the sketch
-#
+"""
+  manage all connections to the sketch
+"""
 	def addGeometry(Element,Mode):
 		ActiveSketch.addGeometry(Element,Mode)
 
@@ -161,9 +161,9 @@ class Sketch:
 		ActiveSketch.addConstraint(Sketcher.Constraint('Tangent',Element1.GeoId,Point1,Element2.GeoId,Point2))
 
 class Tools:
-#
-# diverse geometric tools 
-#
+"""
+  diverse geometric tools 
+"""
 	def createLine(Point1,Point2):
 		return Edge(Part.LineSegment(Point1,Point2))
 
@@ -180,17 +180,17 @@ class Tools:
 		return App.Vector(XPoint,YPoint,0)
 
 class OffsetInSketcher():
-#
-# class containing the addOffset command
-#
+"""
+  class containing the addOffset command
+"""
 	def addOffset(SelGeoId,OffsetLine):
-	#
-	# this is the OffsetInSketcher command
-	#
+	"""
+	  this is the OffsetInSketcher command
+	"""
 		def getSelectedEdges(SelGeoID):
-		#
-		# returns a list of all selected lines and arcs
-		#
+		"""
+		  returns a list of all selected lines and arcs
+		""" 
 			AllGeo = Sketch.getGeometry() # full geometry list
 			Selected = []
 			for Id in SelGeoID:
@@ -199,19 +199,19 @@ class OffsetInSketcher():
 			return Selected
 
 		def areEqual(V1,V2):
-		#
-		# check the  identity of two vectors
-		#
+		"""
+		  check the  identity of two vectors
+		"""
 			if (V1-V2).Length < 0.001: return True
 
 		def interlinkedEdges(UnsortedEdges):
-		#
-		# return an interlinked list of lines and arcs
-		#
+		"""
+		 return an interlinked list of lines and arcs
+		"""
 			def getBackwardElem(Element,UnsortedEdges):
-			#
-			# get next edge in backward direction
-			#
+			"""
+			  get next edge in backward direction
+			"""
 				if len(UnsortedEdges) == 0: return
 				else:
 					StartPt = Element.StartPoint
@@ -229,9 +229,9 @@ class OffsetInSketcher():
 					return # nothing found
 
 			def getForwardElem(Element,UnsortedEdges):
-			#
-			# get next edge in forward direction
-			#
+			"""
+			  get next edge in forward direction
+			"""
 				if len(UnsortedEdges) == 0: return
 				else:
 					EndPt = Element.EndPoint # endpoint of first element in geolist
@@ -258,9 +258,9 @@ class OffsetInSketcher():
 			return SortedEdges
 
 		def flection(A,B,C):
-		#
-		# returns True if flection of polyline is negative
-		#
+		"""
+		  returns True if flection of polyline is negative
+		"""
 			M = App.Matrix(	A.x,	A.y,	1,	0,
 							B.x,	B.y,	1,	0,
 							C.x,	C.y,	1,	0,
@@ -268,9 +268,9 @@ class OffsetInSketcher():
 			if M.determinant() < 0.0: return True
 
 		def pointBetween(Edge0,Edge1):
-		#
-		# calculate  vertex between two offset edges 
-		#
+		"""
+		  calculate  vertex between two offset edges 
+		"""
 			if  Edge0.Type == 'arc': # first edge is an arc
 				delta = Edge0.EndPoint.sub(Edge0.Center).normalize()
 				if Edge0.isNegative(): delta = delta.negative()
@@ -293,9 +293,9 @@ class OffsetInSketcher():
 			return pt
 
 		def pointAtOpenEnd(Edge,Start):
-		#
-		# calculate  offset vertex at start or end of open edge
-		#
+		"""
+		  calculate  offset vertex at start or end of open edge
+		"""
 			e = (Edge.EndPoint.sub(Edge.StartPoint)).normalize()
 			delta =e.cross(App.Vector(0,0,1)).multiply(OffsetValue)  # from point to offset point
 			if Start:	pt = Edge.StartPoint+delta
@@ -303,9 +303,9 @@ class OffsetInSketcher():
 			return pt
 
 		def createOffsetVertexes(SortedEdges):
-		#
-		# create vertexes of offset line
-		#
+		"""
+		  create vertexes of offset line
+		"""
 			OffsetPoints = []
 			NumOfEdges = len(SortedEdges)-1
 			if areEqual(SortedEdges[0].StartPoint,SortedEdges[-1].EndPoint): # figure is closed
@@ -321,9 +321,9 @@ class OffsetInSketcher():
 			return OffsetPoints
 
 		def drawOffsetEdges(SortedEdges,OffsetPoints):
-		#
-		# create and draw the offset lines
-		#
+		"""
+		  create and draw the offset lines
+		"""
 			OffsetEdges = []
 			for i in range(len(OffsetPoints)-1):
 				if SortedEdges[i].Type == 'arc': # edge is an arc
@@ -341,13 +341,13 @@ class OffsetInSketcher():
 			return OffsetEdges
 
 		def createConstraints(OffsetEdges):
-		#
-		# create constraints at vertexes
-		#
+		"""
+		  create constraints at vertexes
+		"""
 			def constraintAtVertex(Edge1,Edge2):
-			#
-			# create constraint between two edges
-			#
+			"""
+			  create constraint between two edges
+			"""
 				if Edge1.Type == 'arc' or Edge2.Type == 'arc': #at least one edge is an arc
 					Sketch.tangent(Edge1,Edge1.EndPointId,Edge2,Edge2.StartPointId) # tangent between arc and neighbour
 				else: # both edges are lines
@@ -359,13 +359,13 @@ class OffsetInSketcher():
 				constraintAtVertex(OffsetEdges[-1],OffsetEdges[0])
 
 		def createParametric(SortedEdges,OffsetEdges,OffsetValue):
-		#
-		# create constraints generating the parametric behavior
-		#
+		"""
+		  create constraints generating the parametric behavior
+		"""
 			def parametricAtOpenEdge(BaseEdge,OffsetEdge,PtNum,OffsetValue):
-			#
-			# constraints at first and last edge
-			#	
+			"""
+			 constraints at first and last edge
+			"""	
 				if PtNum == 2: # at the last edge
 					DistanceLines.append(Tools.createLine(BaseEdge.EndPoint,OffsetEdge.EndPoint))
 					DistanceLines[-1 ].addGeometry(True)
@@ -381,9 +381,9 @@ class OffsetInSketcher():
 				Sketch.perpendicular(BaseEdge,DistanceLines[-1])			
 
 			def parametricAtEdges(BaseEdge,OffsetEdge,OffsetValue):
-			#
-			# constraints at interior edges
-			#
+			"""
+			 constraints at interior edges
+			"""
 				if OffsetEdge.Type == 'arc':
 					Sketch.coincident(BaseEdge,3,OffsetEdge,3) # connect centers
 				else:
@@ -411,21 +411,21 @@ class OffsetInSketcher():
 				parametricAtOpenEdge(SortedEdges[-1],OffsetEdges[-1],2,OffsetValue) # last edge
 
 		def getOffsetValue(FirstEdge,OffsetLine):
-		#
-		# calculate offsetvalue using the offsetline
-		#
+		"""
+		  calculate offsetvalue using the offsetline
+		"""
 			OffsetValue = (OffsetLine[0].sub(OffsetLine[1])).Length
 			if flection(OffsetLine[0],OffsetLine[1],FirstEdge.EndPoint):
 				OffsetValue = -OffsetValue
 			return OffsetValue
 
-		SelectedEdges = getSelectedEdges(SelGeoId) # list of selected edges
-		OffsetValue = getOffsetValue(SelectedEdges[0],OffsetLine) # value of offset
-		SortedEdges = interlinkedEdges(SelectedEdges) # list of interlinked lines and arcs S0-E0,S1-E1, ...
-		OffsetPoints = createOffsetVertexes(SortedEdges) # create offset vertexes
-		OffsetEdges = drawOffsetEdges(SortedEdges,OffsetPoints) # create and draw the offset lines
-		createConstraints(OffsetEdges) # create  constraints between edges
-		createParametric(SortedEdges,OffsetEdges,OffsetValue) # create parametric
+		SelectedEdges = getSelectedEdges(SelGeoId) """list of selected edges"""
+		OffsetValue = getOffsetValue(SelectedEdges[0],OffsetLine) """value of offset"""
+		SortedEdges = interlinkedEdges(SelectedEdges) """list of interlinked lines and arcs S0-E0,S1-E1, ..."""
+		OffsetPoints = createOffsetVertexes(SortedEdges) """create offset vertexes"""
+		OffsetEdges = drawOffsetEdges(SortedEdges,OffsetPoints) """create and draw the offset lines"""
+		createConstraints(OffsetEdges) """create constraints between edges"""
+		createParametric(SortedEdges,OffsetEdges,OffsetValue) """create parametric"""
 		App.ActiveDocument.recompute()
 
 ex = OffsetDialog() 
