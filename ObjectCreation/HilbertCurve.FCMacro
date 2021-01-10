@@ -42,7 +42,7 @@ on the shape of the profile you want to sweep.
 Maybe you need to take a few tries."""
 __Status__ = 'Stable'
 __Requires__ = ''
-__Communication__ = ''
+__Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=53781'
 __Files__ = ''
 
 
