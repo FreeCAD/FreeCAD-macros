@@ -46,9 +46,12 @@ __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=53781'
 __Files__ = ''
 
 
-import FreeCAD, Draft  # For the wire
+# For the wire
+import FreeCAD as app
+import Draft
 
-from PySide import QtGui, QtCore  # For the gui
+# For the gui
+from PySide import QtGui, QtCore
 
 class HilbertCurve:
     """The class of the Hilbert curve.
@@ -239,16 +242,16 @@ class Hilbert_Dialog(QtGui.QDialog):
         length = self.lengthSpin.value()
         HC=HilbertCurve(dimensions, iterations)
         points = HC.get_points()
-        pl = FreeCAD.Placement()
+        pl = app.Placement()
         pl.Rotation.Q = (0.0, 0.0, 0.0, 1.0)
-        pl.Base = FreeCAD.Vector(0.0, 0.0, 0.0)
+        pl.Base = app.Vector(0.0, 0.0, 0.0)
         vectors = []
         if dimensions == 2:
             for point in points:
-                vectors.append(FreeCAD.Vector(point[0]*length, point[1]*length, 0.0))
+                vectors.append(app.Vector(point[0]*length, point[1]*length, 0.0))
         else:
             for point in points:
-                vectors.append(FreeCAD.Vector(point[0]*length, point[1]*length, point[2]*length))
+                vectors.append(app.Vector(point[0]*length, point[1]*length, point[2]*length))
         wire = Draft.makeWire(vectors, placement=pl, closed=False, face=False, support=None)
         wire.Label = "Hilbert"
         Draft.autogroup(wire)
