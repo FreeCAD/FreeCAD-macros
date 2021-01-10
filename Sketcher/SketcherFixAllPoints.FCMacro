@@ -1,14 +1,14 @@
 __Name__   = "SketcherFixAllPoints"
 __Author__  = "edi"
 __Version__ = "0.0.2"
-__License__ = 'License identifier from https://spdx.org/licenses/, e.g. LGPL-2.0-or-later as FreeCAD, MIT, CC0-1.0'
+__License__ = 'LGPL v2'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=13&t=52451'
 __Help__ = 'Open a sketch. Start the macro. All geometry is fixed by constraints.'
 __Status__ = 'Stable'
 __Requires__ = 'e.g. FreeCAD >= v0.19'
 __Date__    = "2021-01-07"
 """
-This macro is intended to automatic constrain incomplete contrained sketches.
+This macro is intended to constrain automatic created, incomplete contrained sketches.
 The sketches usually have been imported from IGES, STEP or DXF files.
 
 All existing external constraints will be deleted.
