@@ -24,7 +24,7 @@
 __Name__ = 'HilbertCurve'
 __Comment__ = 'This macro creates a Hilbert Curve wire in 2 or 3 dimensions with many iterations.'
 __Author__  = 'Simone Bignetti'
-__Version__ = '01.01'
+__Version__ = '1.1.0'
 __Date__    = '2020-12-29'
 __License__ = 'GNU LESSER GENERAL PUBLIC LICENSE Version 2.1, February 1999'
 __Web__ = ''
