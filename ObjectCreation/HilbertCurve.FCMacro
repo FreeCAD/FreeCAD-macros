@@ -2,7 +2,7 @@
 
 # Copyright (c) 2020 Simone Bignetti, Gottolengo Italy (simone.b)
 #
-# This file is part of the FreeCAD CAx development system.              *
+# This file is part of the FreeCAD CAx development system.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
 # You can contact me by mail at simone.bignetti@linux.it
 
 __Name__ = 'HilbertCurve'
-__Comment__ = 'This macro creates a Hilbert Curve wire in 2 or 3 dimensions with many iterations.'
+__Comment__ = 'This macro creates an Hilbert curve wire in 2 or 3 dimensions with many iterations.'
 __Author__  = 'Simone Bignetti'
 __Version__ = '1.1.0'
 __Date__    = '2020-12-29'
@@ -30,7 +30,7 @@ __License__ = 'GNU LESSER GENERAL PUBLIC LICENSE Version 2.1, February 1999'
 __Web__ = ''
 __Wiki__ = ''
 __Icon__ = 'HilbertCurve.png'
-__Help__ = """Usage:
+__Help__ = '''Usage:
 In a FreeCAD document start the macro. A dialog appears.
 Choose if the wire is two-dimensional or three-dimensional,
 the number of the iterations and the length of the wire segment.
@@ -39,7 +39,7 @@ You can use the just created wire to do a sweep in the part Workbench, But first
 it's better to apply a radius to the wire, or the sweep will be badly formed.
 The size of the radius depends on the length chosen for the curve segments and
 on the shape of the profile you want to sweep.
-Maybe you need to take a few tries."""
+Maybe you need to take a few tries.'''
 __Status__ = 'Stable'
 __Requires__ = ''
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=53781'
@@ -50,12 +50,19 @@ import FreeCAD, Draft  # For the wire
 
 from PySide import QtGui, QtCore  # For the gui
 
-class HilbertCurve:  # The class of the Hilbert's Curve.
+class HilbertCurve:
+    """The class of the Hilbert curve.
+    
+    By this class it's possible to create a wire
+    of a fractal Hilbert curve with
+    a fixed number of dimensions and iterations.
+    """
+    
     def __init__(self, dimensions, iterations):
-        """Initialize a hilbert curve.
+        """Initialize the Hilbert curve.
 
         Args:
-            iterations (int): iterations to use in constructing the hilbert curve
+            iterations (int): iterations to use in constructing the curve
             dimensions (int): number of dimensions
         """
 
@@ -74,10 +81,10 @@ class HilbertCurve:  # The class of the Hilbert's Curve.
         self.number_of_points = 2 ** (self.iterations * self.dimensions)
 
     def point_from_distance(self, distance):
-        """Return a point in n-dimensional space given a distance along a hilbert curve.
+        """Return a point in n-dimensional space given a distance along a the curve.
 
         Args:
-            distance (int): integer distance along hilbert curve
+            distance (int): integer distance along the curve
 
         Returns:
             point (iterable of ints): an n-dimensional vector of length dimensions where
@@ -111,11 +118,11 @@ class HilbertCurve:  # The class of the Hilbert's Curve.
         return point
 
     def get_min_distance(self):
-        """Return the minimum distance along a hilbert curve."""
+        """Return the minimum distance along the curve."""
         return self.min_distance
 
     def get_max_distance(self):
-        """Return the maximum distance along a hilbert curve."""
+        """Return the maximum distance along the curve."""
         return self.max_distance
 
     def get_min_coordinate(self):
@@ -127,11 +134,11 @@ class HilbertCurve:  # The class of the Hilbert's Curve.
         return self.max_coordinate
 
     def get_number_of_points(self):
-        """Return the number of points in the hilbert curve."""
+        """Return the number of points in the curve."""
         return self.number_of_points
 
     def get_points(self):
-        """Return the list of points in the hilbert curve."""
+        """Return the list of points in the curve."""
         points = []
         for point_number in range(self.number_of_points):
             points.append(self.point_from_distance(point_number))
@@ -145,6 +152,15 @@ class HilbertCurve:  # The class of the Hilbert's Curve.
 
 
 class Hilbert_Dialog(QtGui.QDialog):
+    """The dialog for the Hilbert curve
+    
+    This class opens in FreeCAD a dialog to input
+    the number of dimensions and the number of iterations
+    to create the Hilbert curve.
+    OK creates the curve.
+    CANCEL quit the macro.
+    """
+
     def __init__(self):
         super(Hilbert_Dialog, self).__init__()
         self.setupUi()
@@ -154,14 +170,14 @@ class Hilbert_Dialog(QtGui.QDialog):
         self.iterations = 3
 
         self.setGeometry(250, 250, 400, 300)  # Window definition
-        self.setWindowTitle("Hilber Curve Macro")
+        self.setWindowTitle("Hilbert curve Macro")
 
-        titleLabel = QtGui.QLabel("Create an Hilbert Curve in two or three dimensions")  # Title and subtitle
+        titleLabel = QtGui.QLabel("Create an Hilbert curve in two or three dimensions")  # Title and subtitle
         titleFont = QtGui.QFont()
         titleFont.setBold(True)
         titleFont.setWeight(75)
         titleLabel.setFont(titleFont)
-        subtitleLabel = QtGui.QLabel("This macro creates a wire in the draft workbench\nwith the shape of an Hilbert's Curve in two or three dimensions.\nFor example, you can use this wire as a sweep path.\nIt's recommended to apply a radius at the wire,\nin order to obtain a correct sweep generation.")
+        subtitleLabel = QtGui.QLabel("This macro creates a wire in the draft workbench\nwith the shape of an Hilbert curve in two or three dimensions.\nFor example, you can use this wire as a sweep path.\nIt's recommended to apply a radius at the wire,\nin order to obtain a correct sweep generation.")
         titleBox = QtGui.QVBoxLayout()
         titleBox.addWidget(titleLabel)
         titleBox.addWidget(subtitleLabel)
