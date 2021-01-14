@@ -8,7 +8,7 @@ __Status__ = 'Stable'
 __Requires__ = 'e.g. FreeCAD >= v0.19'
 __Date__    = "2021-01-07"
 """
-This macro is intended to constrain automatic created, incomplete contrained sketches.
+This macro is intended to constrain automatically created, incompletely contrained sketches.
 The sketches usually have been imported from IGES, STEP or DXF files.
 
 All existing external constraints will be deleted.
