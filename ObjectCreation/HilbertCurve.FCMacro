@@ -29,7 +29,7 @@ __Date__    = '2020-12-29'
 __License__ = 'GNU LESSER GENERAL PUBLIC LICENSE Version 2.1, February 1999'
 __Web__ = ''
 __Wiki__ = ''
-__Icon__ = 'HilbertCurve.png'
+__Icon__ = 'HilbertCurve.svg'
 __Help__ = '''Usage:
 In a FreeCAD document start the macro. A dialog appears.
 Choose if the wire is two-dimensional or three-dimensional,
@@ -43,7 +43,7 @@ Maybe you need to take a few tries.'''
 __Status__ = 'Stable'
 __Requires__ = ''
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=53781'
-__Files__ = ''
+__Files__ = 'HilbertCurve.svg'
 
 
 # For the wire
