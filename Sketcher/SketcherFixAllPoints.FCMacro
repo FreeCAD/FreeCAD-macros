@@ -3,6 +3,7 @@ __Author__  = "edi"
 __Version__ = "0.0.2"
 __License__ = 'LGPL v2'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=13&t=52451'
+__Files__ = 'SketcherFixAllPoints.svg'
 __Help__ = 'Open a sketch. Start the macro. All geometry is fixed by constraints.'
 __Status__ = 'Stable'
 __Requires__ = 'e.g. FreeCAD >= v0.19'
@@ -23,8 +24,10 @@ Workflow:
 Hint: The created sketch may be over constrained. In this case drag an element.
 The redundant constraints will be deleted automatically.
 """
+import FreeCAD as app
+import FreeCADGui as gui
 class Point:
-	'''defining a Point object, containing it's position an element id's'''
+	'''defining a Point object, containing it's position and element id's'''
 	def __init__(self,Pos,GeoId,PtId):
 		self.Pos = Pos
 		self.Ident = []
@@ -46,11 +49,11 @@ def addPoint(Pos,GeoId,PtId):
 
 def getSketch():
 	'''get the open sketch'''
-	ActiveWorkbench = Gui.activeWorkbench()
+	ActiveWorkbench = gui.activeWorkbench()
 	if ActiveWorkbench.name() == 'SketcherWorkbench':
 		return ActiveSketch
 	else:
-		Sel = Gui.Selection.getSelection()
+		Sel = gui.Selection.getSelection()
 		if Sel[0].TypeId == 'Sketcher::SketchObject':
 			return Sel[0]
 
@@ -99,4 +102,4 @@ if Sketch != None:
 	getElements(Sketch)
 	makeConstraints(Sketch)
 	makeDiameters(Sketch)
-	App.ActiveDocument.recompute()
+	app.ActiveDocument.recompute()
