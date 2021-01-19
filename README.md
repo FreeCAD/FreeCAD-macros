@@ -25,7 +25,7 @@ This repository hosts FreeCAD macros that volunteers have vetted and added for u
 
 ### Macro description
 Please add a complete description how to use the macro near the top of your macro as normal Python comments.
-Ideally write a Wiki page explaining what your macro does and how to use it by following the instructions on the [Wiki](https://wiki.freecadweb.org/Macro_documentation).
+Ideally write a Wiki page explaining what your macro does and how to use it by following the instructions on the [Wiki](https://wiki.freecadweb.org/Macro_documentation). It's a good habit to write a changelog, especially when bringing API breaking changes, from latest to oldest.
 
 ### CamelCase macro name
 Please follow the `CamelCase.FCMacro` convention for the macro name (other associated files except the macro icon don't need to follow this convention). Please don't start your macro name with `Macro` or `FC` or similar (we already know it's a macro for FreeCAD).
