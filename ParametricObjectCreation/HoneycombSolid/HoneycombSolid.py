@@ -3,7 +3,7 @@ HoneycombSolid --> Honeycomb solid creator.
 (c) 2021 Christian González Di Antonio <christiangda@gmail.com>
 """
 
-__version__ = "v1.0.2"
+__Version__ = "v1.0.2"
 
 import FreeCAD
 import Part
