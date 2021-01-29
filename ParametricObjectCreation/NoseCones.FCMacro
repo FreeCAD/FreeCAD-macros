@@ -20,6 +20,34 @@
 # * USA                                                                  *
 # *                                                                      *
 # ************************************************************************
+#
+# NoseCones
+# ---------
+#
+# Use this macro to create rocket nose cones suitable for 3D printing or
+# machining.
+#
+# General Procedure:
+# 1. Select the desired nose cone type from the drop down list. Current
+#    types are:
+#        cone
+#        elliptical
+#        ogive
+#        parabola
+#        parabolic (not the same as parabola - see the wikipedia entry for more information)
+#        power series
+#        Haack
+#        Von Karman
+# 2. For the Haack, parabolic, and power series set an appropriate shape coefficient
+# 3. Set the nose style. Currently supported styles are:
+#        solid - the nose cone is solid throughout
+#        hollow - the nose cone is hollow with a specified thickness. The base is not closed
+#        capped - similar to holow, but with a closed base
+# 4. Set your nose length, radius, and thickness as appropriate
+# 5. Select the shoulder checkbox if you wish to crate a shoulder
+# 6. Set the shoulder length, radius, and thickness as appropriate
+# 7. Select OK. The nose cone will be generated and placed in your document
+#
 
 __Name__ = 'Nose Cones'
 __Comment__ = 'Nose Cone Generator'
