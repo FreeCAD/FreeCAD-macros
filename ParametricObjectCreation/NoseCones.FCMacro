@@ -59,9 +59,15 @@ STYLE_SOLID = "solid"
 STYLE_HOLLOW = "hollow"
 STYLE_CAPPED = "capped"
 
+def _err(message):
+    """Write errors  to the console including the line ending."""
+    FreeCAD.Console.PrintError(message + "\n")
+
+
 class NoseShapeHandler():
 	def __init__(self, obj):
 		# Common parameters
+		self._type = str(obj.NoseType)
 		self._style = str(obj.NoseStyle)
 		self._thickness = float(obj.Thickness)
 
@@ -81,32 +87,72 @@ class NoseShapeHandler():
 		spline = Part.BSplineCurve()
 		spline.buildFromPoles(points)
 		return spline
+
+	def isValidShape(self):
+		# Perform some general validations
+		if self._style in [STYLE_HOLLOW, STYLE_CAPPED]:
+			if self._thickness <= 0:
+				_err("For %s nose cones thickness must be > 0" % self._style)
+				return False
+			if self._thickness >= self._radius:
+				_err("Nose cones thickness must be less than the nose cone radius")
+				return False
+		if self._shoulder:
+			if self._shoulderLength <= 0:
+				_err("Shoulder length must be > 0")
+				return False
+			if self._shoulderRadius <= 0:
+				_err("Shoulder radius must be > 0")
+				return False
+			if self._shoulderRadius > self._radius:
+				_err("Shoulder radius can not exceed the nose cone radius")
+				return False
+			if self._style in [STYLE_HOLLOW, STYLE_CAPPED]:
+				if self._shoulderThickness <= 0:
+					_err("For %s nose cones with a shoulder, shoulder thickness must be > 0" % self._style)
+					return False
+				if self._shoulderThickness >= self._shoulderRadius:
+					_err("Shoulder thickness must be less than the shoulder radius")
+					return False
+
+		return True
         
 	def draw(self):
+		if not self.isValidShape():
+			return
+
 		edges = None
 
-		if self._style == STYLE_SOLID:
-			if self._shoulder:
-				edges = self.drawSolidShoulder()
+		try:
+			if self._style == STYLE_SOLID:
+				if self._shoulder:
+					edges = self.drawSolidShoulder()
+				else:
+					edges = self.drawSolid()
+			elif self._style == STYLE_HOLLOW:
+				if self._shoulder:
+					edges = self.drawHollowShoulder()
+				else:
+					edges = self.drawHollow()
 			else:
-				edges = self.drawSolid()
-		elif self._style == STYLE_HOLLOW:
-			if self._shoulder:
-				edges = self.drawHollowShoulder()
-			else:
-				edges = self.drawHollow()
-		else:
-			if self._shoulder:
-				edges = self.drawCappedShoulder()
-			else:
-				edges = self.drawCapped()
+				if self._shoulder:
+					edges = self.drawCappedShoulder()
+				else:
+					edges = self.drawCapped()
+		except (ZeroDivisionError, Part.OCCError):
+			_err("Nose cone parameters produce an invalid shape")
+			return
 
 		if edges is not None:
-			wire = Part.Wire(edges)
-			face = Part.Face(wire)
-			self._obj.Shape = face.revolve(FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(1, 0, 0), 360)
+			try:
+				wire = Part.Wire(edges)
+				face = Part.Face(wire)
+				self._obj.Shape = face.revolve(FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(1, 0, 0), 360)
+			except Part.OCCError:
+				_err("Nose cone parameters produce an invalid shape")
+				return
 		else:
-			self._obj.Shape = None
+			_err("Nose cone parameters produce an invalid shape")
 
 	def solidLines(self, outerShape):
 		center = FreeCAD.Vector(0.0, 0.0)
@@ -215,6 +261,9 @@ class NoseShapeHandler():
 		pass
     
 class OgiveShapeHandler(NoseShapeHandler):
+
+	def isValidShape(self):
+		return super().isValidShape()
             
 	def ogive_y(self, x, length, radius, rho):
 		y = math.sqrt(rho * rho - math.pow(length - x, 2)) + radius - rho
@@ -333,6 +382,12 @@ class OgiveShapeHandler(NoseShapeHandler):
 		return edges
     
 class HaackShapeHandler(NoseShapeHandler):
+
+	def isValidShape(self):
+		if self._coefficient < 0:
+			_err("For %s nose cones the coefficient must be >= 0" % self._type)
+			return False
+		return super().isValidShape()
 
 	def innerMinor(self, last):
 		radius = self._radius - self._thickness
@@ -453,6 +508,9 @@ class HaackShapeHandler(NoseShapeHandler):
     
 class EllipseShapeHandler(NoseShapeHandler):
 
+	def isValidShape(self):
+		return super().isValidShape()
+
 	def innerMinor(self, last):
 		a = last
 		b = self._radius - self._thickness
@@ -513,6 +571,9 @@ class EllipseShapeHandler(NoseShapeHandler):
 		return edges
     
 class ConeShapeHandler(NoseShapeHandler):
+
+	def isValidShape(self):
+		return super().isValidShape()
 
 	def innerMinor(self, last):
 		intercept = self._radius - self._thickness
@@ -580,6 +641,13 @@ class ConeShapeHandler(NoseShapeHandler):
 		return edges
     
 class ParabolicShapeHandler(NoseShapeHandler):
+
+	def isValidShape(self):
+		if self._coefficient < 0 or self._coefficient > 1:
+			_err("For %s nose cones the coefficient must be in the range (0 <= coefficient <= 1)" % self._type)
+			return False
+		return super().isValidShape()
+
 	def para_y(self, x, length, radius, k):
 		ratio = x / length
 		y = radius * ((2 * ratio) - (k * ratio * ratio)) / (2 - k)
@@ -694,6 +762,13 @@ class ParabolicShapeHandler(NoseShapeHandler):
 		return edges
     
 class PowerShapeHandler(NoseShapeHandler):
+
+	def isValidShape(self):
+		if self._coefficient <= 0 or self._coefficient > 1:
+			_err("For %s nose cones the coefficient must be in the range (0 < coefficient <= 1)" % self._type)
+			return False
+		return super().isValidShape()
+
 	def power_y(self, x, length, radius, k):
 		y = radius * math.pow((x / length), k)
 		return y
@@ -824,11 +899,11 @@ class NoseCone:
 		obj.NoseType = [TYPE_CONE,
 					TYPE_ELLIPTICAL,
 					TYPE_OGIVE,
-					TYPE_VON_KARMAN,
-					TYPE_HAACK,
+					TYPE_PARABOLA,
 					TYPE_PARABOLIC,
 					TYPE_POWER,
-					TYPE_PARABOLA]
+					TYPE_VON_KARMAN,
+					TYPE_HAACK]
 
 		obj.addProperty('App::PropertyEnumeration', 'NoseStyle', 'NoseCone', 'Nose cone style')
 		obj.NoseStyle = [STYLE_SOLID,
@@ -873,8 +948,8 @@ class ViewProviderNoseCone:
 	def getDefaultDisplayMode(self):
 		return "Flat Lines"
 
-	def onChanged(self, vp, prop):
-		FreeCAD.Console.PrintMessage('Change property: ' + str(prop) + '\n')
+	#def onChanged(self, vp, prop):
+	#	FreeCAD.Console.PrintMessage('Change property: ' + str(prop) + '\n')
 
 class NoseConeGuiClass(QtGui.QDialog):
 	''' See http://en.wikipedia.org/Nose_cone_design
@@ -903,7 +978,6 @@ class NoseConeGuiClass(QtGui.QDialog):
 								TYPE_PARABOLA,
 								TYPE_PARABOLIC,
 								TYPE_POWER,
-								TYPE_PARABOLA,
 								TYPE_VON_KARMAN,
 								TYPE_HAACK)
 		self.noseConeTypesCombo = QtGui.QComboBox(self)
@@ -1039,8 +1113,11 @@ class NoseConeGuiClass(QtGui.QDialog):
 
 
 	def onNoseConeType(self, selectedText):
-		if selectedText == TYPE_HAACK or selectedText == TYPE_PARABOLIC or selectedText == TYPE_POWER:
-			self.coefficientInput.setText("0.00")
+		if selectedText == TYPE_HAACK or selectedText == TYPE_PARABOLIC:
+			self.coefficientInput.setText("1.00")
+			self.coefficientInput.setEnabled(True)
+		elif selectedText == TYPE_POWER:
+			self.coefficientInput.setText("1.00")
 			self.coefficientInput.setEnabled(True)
 		else:
 			self.coefficientInput.setText("")
@@ -1130,7 +1207,6 @@ class NoseConeGuiClass(QtGui.QDialog):
 			shoulderThickness = 0
 		else:
 			shoulderThickness = float(shoulderThickness)
-		FreeCAD.Console.PrintMessage('type = ' + str(noseType) + '\n')
 
 		noseCone = FreeCAD.ActiveDocument.addObject('Part::FeaturePython', 'NoseCone')
 		NoseCone(noseCone)
@@ -1145,10 +1221,7 @@ class NoseConeGuiClass(QtGui.QDialog):
 		noseCone.ShoulderLength = shoulderLength
 		noseCone.ShoulderThickness = shoulderThickness
 
-		#FreeCAD.ActiveDocument.recompute()
 		noseCone.NoseType = str(noseType)
-
-		#FreeCAD.ActiveDocument.recompute()
 		noseCone.NoseStyle = str(noseStyle)
 
 		FreeCAD.ActiveDocument.recompute()
