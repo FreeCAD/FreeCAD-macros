@@ -49,10 +49,11 @@ userOK = "OK"
 TYPE_CONE = "cone"
 TYPE_ELLIPTICAL = "elliptical"
 TYPE_OGIVE = "ogive"
-TYPE_VON_KARMAN = "Von Karman"
-TYPE_HAACK = "Haack"
 TYPE_PARABOLIC = "parabolic"
 TYPE_POWER = "power series"
+TYPE_PARABOLA = "parabola"
+TYPE_VON_KARMAN = "Von Karman"
+TYPE_HAACK = "Haack"
 
 STYLE_SOLID = "solid"
 STYLE_HOLLOW = "hollow"
@@ -826,7 +827,8 @@ class NoseCone:
 					TYPE_VON_KARMAN,
 					TYPE_HAACK,
 					TYPE_PARABOLIC,
-					TYPE_POWER]
+					TYPE_POWER,
+					TYPE_PARABOLA]
 
 		obj.addProperty('App::PropertyEnumeration', 'NoseStyle', 'NoseCone', 'Nose cone style')
 		obj.NoseStyle = [STYLE_SOLID,
@@ -851,6 +853,9 @@ class NoseCone:
 			shape = HaackShapeHandler(obj)
 		elif obj.NoseType == TYPE_PARABOLIC:
 			shape = ParabolicShapeHandler(obj)
+		elif obj.NoseType == TYPE_PARABOLA:
+			obj.Coefficient = 0.5
+			shape = PowerShapeHandler(obj)
 		elif obj.NoseType == TYPE_POWER:
 			shape = PowerShapeHandler(obj)
 
@@ -895,10 +900,12 @@ class NoseConeGuiClass(QtGui.QDialog):
 		self.noseConeTypes = (TYPE_CONE,
 								TYPE_ELLIPTICAL,
 								TYPE_OGIVE,
-								TYPE_VON_KARMAN,
-								TYPE_HAACK,
+								TYPE_PARABOLA,
 								TYPE_PARABOLIC,
-								TYPE_POWER)
+								TYPE_POWER,
+								TYPE_PARABOLA,
+								TYPE_VON_KARMAN,
+								TYPE_HAACK)
 		self.noseConeTypesCombo = QtGui.QComboBox(self)
 		self.noseConeTypesCombo.addItems(self.noseConeTypes)
 		self.noseConeTypesCombo.setCurrentIndex(self.noseConeTypes.index(TYPE_VON_KARMAN))
