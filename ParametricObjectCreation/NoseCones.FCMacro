@@ -1,0 +1,1156 @@
+# ************************************************************************
+# * Copyright (c)2020-2021 David Carter <dcarter[at]davidcarter.ca>      *
+# *                                                                      *
+# * This file is a supplement to the FreeCAD CAx development system.     *
+# *                                                                      *
+# * This program is free software; you can redistribute it and/or modify *
+# * it under the terms of the GNU Lesser General Public License (LGPL)   *
+# * as published by the Free Software Foundation; either version 2 of    *
+# * the License, or (at your option) any later version.                  *
+# * for detail see the LICENCE text file.                                *
+# *                                                                      *
+# * This software is distributed in the hope that it will be useful,     *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
+# * GNU Library General Public License for more details.                 *
+# *                                                                      *
+# * You should have received a copy of the GNU Library General Public    *
+# * License along with this macro; if not, write to the Free Software    *
+# * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 *
+# * USA                                                                  *
+# *                                                                      *
+# ************************************************************************
+
+__Name__ = 'Nose Cones'
+__Comment__ = 'Nose Cone Generator'
+__Author__ = 'David Carter'
+__Version__ = '1.04.00'
+__Date__ = '2021-01-29'
+__License__ = 'LGPL-2.0-or-later'
+__Web__ = 'https://en.wikipedia.org/wiki/Nose_cone_design'
+__Wiki__ = ''
+__Icon__ = 'NoseCones.png'
+__Help__ = ''
+__Status__ = ''
+__Requires__ = ''
+__Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
+__Files__ = ''
+
+from PySide import QtGui, QtCore
+import FreeCAD
+import FreeCADGui
+import Part
+import math
+
+# Constant definitions
+userCancelled = "Cancelled"
+userOK = "OK"
+
+TYPE_CONE = "cone"
+TYPE_ELLIPTICAL = "elliptical"
+TYPE_OGIVE = "ogive"
+TYPE_VON_KARMAN = "Von Karman"
+TYPE_HAACK = "Haack"
+TYPE_PARABOLIC = "parabolic"
+TYPE_POWER = "power series"
+
+STYLE_SOLID = "solid"
+STYLE_HOLLOW = "hollow"
+STYLE_CAPPED = "capped"
+
+class NoseShapeHandler():
+	def __init__(self, obj):
+		# Common parameters
+		self._style = str(obj.NoseStyle)
+		self._thickness = float(obj.Thickness)
+
+		self._shoulder = bool(obj.Shoulder)
+		self._shoulderLength = float(obj.ShoulderLength)
+		self._shoulderRadius = float(obj.ShoulderRadius)
+		self._shoulderThickness = float(obj.ShoulderThickness)
+
+		self._length = float(obj.Length)
+		self._radius = float(obj.Radius)
+		self._coefficient = float(obj.Coefficient)
+		self._resolution = int(obj.Resolution)
+
+		self._obj = obj
+
+	def makeSpline(self, points):
+		spline = Part.BSplineCurve()
+		spline.buildFromPoles(points)
+		return spline
+        
+	def draw(self):
+		edges = None
+
+		if self._style == STYLE_SOLID:
+			if self._shoulder:
+				edges = self.drawSolidShoulder()
+			else:
+				edges = self.drawSolid()
+		elif self._style == STYLE_HOLLOW:
+			if self._shoulder:
+				edges = self.drawHollowShoulder()
+			else:
+				edges = self.drawHollow()
+		else:
+			if self._shoulder:
+				edges = self.drawCappedShoulder()
+			else:
+				edges = self.drawCapped()
+
+		if edges is not None:
+			wire = Part.Wire(edges)
+			face = Part.Face(wire)
+			self._obj.Shape = face.revolve(FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(1, 0, 0), 360)
+		else:
+			self._obj.Shape = None
+
+	def solidLines(self, outerShape):
+		center = FreeCAD.Vector(0.0, 0.0)
+		major = FreeCAD.Vector(self._length, 0.0)
+		minor = FreeCAD.Vector(0.0, self._radius)
+
+		line1 = Part.LineSegment(center, major)
+		line2 = Part.LineSegment(center, minor)
+		return [outerShape.toShape(), line1.toShape(), line2.toShape()]
+
+	def solidShoulderLines(self, outerShape):
+		center = FreeCAD.Vector(0,0)
+		major = FreeCAD.Vector(self._length,0)
+		minor = FreeCAD.Vector(0,self._radius)
+
+		line1 = Part.LineSegment(major,                                                      FreeCAD.Vector(-self._shoulderLength,0))
+		line2 = Part.LineSegment(FreeCAD.Vector(-self._shoulderLength,0),                    FreeCAD.Vector(-self._shoulderLength,self._shoulderRadius))
+		line3 = Part.LineSegment(FreeCAD.Vector(-self._shoulderLength,self._shoulderRadius), FreeCAD.Vector(0,self._shoulderRadius))
+		line4 = Part.LineSegment(FreeCAD.Vector(0,self._shoulderRadius),                     minor)
+		return [outerShape.toShape(), line1.toShape(), line2.toShape(), line3.toShape(), line4.toShape()]
+
+	def hollowLines(self, max_x, outerShape, innerShape):
+		major = FreeCAD.Vector(self._length,0)
+		minor = FreeCAD.Vector(0,self._radius)
+
+		innerMajor = FreeCAD.Vector(max_x,0)
+		innerMinor = FreeCAD.Vector(0,self._radius - self._thickness)
+
+		line1 = Part.LineSegment(major, innerMajor)
+		line2 = Part.LineSegment(minor, innerMinor)
+		return [outerShape.toShape(), line1.toShape(), line2.toShape(), innerShape.toShape()]
+
+	def hollowShoulderLines(self, max_x, minor_y, outerShape, innerShape):
+		major = FreeCAD.Vector(self._length,0)
+		minor = FreeCAD.Vector(0,self._radius)
+
+		innerMajor = FreeCAD.Vector(max_x,0)
+		innerMinor = FreeCAD.Vector(self._thickness, minor_y)
+
+		end2 = FreeCAD.Vector(0,                       self._shoulderRadius)
+		end3 = FreeCAD.Vector(-self._shoulderLength,   self._shoulderRadius)
+		end4 = FreeCAD.Vector(-self._shoulderLength,   self._shoulderRadius - self._shoulderThickness)
+		end5 = FreeCAD.Vector(self._thickness, self._shoulderRadius - self._shoulderThickness)
+		line1 = Part.LineSegment(major, innerMajor)
+		line2 = Part.LineSegment(minor, end2)
+		line3 = Part.LineSegment(end2,  end3)
+		line4 = Part.LineSegment(end3,  end4)
+		line5 = Part.LineSegment(end4,  end5)
+		line6 = Part.LineSegment(end5,  innerMinor)
+		return [outerShape.toShape(), line1.toShape(), line2.toShape(), line3.toShape(), line4.toShape(), line5.toShape(), line6.toShape(), innerShape.toShape()]
+
+	def cappedLines(self, max_x, minor_y, outerShape, innerShape):
+		center = FreeCAD.Vector(0,0)
+		major = FreeCAD.Vector(self._length,0)
+		minor = FreeCAD.Vector(0,self._radius)
+
+		innerMajor = FreeCAD.Vector(max_x,0)
+		innerMinor = FreeCAD.Vector(self._thickness, minor_y)
+
+		line1 = Part.LineSegment(major, innerMajor)
+		line2 = Part.LineSegment(minor, center)
+		line3 = Part.LineSegment(center, FreeCAD.Vector(self._thickness, 0))
+		line4 = Part.LineSegment(FreeCAD.Vector(self._thickness, 0), innerMinor)
+		return [outerShape.toShape(), line1.toShape(), line2.toShape(), line3.toShape(), line4.toShape(), innerShape.toShape()]
+
+	def cappedShoulderLines(self, max_x, minor_y, outerShape, innerShape):
+		major = FreeCAD.Vector(self._length,0)
+		minor = FreeCAD.Vector(0,self._radius)
+
+		innerMajor = FreeCAD.Vector(max_x,0)
+		innerMinor = FreeCAD.Vector(self._thickness, minor_y)
+
+		end2 = FreeCAD.Vector(0,                                            self._shoulderRadius)
+		end3 = FreeCAD.Vector(-self._shoulderLength,                        self._shoulderRadius)
+		end4 = FreeCAD.Vector(-self._shoulderLength,                        0)
+		end5 = FreeCAD.Vector(self._shoulderThickness-self._shoulderLength, 0)
+		end6 = FreeCAD.Vector(self._shoulderThickness-self._shoulderLength, self._shoulderRadius-self._shoulderThickness)
+		end7 = FreeCAD.Vector(self._thickness,                              self._shoulderRadius-self._shoulderThickness)
+		line1 = Part.LineSegment(major, innerMajor)
+		line2 = Part.LineSegment(minor, end2)
+		line3 = Part.LineSegment(end2,  end3)
+		line4 = Part.LineSegment(end3,  end4)
+		line5 = Part.LineSegment(end4,  end5)
+		line6 = Part.LineSegment(end5,  end6)
+		line7 = Part.LineSegment(end6,  end7)
+		line8 = Part.LineSegment(end7,  innerMinor)
+		return [outerShape.toShape(), line1.toShape(), line2.toShape(), line3.toShape(), line4.toShape(), 
+				line5.toShape(), line6.toShape(), line7.toShape(), line8.toShape(), innerShape.toShape()]
+    
+	def drawSolid(self):
+		pass
+    
+	def drawSolidShoulder(self):
+		pass
+    
+	def drawHollow(self):
+		pass
+    
+	def drawHollowShoulder(self):
+		pass
+    
+	def drawCapped(self):
+		pass
+    
+	def drawCappedShoulder(self):
+		pass
+    
+class OgiveShapeHandler(NoseShapeHandler):
+            
+	def ogive_y(self, x, length, radius, rho):
+		y = math.sqrt(rho * rho - math.pow(length - x, 2)) + radius - rho
+		return y
+
+	def innerMinor(self, last):
+		radius = self._radius - self._thickness
+		length = last
+		rho = (radius * radius + length * length) / (2.0 * radius)
+
+		inner_minor = self.ogive_y(length - self._thickness, length, radius, rho)
+		return inner_minor
+ 
+	def ogive_curve(self, length, radius, resolution, min = 0):
+		rho = (radius * radius + length * length) / (2.0 * radius)
+		points = []
+		for i in range(0, resolution):
+			
+			x = float(i) * ((length - min) / float(resolution))
+			y = self.ogive_y(x, length, radius, rho)
+			points.append(FreeCAD.Vector(length - x, y))
+
+		points.append(FreeCAD.Vector(min, radius))
+		return points
+           
+	def findOgiveY(self, thickness, length, radius):
+		rho = (radius * radius + length * length) / (2.0 * radius)
+
+		min = 0
+		max = length
+		x = 0
+
+		# Do a binary search to see where f(x) = thickness, to 1 mm
+		while (max - min) > 0.1:
+			y = self.ogive_y(length - x, length, radius, rho)
+			if (y == thickness):
+				return x
+			if (y > thickness):
+				min = x
+			else:
+				max = x
+			x = (max - min) / 2 + min
+		return x
+    
+	def drawSolid(self):
+		outer_curve = self.ogive_curve(self._length, self._radius, self._resolution)
+		ogive = self.makeSpline(outer_curve)
+
+		edges = self.solidLines(ogive)
+		return edges
+    
+	def drawSolidShoulder(self):
+		outer_curve = self.ogive_curve(self._length, self._radius, self._resolution)
+		ogive = self.makeSpline(outer_curve)
+
+		edges = self.solidShoulderLines(ogive)
+		return edges
+    
+	def drawHollow(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findOgiveY(self._thickness, self._length, self._radius)
+
+		outer_curve = self.ogive_curve(self._length, self._radius, self._resolution)
+		inner_curve = self.ogive_curve(x, self._radius - self._thickness, self._resolution)
+
+		# Create the splines.
+		ogive = self.makeSpline(outer_curve)
+		innerOgive = self.makeSpline(inner_curve)
+
+		edges = self.hollowLines(x, ogive, innerOgive)
+		return edges
+    
+	def drawHollowShoulder(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findOgiveY(self._thickness, self._length, self._radius)
+		minor_y = self.innerMinor(x)
+
+		outer_curve = self.ogive_curve(self._length, self._radius, self._resolution)
+		inner_curve = self.ogive_curve(x, minor_y, self._resolution, self._thickness)
+
+		# Create the splines.
+		ogive = self.makeSpline(outer_curve)
+		innerOgive = self.makeSpline(inner_curve)
+
+		edges = self.hollowShoulderLines(x, minor_y, ogive, innerOgive)
+		return edges
+    
+	def drawCapped(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findOgiveY(self._thickness, self._length, self._radius)
+		minor_y = self.innerMinor(x)
+
+		outer_curve = self.ogive_curve(self._length, self._radius, self._resolution)
+		inner_curve = self.ogive_curve(x, minor_y, self._resolution, self._thickness)
+
+		# Create the splines.
+		ogive = self.makeSpline(outer_curve)
+		innerOgive = self.makeSpline(inner_curve)
+
+		edges = self.cappedLines(x, minor_y, ogive, innerOgive)
+		return edges
+    
+	def drawCappedShoulder(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findOgiveY(self._thickness, self._length, self._radius)
+		minor_y = self.innerMinor(x)
+
+		outer_curve = self.ogive_curve(self._length, self._radius, self._resolution)
+		inner_curve = self.ogive_curve(x, minor_y, self._resolution, self._thickness)
+
+		# Create the splines.
+		ogive = self.makeSpline(outer_curve)
+		innerOgive = self.makeSpline(inner_curve)
+
+		edges = self.cappedShoulderLines(x, minor_y, ogive, innerOgive)
+		return edges
+    
+class HaackShapeHandler(NoseShapeHandler):
+
+	def innerMinor(self, last):
+		radius = self._radius - self._thickness
+		length = last
+
+		inner_minor = self.haack_y(length - self._thickness, length, radius, self._coefficient)
+		return inner_minor
+ 
+	def theta(self, x, length):
+		return  math.acos(1 - 2*x/length);
+
+	def haack_y(self, x, length, radius, coefficient):
+	    theta = self.theta(x, length)
+	    return  radius * math.sqrt(theta - math.sin(2 * theta)/2
+			+ coefficient * math.pow(math.sin(theta), 3)) / math.sqrt(math.pi);
+
+	def haack_curve(self, length, radius, resolution, coefficient, min = 0):
+		points = []
+		for i in range(0, resolution):
+			
+			x = float(i) * (length / float(resolution))
+			y = self.haack_y(x, length, radius, coefficient)
+			if length - x > min:
+				points.append(FreeCAD.Vector(length - x, y))
+
+		points.append(FreeCAD.Vector(min, radius))
+		return points
+            
+	def findHaackY(self, thickness, length, radius, coefficient):
+		min = 0
+		max = length
+		x = 0
+
+		# Do a binary search to see where f(x) = thickness, to 1 mm
+		while (max - min) > 0.1:
+			y = self.haack_y(length - x, length, radius, coefficient)
+			if (y == thickness):
+				return x
+			if (y > thickness):
+				min = x
+			else:
+				max = x
+			x = (max - min) / 2 + min
+		return x
+    
+	def drawSolid(self):
+		outer_curve = self.haack_curve(self._length, self._radius, self._resolution, self._coefficient)
+		spline = self.makeSpline(outer_curve)
+
+		edges = self.solidLines(spline)
+		return edges
+    
+	def drawSolidShoulder(self):
+		outer_curve = self.haack_curve(self._length, self._radius, self._resolution, self._coefficient)
+		spline = self.makeSpline(outer_curve)
+
+		edges = self.solidShoulderLines(spline)
+		return edges
+    
+	def drawHollow(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findHaackY(self._thickness, self._length, self._radius, self._coefficient)
+
+		outer_curve = self.haack_curve(self._length, self._radius, self._resolution, self._coefficient)
+		inner_curve = self.haack_curve(x, self._radius - self._thickness, self._resolution, self._coefficient)
+
+		# Create the splines.
+		outerSpline = self.makeSpline(outer_curve)
+		innerSpline = self.makeSpline(inner_curve)
+
+		edges = self.hollowLines(x, outerSpline, innerSpline)
+		return edges
+    
+	def drawHollowShoulder(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findHaackY(self._thickness, self._length, self._radius, self._coefficient)
+		minor_y = self.innerMinor(x)
+
+		outer_curve = self.haack_curve(self._length, self._radius, self._resolution, self._coefficient)
+		inner_curve = self.haack_curve(x - self._thickness, minor_y, self._resolution, self._coefficient, self._thickness)
+
+		# Create the splines.
+		outerSpline = self.makeSpline(outer_curve)
+		innerSpline = self.makeSpline(inner_curve)
+
+		edges = self.hollowShoulderLines(x, minor_y, outerSpline, innerSpline)
+		return edges
+    
+	def drawCapped(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findHaackY(self._thickness, self._length, self._radius, self._coefficient)
+		minor_y = self.innerMinor(x)
+
+		outer_curve = self.haack_curve(self._length, self._radius, self._resolution, self._coefficient)
+		inner_curve = self.haack_curve(x - self._thickness, minor_y, self._resolution, self._coefficient, self._thickness)
+
+		# Create the splines.
+		outerSpline = self.makeSpline(outer_curve)
+		innerSpline = self.makeSpline(inner_curve)
+
+		edges = self.cappedLines(x, minor_y, outerSpline, innerSpline)
+		return edges
+    
+	def drawCappedShoulder(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findHaackY(self._thickness, self._length, self._radius, self._coefficient)
+		minor_y = self.innerMinor(x)
+
+		outer_curve = self.haack_curve(self._length, self._radius, self._resolution, self._coefficient)
+		inner_curve = self.haack_curve(x - self._thickness, minor_y, self._resolution, self._coefficient, self._thickness)
+
+		# Create the splines.
+		outerSpline = self.makeSpline(outer_curve)
+		innerSpline = self.makeSpline(inner_curve)
+
+		edges = self.cappedShoulderLines(x, minor_y, outerSpline, innerSpline)
+		return edges
+    
+class EllipseShapeHandler(NoseShapeHandler):
+
+	def innerMinor(self, last):
+		a = last
+		b = self._radius - self._thickness
+		x = self._thickness
+
+		inner_minor = (b / a) * math.sqrt(a * a - x * x)
+		return inner_minor
+ 
+	def drawSolid(self):
+		outer_curve = Part.ArcOfEllipse(Part.Ellipse(FreeCAD.Vector(0, 0), self._length, self._radius), 0.0, math.pi/2)
+
+		edges = self.solidLines(outer_curve)
+		return edges
+    
+	def drawSolidShoulder(self):
+		outer_curve = Part.ArcOfEllipse(Part.Ellipse(FreeCAD.Vector(0, 0), self._length, self._radius), 0.0, math.pi/2)
+
+		edges = self.solidShoulderLines(outer_curve)
+		return edges
+    
+	def drawHollow(self):
+		last = self._length - self._thickness
+
+		outer_curve = Part.ArcOfEllipse(Part.Ellipse(FreeCAD.Vector(0, 0), self._length, self._radius), 0.0, math.pi/2)
+		inner_curve = Part.ArcOfEllipse(Part.Ellipse(FreeCAD.Vector(0, 0), last, self._radius - self._thickness), 0.0, math.pi/2)
+
+		edges = self.hollowLines(last, outer_curve, inner_curve)
+		return edges
+    
+	def drawHollowShoulder(self):
+		last = self._length - self._thickness
+		minor_y = self.innerMinor(last)
+
+		outer_curve = Part.ArcOfEllipse(Part.Ellipse(FreeCAD.Vector(0, 0), self._length, self._radius), 0.0, math.pi/2)
+		inner_curve = Part.ArcOfEllipse(Part.Ellipse(FreeCAD.Vector(self._thickness, 0), last - self._thickness, minor_y), 0.0, math.pi/2)
+
+		edges = self.hollowShoulderLines(last, minor_y, outer_curve, inner_curve)
+		return edges
+    
+	def drawCapped(self):
+		last = self._length - self._thickness
+		minor_y = self.innerMinor(last)
+
+		outer_curve = Part.ArcOfEllipse(Part.Ellipse(FreeCAD.Vector(0, 0), self._length, self._radius), 0.0, math.pi/2)
+		inner_curve = Part.ArcOfEllipse(Part.Ellipse(FreeCAD.Vector(self._thickness, 0), last - self._thickness, minor_y), 0.0, math.pi/2)
+
+		edges = self.cappedLines(last, minor_y, outer_curve, inner_curve)
+		return edges
+    
+	def drawCappedShoulder(self):
+		last = self._length - self._thickness
+		minor_y = self.innerMinor(last)
+
+		outer_curve = Part.ArcOfEllipse(Part.Ellipse(FreeCAD.Vector(0, 0), self._length, self._radius), 0.0, math.pi/2)
+		inner_curve = Part.ArcOfEllipse(Part.Ellipse(FreeCAD.Vector(self._thickness, 0), last - self._thickness, minor_y), 0.0, math.pi/2)
+
+		edges = self.cappedShoulderLines(last, minor_y, outer_curve, inner_curve)
+		return edges
+    
+class ConeShapeHandler(NoseShapeHandler):
+
+	def innerMinor(self, last):
+		intercept = self._radius - self._thickness
+		slope = intercept * -1 / (last - self._thickness)
+		inner_minor = self._thickness * slope + intercept
+		return inner_minor
+ 
+	def drawSolid(self):
+		outer_curve = Part.LineSegment(FreeCAD.Vector(self._length, 0.0), FreeCAD.Vector(0.0, self._radius))
+
+		edges = self.solidLines(outer_curve)
+		return edges
+    
+	def drawSolidShoulder(self):
+		outer_curve = Part.LineSegment(FreeCAD.Vector(self._length, 0.0), FreeCAD.Vector(0.0, self._radius))
+
+		edges = self.solidShoulderLines(outer_curve)
+		return edges
+    
+	def drawHollow(self):
+		# Calculate the offset from the end to maintain the thickness
+		offset = self._length * self._thickness / self._radius
+		last = self._length - offset
+
+		outer_curve = Part.LineSegment(FreeCAD.Vector(self._length, 0.0), FreeCAD.Vector(0.0, self._radius))
+		inner_curve = Part.LineSegment(FreeCAD.Vector(last, 0.0), FreeCAD.Vector(0.0, self._radius - self._thickness))
+
+		edges = self.hollowLines(last, outer_curve, inner_curve)
+		return edges
+    
+	def drawHollowShoulder(self):
+		# Calculate the offset from the end to maintain the thickness
+		offset = self._length * self._thickness / self._radius
+		last = self._length - offset
+		minor_y = self.innerMinor(last)
+
+		outer_curve = Part.LineSegment(FreeCAD.Vector(self._length, 0.0), FreeCAD.Vector(0.0, self._radius))
+		inner_curve = Part.LineSegment(FreeCAD.Vector(last, 0.0), FreeCAD.Vector(self._thickness, minor_y))
+
+		edges = self.hollowShoulderLines(last, minor_y, outer_curve, inner_curve)
+		return edges
+    
+	def drawCapped(self):
+		# Calculate the offset from the end to maintain the thickness
+		offset = self._length * self._thickness / self._radius
+		last = self._length - offset
+		minor_y = self.innerMinor(last)
+
+		outer_curve = Part.LineSegment(FreeCAD.Vector(self._length, 0.0), FreeCAD.Vector(0.0, self._radius))
+		inner_curve = Part.LineSegment(FreeCAD.Vector(last, 0.0), FreeCAD.Vector(self._thickness, minor_y))
+
+		edges = self.cappedLines(last, minor_y, outer_curve, inner_curve)
+		return edges
+    
+	def drawCappedShoulder(self):
+		# Calculate the offset from the end to maintain the thickness
+		offset = self._length * self._thickness / self._radius
+		last = self._length - offset
+		minor_y = self.innerMinor(last)
+
+		outer_curve = Part.LineSegment(FreeCAD.Vector(self._length, 0.0), FreeCAD.Vector(0.0, self._radius))
+		inner_curve = Part.LineSegment(FreeCAD.Vector(last, 0.0), FreeCAD.Vector(self._thickness, minor_y))
+
+		edges = self.cappedShoulderLines(last, minor_y, outer_curve, inner_curve)
+		return edges
+    
+class ParabolicShapeHandler(NoseShapeHandler):
+	def para_y(self, x, length, radius, k):
+		ratio = x / length
+		y = radius * ((2 * ratio) - (k * ratio * ratio)) / (2 - k)
+		return y
+
+	def innerMinor(self, last, k):
+		radius = self._radius - self._thickness
+		length = last
+
+		inner_minor = self.para_y(length - self._thickness, length, radius, k)
+		return inner_minor
+ 
+	def para_curve(self, length, radius, resolution, k, min = 0):
+		points = []
+		for i in range(0, resolution):
+			
+			x = float(i) * ((length - min) / float(resolution))
+			y = self.para_y(x, length, radius, k)
+			points.append(FreeCAD.Vector(length - x, y))
+
+		points.append(FreeCAD.Vector(min, radius))
+		return points
+           
+	def findParaY(self, thickness, length, radius, k):
+		min = 0
+		max = length
+		x = 0
+
+		# Do a binary search to see where f(x) = thickness, to 1 mm
+		while (max - min) > 0.1:
+			y = self.para_y(length - x, length, radius, k)
+			if (y == thickness):
+				return x
+			if (y > thickness):
+				min = x
+			else:
+				max = x
+			x = (max - min) / 2 + min
+		return x
+    
+	def drawSolid(self):
+		outer_curve = self.para_curve(self._length, self._radius, self._resolution, self._coefficient)
+		spline = self.makeSpline(outer_curve)
+
+		edges = self.solidLines(spline)
+		return edges
+    
+	def drawSolidShoulder(self):
+		outer_curve = self.para_curve(self._length, self._radius, self._resolution, self._coefficient)
+		spline = self.makeSpline(outer_curve)
+
+		edges = self.solidShoulderLines(spline)
+		return edges
+    
+	def drawHollow(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findParaY(self._thickness, self._length, self._radius, self._coefficient)
+
+		outer_curve = self.para_curve(self._length, self._radius, self._resolution, self._coefficient)
+		inner_curve = self.para_curve(x, self._radius - self._thickness, self._resolution, self._coefficient)
+
+		# Create the splines.
+		outerSpline = self.makeSpline(outer_curve)
+		innerSpline = self.makeSpline(inner_curve)
+
+		edges = self.hollowLines(x, outerSpline, innerSpline)
+		return edges
+    
+	def drawHollowShoulder(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findParaY(self._thickness, self._length, self._radius, self._coefficient)
+		minor_y = self.innerMinor(x, self._coefficient)
+
+		outer_curve = self.para_curve(self._length, self._radius, self._resolution, self._coefficient)
+		inner_curve = self.para_curve(x - self._thickness, minor_y, self._resolution, self._coefficient, self._thickness)
+
+		# Create the splines.
+		outerSpline = self.makeSpline(outer_curve)
+		innerSpline = self.makeSpline(inner_curve)
+
+		edges = self.hollowShoulderLines(x, minor_y, outerSpline, innerSpline)
+		return edges
+    
+	def drawCapped(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findParaY(self._thickness, self._length, self._radius, self._coefficient)
+		minor_y = self.innerMinor(x, self._coefficient)
+
+		outer_curve = self.para_curve(self._length, self._radius, self._resolution, self._coefficient)
+		inner_curve = self.para_curve(x - self._thickness, minor_y, self._resolution, self._coefficient, self._thickness)
+
+		# Create the splines.
+		outerSpline = self.makeSpline(outer_curve)
+		innerSpline = self.makeSpline(inner_curve)
+
+		edges = self.cappedLines(x, minor_y, outerSpline, innerSpline)
+		return edges
+    
+	def drawCappedShoulder(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findParaY(self._thickness, self._length, self._radius, self._coefficient)
+		minor_y = self.innerMinor(x, self._coefficient)
+
+		outer_curve = self.para_curve(self._length, self._radius, self._resolution, self._coefficient)
+		inner_curve = self.para_curve(x - self._thickness, minor_y, self._resolution, self._coefficient, self._thickness)
+
+		# Create the splines.
+		outerSpline = self.makeSpline(outer_curve)
+		innerSpline = self.makeSpline(inner_curve)
+
+		edges = self.cappedShoulderLines(x, minor_y, outerSpline, innerSpline)
+		return edges
+    
+class PowerShapeHandler(NoseShapeHandler):
+	def power_y(self, x, length, radius, k):
+		y = radius * math.pow((x / length), k)
+		return y
+
+	def innerMinor(self, last, k):
+		radius = self._radius - self._thickness
+		length = last
+
+		inner_minor = self.power_y(length - self._thickness, length, radius, k)
+		return inner_minor
+ 
+	def power_curve(self, length, radius, resolution, k, min = 0):
+		points = []
+		for i in range(0, resolution):
+			
+			x = float(i) * ((length - min) / float(resolution))
+			y = self.power_y(x, length, radius, k)
+			points.append(FreeCAD.Vector(length - x, y))
+
+		points.append(FreeCAD.Vector(min, radius))
+		return points
+           
+	def findPowerY(self, thickness, length, radius, k):
+		min = 0
+		max = length
+		x = 0
+
+		# Do a binary search to see where f(x) = thickness, to 1 mm
+		while (max - min) > 0.1:
+			y = self.power_y(length - x, length, radius, k)
+			if (y == thickness):
+				return x
+			if (y > thickness):
+				min = x
+			else:
+				max = x
+			x = (max - min) / 2 + min
+		return x
+ 
+    
+	def drawSolid(self):
+		outer_curve = self.power_curve(self._length, self._radius, self._resolution, self._coefficient)
+		spline = self.makeSpline(outer_curve)
+
+		edges = self.solidLines(spline)
+		return edges
+    
+	def drawSolidShoulder(self):
+		outer_curve = self.power_curve(self._length, self._radius, self._resolution, self._coefficient)
+		spline = self.makeSpline(outer_curve)
+
+		edges = self.solidShoulderLines(spline)
+		return edges
+    
+	def drawHollow(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findPowerY(self._thickness, self._length, self._radius, self._coefficient)
+
+		outer_curve = self.power_curve(self._length, self._radius, self._resolution, self._coefficient)
+		inner_curve = self.power_curve(x, self._radius - self._thickness, self._resolution, self._coefficient)
+
+		# Create the splines.
+		outerSpline = self.makeSpline(outer_curve)
+		innerSpline = self.makeSpline(inner_curve)
+
+		edges = self.hollowLines(x, outerSpline, innerSpline)
+		return edges
+    
+	def drawHollowShoulder(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findPowerY(self._thickness, self._length, self._radius, self._coefficient)
+		minor_y = self.innerMinor(x, self._coefficient)
+
+		outer_curve = self.power_curve(self._length, self._radius, self._resolution, self._coefficient)
+		inner_curve = self.power_curve(x - self._thickness, minor_y, self._resolution, self._coefficient, self._thickness)
+
+		# Create the splines.
+		outerSpline = self.makeSpline(outer_curve)
+		innerSpline = self.makeSpline(inner_curve)
+
+		edges = self.hollowShoulderLines(x, minor_y, outerSpline, innerSpline)
+		return edges
+    
+	def drawCapped(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findPowerY(self._thickness, self._length, self._radius, self._coefficient)
+		minor_y = self.innerMinor(x, self._coefficient)
+
+		outer_curve = self.power_curve(self._length, self._radius, self._resolution, self._coefficient)
+		inner_curve = self.power_curve(x - self._thickness, minor_y, self._resolution, self._coefficient, self._thickness)
+
+		# Create the splines.
+		outerSpline = self.makeSpline(outer_curve)
+		innerSpline = self.makeSpline(inner_curve)
+
+		edges = self.cappedLines(x, minor_y, outerSpline, innerSpline)
+		return edges
+    
+	def drawCappedShoulder(self):
+		# Find the point where the thickness matches the desired thickness, so we don't get too narrow at the tip
+		x = self.findPowerY(self._thickness, self._length, self._radius, self._coefficient)
+		minor_y = self.innerMinor(x, self._coefficient)
+
+		outer_curve = self.power_curve(self._length, self._radius, self._resolution, self._coefficient)
+		inner_curve = self.power_curve(x - self._thickness, minor_y, self._resolution, self._coefficient, self._thickness)
+
+		# Create the splines.
+		outerSpline = self.makeSpline(outer_curve)
+		innerSpline = self.makeSpline(inner_curve)
+
+		edges = self.cappedShoulderLines(x, minor_y, outerSpline, innerSpline)
+		return edges
+
+class NoseCone:
+
+	def __init__(self, obj):
+		obj.addProperty('App::PropertyLength', 'Length', 'NoseCone', 'Length of the nose not including any shoulder').Length = 60.0
+		obj.addProperty('App::PropertyLength', 'Radius', 'NoseCone', 'Radius at the base of the nose').Radius = 10.0
+		obj.addProperty('App::PropertyLength', 'Thickness', 'NoseCone', 'Nose cone thickness').Thickness = 2.0
+		obj.addProperty('App::PropertyBool', 'Shoulder', 'NoseCone', 'Set to true if the part includes a shoulder').Shoulder = False
+		obj.addProperty('App::PropertyLength', 'ShoulderRadius', 'NoseCone', 'Shoulder length').ShoulderRadius = 8.0
+		obj.addProperty('App::PropertyLength', 'ShoulderLength', 'NoseCone', 'Shoulder radius').ShoulderLength = 10.0
+		obj.addProperty('App::PropertyLength', 'ShoulderThickness', 'NoseCone', 'Shoulder thickness').ShoulderLength = 10.0
+		obj.addProperty('App::PropertyFloat', 'Coefficient', 'NoseCone', 'Coefficient').Coefficient = 0.0
+		obj.addProperty('App::PropertyInteger', 'Resolution', 'NoseCone', 'Resolution').Resolution = 100 # TODO: Expose resolution
+
+		obj.addProperty('App::PropertyEnumeration', 'NoseType', 'NoseCone', 'Nose cone type')
+		obj.NoseType = [TYPE_CONE,
+					TYPE_ELLIPTICAL,
+					TYPE_OGIVE,
+					TYPE_VON_KARMAN,
+					TYPE_HAACK,
+					TYPE_PARABOLIC,
+					TYPE_POWER]
+
+		obj.addProperty('App::PropertyEnumeration', 'NoseStyle', 'NoseCone', 'Nose cone style')
+		obj.NoseStyle = [STYLE_SOLID,
+							STYLE_HOLLOW,
+							STYLE_CAPPED]
+
+		obj.addProperty('Part::PropertyPartShape', 'Shape', 'NoseCone', 'Shape of the nose cone')
+		obj.Proxy=self
+
+	def execute(self, obj):
+		shape = None
+		if obj.NoseType == TYPE_CONE:
+			shape = ConeShapeHandler(obj)
+		elif obj.NoseType == TYPE_ELLIPTICAL:
+			shape = EllipseShapeHandler(obj)
+		elif obj.NoseType == TYPE_OGIVE:
+			shape = OgiveShapeHandler(obj)
+		elif obj.NoseType == TYPE_VON_KARMAN:
+			obj.Coefficient = 0.0
+			shape = HaackShapeHandler(obj)
+		elif obj.NoseType == TYPE_HAACK:
+			shape = HaackShapeHandler(obj)
+		elif obj.NoseType == TYPE_PARABOLIC:
+			shape = ParabolicShapeHandler(obj)
+		elif obj.NoseType == TYPE_POWER:
+			shape = PowerShapeHandler(obj)
+
+		if shape is not None:
+			shape.draw()
+		else:
+			obj.Shape = shape
+
+
+class ViewProviderNoseCone:
+
+	def __init__(self, obj):
+		obj.Proxy = self
+
+	def getDefaultDisplayMode(self):
+		return "Flat Lines"
+
+	def onChanged(self, vp, prop):
+		FreeCAD.Console.PrintMessage('Change property: ' + str(prop) + '\n')
+
+class NoseConeGuiClass(QtGui.QDialog):
+	''' See http://en.wikipedia.org/Nose_cone_design
+	'''
+
+	def __init__(self):
+		super(NoseConeGuiClass, self).__init__()
+		self.initUI()
+
+	def initUI(self):
+		self.result = userCancelled
+
+		# define our window
+		self.setGeometry(250, 250, 400, 350)
+		self.setWindowTitle("Nose Cone Design Wizard")
+		self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+
+		# Select the type of nose cone
+		self.noseConeTypeLabel = QtGui.QLabel("Nose cone type", self)
+		#self.noseConeTypeLabel.setFont('Courier')
+		self.noseConeTypeLabel.move(20, 20)
+
+		self.noseConeTypes = (TYPE_CONE,
+								TYPE_ELLIPTICAL,
+								TYPE_OGIVE,
+								TYPE_VON_KARMAN,
+								TYPE_HAACK,
+								TYPE_PARABOLIC,
+								TYPE_POWER)
+		self.noseConeTypesCombo = QtGui.QComboBox(self)
+		self.noseConeTypesCombo.addItems(self.noseConeTypes)
+		self.noseConeTypesCombo.setCurrentIndex(self.noseConeTypes.index(TYPE_VON_KARMAN))
+		self.noseConeTypesCombo.activated[str].connect(self.onNoseConeType)
+		self.noseConeTypesCombo.move(210, 15)
+
+		# Select the type of sketch
+		self.noseStyleLabel = QtGui.QLabel("Nose Style", self)
+		#self.noseStyleLabel.setFont('Courier')
+		self.noseStyleLabel.move(20, 50)
+
+		self.noseStyles = (STYLE_SOLID,
+							STYLE_HOLLOW,
+							STYLE_CAPPED)
+		self.noseStylesCombo = QtGui.QComboBox(self)
+		self.noseStylesCombo.addItems(self.noseStyles)
+		self.noseStylesCombo.setCurrentIndex(self.noseStyles.index(STYLE_HOLLOW))
+		self.noseStylesCombo.activated[str].connect(self.onNoseStyle)
+		self.noseStylesCombo.move(210, 45)
+
+		# Get the nose cone paramters: length, width, etc...
+		self.lengthLabel = QtGui.QLabel("Length (mm)", self)
+		#self.lengthLabel.setFont('Courier')
+		self.lengthLabel.move(20, 80)
+
+		self.lengthValidator = QtGui.QDoubleValidator(self)
+		self.lengthValidator.setBottom(0.0)
+
+		self.lengthInput = QtGui.QLineEdit(self)
+		self.lengthInput.setText("60.00")
+		self.lengthInput.setFixedWidth(100)
+		self.lengthInput.setValidator(self.lengthValidator)
+		self.lengthInput.move(210, 80)
+
+		self.radiusLabel = QtGui.QLabel("Radius (mm)", self)
+		#self.radiusLabel.setFont('Courier')
+		self.radiusLabel.move(20, 110)
+
+		self.radiusValidator = QtGui.QDoubleValidator(self)
+		self.radiusValidator.setBottom(0.0)
+
+		self.radiusInput = QtGui.QLineEdit(self)
+		self.radiusInput.setText("10.00")
+		self.radiusInput.setFixedWidth(100)
+		self.radiusInput.setValidator(self.radiusValidator)
+		self.radiusInput.move(210, 110)
+
+		self.thicknessLabel = QtGui.QLabel("Thickness (mm)", self)
+		#self.thicknessLabel.setFont('Courier')
+		self.thicknessLabel.move(20, 140)
+
+		self.thicknessValidator = QtGui.QDoubleValidator(self)
+		self.thicknessValidator.setBottom(0.0)
+
+		self.thicknessInput = QtGui.QLineEdit(self)
+		self.thicknessInput.setText("2.00")
+		self.thicknessInput.setFixedWidth(100)
+		self.thicknessInput.setValidator(self.thicknessValidator)
+		self.thicknessInput.move(210, 140)
+
+		self.coefficientLabel = QtGui.QLabel("Coefficient", self)
+		self.coefficientLabel.move(20, 170)
+
+		self.coefficientValidator = QtGui.QDoubleValidator(self)
+		self.coefficientValidator.setBottom(0.0)
+
+		self.coefficientInput = QtGui.QLineEdit(self)
+		self.coefficientInput.setText("")
+		self.coefficientInput.setFixedWidth(100)
+		self.coefficientInput.setValidator(self.coefficientValidator)
+		self.coefficientInput.move(210, 170)
+		self.coefficientInput.setEnabled(False)
+
+		self.shoulderLabel = QtGui.QLabel("Shoulder", self)
+		self.shoulderLabel.move(20, 200)
+
+		self.shoulderCheckbox = QtGui.QCheckBox(self)
+		self.shoulderCheckbox.setCheckState(QtCore.Qt.Unchecked)
+		self.shoulderCheckbox.move(210, 200)
+		self.shoulderCheckbox.stateChanged.connect(self.onShoulder)
+
+		self.shoulderRadiusLabel = QtGui.QLabel("Radius (mm)", self)
+		self.shoulderRadiusLabel.move(40, 230)
+
+		self.shoulderRadiusValidator = QtGui.QDoubleValidator(self)
+		self.shoulderRadiusValidator.setBottom(0.0)
+
+		self.shoulderRadiusInput = QtGui.QLineEdit(self)
+		self.shoulderRadiusInput.setText("")
+		self.shoulderRadiusInput.setFixedWidth(100)
+		self.shoulderRadiusInput.setValidator(self.shoulderRadiusValidator)
+		self.shoulderRadiusInput.move(210, 230)
+		self.shoulderRadiusInput.setEnabled(False)
+
+		self.shoulderLengthLabel = QtGui.QLabel("Length (mm)", self)
+		self.shoulderLengthLabel.move(40, 260)
+
+		self.shoulderLengthValidator = QtGui.QDoubleValidator(self)
+		self.shoulderLengthValidator.setBottom(0.0)
+
+		self.shoulderLengthInput = QtGui.QLineEdit(self)
+		self.shoulderLengthInput.setText("")
+		self.shoulderLengthInput.setFixedWidth(100)
+		self.shoulderLengthInput.setValidator(self.shoulderLengthValidator)
+		self.shoulderLengthInput.move(210, 260)
+		self.shoulderLengthInput.setEnabled(False)
+
+		self.shoulderThicknessLabel = QtGui.QLabel("Thickness (mm)", self)
+		self.shoulderThicknessLabel.move(40, 290)
+
+		self.shoulderThicknessValidator = QtGui.QDoubleValidator(self)
+		self.shoulderThicknessValidator.setBottom(0.0)
+
+		self.shoulderThicknessInput = QtGui.QLineEdit(self)
+		self.shoulderThicknessInput.setText("")
+		self.shoulderThicknessInput.setFixedWidth(100)
+		self.shoulderThicknessInput.setValidator(self.shoulderThicknessValidator)
+		self.shoulderThicknessInput.move(210, 290)
+		self.shoulderThicknessInput.setEnabled(False)
+
+		self.cancelButton = QtGui.QPushButton('Cancel', self)
+		self.cancelButton.clicked.connect(self.onCancel)
+		self.cancelButton.move(260, 320)
+
+		self.okButton = QtGui.QPushButton("OK", self)
+		self.okButton.clicked.connect(self.onOK)
+		self.okButton.setAutoDefault(True)
+		self.okButton.move(150, 320)
+
+		self.show()
+
+
+	def onNoseConeType(self, selectedText):
+		if selectedText == TYPE_HAACK or selectedText == TYPE_PARABOLIC or selectedText == TYPE_POWER:
+			self.coefficientInput.setText("0.00")
+			self.coefficientInput.setEnabled(True)
+		else:
+			self.coefficientInput.setText("")
+			self.coefficientInput.setEnabled(False)
+
+	def onNoseStyle(self, selectedText):
+		if selectedText == STYLE_HOLLOW or selectedText == STYLE_CAPPED:
+			self.thicknessInput.setText("2.00")
+			self.thicknessInput.setEnabled(True)
+
+			if self.shoulderCheckbox.isChecked():
+				self.shoulderThicknessInput.setText("2.00")
+				self.shoulderThicknessInput.setEnabled(True)
+			else:
+				self.shoulderThicknessInput.setText("")
+				self.shoulderThicknessInput.setEnabled(False)
+		else:
+			self.thicknessInput.setText("")
+			self.thicknessInput.setEnabled(False)
+
+			self.shoulderThicknessInput.setText("")
+			self.shoulderThicknessInput.setEnabled(False)
+
+	def onShoulder(self, state):
+		if self.shoulderCheckbox.isChecked():
+			self.shoulderRadiusInput.setText("8.00")
+			self.shoulderRadiusInput.setEnabled(True)
+
+			self.shoulderLengthInput.setText("10.00")
+			self.shoulderLengthInput.setEnabled(True)
+
+			selectedText = self.noseStylesCombo.currentText()
+			if selectedText == STYLE_HOLLOW or selectedText == STYLE_CAPPED:
+				self.shoulderThicknessInput.setText("2.00")
+				self.shoulderThicknessInput.setEnabled(True)
+			else:
+				self.shoulderThicknessInput.setText("")
+				self.shoulderThicknessInput.setEnabled(False)
+		else:
+			self.shoulderRadiusInput.setText("")
+			self.shoulderRadiusInput.setEnabled(False)
+
+			self.shoulderLengthInput.setText("")
+			self.shoulderLengthInput.setEnabled(False)
+
+			self.shoulderThicknessInput.setText("")
+			self.shoulderThicknessInput.setEnabled(False)
+
+	def onCancel(self):
+		self.result = userCancelled
+		self.close()
+
+	def onOK(self):
+		#QtGui.qApp.setOverrideCursor(QtCore.Qt.WaitCursor)
+
+		if FreeCAD.ActiveDocument == None:
+			FreeCAD.newDocument("NoseCone")
+
+
+		length = float(self.lengthInput.text())
+		radius = float(self.radiusInput.text())
+		thickness = self.thicknessInput.text()
+		if thickness == '':
+			thickness = 0
+		else:
+			thickness = float(thickness)
+		coefficient = self.coefficientInput.text()
+		if coefficient == '':
+			coefficient = -1
+		else:
+			coefficient = float(coefficient)
+		noseType = self.noseConeTypesCombo.currentText()
+		noseStyle = self.noseStylesCombo.currentText()
+		shoulder = self.shoulderCheckbox.isChecked()
+		shoulderRadius = self.shoulderRadiusInput.text()
+		if shoulderRadius == '':
+			shoulderRadius = 0
+		else:
+			shoulderRadius = float(shoulderRadius)
+		shoulderLength = self.shoulderLengthInput.text()
+		if shoulderLength == '':
+			shoulderLength = 0
+		else:
+			shoulderLength = float(shoulderLength)
+		shoulderThickness = self.shoulderThicknessInput.text()
+		if shoulderThickness == '':
+			shoulderThickness = 0
+		else:
+			shoulderThickness = float(shoulderThickness)
+		FreeCAD.Console.PrintMessage('type = ' + str(noseType) + '\n')
+
+		noseCone = FreeCAD.ActiveDocument.addObject('Part::FeaturePython', 'NoseCone')
+		NoseCone(noseCone)
+		ViewProviderNoseCone(noseCone.ViewObject)
+
+		noseCone.Length = length
+		noseCone.Radius = radius
+		noseCone.Thickness = thickness
+		noseCone.Coefficient = coefficient
+		noseCone.Shoulder = shoulder
+		noseCone.ShoulderRadius = shoulderRadius
+		noseCone.ShoulderLength = shoulderLength
+		noseCone.ShoulderThickness = shoulderThickness
+
+		#FreeCAD.ActiveDocument.recompute()
+		noseCone.NoseType = str(noseType)
+
+		#FreeCAD.ActiveDocument.recompute()
+		noseCone.NoseStyle = str(noseStyle)
+
+		FreeCAD.ActiveDocument.recompute()
+		FreeCADGui.SendMsgToActiveView('ViewFit')
+
+		#QtGui.qApp.restoreOverrideCursor()
+
+		self.result = userOK
+		self.close()
+
+form = NoseConeGuiClass()
+form.exec_()
