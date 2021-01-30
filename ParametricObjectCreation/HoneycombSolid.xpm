@@ -1,5 +1,5 @@
 /* XPM */
-static char * C:\Users\chris\Pictures\HoneycombSolid_xpm[] = {
+static const char * ViewProviderHoneycombSolid_xpm[] = {
 "16 16 54 1",
 " 	c None",
 ".	c #181818",
