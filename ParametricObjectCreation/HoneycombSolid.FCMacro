@@ -1,0 +1,34 @@
+"""
+HoneycombSolid --> Honeycomb solid creator.
+(c) 2021 Christian González Di Antonio <christiangda@gmail.com>
+
+"""
+
+__Name__ = 'HoneycombSolid'
+__Comment__ = 'Macro to create a Honeycomb solid'
+__Author__ = "Christian González Di Antonio <christiangda@gmail.com>"
+__Version__ = "v1.0.3"
+__License__ = 'LGPL-2.0-or-later'
+__Web__ = "https://github.com/christiangda/FreeCAD-macros-HoneycombSolid"
+__Wiki__ = "https://github.com/christiangda/FreeCAD-macros-HoneycombSolid/blob/main/README.md"
+__Icon__ = ''
+__Help__ = ''
+__Status__ = 'Stable'
+__Requires__ = ''
+__Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
+__Files__ = 'honeycomb_solid/__init__.py,honeycomb_solid/honeycomb_solid.py'
+
+import FreeCAD as app
+import FreeCADGui as gui
+
+if __name__ == '__main__':
+	#running as a macro. Load as module, to support save-restore.
+	try:
+		from honeycomb_solid.honeycomb_solid import HoneycombSolid
+		from honeycomb_solid.honeycomb_solid import ViewProviderHoneycombSolid
+	except ImportError as err:
+		app.Console.PrintError("Macro HoneycombSolid: failed to import Macro honeycomb_solid.honeycomb_solid.py. The parametric object will lose functionality after saving-loading your project, sorry.")
+	else:
+		from honeycomb_solid.honeycomb_solid import makeHoneycombSolid
+		makeHoneycombSolid(__Version__)
+		gui.SendMsgToActiveView("ViewFit")
