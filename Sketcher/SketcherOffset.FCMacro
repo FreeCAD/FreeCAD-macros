@@ -3,6 +3,7 @@ __Author__  = "edi"
 __Version__ = "0.0.3"
 __License__ = 'License identifier from https://spdx.org/licenses/, e.g. LGPL-2.0-or-later as FreeCAD, MIT, CC0-1.0'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=19&t=49886'
+__Files__ = 'SketcherOffset.svg'
 __Help__ = 'Select some lines in a sketch. Start the macro. Show offset value using the rubber band.'
 __Status__ = 'Stable'
 __Requires__ = 'e.g. FreeCAD >= v0.18'
@@ -23,415 +24,416 @@ Workflow:
 - Show value of distance and side (left/right) of the created lines using the mouse.
 """ 
 class OffsetDialog:
-""" 
-  read selected items and show the offset distance
-""" 
-	def __init__(self):
-		self.view = FreeCADGui.ActiveDocument.ActiveView 
-		self.OffsetLine = [] 
-		self.tracker = DraftTrackers.lineTracker(scolor=(1,1,1),swidth=3,dotted=True) 
-		self.tracker.raiseTracker() 
-		self.callback = self.view.addEventCallbackPivy(SoMouseButtonEvent.getClassTypeId(), self.getPoint) 
-		self.callmouse=self.view.addEventCallbackPivy(SoLocation2Event.getClassTypeId(),self.getMousePoint) 
-		self.SelGeoId = self.getElements() """init the command"""
+    """ 
+    read selected items and show the offset distance
+    """
+        
+    def __init__(self):
+        self.view = FreeCADGui.ActiveDocument.ActiveView 
+        self.OffsetLine = [] 
+        self.tracker = DraftTrackers.lineTracker(scolor=(1,1,1),swidth=3,dotted=True) 
+        self.tracker.raiseTracker() 
+        self.callback = self.view.addEventCallbackPivy(SoMouseButtonEvent.getClassTypeId(), self.getPoint) 
+        self.callmouse=self.view.addEventCallbackPivy(SoLocation2Event.getClassTypeId(),self.getMousePoint) 
+        self.SelGeoId = self.getElements()
 
-	def getMousePoint(self, event_cb):
-	"""
-	  slot: the mouse has been moved
-	"""
-		event = event_cb.getEvent()
-		if len(self.OffsetLine)==1: 
-			pos = event.getPosition() 
-			point = self.view.getPoint(pos[0],pos[1]) 
-			self.tracker.p2(point) 
+    def getMousePoint(self, event_cb):
+        """
+        slot: the mouse has been moved
+        """
+        event = event_cb.getEvent()
+        if len(self.OffsetLine)==1: 
+            pos = event.getPosition() 
+            point = self.view.getPoint(pos[0],pos[1]) 
+            self.tracker.p2(point) 
 
-	def getPoint(self, event_callback):
-	"""
-	  slot: a mouse button has been pressed
-	"""
-		event = event_callback.getEvent() 
-		if event.getState() == SoMouseButtonEvent.DOWN:
-			pos = event.getPosition() 
-			point = self.view.getPoint(pos[0], pos[1]) 
-			self.OffsetLine.append(point) 
-			self.tracker.p2(point) 
-			self.view.removeEventCallbackPivy(SoMouseButtonEvent.getClassTypeId(), self.callback) 
-			self.view.removeEventCallbackPivy(SoLocation2Event.getClassTypeId(),self.callmouse)  
-			self.tracker.off() 
-			self.tracker.finalize()
-			OffsetInSketcher.addOffset(self.SelGeoId,self.OffsetLine) """call the command"""
+    def getPoint(self, event_callback):
+        """
+        slot: a mouse button has been pressed
+        """
+        event = event_callback.getEvent() 
+        if event.getState() == SoMouseButtonEvent.DOWN:
+            pos = event.getPosition() 
+            point = self.view.getPoint(pos[0], pos[1]) 
+            self.OffsetLine.append(point) 
+            self.tracker.p2(point) 
+            self.view.removeEventCallbackPivy(SoMouseButtonEvent.getClassTypeId(), self.callback) 
+            self.view.removeEventCallbackPivy(SoLocation2Event.getClassTypeId(),self.callmouse)  
+            self.tracker.off() 
+            self.tracker.finalize()
+            OffsetInSketcher.addOffset(self.SelGeoId,self.OffsetLine)
 
-	def selectedGeoId(self):
-	"""
-	  returns a list containing GeoId's of selected lines and arcs
-	"""
-		if not Gui.Selection.getSelectionEx():
-			OffsetDialog.message('Please select elements')
-		SelEx=Gui.Selection.getSelectionEx()[0].SubElementNames """list of selected elements"""
-		SelGeoId = []
-		for El in SelEx:
-			if El.find('Edge') == 0: """El is an edge"""
-				Number = int(re.findall(r'\d+',El)[0])-1
-				SelGeoId.append(Number)
-		return SelGeoId
+    def selectedGeoId(self):
+        """
+        returns a list containing GeoId's of selected lines and arcs
+        """
+        if not Gui.Selection.getSelectionEx():
+            OffsetDialog.message('Please select elements')
+        SelEx=Gui.Selection.getSelectionEx()[0].SubElementNames 
+        SelGeoId = []
+        for El in SelEx:
+            if El.find('Edge') == 0:
+                Number = int(re.findall(r'\d+',El)[0])-1
+                SelGeoId.append(Number)
+        return SelGeoId
 
-	def getElements(self):
-	"""
-	  get selected elements and offset value
-	"""
-		SelGeoId = self.selectedGeoId()
-		point = Sketch.getSketchPoint(SelGeoId[0]) """start of rubber band"""
-		self.OffsetLine.append(point) 
-		self.tracker.on() 
-		self.tracker.p1(point) 
-		return SelGeoId
+    def getElements(self):
+        """
+        get selected elements and offset value
+        """
+        SelGeoId = self.selectedGeoId()
+        point = Sketch.getSketchPoint(SelGeoId[0]) 
+        self.OffsetLine.append(point) 
+        self.tracker.on() 
+        self.tracker.p1(point) 
+        return SelGeoId
 
-	def message(MessageText):
-		msgBox = QtGui.QMessageBox()
-		msgBox.setText(MessageText)
-		msgBox.exec_()
+    def message(MessageText):
+        msgBox = QtGui.QMessageBox()
+        msgBox.setText(MessageText)
+        msgBox.exec_()
 
 class Edge:
-""" 
-  manage the edge-element
-"""
-	def __init__(self,Geometry,Number=None):
-		self.Geo = Geometry
-		self.GeoId = Number
-		self.StartPoint = Geometry.StartPoint
-		self.EndPoint = Geometry.EndPoint
-		self.StartPointId = 1
-		self.EndPointId = 2
-		self.Type = 'line'
-		if hasattr(Geometry,'Radius'): 
-			self.Type = 'arc'
-			self.Axis = Geometry.Axis
-			if self.Axis.z < 0.0:
-				self.StartPointId = 2
-				self.EndPointId = 1
-			self.Center = Geometry.Center
-			self.Radius = Geometry.Radius
+    """ 
+    manage the edge-element
+    """
+    def __init__(self,Geometry,Number=None):
+        self.Geo = Geometry
+        self.GeoId = Number
+        self.StartPoint = Geometry.StartPoint
+        self.EndPoint = Geometry.EndPoint
+        self.StartPointId = 1
+        self.EndPointId = 2
+        self.Type = 'line'
+        if hasattr(Geometry,'Radius'): 
+            self.Type = 'arc'
+            self.Axis = Geometry.Axis
+            if self.Axis.z < 0.0:
+                self.StartPointId = 2
+                self.EndPointId = 1
+            self.Center = Geometry.Center
+            self.Radius = Geometry.Radius
 
-	def addGeometry(self,Mode=False):
-		self.GeoId = Sketch.getGeoNumber()
-		Sketch.addGeometry(self.Geo,Mode)
+    def addGeometry(self,Mode=False):
+        self.GeoId = Sketch.getGeoNumber()
+        Sketch.addGeometry(self.Geo,Mode)
 
-	def reverse(self):
-		self.Geo.reverse()
-		self.StartPoint = self.Geo.StartPoint
-		self.EndPoint = self.Geo.EndPoint
-		self.StartPointId = 3-self.StartPointId
-		self.EndPointId = 3-self.EndPointId
-		if self.Type == 'arc':
-			self.Axis = self.Geo.Axis
+    def reverse(self):
+        self.Geo.reverse()
+        self.StartPoint = self.Geo.StartPoint
+        self.EndPoint = self.Geo.EndPoint
+        self.StartPointId = 3-self.StartPointId
+        self.EndPointId = 3-self.EndPointId
+        if self.Type == 'arc':
+            self.Axis = self.Geo.Axis
 
-	def isNegative(self):
-		if self.Type == 'arc': 
-			if self.Axis.z < 0.0:
-				return True
+    def isNegative(self):
+        if self.Type == 'arc': 
+            if self.Axis.z < 0.0:
+                return True
 
 class Sketch:
-"""
-  manage all connections to the sketch
-"""
-	def addGeometry(Element,Mode):
-		ActiveSketch.addGeometry(Element,Mode)
+    """
+    manage all connections to the sketch
+    """
+    def addGeometry(Element,Mode):
+        ActiveSketch.addGeometry(Element,Mode)
 
-	def getGeometry():
-		return ActiveSketch.Geometry
+    def getGeometry():
+        return ActiveSketch.Geometry
 
-	def getGeoNumber():
-		return ActiveSketch.GeometryCount
+    def getGeoNumber():
+        return ActiveSketch.GeometryCount
 
-	def getSketchPoint(Element):
-		return ActiveSketch.getPoint(Element,1)
+    def getSketchPoint(Element):
+        return ActiveSketch.getPoint(Element,1)
 
-	def coincident(Element1,Point1,Element2,Point2):
-		ActiveSketch.addConstraint(Sketcher.Constraint('Coincident',Element1.GeoId,Point1,Element2.GeoId,Point2))
+    def coincident(Element1,Point1,Element2,Point2):
+        ActiveSketch.addConstraint(Sketcher.Constraint('Coincident',Element1.GeoId,Point1,Element2.GeoId,Point2))
 
-	def equal(Element1,Element2):
-		ActiveSketch.addConstraint(Sketcher.Constraint('Equal',Element1.GeoId,Element2.GeoId))
+    def equal(Element1,Element2):
+        ActiveSketch.addConstraint(Sketcher.Constraint('Equal',Element1.GeoId,Element2.GeoId))
 
-	def perpendicular(Element1,Element2):
-		ActiveSketch.addConstraint(Sketcher.Constraint('Perpendicular',Element1.GeoId,Element2.GeoId))
+    def perpendicular(Element1,Element2):
+        ActiveSketch.addConstraint(Sketcher.Constraint('Perpendicular',Element1.GeoId,Element2.GeoId))
 
-	def pointOnObject(Element1,Point,Element2):
-		ActiveSketch.addConstraint(Sketcher.Constraint('PointOnObject',Element1.GeoId,Point,Element2.GeoId))
+    def pointOnObject(Element1,Point,Element2):
+        ActiveSketch.addConstraint(Sketcher.Constraint('PointOnObject',Element1.GeoId,Point,Element2.GeoId))
 
-	def symmetric(Element,MidVertexNum):
-		ActiveSketch.addConstraint(Sketcher.Constraint('Symmetric',Element.GeoId,1,Element.GeoId,2,MidVertexNum,1))
+    def symmetric(Element,MidVertexNum):
+        ActiveSketch.addConstraint(Sketcher.Constraint('Symmetric',Element.GeoId,1,Element.GeoId,2,MidVertexNum,1))
 
-	def tangent(Element1,Point1,Element2,Point2):
-		ActiveSketch.addConstraint(Sketcher.Constraint('Tangent',Element1.GeoId,Point1,Element2.GeoId,Point2))
+    def tangent(Element1,Point1,Element2,Point2):
+        ActiveSketch.addConstraint(Sketcher.Constraint('Tangent',Element1.GeoId,Point1,Element2.GeoId,Point2))
 
 class Tools:
-"""
-  diverse geometric tools 
-"""
-	def createLine(Point1,Point2):
-		return Edge(Part.LineSegment(Point1,Point2))
+    """
+    diverse geometric tools 
+    """
+    def createLine(Point1,Point2):
+        return Edge(Part.LineSegment(Point1,Point2))
 
-	def concentricArcOfCircle(Element,Distance,Reverse=False):
-		Arc = Element.Geo.clone()
-		Circle = Arc.Circle
-		ConcentricEdge = Edge(Part.ArcOfCircle(Part.Circle(Circle,Distance),Arc.FirstParameter,Arc.LastParameter))
-		if Reverse: ConcentricEdge.reverse() """change sense of rotation"""
-		return ConcentricEdge
+    def concentricArcOfCircle(Element,Distance,Reverse=False):
+        Arc = Element.Geo.clone()
+        Circle = Arc.Circle
+        ConcentricEdge = Edge(Part.ArcOfCircle(Part.Circle(Circle,Distance),Arc.FirstParameter,Arc.LastParameter))
+        if Reverse: ConcentricEdge.reverse()
+        return ConcentricEdge
 
-	def getMidPoint(Element):
-		XPoint = (Element.EndPoint.x+Element.StartPoint.x)/2
-		YPoint = (Element.EndPoint.y+Element.StartPoint.y)/2
-		return App.Vector(XPoint,YPoint,0)
+    def getMidPoint(Element):
+        XPoint = (Element.EndPoint.x+Element.StartPoint.x)/2
+        YPoint = (Element.EndPoint.y+Element.StartPoint.y)/2
+        return App.Vector(XPoint,YPoint,0)
 
 class OffsetInSketcher():
-"""
-  class containing the addOffset command
-"""
-	def addOffset(SelGeoId,OffsetLine):
-	"""
-	  this is the OffsetInSketcher command
-	"""
-		def getSelectedEdges(SelGeoID):
-		"""
-		  returns a list of all selected lines and arcs
-		""" 
-			AllGeo = Sketch.getGeometry() """full geometry list"""
-			Selected = []
-			for Id in SelGeoID:
-				Goemetry = AllGeo[Id]
-				Selected.append(Edge(Goemetry,Id))
-			return Selected
+    """
+    class containing the addOffset command
+    """
+    def addOffset(SelGeoId,OffsetLine):
+        """
+        this is the OffsetInSketcher command
+        """
+        def getSelectedEdges(SelGeoID):
+            """
+            returns a list of all selected lines and arcs
+            """ 
+            AllGeo = Sketch.getGeometry()
+            Selected = []
+            for Id in SelGeoID:
+                Goemetry = AllGeo[Id]
+                Selected.append(Edge(Goemetry,Id))
+            return Selected
 
-		def areEqual(V1,V2):
-		"""
-		  check the  identity of two vectors
-		"""
-			if (V1-V2).Length < 0.001: return True
+        def areEqual(V1,V2):
+            """
+            check the  identity of two vectors
+            """
+            if (V1-V2).Length < 0.001: return True
 
-		def interlinkedEdges(UnsortedEdges):
-		"""
-		 return an interlinked list of lines and arcs
-		"""
-			def getBackwardElem(Element,UnsortedEdges):
-			"""
-			  get next edge in backward direction
-			"""
-				if not UnsortedEdges: return
+        def interlinkedEdges(UnsortedEdges):
+            """
+            return an interlinked list of lines and arcs
+            """
+            def getBackwardElem(Element,UnsortedEdges):
+                """
+                get next edge in backward direction
+                """
+                if not UnsortedEdges: return
 				
-				StartPt = Element.StartPoint
-				Num = 0
-				while Num <= len(UnsortedEdges)-1: """search backwards"""
-					El=UnsortedEdges[Num]
-					if (areEqual(El.StartPoint,StartPt)) or (areEqual(El.EndPoint ,StartPt)): """element found"""
-						if areEqual(El.StartPoint,StartPt): """swap element"""
-							El.reverse() 
-						SortedEdges.append(El)
-						UnsortedEdges.pop(Num)
-						getBackwardElem(El,UnsortedEdges)
-						break
-					Num = Num+1
-				return """nothing found"""
+                StartPt = Element.StartPoint
+                Num = 0
+                while Num <= len(UnsortedEdges)-1: 
+                    El=UnsortedEdges[Num]
+                    if (areEqual(El.StartPoint,StartPt)) or (areEqual(El.EndPoint ,StartPt)): 
+                        if areEqual(El.StartPoint,StartPt): 
+                            El.reverse() 
+                        SortedEdges.append(El)
+                        UnsortedEdges.pop(Num)
+                        getBackwardElem(El,UnsortedEdges)
+                        break
+                    Num = Num+1
+                return 
 
-			def getForwardElem(Element,UnsortedEdges):
-			"""
-			  get next edge in forward direction
-			"""
-				if not UnsortedEdges: return
+            def getForwardElem(Element,UnsortedEdges):
+                """
+                get next edge in forward direction
+                """
+                if not UnsortedEdges: return
 				
-				EndPt = Element.EndPoint """endpoint of first element in geolist"""
-				Num = 0
-				while Num <= len(UnsortedEdges)-1: """search forward direction"""
-					El=UnsortedEdges[Num]
-					if (areEqual(El.StartPoint,EndPt)) or (areEqual(El.EndPoint ,EndPt)): """element found"""
-						if areEqual(El.EndPoint,EndPt): """swap elements"""
-							El.reverse()
-						SortedEdges.append(El)
-						UnsortedEdges.pop(Num)
-						getForwardElem(El,UnsortedEdges)
-						break
-					Num = Num+1
-				return """nothing found"""
+                EndPt = Element.EndPoint 
+                Num = 0
+                while Num <= len(UnsortedEdges)-1: 
+                    El=UnsortedEdges[Num]
+                    if (areEqual(El.StartPoint,EndPt)) or (areEqual(El.EndPoint ,EndPt)): 
+                        if areEqual(El.EndPoint,EndPt): 
+                            El.reverse()
+                        SortedEdges.append(El)
+                        UnsortedEdges.pop(Num)
+                        getForwardElem(El,UnsortedEdges)
+                        break
+                    Num = Num+1
+                return
 
-			SortedEdges = []
-			SortedEdges.append(UnsortedEdges.pop(0)) """first element in UnsortedEdges list"""
-			getBackwardElem(SortedEdges[0],UnsortedEdges)
-			SortedEdges.reverse()
-			getForwardElem(SortedEdges[-1],UnsortedEdges)
-			if len(UnsortedEdges) > 0 :
-				OffsetDialog.message('Selected lines are split')
-			return SortedEdges
+            SortedEdges = []
+            SortedEdges.append(UnsortedEdges.pop(0)) 
+            getBackwardElem(SortedEdges[0],UnsortedEdges)
+            SortedEdges.reverse()
+            getForwardElem(SortedEdges[-1],UnsortedEdges)
+            if len(UnsortedEdges) > 0 :
+                OffsetDialog.message('Selected lines are split')
+            return SortedEdges
 
-		def flection(A,B,C):
-		"""
-		  returns True if flection of polyline is negative
-		"""
-			M = App.Matrix(	A.x,	A.y,	1,	0,
-							B.x,	B.y,	1,	0,
-							C.x,	C.y,	1,	0,
-							0,	0,	0,	1)
-			if M.determinant() < 0.0: return True
+        def flection(A,B,C):
+            """
+            returns True if flection of polyline is negative
+            """
+            M = App.Matrix(	A.x,	A.y,	1,	0,
+					B.x,	B.y,	1,	0,
+					C.x,	C.y,	1,	0,
+					0,	0,	0,	1)
+            if M.determinant() < 0.0: return True
 
-		def pointBetween(Edge0,Edge1):
-		"""
-		  calculate  vertex between two offset edges 
-		"""
-			if  Edge0.Type == 'arc': """first edge is an arc"""
-				delta = Edge0.EndPoint.sub(Edge0.Center).normalize()
-				if Edge0.isNegative(): delta = delta.negative()
-			elif  Edge1.Type == 'arc': """second edge is an arc"""
-				delta = Edge1.StartPoint.sub(Edge1.Center).normalize()
-				if Edge1.isNegative(): delta = delta.negative()
-			else: """both edges are lines"""
-				e0=(Edge0.EndPoint.sub(Edge0.StartPoint)).normalize()
-				e1=(Edge1.EndPoint.sub(Edge1.StartPoint)).normalize()
-				Angle = e0.getAngle(e1) """angle between edges"""
-				if Angle == 0.0: """edges fall in line"""
-					delta =e0.cross(App.Vector(0,0,1))
-				else:
-					Factor = 1.0/math.cos(Angle/2) 
-					delta=e0.sub(e1).normalize().multiply(Factor) """from point to offset point"""
-				if flection(Edge0.StartPoint,Edge0.EndPoint,Edge1.EndPoint):
-					delta=delta.negative() """... if flection is negative"""
-			delta = delta.multiply(OffsetValue)
-			pt=Edge0.EndPoint.add(delta)
-			return pt
+        def pointBetween(Edge0,Edge1):
+            """
+            calculate  vertex between two offset edges 
+            """
+            if  Edge0.Type == 'arc': 
+                delta = Edge0.EndPoint.sub(Edge0.Center).normalize()
+                if Edge0.isNegative(): delta = delta.negative()
+            elif  Edge1.Type == 'arc': 
+                delta = Edge1.StartPoint.sub(Edge1.Center).normalize()
+                if Edge1.isNegative(): delta = delta.negative()
+            else: 
+                e0=(Edge0.EndPoint.sub(Edge0.StartPoint)).normalize()
+                e1=(Edge1.EndPoint.sub(Edge1.StartPoint)).normalize()
+                Angle = e0.getAngle(e1) 
+                if Angle == 0.0: 
+                    delta =e0.cross(App.Vector(0,0,1))
+                else:
+                    Factor = 1.0/math.cos(Angle/2) 
+                    delta=e0.sub(e1).normalize().multiply(Factor) 
+                if flection(Edge0.StartPoint,Edge0.EndPoint,Edge1.EndPoint):
+                    delta=delta.negative() 
+            delta = delta.multiply(OffsetValue)
+            pt=Edge0.EndPoint.add(delta)
+            return pt
 
-		def pointAtOpenEnd(Edge,Start):
-		"""
-		  calculate  offset vertex at start or end of open edge
-		"""
-			e = (Edge.EndPoint.sub(Edge.StartPoint)).normalize()
-			delta =e.cross(App.Vector(0,0,1)).multiply(OffsetValue)  """from point to offset point"""
-			if Start:
-				pt = Edge.StartPoint+delta
-			else:
-				pt = Edge.EndPoint+delta
-			return pt
+        def pointAtOpenEnd(Edge,Start):
+            """
+            calculate  offset vertex at start or end of open edge
+            """
+            e = (Edge.EndPoint.sub(Edge.StartPoint)).normalize()
+            delta =e.cross(App.Vector(0,0,1)).multiply(OffsetValue)  
+            if Start:
+                pt = Edge.StartPoint+delta
+            else:
+                pt = Edge.EndPoint+delta
+            return pt
 
-		def createOffsetVertexes(SortedEdges):
-		"""
-		  create vertexes of offset line
-		"""
-			OffsetPoints = []
-			NumOfEdges = len(SortedEdges)-1
-			if areEqual(SortedEdges[0].StartPoint,SortedEdges[-1].EndPoint): """figure is closed"""
-				SortedEdges.append(SortedEdges[0]) """copy first edge to end"""
-				for i in range(NumOfEdges+1):
-					OffsetPoints.append(pointBetween(SortedEdges[i],SortedEdges[i+1]))
-				OffsetPoints.insert(0,OffsetPoints[-1]) """append last vertex at start"""
-			else: """figure is open"""
-				OffsetPoints.append(pointAtOpenEnd(SortedEdges[0],True))
-				for i in range(NumOfEdges):
-					OffsetPoints.append(pointBetween(SortedEdges[i],SortedEdges[i+1]))
-				OffsetPoints.append(pointAtOpenEnd(SortedEdges[-1],False))
-			return OffsetPoints
+        def createOffsetVertexes(SortedEdges):
+            """
+            create vertexes of offset line
+            """
+            OffsetPoints = []
+            NumOfEdges = len(SortedEdges)-1
+            if areEqual(SortedEdges[0].StartPoint,SortedEdges[-1].EndPoint): 
+                SortedEdges.append(SortedEdges[0]) 
+                for i in range(NumOfEdges+1):
+                    OffsetPoints.append(pointBetween(SortedEdges[i],SortedEdges[i+1]))
+                OffsetPoints.insert(0,OffsetPoints[-1]) 
+            else: 
+                OffsetPoints.append(pointAtOpenEnd(SortedEdges[0],True))
+                for i in range(NumOfEdges):
+                    OffsetPoints.append(pointBetween(SortedEdges[i],SortedEdges[i+1]))
+                OffsetPoints.append(pointAtOpenEnd(SortedEdges[-1],False))
+            return OffsetPoints
 
-		def drawOffsetEdges(SortedEdges,OffsetPoints):
-		"""
-		  create and draw the offset lines
-		"""
-			OffsetEdges = []
-			for i in range(len(OffsetPoints)-1):
-				if SortedEdges[i].Type == 'arc': """edge is an arc"""
-					Arc = SortedEdges[i]
-					Offset = OffsetValue
-					if Arc.isNegative(): """concentric arc at inner face"""
-						Offset = -OffsetValue
-					if Arc.Radius+Offset < 0.0:
-						OffsetDialog.message('Inner radius becomes negative')
-					else: 
-						OffsetEdges.append(Tools.concentricArcOfCircle(SortedEdges[i],Offset)) """concentric arc"""				
-				else: """edge is a line"""
-					OffsetEdges.append(Edge(Part.LineSegment(OffsetPoints[i],OffsetPoints[i+1])))
-				OffsetEdges[-1 ].addGeometry()
-			return OffsetEdges
+        def drawOffsetEdges(SortedEdges,OffsetPoints):
+            """
+            create and draw the offset lines
+            """
+            OffsetEdges = []
+            for i in range(len(OffsetPoints)-1):
+                if SortedEdges[i].Type == 'arc': 
+                    Arc = SortedEdges[i]
+                    Offset = OffsetValue
+                    if Arc.isNegative(): 
+                        Offset = -OffsetValue
+                    if Arc.Radius+Offset < 0.0:
+                        OffsetDialog.message('Inner radius becomes negative')
+                    else: 
+                        OffsetEdges.append(Tools.concentricArcOfCircle(SortedEdges[i],Offset)) 				
+                else: 
+                    OffsetEdges.append(Edge(Part.LineSegment(OffsetPoints[i],OffsetPoints[i+1])))
+                OffsetEdges[-1 ].addGeometry()
+            return OffsetEdges
 
-		def createConstraints(OffsetEdges):
-		"""
-		  create constraints at vertexes
-		"""
-			def constraintAtVertex(Edge1,Edge2):
-			"""
-			  create constraint between two edges
-			"""
-				if Edge1.Type == 'arc' or Edge2.Type == 'arc': """at least one edge is an arc"""
-					Sketch.tangent(Edge1,Edge1.EndPointId,Edge2,Edge2.StartPointId) """tangent between arc and neighbour"""
-				else: """both edges are lines"""
-					Sketch.coincident(Edge1,Edge1.EndPointId,Edge2,Edge2.StartPointId) """coincident betwenn two lines"""
+        def createConstraints(OffsetEdges):
+            """
+            create constraints at vertexes
+            """
+            def constraintAtVertex(Edge1,Edge2):
+                """
+                create constraint between two edges
+                """
+                if Edge1.Type == 'arc' or Edge2.Type == 'arc': 
+                    Sketch.tangent(Edge1,Edge1.EndPointId,Edge2,Edge2.StartPointId)
+                else: 
+                    Sketch.coincident(Edge1,Edge1.EndPointId,Edge2,Edge2.StartPointId) 
 
-			for i in range(len(OffsetEdges)-1):
-				constraintAtVertex(OffsetEdges[i],OffsetEdges[i+1])
-			if  areEqual(OffsetEdges[-1].EndPoint,OffsetEdges[0].StartPoint): """closed figure"""
-				constraintAtVertex(OffsetEdges[-1],OffsetEdges[0])
+            for i in range(len(OffsetEdges)-1):
+                constraintAtVertex(OffsetEdges[i],OffsetEdges[i+1])
+            if  areEqual(OffsetEdges[-1].EndPoint,OffsetEdges[0].StartPoint): 
+                constraintAtVertex(OffsetEdges[-1],OffsetEdges[0])
 
-		def createParametric(SortedEdges,OffsetEdges,OffsetValue):
-		"""
-		  create constraints generating the parametric behavior
-		"""
-			def parametricAtOpenEdge(BaseEdge,OffsetEdge,PtNum,OffsetValue):
-			"""
-			 constraints at first and last edge
-			"""	
-				if PtNum == 2: """at the last edge"""
-					DistanceLines.append(Tools.createLine(BaseEdge.EndPoint,OffsetEdge.EndPoint))
-					DistanceLines[-1 ].addGeometry(True)
-					Sketch.coincident(DistanceLines[-1 ],1,BaseEdge,BaseEdge.EndPointId) """connect vertexes at end"""
-					Sketch.coincident(DistanceLines[-1 ],2,OffsetEdge,OffsetEdge.EndPointId)
-					Sketch.equal(DistanceLines[0 ],DistanceLines[-1])					
-				else: """at the first edge"""
-					DistanceLines.append(Tools.createLine(BaseEdge.StartPoint,OffsetEdge.StartPoint))
-					DistanceLines[-1 ].addGeometry(True)
-					Sketch.coincident(DistanceLines[-1 ],1,BaseEdge,BaseEdge.StartPointId) """connect vertexes at start"""
-					Sketch.coincident(DistanceLines[-1 ],2,OffsetEdge,OffsetEdge.StartPointId)
-				Sketch.perpendicular(OffsetEdge,DistanceLines[-1]) """distance line perpendicular to edges"""
-				Sketch.perpendicular(BaseEdge,DistanceLines[-1])			
+        def createParametric(SortedEdges,OffsetEdges,OffsetValue):
+            """
+            create constraints generating the parametric behavior
+            """
+            def parametricAtOpenEdge(BaseEdge,OffsetEdge,PtNum,OffsetValue):
+                """
+                constraints at first and last edge
+                """	
+                if PtNum == 2: 
+                    DistanceLines.append(Tools.createLine(BaseEdge.EndPoint,OffsetEdge.EndPoint))
+                    DistanceLines[-1 ].addGeometry(True)
+                    Sketch.coincident(DistanceLines[-1 ],1,BaseEdge,BaseEdge.EndPointId)
+                    Sketch.coincident(DistanceLines[-1 ],2,OffsetEdge,OffsetEdge.EndPointId)
+                    Sketch.equal(DistanceLines[0 ],DistanceLines[-1])					
+                else:
+                    DistanceLines.append(Tools.createLine(BaseEdge.StartPoint,OffsetEdge.StartPoint))
+                    DistanceLines[-1 ].addGeometry(True)
+                    Sketch.coincident(DistanceLines[-1 ],1,BaseEdge,BaseEdge.StartPointId) 
+                    Sketch.coincident(DistanceLines[-1 ],2,OffsetEdge,OffsetEdge.StartPointId)
+                Sketch.perpendicular(OffsetEdge,DistanceLines[-1]) 
+                Sketch.perpendicular(BaseEdge,DistanceLines[-1])			
 
-			def parametricAtEdges(BaseEdge,OffsetEdge,OffsetValue):
-			"""
-			 constraints at interior edges
-			"""
-				if OffsetEdge.Type == 'arc':
-					Sketch.coincident(BaseEdge,3,OffsetEdge,3) """connect centers"""
-				else:
-					e = (OffsetEdge.EndPoint.sub(OffsetEdge.StartPoint)).normalize()
-					delta =e.cross(App.Vector(0,0,-1)).multiply(OffsetValue)  """distance vector"""
-					MidPoint = Tools.getMidPoint(OffsetEdge)
-					DistanceLines.append(Tools.createLine(MidPoint,MidPoint.add(delta)))
-					DistanceLines[-1 ].addGeometry(True)
-					Sketch.symmetric(OffsetEdge,Sketch.getGeoNumber()-1)
-					if len(DistanceLines) > 1: Sketch.equal(DistanceLines[0 ],DistanceLines[-1]) """all distance lines have equal length"""
-					Sketch.perpendicular(OffsetEdge,DistanceLines[-1]) """distance line perpendicular to edges"""
-					Sketch.perpendicular(BaseEdge,DistanceLines[-1])
-					Sketch.pointOnObject(DistanceLines[-1],1,OffsetEdge) """distance line connected to edges"""
-					Sketch.pointOnObject(DistanceLines[-1],2,BaseEdge)
+            def parametricAtEdges(BaseEdge,OffsetEdge,OffsetValue):
+                """
+                constraints at interior edges
+                """
+                if OffsetEdge.Type == 'arc':
+                    Sketch.coincident(BaseEdge,3,OffsetEdge,3) 
+                else:
+                    e = (OffsetEdge.EndPoint.sub(OffsetEdge.StartPoint)).normalize()
+                    delta =e.cross(App.Vector(0,0,-1)).multiply(OffsetValue)  
+                    MidPoint = Tools.getMidPoint(OffsetEdge)
+                    DistanceLines.append(Tools.createLine(MidPoint,MidPoint.add(delta)))
+                    DistanceLines[-1 ].addGeometry(True)
+                    Sketch.symmetric(OffsetEdge,Sketch.getGeoNumber()-1)
+                    if len(DistanceLines) > 1: Sketch.equal(DistanceLines[0 ],DistanceLines[-1]) 
+                    Sketch.perpendicular(OffsetEdge,DistanceLines[-1]) 
+                    Sketch.perpendicular(BaseEdge,DistanceLines[-1])
+                    Sketch.pointOnObject(DistanceLines[-1],1,OffsetEdge) 
+                    Sketch.pointOnObject(DistanceLines[-1],2,BaseEdge)
 
-			DistanceLines = []
-			if  areEqual(OffsetEdges[-1].EndPoint,OffsetEdges[0].StartPoint): """closed figure"""			
-				parametricAtEdges(SortedEdges[0],OffsetEdges[0],OffsetValue)
-				for i in range(1,len(SortedEdges)-1):	
-					parametricAtEdges(SortedEdges[i],OffsetEdges[i],OffsetValue)
-			else: """open figure"""
-				parametricAtOpenEdge(SortedEdges[0],OffsetEdges[0],1,OffsetValue) """first edge"""
-				for i in range(1,len(SortedEdges)-1): 
-					parametricAtEdges(SortedEdges[i],OffsetEdges[i],OffsetValue)
-				parametricAtOpenEdge(SortedEdges[-1],OffsetEdges[-1],2,OffsetValue) """last edge"""
+            DistanceLines = []
+            if  areEqual(OffsetEdges[-1].EndPoint,OffsetEdges[0].StartPoint): 			
+                parametricAtEdges(SortedEdges[0],OffsetEdges[0],OffsetValue)
+                for i in range(1,len(SortedEdges)-1):	
+                    parametricAtEdges(SortedEdges[i],OffsetEdges[i],OffsetValue)
+            else:
+                parametricAtOpenEdge(SortedEdges[0],OffsetEdges[0],1,OffsetValue) 
+                for i in range(1,len(SortedEdges)-1): 
+                    parametricAtEdges(SortedEdges[i],OffsetEdges[i],OffsetValue)
+                parametricAtOpenEdge(SortedEdges[-1],OffsetEdges[-1],2,OffsetValue) 
 
-		def getOffsetValue(FirstEdge,OffsetLine):
-		"""
-		  calculate offsetvalue using the offsetline
-		"""
-			OffsetValue = (OffsetLine[0].sub(OffsetLine[1])).Length
-			if flection(OffsetLine[0],OffsetLine[1],FirstEdge.EndPoint):
-				OffsetValue = -OffsetValue
-			return OffsetValue
+        def getOffsetValue(FirstEdge,OffsetLine):
+            """
+            calculate offsetvalue using the offsetline
+            """
+            OffsetValue = (OffsetLine[0].sub(OffsetLine[1])).Length
+            if flection(OffsetLine[0],OffsetLine[1],FirstEdge.EndPoint):
+                OffsetValue = -OffsetValue
+            return OffsetValue
 
-		SelectedEdges = getSelectedEdges(SelGeoId) """list of selected edges"""
-		OffsetValue = getOffsetValue(SelectedEdges[0],OffsetLine) """value of offset"""
-		SortedEdges = interlinkedEdges(SelectedEdges) """list of interlinked lines and arcs S0-E0,S1-E1, ..."""
-		OffsetPoints = createOffsetVertexes(SortedEdges) """create offset vertexes"""
-		OffsetEdges = drawOffsetEdges(SortedEdges,OffsetPoints) """create and draw the offset lines"""
-		createConstraints(OffsetEdges) """create constraints between edges"""
-		createParametric(SortedEdges,OffsetEdges,OffsetValue) """create parametric"""
-		App.ActiveDocument.recompute()
+        SelectedEdges = getSelectedEdges(SelGeoId) 
+        OffsetValue = getOffsetValue(SelectedEdges[0],OffsetLine) 
+        SortedEdges = interlinkedEdges(SelectedEdges) 
+        OffsetPoints = createOffsetVertexes(SortedEdges)
+        OffsetEdges = drawOffsetEdges(SortedEdges,OffsetPoints) 
+        createConstraints(OffsetEdges) 
+        createParametric(SortedEdges,OffsetEdges,OffsetValue) 
+        App.ActiveDocument.recompute()
 
 ex = OffsetDialog() 
