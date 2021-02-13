@@ -27,8 +27,8 @@ __Author__  = 'Simone Bignetti'
 __Version__ = '1.1.0'
 __Date__    = '2020-12-29'
 __License__ = 'GNU LESSER GENERAL PUBLIC LICENSE Version 2.1, February 1999'
-__Web__ = ''
-__Wiki__ = ''
+__Web__ = 'https://wiki.freecadweb.org/Macro_HilbertCurve'
+__Wiki__ = 'https://wiki.freecadweb.org/Macro_HilbertCurve'
 __Icon__ = 'HilbertCurve.svg'
 __Help__ = '''Usage:
 In a FreeCAD document start the macro. A dialog appears.
