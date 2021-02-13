@@ -30,16 +30,7 @@ __License__ = 'GNU LESSER GENERAL PUBLIC LICENSE Version 2.1, February 1999'
 __Web__ = 'https://wiki.freecadweb.org/Macro_HilbertCurve'
 __Wiki__ = 'https://wiki.freecadweb.org/Macro_HilbertCurve'
 __Icon__ = 'HilbertCurve.svg'
-__Help__ = '''Usage:
-In a FreeCAD document start the macro. A dialog appears.
-Choose if the wire is two-dimensional or three-dimensional,
-the number of the iterations and the length of the wire segment.
-Click OK to create the wire or CANCEL to exit the macro.
-You can use the just created wire to do a sweep in the part Workbench, But first of all
-it's better to apply a radius to the wire, or the sweep will be badly formed.
-The size of the radius depends on the length chosen for the curve segments and
-on the shape of the profile you want to sweep.
-Maybe you need to take a few tries.'''
+__Help__ = 'Choose the dimensions of the wire, the number of the iterations and the length of the wire segment.'
 __Status__ = 'Stable'
 __Requires__ = ''
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=53781'
