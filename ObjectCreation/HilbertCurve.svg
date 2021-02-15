@@ -5,15 +5,11 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="100"
-   height="100"
-   viewBox="0 0 26.458329 26.458331"
-   version="1.1"
    id="svg6"
-   sodipodi:docname="HilbertCurve.svg"
-   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)">
+   version="1.1"
+   viewBox="0 0 26.458329 26.458331"
+   height="100"
+   width="100">
   <metadata
      id="metadata12">
     <rdf:RDF>
@@ -28,40 +24,14 @@
   </metadata>
   <defs
      id="defs10" />
-  <sodipodi:namedview
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1"
-     objecttolerance="10"
-     gridtolerance="10"
-     guidetolerance="10"
-     inkscape:pageopacity="0"
-     inkscape:pageshadow="2"
-     inkscape:window-width="1848"
-     inkscape:window-height="1016"
-     id="namedview8"
-     showgrid="false"
-     inkscape:zoom="6.928776"
-     inkscape:cx="47.222324"
-     inkscape:cy="43.437603"
-     inkscape:window-x="72"
-     inkscape:window-y="27"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="svg6"
-     units="px"
-     fit-margin-top="0"
-     fit-margin-left="0"
-     fit-margin-right="0"
-     fit-margin-bottom="0" />
   <g
-     id="Wire"
+     style="stroke:#0000f6;stroke-width:2.82222223;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;image-rendering:auto"
      transform="matrix(0.75,0,0,-0.75,2.1317398,24.341557)"
-     style="stroke:#0000f6;stroke-width:2.82222223;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;image-rendering:auto">
+     id="Wire">
     <path
-       id="Wire_w0000"
-       d="M 0,0 H 10 V 10 H 0 V 20 30 H 10 V 20 H 20 V 30 H 30 V 20 10 H 20 V 0 h 10"
        style="fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#0000f6;stroke-width:2.82222223;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       inkscape:connector-curvature="0" />
+       d="M 0,0 H 10 V 10 H 0 V 20 30 H 10 V 20 H 20 V 30 H 30 V 20 10 H 20 V 0 h 10"
+       id="Wire_w0000" />
     <title
        id="title3">b'Hilbert'</title>
   </g>
