@@ -1,0 +1,798 @@
+__Name__   = "TechDrawTools"
+__Author__  = "edi"
+__Version__ = "0.3.1"
+__License__ = 'LGPL v2'
+__Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=35&t=55029'
+__Files__ = 'TechDrawTools.svg'
+__Help__ = 'Start the macro. Select one of the 23 helper tools.'
+__Status__ = 'Stable'
+__Requires__ = 'e.g. FreeCAD >= v0.19'
+__Date__    = "2021-03-07"
+"""
+This macro is a container, including 23 helper tools to improve the appearance of drawings
+created in the TechDraw workbench. There are tools to:
+- create circle and bolt cicle center lines
+- draw cosmetic threads in ground and side view
+- create vertexes at intersection of elements
+- change attributes of center lines and cosmetic lines
+- change the number of decimal places of the dimension value
+- create chain- and coordinate dimensions
+- position and cascade dimensions
+- create a hole table
+
+Workflow:
+- Start the macro
+- Select the desired line attributes and cascade spacing
+- Select any helper tool
+"""
+import PySide
+from PySide import QtCore, QtGui 
+import TechDraw
+import math
+from functools import partial
+
+class LineAttributes:
+    '''Operate all line attributes'''
+    Colors = {'black':         ((0.0, 0.0, 0.0, 0.0),'000000'),\
+                       'grey':          ((0.7, 0.7,0.7, 0.0),'b6b6b6'),\
+                       'red':            ((1.0, 0.0, 0.0, 0.0),'ff0000'),\
+                       'green':       ((0.0, 1.0, 0.0, 0.0),'00ff00'),\
+                       'blue':          ((0.0, 0.0, 1.0, 0.0),'0000ff'),\
+                        'magenta':((1.0, 0.0, 1.0, 0.0),'ff00ff'),\
+                        'cyan':         ((0.0, 1.0, 1.0, 0.0),'00ffff'),
+                        'yellow':     ((1.0,1.0,0.0,0.0),'ffff00')}
+    Styles = {'solid': 1, 'dashed':2, 'dotted':3,'dashdot':4}
+    Width = {'thick': 0.6, 'middle': 0.42, 'thin': 0.3}
+
+    def __init__(self):
+        self.LineColor =  self.Colors['black']
+        self.LineStyle = self.Styles['dashdot']
+        self.LineWidth = self.Width['middle']
+
+    def setColor(self,Color):
+        self.LineColor = self.Colors[Color]
+
+    def getColorTuple(self):
+        return self.LineColor[0]
+
+    def getColorHex(color):
+        return LineAttributes.Colors[color][1]
+
+    def setStyle(self,Style):
+        self.LineStyle = self.Styles[Style]
+
+    def getStyle(self):
+        return self.LineStyle
+
+    def setWidth(self,Width):
+        self.LineWidth = self.Width[Width]
+
+    def getWidth(self):
+        return self.LineWidth
+
+class DimensionAttributes:
+    '''Operate all dimension attributes'''
+    def __init__(self):
+        self.DimLineDistance = 7
+
+    def getDimLineDistance(self):
+        return self.DimLineDistance
+
+class commandWidget(QtGui.QWidget):
+    '''Widget containing the command buttons'''
+    def __init__(self):
+        super().__init__()
+    def oneCommandButton(self,cmd,win):
+        '''create a command push button'''
+        Button = QtGui.QPushButton()
+        Button.setText(cmd.buttonText)
+        Button.setToolTip(cmd.helpText)
+        Button.clicked.connect(partial(win.on_PB_clicked,cmd))
+        self.layout.addWidget(Button)
+
+class Ui_MainWindow(object):
+    def setupUi(self, MainWindow):
+
+        def radioButton(Box,Slot,Tip,Text,Color='black',Checked = False):
+            ''' create a radio button '''
+            Button = QtGui.QRadioButton(Box)
+            if Checked:
+                Button.setMouseTracking(True)
+                Button.setChecked(True)
+            Button.setText(Text)
+            Button.setStyleSheet("color : #"+LineAttributes.getColorHex(Color)) 
+            Button.setToolTip(Tip+Text)
+            Button.clicked.connect(partial(Slot,Text))
+            Box.layout.addWidget(Button)
+
+        self.window = MainWindow
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.setWindowTitle("TechDraw Tools 3.0")
+        self.centralWidget = QtGui.QWidget(MainWindow)
+        self.layout = QtGui.QHBoxLayout(self.centralWidget)        
+        ''' Initialize tab screen'''
+        self.tabs = QtGui.QTabWidget()
+        self.tabs.setTabPosition(QtGui.QTabWidget.East)
+        self.tabs.setTabShape(QtGui.QTabWidget.Triangular)
+        self.tab1 = QtGui.QWidget()
+        self.tabs.addTab(self.tab1,"Cosmetic- and centerlines")
+        self.tab2 = commandWidget()
+        self.tabs.addTab(self.tab2,"Views and dimensions")        
+        ''' Create layouts of tab1'''
+        self.tab1.layout = QtGui.QVBoxLayout()
+        self.topBox1 = commandWidget()
+        self.topBox1.layout =QtGui.QVBoxLayout()
+        self.bottomBox = QtGui.QWidget()
+        self.bottomBox.layout =QtGui.QGridLayout()
+        self.bottomBox.layout.setVerticalSpacing(0)
+        self.bottomBoxLeftTop = QtGui.QGroupBox('Line attributes')
+        self.bottomBoxLeftTop.layout =QtGui.QVBoxLayout()
+        self.bottomBoxLeftBottom = QtGui.QGroupBox()
+        self.bottomBoxLeftBottom.layout =QtGui.QVBoxLayout()
+        self.bottomBoxRight = QtGui.QGroupBox()
+        self.bottomBoxRight.layout =QtGui.QVBoxLayout()
+        ''' Create layouts of tab2'''
+        self.tab2.layout = QtGui.QVBoxLayout()
+        self.topBox2 = commandWidget()
+        self.topBox2.layout =QtGui.QVBoxLayout()
+        self.bottomBox2 = QtGui.QWidget()
+        self.bottomBox2.layout =QtGui.QHBoxLayout()
+
+        ''' Radio buttons for line attributes --------------------------------------------'''
+
+        radioButton(self.bottomBoxLeftTop,self.on_RB_ChangeStyle_Clicked,"set lines to ",'solid')
+        radioButton(self.bottomBoxLeftTop,self.on_RB_ChangeStyle_Clicked,"set lines to ",'dashed')
+        radioButton(self.bottomBoxLeftTop,self.on_RB_ChangeStyle_Clicked,"set lines to ",'dotted')
+        radioButton(self.bottomBoxLeftTop,self.on_RB_ChangeStyle_Clicked,"set lines to ",'dashdot','black',True)
+
+        radioButton(self.bottomBoxLeftBottom,self.on_RB_ChangeWidth_Clicked,"set lines width to ",'thick')
+        radioButton(self.bottomBoxLeftBottom,self.on_RB_ChangeWidth_Clicked,"set lines width to ",'middle','black',True)
+        radioButton(self.bottomBoxLeftBottom,self.on_RB_ChangeWidth_Clicked,"set lines width to ",'thin')
+
+        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ",'black','black',True)
+        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ",'grey','grey')
+        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ",'red','red')
+        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ",'green','green')
+        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ",'blue','blue')
+        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ",'magenta','magenta')
+        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ",'cyan','cyan')
+        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ",'yellow','yellow')
+
+        ''' Button: Quit in  centralWidget -------------------------------------------------------------'''
+        self.PB_Quit = QtGui.QPushButton(self.centralWidget)
+        self.PB_Quit.setText("Quit")
+        self.PB_Quit.clicked.connect(self.on_PB_Quit_clicked) 
+        ''' insert buttons into tab 1'''
+        self.topBox1.oneCommandButton(CircleCenterLines(),self)
+        self.topBox1.oneCommandButton(DrawHoleCircle(),self)
+        self.topBox1.oneCommandButton(CenterLine(),self)
+        self.topBox1.oneCommandButton(DrawCosmeticThread(),self)
+        self.topBox1.oneCommandButton(DrawCosmeticThreadSide(),self)
+        self.topBox1.oneCommandButton(IntersectionVertex(),self)
+        self.topBox1.oneCommandButton(ChangeLineStyle(),self)
+        self.topBox1.setLayout(self.topBox1.layout)
+        self.bottomBoxLeftTop.setLayout(self.bottomBoxLeftTop.layout)
+        self.bottomBoxRight.setLayout(self.bottomBoxRight.layout)
+        self.bottomBoxLeftBottom.setLayout(self.bottomBoxLeftBottom.layout)
+        self.bottomBox.layout.addWidget(self.bottomBoxLeftTop,0,0)
+        self.bottomBox.layout.addWidget(self.bottomBoxLeftBottom,1,0)
+        self.bottomBox.layout.addWidget(self.bottomBoxRight,0,1,2,1)
+        self.bottomBox.setLayout(self.bottomBox.layout)
+        self.tab1.layout.addWidget(self.topBox1)
+        self.tab1.layout.addWidget(self.bottomBox)
+        self.tab1.layout.addWidget(self.PB_Quit)
+        self.tab1.setLayout(self.tab1.layout)
+        ''' insert buttons into tab 2'''
+        self.topBox2.oneCommandButton(drawDiameterSign(),self)
+        self.topBox2.oneCommandButton(increaseComma(),self)
+        self.topBox2.oneCommandButton(decreaseComma(),self)
+        self.topBox2.oneCommandButton(changeLockPosition(),self)
+        self.topBox2.oneCommandButton(positionSectionView(),self)
+        self.topBox2.oneCommandButton(createHorizDimChain(),self)
+        self.topBox2.oneCommandButton(createVertDimChain(),self)
+        self.topBox2.oneCommandButton(createHorizCoordDim(),self)
+        self.topBox2.oneCommandButton(createVertCoordDim(),self)
+        self.topBox2.oneCommandButton(createHorizChamferDim(),self)
+        self.topBox2.oneCommandButton(createVertChamferDim(),self)
+        self.topBox2.oneCommandButton(positionHorizDimChain(),self)
+        self.topBox2.oneCommandButton(positionVertDimChain(),self)
+        self.topBox2.oneCommandButton(cascadeHorizDimensions(),self)
+        self.topBox2.oneCommandButton(cascadeVertDimensions(),self)
+        self.topBox2.oneCommandButton(holeTable(),self)
+        '''create spin label to define cascade spacing'''
+        self.spinLabel = QtGui.QLabel('Cascade spacing:')
+        self.SpinBox = QtGui.QSpinBox()
+        self.SpinBox.setValue(7)
+        self.SpinBox.valueChanged.connect(self.on_SB_clicked)
+        self.bottomBox2.layout.addWidget(self.spinLabel)
+        self.bottomBox2.layout.addWidget(self.SpinBox)
+        self.topBox2.setLayout(self.topBox2.layout)
+        self.tab2.layout.addWidget(self.topBox2)
+        self.bottomBox2.setLayout(self.bottomBox2.layout)
+        self.tab2.layout.addWidget(self.bottomBox2)
+        self.tab2.setLayout(self.tab2.layout)
+        ''' Add tabs to widget'''
+        self.layout.addWidget(self.tabs)
+        MainWindow.setCentralWidget(self.centralWidget)
+        MainWindow.setWindowFlags(PySide.QtCore.Qt.WindowStaysOnTopHint)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    ''' slots -----------------------------------------------------------------------------------'''
+
+    def on_SB_clicked(self): 
+        ''' Spinbox value changed'''
+        DimAttrib.DimLineDistance = self.SpinBox.value()
+
+    def on_PB_clicked(self,cmd): 
+        ''' Command Push Button clicked  '''
+        cmd.activated()
+
+    def on_RB_ChangeStyle_Clicked(self,style): 
+        Attrib.setStyle(style)
+
+    def on_RB_ChangeWidth_Clicked(self,width): 
+        Attrib.setWidth(width)
+
+    def on_RB_ChangeColor_Clicked(self,color): 
+        Attrib.setColor(color)
+
+    def on_PB_Quit_clicked(self): 
+        App.Console.PrintMessage("End of TechDraw Tools" + "\n")
+        self.window.close()
+
+''' define all commands: each command an own class ---------------------------------'''
+
+class commonTools:
+    ''' common tools used by command buttons'''
+    def getPoints(View,ObjectList):
+
+        def circulation(A,B,C):
+            '''returns True if circulation ABC is positive'''
+            M = App.Matrix(A.x, A.y,	1, 0,
+                                            B.x, B.y,	1, 0,
+          			       C.x, C.y,	1, 0,
+                      		       0, 0, 0, 1)
+            if M.determinant() > 0.0: return True
+        
+        if len(ObjectList) > 1:
+            Edge1 = View.getEdgeBySelection(ObjectList[0])
+            Edge2 = View.getEdgeBySelection(ObjectList[1])
+            if Edge1.Curve.TypeId == 'Part::GeomLine' and Edge2.Curve.TypeId == 'Part::GeomLine':
+                Start1, Start2 = Edge1.Vertexes[0].Point, Edge2.Vertexes[0].Point
+                End1, End2 = Edge1.Vertexes[1].Point, Edge2.Vertexes[1].Point
+                if circulation(Start1,End1,Start2) != circulation(End1,End2,Start2):
+                    Help1, Help2 = Start1, End1
+                    Start1, End1 = Help2, Help1
+            return (Start1,End1,Start2,End2)
+
+class CircleCenterLines:
+    '''Draw a center line cross at  circles'''
+    buttonText = "Draw circle centerLines"
+    helpText = "Draw a center line cross at circles:"+ "\n"\
+                         "- pick favoured line attributes"+ "\n"\
+                         "- select many circles or arcs"+ "\n"\
+                         "- click this button"
+    def activated(self): 
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ObjectList = Sel.SubElementNames
+        View = Gui.Selection.getCompleteSelection()[0]
+        for ObjectString in ObjectList:
+            if ObjectString[0:4] == 'Edge':
+                Edge = View.getEdgeBySelection(ObjectString)
+                if Edge.Curve.TypeId == 'Part::GeomCircle':
+                    Object = Edge.Curve
+                    Center = Object.Center
+                    Radius = Object.Radius+2
+                    Right = App.Vector(Center.x+Radius,Center.y,0)
+                    Left = App.Vector(Center.x-Radius,Center.y,0)
+                    Top = App.Vector(Center.x,Center.y+Radius,0)
+                    Bottom = App.Vector(Center.x,Center.y-Radius,0)
+                    Style, Width, Color = Attrib.getStyle(), Attrib.getWidth(), Attrib.getColorTuple()
+                    View.makeCosmeticLine(Left,Right,Style, Width, Color)
+                    View.makeCosmeticLine(Top,Bottom,Style, Width, Color)
+
+class DrawHoleCircle:
+    '''Draw a center circle and center cross at a bolt circle'''
+    buttonText = "Draw bolt circle centerlines"
+    helpText = "Draw the center lines of a bolt circle:"+ "\n"\
+                          "- pick favoured line attributes"+ "\n"\
+                          "- select at least 3 circles of the bolt circle"+ "\n"\
+                          "- click this button"
+    def activated(self):
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ObjectList = Sel.SubElementNames
+        View = Gui.Selection.getCompleteSelection()[0]
+        if len(ObjectList) < 3: return
+        Style, Width, Color = Attrib.getStyle(), Attrib.getWidth(), Attrib.getColorTuple()
+        Rot90 = App.Rotation(App.Vector(0,0,1),90)
+        Circles = []
+        for ObjectString in ObjectList:
+            if ObjectString[0:4] == 'Edge':
+                Edge = View.getEdgeBySelection(ObjectString)
+                if Edge.Curve.TypeId == 'Part::GeomCircle':
+                    Circles.append((Edge.Curve.Center,Edge.Curve.Radius))
+        Edge1,Edge2 = Circles[1][0]-Circles[0][0],Circles[2][0]-Circles[0][0]
+        Mid1,Mid2 =Circles[0][0]+Edge1/2,Circles[0][0]+Edge2/2
+        Pnt1,Pnt2 = Rot90.multVec(Edge1)+Mid1,Rot90.multVec(Edge2)+Mid2
+        Line1,Line2 = Part.Line(Mid1,Pnt1),Part.Line(Mid2,Pnt2)
+        IP = Line1.intersect(Line2)[0]
+        BigCenter = App.Vector(IP.X,IP.Y,IP.Z)
+        for Circle in Circles:
+            RadVec = Circle[0].sub(BigCenter)
+            Radius = RadVec.Length
+            RadVec1 =RadVec.normalize()
+            StartDist = Radius-Circle[1]-2
+            EndDist = Radius+Circle[1]+2
+            EndPt = BigCenter+RadVec1.scale(EndDist,EndDist,EndDist)
+            RadVec1.normalize()
+            StartPt = BigCenter+RadVec1.scale(StartDist,StartDist,StartDist)
+            View.makeCosmeticLine(StartPt,EndPt,Style, Width, Color)
+        BigRadius =Circles[0][0].sub(BigCenter).Length
+        View.makeCosmeticCircle(BigCenter, BigRadius, Style, Width, Color)
+
+class CenterLine:
+    '''Draw center line between two lines'''
+    buttonText = "Draw one center line"
+    helpText = "Draw a center line between two lines:"+ "\n"\
+                          "- pick favoured line attributes"+ "\n"\
+                          "- select two lines"+ "\n"\
+                          "- click this button"
+    def activated(self): 
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ObjectList = Sel.SubElementNames
+        View = Gui.Selection.getCompleteSelection()[0]
+        (Start1,End1,Start2,End2) = commonTools.getPoints(View,ObjectList)
+        Mid1, Mid2 = (Start1+Start2)/2, (End1+End2)/2
+        Protrusion = Mid2.sub(Mid1).normalize()*2
+        StartPt, EndPt = Mid1-Protrusion, Mid2+Protrusion
+        View.makeCosmeticLine(StartPt,EndPt,Attrib.getStyle(), Attrib.getWidth(), Attrib.getColorTuple())
+
+class DrawCosmeticThread:
+    '''Draw a cosmetic thread at selected circles'''
+    buttonText = "Cosmetic thread ground view"
+    helpText = "Draw cosmetic threads ground view:"+ "\n"\
+                          "- pick favoured line attributes"+ "\n"\
+                          "- select many circles"+ "\n"\
+                          "- click this button"
+    def activated(self): 
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ObjectList = Sel.SubElementNames
+        View = Gui.Selection.getCompleteSelection()[0]
+        for ObjectString in ObjectList:
+            if ObjectString[0:4] == 'Edge':
+                Edge = View.getEdgeBySelection(ObjectString)
+                if Edge.Curve.TypeId == 'Part::GeomCircle':
+                    Object = Edge.Curve
+                    Center = Object.Center
+                    Radius = Object.Radius/0.85
+                    View.makeCosmeticCircleArc(Center, Radius, 255, 165, Attrib.getStyle(), Attrib.getWidth(), Attrib.getColorTuple())
+
+class DrawCosmeticThreadSide:
+    '''Draw cosmetic thread side view'''
+    buttonText = "Cosmetic thread side view"
+    helpText = "Draw a cosmetic thread:"+ "\n"\
+                         "- pick favoured line attributes"+ "\n"\
+                         "- select two parallel lines"+ "\n"\
+                         "- click this button"
+    def activated(self): 
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ObjectList = Sel.SubElementNames
+        View = Gui.Selection.getCompleteSelection()[0]
+        (Start1,End1,Start2,End2) = commonTools.getPoints(View,ObjectList)
+        KernelDiam = Start2.sub(Start1).Length
+        Factor = (KernelDiam/0.85-KernelDiam)/2
+        Delta =Start2.sub(Start1).normalize()*Factor
+        Style, Width, Color = Attrib.getStyle(), Attrib.getWidth(), Attrib.getColorTuple()
+        View.makeCosmeticLine(Start1-Delta,End1-Delta, Style, Width, Color)
+        View.makeCosmeticLine(Start2+Delta,End2+Delta, Style, Width, Color)
+
+class IntersectionVertex:
+    '''Create  vertexes at intersection of two edges (lines and/or circles)'''
+    buttonText = "Create Vertex(es) at Intersection"
+    helpText = "Create the vertexes at intersection of lines:"+ "\n"\
+                         "- select two lines/circles/arcs"+ "\n"\
+                         "- click this button"
+    def activated(self): 
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ObjectList = Sel.SubElementNames
+        View = Gui.Selection.getCompleteSelection()[0]
+        if len(ObjectList) < 2: return
+        Edges = []
+        for ObjectString in ObjectList:
+            if ObjectString[0:4] == 'Edge':
+                Edges.append(View.getEdgeBySelection(ObjectString))
+        if Edges[0].Curve.TypeId == 'Part::GeomCircle':
+            Line1 = Part.Circle(Edges[0].Curve.Center,App.Vector(0,0,1),Edges[0].Curve.Radius)
+        else:
+            Line1 = Part.Line(Edges[0].Vertexes[0].Point,Edges[0].Vertexes[1].Point)
+        if Edges[1].Curve.TypeId == 'Part::GeomCircle':
+            Line2 = Part.Circle(Edges[1].Curve.Center,App.Vector(0,0,1),Edges[1].Curve.Radius)
+        else:
+            Line2 = Part.Line(Edges[1].Vertexes[0].Point,Edges[1].Vertexes[1].Point)
+        InterPnts = Line1.intersect(Line2)
+        for Ip in InterPnts[:2]:
+            View.makeCosmeticVertex(App.Vector(Ip.X,Ip.Y,Ip.Z))
+
+class ChangeLineStyle:
+    '''Change style/ thickness/color of selected lines'''
+    buttonText = "Change the line attributes"
+    helpText = "Change the attributes of selected lines:"+ "\n"\
+                          "- pick favoured line attributes"+ "\n"\
+                          "- select many cosmetic or center lines"+ "\n"\
+                          "- click this button"
+    def activated(self): 
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ObjectList = Sel.SubElementNames
+        View = Gui.Selection.getCompleteSelection()[0]
+        for ObjectString in ObjectList:
+            if ObjectString[0:4] == 'Edge':
+                Edge = View.getCenterLineBySelection(ObjectString)
+                if Edge == None:
+                    Edge = View.getCosmeticEdgeBySelection(ObjectString)
+                if Edge != None:
+                        newFormat = (Attrib.getStyle(),Attrib.getWidth(),Attrib.getColorTuple(),True)
+                        Edge.Format = newFormat
+                        View.requestPaint()
+
+class drawDiameterSign:
+    '''Inserta  a '⌀' sign in a measure'''
+    buttonText = "Insert a '⌀' sign"
+    helpText = "Insert a '⌀' sign in a measure:"+ "\n"\
+                          "- select many measures"+ "\n"\
+                          "- click this button"
+    def activated(self):
+        DiamSign ='⌀'
+        Sel = Gui.Selection.getSelectionEx()
+        View = Gui.Selection.getCompleteSelection()[0]
+        for Elem in Sel:
+            if Elem.Object.TypeId == 'TechDraw::DrawViewDimension':
+                OldFormat = Elem.Object.FormatSpec
+                Elem.Object.FormatSpec = DiamSign+OldFormat
+
+class positionSectionView:
+    ''' Position a section view at same x or y as its base view'''
+    buttonText = "Position section view"
+    helpText = "Position a section view at same x or y as its base view"+ "\n"\
+                          "- select a section view"+ "\n"\
+                          "- click this button"
+    def activated(self):
+        Section = Gui.Selection.getCompleteSelection()[0]
+        if Section.TypeId == 'TechDraw::DrawViewSection':
+            BaseView = Section.BaseView
+            ProjGroup = BaseView.InList[0]
+            if abs(Section.Direction.x) == 1:
+                Section.Y=ProjGroup.Y
+            if abs(Section.Direction.y) == 1:
+                Section.X=ProjGroup.X
+
+class changeLockPosition:
+    '''change the LockPosition of the selected view'''
+    buttonText = "Lock/Unlock a view"
+    helpText = "Lock/Unlock a view"+ "\n"\
+                          "- select a view"+ "\n"\
+                          "- click this button"
+    def activated(self):
+        Select = Gui.Selection.getCompleteSelection()[0]
+        if hasattr(Select,'LockPosition'):
+            Select.LockPosition = not Select.LockPosition
+
+class createVertDimChain:
+    '''create a vertical chain dimension'''
+    buttonText = "Create a vertical chain dimension"
+    helpText = "Select three or more vertexes"+ "\n"\
+                          "- click this button"
+    def activated(self):
+
+        def sortVertex(Vertex):
+            return Vertex.Point.y
+
+        View = Gui.Selection.getCompleteSelection()[0]
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ElementNames = Sel.SubElementNames
+        VertexNames = [VertexName for VertexName in ElementNames if VertexName[:6]=='Vertex']
+        Vertexes = [View.getVertexBySelection(VertexName) for VertexName in VertexNames]
+        Vertexes.sort(key=sortVertex)
+        if len(Vertexes) > 1:
+            XPos = Vertexes[0].X
+            for i  in range(len(Vertexes)-1):
+                DistanceDim=TechDraw.makeDistanceDim(View,'DistanceY',Vertexes[i].Point,Vertexes[i+1].Point)
+                DistanceDim.X = XPos
+                DistanceDim.Y = Y = (Vertexes[i].Point.y+Vertexes[i+1].Point.y)/2
+
+class createHorizDimChain:
+    '''create a horicontal chain dimension'''
+    buttonText = "Create a horizontal chain dimensions"
+    helpText = "Select three or more vertexes"+ "\n"\
+                          "- click this button"
+    def activated(self):
+        def sortVertex(Vertex):
+            return Vertex.Point.x
+
+        View = Gui.Selection.getCompleteSelection()[0]
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ElementNames = Sel.SubElementNames
+        VertexNames = [VertexName for VertexName in ElementNames if VertexName[:6]=='Vertex']
+        Vertexes = [View.getVertexBySelection(VertexName) for VertexName in VertexNames]
+        Vertexes.sort(key=sortVertex)
+        if len(Vertexes) > 1:
+            YPos = Vertexes[0].Y
+            for i  in range(len(Vertexes)-1):
+                DistanceDim=TechDraw.makeDistanceDim(View,'DistanceX',Vertexes[i].Point,Vertexes[i+1].Point)
+                DistanceDim.X = X = (Vertexes[i].Point.x+Vertexes[i+1].Point.x)/2
+                DistanceDim.Y = YPos
+
+class positionVertDimChain:
+    '''position a vertical chain dimension'''
+    buttonText = "Position a vertical dimension chain"
+    helpText = "Select two or more measures"+ "\n"\
+                          "- click this button"
+    def activated(self):
+
+        View = Gui.Selection.getCompleteSelection()[0]
+        Selected = Gui.Selection.getSelectionEx()
+        VertictalDimList = [Select.Object for Select in Selected if Select.Object.Type == 'DistanceY']
+        if len(VertictalDimList) > 1:
+            XPos = VertictalDimList[0].X
+            for Dimension in VertictalDimList:
+                Dimension.X = XPos
+
+class positionHorizDimChain:
+    '''position a horizontal chain dimension'''
+    buttonText = "Position a horizontal dimension chain"
+    helpText = "Select two or more measures"+ "\n"\
+                          "- click this button"
+    def activated(self):
+
+        View = Gui.Selection.getCompleteSelection()[0]
+        Selected = Gui.Selection.getSelectionEx()
+        HorizontalDimList = [Select.Object for Select in Selected if Select.Object.Type == 'DistanceX']
+        if len(HorizontalDimList) > 1:
+            YPos = HorizontalDimList[0].Y
+            for Dimension in HorizontalDimList:
+                Dimension.Y = YPos
+
+class cascadeVertDimensions:
+    '''cascade vertical dimensions'''
+    buttonText = "Cascade vertical dimensions"
+    helpText = "- adjust the desired cascade spacing"+ "\n"\
+                          "- select two or more vertical dimensions"+ "\n"\
+                          "- click this button"
+    def activated(self):
+
+        View = Gui.Selection.getCompleteSelection()[0]
+        Selected = Gui.Selection.getSelectionEx()
+        HorizontalDimList = [Select.Object for Select in Selected if Select.Object.Type == 'DistanceY']
+        if len(HorizontalDimList) > 1:
+            XPos = float(HorizontalDimList[0].X)
+            Sign = XPos/abs(XPos)
+            for Dimension in HorizontalDimList:
+                Dimension.X = XPos
+                XPos = XPos + DimAttrib.getDimLineDistance()*Sign
+
+class cascadeHorizDimensions:
+    '''cascade horizontal dimensions'''
+    buttonText = "Cascade horizontal dimensions"
+    helpText = "- adjust the desired cascade spacing"+ "\n"\
+                          "- select two or more horizontal dimensions"+ "\n"\
+                          "- click this button"
+    def activated(self):
+
+        View = Gui.Selection.getCompleteSelection()[0]
+        Selected = Gui.Selection.getSelectionEx()
+        HorizontalDimList = [Select.Object for Select in Selected if Select.Object.Type == 'DistanceX']
+        if len(HorizontalDimList) > 1:
+            YPos = float(HorizontalDimList[0].Y)
+            Sign = YPos/abs(YPos)
+            for Dimension in HorizontalDimList:
+                Dimension.Y = YPos
+                YPos = YPos + DimAttrib.getDimLineDistance()*Sign
+
+class increaseComma:
+    '''increase the comma of the dimension value'''
+    buttonText = "Increase decimal places"
+    helpText = "Increase decimal places of a measure:"+ "\n"\
+                          "- select many  measures"+ "\n"\
+                          "- click this button"
+    def activated(self):
+        Sel = Gui.Selection.getSelectionEx()
+        View = Gui.Selection.getCompleteSelection()[0]
+        for Elem in Sel:
+            if Elem.Object.TypeId == 'TechDraw::DrawViewDimension':
+                OldFormat = Elem.Object.FormatSpec
+                if OldFormat.find('%.0f') != -1:
+                    Elem.Object.FormatSpec = OldFormat.replace('%.0','%.1')
+                elif OldFormat.find('%.1f') != -1:
+                    Elem.Object.FormatSpec = OldFormat.replace('%.1','%.2')
+
+class decreaseComma:
+    '''decrease the comma of the dimension value'''
+    buttonText = "Decrease decimal places"
+    helpText = "Decrease decimal places of a measure:"+ "\n"\
+                          "- select many  measures"+ "\n"\
+                          "- click this button"
+    def activated(self):
+        Sel = Gui.Selection.getSelectionEx()
+        View = Gui.Selection.getCompleteSelection()[0]
+        for Elem in Sel:
+            if Elem.Object.TypeId == 'TechDraw::DrawViewDimension':
+                OldFormat = Elem.Object.FormatSpec
+                if OldFormat.find('%.1f') != -1:
+                    Elem.Object.FormatSpec = OldFormat.replace('%.1','%.0')
+                elif OldFormat.find('%.2f') != -1:
+                    Elem.Object.FormatSpec = OldFormat.replace('%.2','%.1')
+
+class createHorizCoordDim:
+    '''Create horizontal coordinate dimension'''
+    buttonText = "Create horizontal coordinate dimensions"
+    helpText = "- adjust the desired cascade spacing"+ "\n"\
+                          "- select three or more vertexes"+ "\n"\
+                          "- click this button"
+    def activated(self):
+        def sortVertex(Vertex):
+            return Vertex.Point.x
+
+        View = Gui.Selection.getCompleteSelection()[0]
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ElementNames = Sel.SubElementNames
+        VertexNames = [VertexName for VertexName in ElementNames if VertexName[:6]=='Vertex']
+        Vertexes = [View.getVertexBySelection(VertexName) for VertexName in VertexNames]
+        Vertexes.sort(key=sortVertex)
+        if len(Vertexes) > 1:
+            XPos = float(Vertexes[0].X)
+            YPos = float(Vertexes[0].Y)
+            Sign = YPos/abs(YPos)
+            for i  in range(len(Vertexes)-1):
+                DistanceDim=TechDraw.makeDistanceDim(View,'DistanceX',Vertexes[0].Point,Vertexes[i+1].Point)
+                DistanceDim.X = (XPos+Vertexes[i+1].Point.x)/2
+                YPos = YPos + DimAttrib.getDimLineDistance()*Sign
+                DistanceDim.Y = YPos
+
+class createVertCoordDim:
+    '''Create vertical coordinate dimension'''
+    buttonText = "Create vertical coordinate dimensions"
+    helpText = "- adjust the desired cascade spacing"+ "\n"\
+                          "- select three or more vertexes"+ "\n"\
+                          "- click this button"
+    def activated(self):
+        def sortVertex(Vertex):
+            return Vertex.Point.y
+
+        View = Gui.Selection.getCompleteSelection()[0]
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ElementNames = Sel.SubElementNames
+        VertexNames = [VertexName for VertexName in ElementNames if VertexName[:6]=='Vertex']
+        Vertexes = [View.getVertexBySelection(VertexName) for VertexName in VertexNames]
+        Vertexes.sort(key=sortVertex)
+        Vertexes.reverse()
+        if len(Vertexes) > 1:
+            XPos = float(Vertexes[0].X)
+            YPos = float(Vertexes[0].Y)
+            Sign = XPos/abs(XPos)
+            for i  in range(len(Vertexes)-1):
+                DistanceDim=TechDraw.makeDistanceDim(View,'DistanceY',Vertexes[0].Point,Vertexes[i+1].Point)
+                DistanceDim.Y = (YPos+Vertexes[i+1].Point.y)/2
+                XPos = XPos + DimAttrib.getDimLineDistance()*Sign
+                DistanceDim.X = XPos
+
+class createHorizChamferDim:
+    '''Create horizontal chamfer dimension'''
+    buttonText = "Create horizontal chamfer dimension"
+    helpText = "- select two vertexes"+ "\n"\
+                          "- click this button"
+    def activated(self):
+        View = Gui.Selection.getCompleteSelection()[0]
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ElementNames = Sel.SubElementNames
+        VertexNames = [VertexName for VertexName in ElementNames if VertexName[:6]=='Vertex']
+        Vertexes = [View.getVertexBySelection(VertexName) for VertexName in VertexNames]
+        if len(Vertexes) > 1:
+            ChamferDim=TechDraw.makeDistanceDim(View,'DistanceX',Vertexes[0].Point,Vertexes[1].Point)
+            ChamferDim.X = (Vertexes[0].Point.x+Vertexes[1].Point.x)/2
+            MaxY = max(Vertexes[0].Point.y,Vertexes[1].Point.y)
+            Sign = MaxY/abs(MaxY)
+            ChamferDim.Y = MaxY + 7.0*Sign
+            Dx, Dy  = Vertexes[0].Point.x-Vertexes[1].Point.x, Vertexes[0].Point.y-Vertexes[1].Point.y
+            Alpha = str(int(math.degrees(abs(math.atan(Dx/Dy)))))
+            print(Alpha)
+            ChamferDim.FormatSpec = ChamferDim.FormatSpec+'x'+Alpha+'°'
+
+class createVertChamferDim:
+    '''Create horizontal chamfer dimension'''
+    buttonText = "Create vertical chamfer dimension"
+    helpText = "- select two vertexes"+ "\n"\
+                          "- click this button"
+    def activated(self):
+        View = Gui.Selection.getCompleteSelection()[0]
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ElementNames = Sel.SubElementNames
+        VertexNames = [VertexName for VertexName in ElementNames if VertexName[:6]=='Vertex']
+        Vertexes = [View.getVertexBySelection(VertexName) for VertexName in VertexNames]
+        if len(Vertexes) > 1:
+            ChamferDim=TechDraw.makeDistanceDim(View,'DistanceY',Vertexes[0].Point,Vertexes[1].Point)
+            ChamferDim.Y = (Vertexes[0].Point.y+Vertexes[1].Point.y)/2
+            MaxX = max(Vertexes[0].Point.x,Vertexes[1].Point.x)
+            Sign = MaxX/abs(MaxX)
+            ChamferDim.X = MaxX + 7.0*Sign
+            Dx, Dy  = Vertexes[0].Point.x-Vertexes[1].Point.x, Vertexes[0].Point.y-Vertexes[1].Point.y
+            Alpha = str(int(math.degrees(abs(math.atan(Dy/Dx)))))
+            ChamferDim.FormatSpec = ChamferDim.FormatSpec+'x'+Alpha+'°'
+
+class holeTable:
+    '''Create a hole table'''
+    buttonText = "Create hole table"
+    helpText = "- select one vertex as origin"+ "\n"\
+                          "- select many hole circles"+ "\n"\
+                          "- click this button"
+    def activated(self):
+        def getViewCoords(View):
+            ''' position of View in Template coordinates'''
+            XView, YView = View.X, View.Y
+            if View.TypeId == 'TechDraw::DrawProjGroupItem':
+                XView = XView+View.InList[0].X
+                YView = YView+View.InList[0].Y
+            return (XView,YView)
+
+        def drawArrow(Origin,P1,P2,P3,P4,P5):
+            '''Draw arrows at origin'''
+            View.makeCosmeticLine(Origin,P1,1)
+            View.makeCosmeticLine(P2,P3,1)
+            View.makeCosmeticLine(P3,P4,1)
+            View.makeCosmeticLine(P3,P5,1)
+
+        def createAnnot(Name,Text,XPos,YPos):
+            '''Create an annotation'''
+            Annot = Doc.addObject('TechDraw::DrawViewAnnotation',Name)
+            Doc.Page.addView(Annot)
+            Annot.Text = Text
+            Annot.TextSize = 4
+            Annot.X = XPos
+            Annot.Y = YPos
+
+        Doc = App.ActiveDocument
+        View = Gui.Selection.getCompleteSelection()[0]
+        XView,YView = getViewCoords(View)
+        print(XView,YView)
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ObjectList = Sel.SubElementNames
+        if ObjectList[0][0:6] == 'Vertex':
+            Origin = View.getVertexBySelection(ObjectList[0]).Point
+            P1X, P1Y = Origin + App.Vector(0,-10,0), Origin + App.Vector(-10,0,0)
+            P2X, P2Y = Origin + App.Vector(0,-5,0), Origin + App.Vector(-5,0,0)
+            P3X, P3Y = Origin + App.Vector(10,-5,0), Origin + App.Vector(-5,10,0)
+            P4X, P4Y = Origin + App.Vector(7,-4,0), Origin + App.Vector(-4,7,0)
+            P5X, P5Y = Origin + App.Vector(7,-6,0), Origin + App.Vector(-6,7,0)
+            drawArrow(Origin,P1X,P2X,P3X,P4X,P5X)
+            drawArrow(Origin,P1Y,P2Y,P3Y,P4Y,P5Y)
+            createAnnot('OriginX','X',float(XView)+Origin.x+12,float(YView)+Origin.y-7)
+            createAnnot('OriginY','Y',float(XView)+Origin.x-5,float(YView)+Origin.y+12)
+            Spread =Doc.addObject('Spreadsheet::Sheet','Spreadsheet')
+            HoleTable = Doc.addObject('TechDraw::DrawViewSpreadsheet','HoleTable')
+            HoleTable.Source = Doc.Spreadsheet
+            Spread.set('A1','Tag')
+            Spread.set('B1','XLoc')
+            Spread.set('C1','YLoc')
+            Spread.set('D1','SIZE')
+            Num = 2
+            for ObjectString in ObjectList:
+                if ObjectString[0:4] == 'Edge':
+                    Edge = View.getEdgeBySelection(ObjectString)
+                    if Edge.Curve.TypeId == 'Part::GeomCircle':
+                        Object = Edge.Curve
+                        Center, Radius = Object.Center, Object.Radius
+                        Spread.set('A'+str(Num),'A'+str(Num-1))
+                        Spread.set('B'+str(Num),str(Center.x-Origin.x))
+                        Spread.set('C'+str(Num),str(Center.y-Origin.y))
+                        Spread.set('D'+str(Num),str(2*Radius))
+                        createAnnot('A'+str(Num-1),'A'+str(Num-1),float(XView)+Center.x+Radius,float(YView)+Center.y+Radius)
+                        Num +=1
+            HoleTable.CellEnd = 'D'+str(Num-1)
+            App.ActiveDocument.recompute()
+            Doc.Page.addView(HoleTable)
+        App.ActiveDocument.recompute()
+
+Attrib = LineAttributes()
+DimAttrib = DimensionAttributes()
+MainWindow = QtGui.QMainWindow()
+ui = Ui_MainWindow()
+ui.setupUi(MainWindow)
+MainWindow.show()
