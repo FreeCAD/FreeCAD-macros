@@ -10,19 +10,19 @@
     <x>0</x>
     <y>0</y>
     <width>500</width>
-    <height>565</height>
+    <height>560</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>500</width>
-    <height>565</height>
+    <height>560</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>500</width>
-    <height>565</height>
+    <height>560</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -32,7 +32,7 @@
    <property name="geometry">
     <rect>
      <x>370</x>
-     <y>520</y>
+     <y>515</y>
      <width>100</width>
      <height>30</height>
     </rect>
@@ -45,7 +45,7 @@
    <property name="geometry">
     <rect>
      <x>25</x>
-     <y>520</y>
+     <y>515</y>
      <width>100</width>
      <height>30</height>
     </rect>
@@ -87,7 +87,7 @@
    <property name="geometry">
     <rect>
      <x>25</x>
-     <y>400</y>
+     <y>420</y>
      <width>445</width>
      <height>30</height>
     </rect>
@@ -100,7 +100,7 @@
    <property name="geometry">
     <rect>
      <x>25</x>
-     <y>130</y>
+     <y>150</y>
      <width>175</width>
      <height>30</height>
     </rect>
@@ -121,7 +121,7 @@
    <property name="geometry">
     <rect>
      <x>50</x>
-     <y>195</y>
+     <y>215</y>
      <width>150</width>
      <height>110</height>
     </rect>
@@ -178,7 +178,7 @@
    <property name="geometry">
     <rect>
      <x>275</x>
-     <y>195</y>
+     <y>215</y>
      <width>150</width>
      <height>110</height>
     </rect>
@@ -229,7 +229,7 @@
    <property name="geometry">
     <rect>
      <x>25</x>
-     <y>440</y>
+     <y>460</y>
      <width>445</width>
      <height>30</height>
     </rect>
@@ -242,7 +242,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>140</y>
+     <y>160</y>
      <width>450</width>
      <height>75</height>
     </rect>
@@ -293,7 +293,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Quantity</string>
+    <string>Quantity :</string>
    </property>
   </widget>
   <widget class="QCheckBox" name="af_d3_checkbox_2">
@@ -309,11 +309,11 @@
     <string>Multiple Curves</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="af_d3_checkbox_3">
+  <widget class="QCheckBox" name="af_d3_checkbox_5">
    <property name="geometry">
     <rect>
      <x>25</x>
-     <y>85</y>
+     <y>115</y>
      <width>201</width>
      <height>25</height>
     </rect>
@@ -370,7 +370,7 @@
    <property name="geometry">
     <rect>
      <x>25</x>
-     <y>340</y>
+     <y>360</y>
      <width>160</width>
      <height>30</height>
     </rect>
@@ -391,7 +391,7 @@
    <property name="geometry">
     <rect>
      <x>190</x>
-     <y>340</y>
+     <y>360</y>
      <width>200</width>
      <height>30</height>
     </rect>
@@ -402,12 +402,15 @@
    <property name="decimals">
     <number>2</number>
    </property>
+   <property name="maximum">
+    <double>100000.000000000000000</double>
+   </property>
   </widget>
   <widget class="QComboBox" name="af_d3_combobox">
    <property name="geometry">
     <rect>
      <x>395</x>
-     <y>340</y>
+     <y>360</y>
      <width>75</width>
      <height>30</height>
     </rect>
@@ -443,13 +446,64 @@
     </property>
    </item>
   </widget>
+  <widget class="QCheckBox" name="af_d3_checkbox_3">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>85</y>
+     <width>161</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="layoutDirection">
+    <enum>Qt::LeftToRight</enum>
+   </property>
+   <property name="text">
+    <string>Split Curves (Open)</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="af_d3_checkbox_4">
+   <property name="geometry">
+    <rect>
+     <x>246</x>
+     <y>85</y>
+     <width>188</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="layoutDirection">
+    <enum>Qt::RightToLeft</enum>
+   </property>
+   <property name="text">
+    <string>Split Curves (Closed) :     </string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="af_d3_checkbox_6">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>245</x>
+     <y>115</y>
+     <width>191</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="layoutDirection">
+    <enum>Qt::RightToLeft</enum>
+   </property>
+   <property name="text">
+    <string>End Points at [0,0; 1,0] :  </string>
+   </property>
+  </widget>
  </widget>
  <tabstops>
   <tabstop>af_d3_checkbox_1</tabstop>
   <tabstop>af_d3_spinbox_1</tabstop>
   <tabstop>af_d3_checkbox_2</tabstop>
   <tabstop>af_d3_spinbox_2</tabstop>
-  <tabstop>af_d3_checkbox_3</tabstop>
+  <tabstop>af_d3_checkbox_5</tabstop>
   <tabstop>af_d3_radio_1</tabstop>
   <tabstop>af_d3_radio_2</tabstop>
   <tabstop>af_d3_radio_1a</tabstop>
