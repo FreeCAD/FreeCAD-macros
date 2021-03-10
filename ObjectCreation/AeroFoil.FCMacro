@@ -1,0 +1,2743 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
+
+##########################################################################################
+#####				L I C E N S E					     #####
+##########################################################################################
+#
+#  GNU LESSER GENERAL PUBLIC LICENSE
+#  Version 2.1, February 1999
+#
+#  Copyright (C) 1991, 1999 Free Software Foundation, Inc.
+#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+#  Everyone is permitted to copy and distribute verbatim copies
+#  of this license document, but changing it is not allowed.
+#
+#  [This is the first released version of the Lesser GPL. It also counts
+#  as the successor of the GNU Library Public License, version 2, hence
+#  the version number 2.1.]
+#
+#  'AeroFoil' is a FreeCAD macro. AeroFoil creates airfoil curves and faces
+#  using pre-defined models, algebraic functions, and DAT or CSV Files.
+#
+#  Copyright (C) 2021  Melwyn Francis Carlo
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 2.1 of the License, or (at your option) any later version.
+#
+#  This library is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with this library; if not, write to the Free Software Foundation, Inc.,
+#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+#  Contact Information :-
+#  Email :  carlo.melwyn@outlook.com
+#  FreeCAD UserTalk :  http://www.freecadweb.org/wiki/index.php?title=User:Melwyncarlo
+#
+##########################################################################################
+#####				L I C E N S E					     #####
+##########################################################################################
+#
+#
+#
+#  The AeroFoil macro was developed and tested on a platform containing the
+#  following system and FreeCAD software specifications :
+#
+#  - OS			: Ubuntu 18.04.5 LTS (LXDE/Lubuntu)
+#  - Word size of OS	: 64-bit
+#  - Word size of FreeCAD: 64-bit
+#  - Version		: 0.19
+#  - Build type		: Release
+#  - Branch		: unknown
+#  - Hash		: 32200b604d421c4dad527fe587a7d047cf953b4f
+#  - Python version	: 3.6.9
+#  - Qt version		: 5.9.5
+#  - Coin version	: 4.0.0a
+#  - OCC version	: 7.3.0
+#  - Locale		: English/UnitedKingdom (en_GB)
+
+
+
+"""
+  To use this macro, the steps to be followed are simple and straightforward :
+  follow the instructions in the respective dialog boxes, fill in the relevant inputs, 
+  and navigate accordingly. In case of error or warning, you will automatically be 
+  notified the same. In case you are notified to report an unexpected error, 
+  communicate the error by mentioning the FreeCAD version, tracing the steps 
+  taken, and mentioning whether (and how much) or not any ouput was generated.
+
+  Note (1)	Performing the macro operation with custom points and refinement 
+		produces no visible changes.
+  Note (2)	The AeroFoil object properties are only visible on the FreeCAD 
+		software version 0.19. On older versions, you will be shown 
+		a warning on the console.
+  Note (3)	The single underscore prefix (e.g. _name) denotes a private 
+		function or a private variable.
+  Note (4)	Some of the short forms used in this script are as follows:
+		  'af' stands for AeroFoil
+  		  'mfb' stands for Math Functions Box
+  		  'd' stands for Dialog (e.g. d2c, d3, etc.)
+  Note (5)	The dialog boxes and their corresponding UI elements may be 
+		labelled differently. Here is a map:
+		  d1	= AeroFoil_Initial_Dialog
+		  d2a	= AeroFoil_NACA4Digit_Dialog
+		  d2b	= AeroFoil_NACA5Digit_Dialog
+		  d2c	= AeroFoil_CurvesInput_Dialog
+		  d2d	= AeroFoil_PointsInput_Dialog
+		  d2d1a	= AeroFoil_DATInput_Dialog
+		  d2d1b	= AeroFoil_CSVInput_Dialog
+		  dcd2	= AeroFoil_FileLoad_Dialog
+		  d3	= AeroFoil_Final_Dialog
+		  mfb	= AeroFoil_Math_Functions_Box
+		Read the DocString of the '_setDialogIndex' method in the 
+		'AeroFoilDialog' class to know more about its implementation.
+  Note (6)	The global variable 'dialogIndex' is listed in the exact order 
+		as the above list of dialog boxes.
+"""
+
+
+
+__Title__ = "AeroFoil"
+__Author__ = "Melwyncarlo"
+__Version__ = "2.0.0"
+__Date__ = "2021-03-09"
+__Comment__ = "AeroFoil creates airfoil curves and faces using pre-defined models, algebraic functions, and DAT or CSV Files"
+__Web__ = "https://github.com/melwyncarlo/AeroFoil"
+__Wiki__ = "http://www.freecadweb.org/wiki/index.php?title=Macro_AeroFoil"
+__Icon__ = "AeroFoil_UI_Files/AeroFoil.png"
+__Help__ = "Click on the AeroFoil button/macro, and follow the instructions in the subsequent dialog boxes."
+__Status__ = "stable"
+__Requires__ = "Freecad >= v0.17"
+__Communication__ = "https://github.com/melwyncarlo/AeroFoil/issues"
+__Files__ = "AeroFoil_UI_Files/AeroFoil_Initial_Dialog.ui, AeroFoil_UI_Files/AeroFoil_NACA4Digit_Dialog.ui, \
+AeroFoil_UI_Files/AeroFoil_NACA5Digit_Dialog.ui, AeroFoil_UI_Files/AeroFoil_CurvesInput_Dialog.ui, \
+AeroFoil_UI_Files/AeroFoil_PointsInput_Dialog.ui, AeroFoil_UI_Files/AeroFoil_DATInput_Dialog.ui, \
+AeroFoil_UI_Files/AeroFoil_CSVInput_Dialog.ui, AeroFoil_UI_Files/AeroFoil_FileLoad_Dialog.ui, \
+AeroFoil_UI_Files/AeroFoil_Final_Dialog.ui, AeroFoil_UI_Files/AeroFoil_Math_Functions_Box.ui, \
+AeroFoil_UI_Files/AeroFoil_mfb_img.gif, AeroFoil_UI_Files/AeroFoil.svg"
+
+
+
+# Library Imports
+# ------------------------------------------------------------------------------------------------
+
+import FreeCAD as app
+import FreeCADGui as gui
+import Sketcher, Part, Draft
+from pathlib import Path
+import PySide
+from PySide import QtGui, QtCore
+from PySide.QtGui import *
+from PySide.QtCore import *
+import time, math, csv, re
+
+
+
+###########################################################################
+###---------------------------------------------------------------------###
+### 		AEROFOIL MACRO CALLS - Top (check Bottom)		###
+###---------------------------------------------------------------------###
+									###
+def AeroFoil_generate(obj):						###
+    """
+    The 'AeroFoil_generate' function generates the 2D curves 
+    and shapes, assigns them properties, and creates 
+    multiples of created curves and shapes.	
+
+    Arguments
+    ----------
+    obj: An instance of the 'AeroFoilDialog' object.
+    
+    Return
+    ----------
+    True:   The airfoil curves/shapes were generated 
+            successfully.
+    False:  The airfoil curves/shapes were NOT generated 
+            successfully.
+    """									###
+    n_ = (obj.multi * (obj.multiParam - 1)) + 1				###
+    AeroFoil_object = AeroFoil(obj)					###
+    if AeroFoil_object.create():					###
+        AeroFoil_object.characterize()					###
+    else:								###
+        return False							###
+    AeroFoil_object.copy(n_)						###
+    return True								###
+									###
+###---------------------------------------------------------------------###
+### 		AEROFOIL MACRO CALLS - Top (check Bottom)		###
+###---------------------------------------------------------------------###
+###########################################################################
+
+
+
+# Constant Variables
+# ------------------------------------------------------------------------------------------------
+
+MAX_REFINE_PARAM = 2
+# Pertaining to the 'Refine Parameter' input from AeroFoil_Final_Dialog
+# It is the maximum airfoil points refinement coefficient above which
+# a warning is diplayed notifying the user of increased computation.
+MAX_QUANTITY_PARAM = 5
+# Pertaining to the 'Quantity Parameter' input from AeroFoil_Final_Dialog
+# It is the maximum number of Airfoil curves to be generated above which
+# a warning is diplayed notifying the user of increased computation.
+MIN_DATA_POINTS = 10
+# Pertaining to the 'Quantity Parameter' input from AeroFoil_FileLoad_Dialog
+# It is the minimum pair of airfoil data points to be present in the file
+# below which an error is shown.
+NACA_NUMBER_OF_POINTS = 50
+# It is the number of airfoil data points pair used while generating the curves
+# It is the value set at REFINE_PARAM = 1
+NACA_5_2ND_3RD_DIGITS = ["10", "20", "30", "40", "50", "21", "31", "41", "51"]
+# The NACA 5 Digit airfoils are limited. These are the 2nd and 3rd digit combinations
+# of the available NACA 5 Digit airfoils
+FUNCTIONSARRAY = [
+    "+",
+    "-",
+    "*",
+    "/",
+    "^",
+    "e",
+    "pi",
+    "ln(",
+    "log(",
+    "sqrt(",
+    "sin(",
+    "cos(",
+    "tan(",
+    "asin(",
+    "acos(",
+    "atan(",
+    "x",
+    "(",
+    ")",
+    ".",
+]
+# A list of functions and mathematics-based characters that are allowed for input.
+UNITSCONVERSION = [0, 1, 10, 1000, 25.4, 304.8, 914.4]
+# This is the conversion coefficients list to convert different units into millimetres (mm).
+# From element 2 to 7 :  millimetre (mm), centimetre (cm), metre (m), inch (in), feet (ft),
+# and yards.
+# Ignore the 1st element; it's superfluous.
+MIN_CHORD_LENGTH_MM = 1
+# It is the minimum airfoil chord length input below which a warning is displayed.
+MACRO_DIR = app.getUserMacroDir(True) + "/AeroFoil_UI_Files/AeroFoil_"
+# It is the user's macro directory
+
+
+
+# Global Variables
+# ------------------------------------------------------------------------------------------------
+
+dialogIndex = [1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+# These are the code numbers pertaining to the entire program's dialogs
+# Each dialog box is assigned an initial code number.
+# Each of the numbers given in the list from element 2 t0 11
+# correspond to a dialog box as mentioned in the macro's
+# main DocString above.
+# The 1st element contains the current dialog box's index number
+# Read the DocString of the '_setDialogIndex' method in the
+# 'AeroFoilDialog' class to know more about its implementation.
+doc = app.activeDocument()
+
+
+
+# Main Function Class
+# ------------------------------------------------------------------------------------------------
+
+class AeroFoil:
+
+    """
+    The 'AeroFoil' class is the AeroFoil object itself. It is a non-interactive 
+    console-based class that is responsible for physical creation of the custom 
+    2D airfoil curves/shapes. The gathered user input data is used for the process.
+
+    Functions include:
+    __init__
+    copy
+    characterize
+    create
+    _create_tempX_var
+    _createSketcherPolyLine
+    _createSketcherBSpline
+    """
+
+    def __init__(self, obj):
+        """
+        This function initializes of the 'AeroFoil' class.
+        This function transfers the user input data through the 'obj' variable.
+
+        Arguments
+        ----------
+        obj: An instance of the 'AeroFoilDialog' object.
+        """
+        global UNITSCONVERSION
+        self.profileName = generateName("AeroFoil")
+        self.chord = obj.chordLength * UNITSCONVERSION[obj.chordUnits]
+        # 'designtype' is used as a container for a set of relevant variables
+        self.designtype = [obj.workbench, obj.curveType]
+        self.designclosed = obj.closed_
+        self.designsplit = obj.splitCurve
+        self.designsplitmode = obj.splitCurveMode
+        self.defaultEndPoints = obj.defaultEndPoints
+        # 'midIndices' is used as a container for a set of relevant variables
+        self.midIndices = [obj.midIndex1, obj.midIndex2]
+        self.points = []
+        self.points.append(obj.pointsX)
+        self.points.append(obj.pointsY)
+        self.n_units = len(self.points[0])
+        self.designprogressbar = obj.progressBar_
+        # 'objRefData' is used as a container for a set of relevant variables
+        self.objRefData = [
+            obj.airfoilType,
+            obj.airfoil4DNumber,
+            obj.airfoil5DNumber,
+            obj.airfoilProfileType,
+            obj.importFrom,
+        ]
+
+    def copy(self, quantity_):
+        """
+        This function creates multiple copies of the created airfoil curves/shapes.
+
+        Arguments
+        ----------
+        quantity_: (Integer) Number of copies required.
+        """
+        if quantity_ != 1:
+            refNum = int(re.findall(r"\d+", self.profileName)[0])
+            gui.Selection.clearSelection()
+            if self.designsplit:
+                gui.Selection.addSelection(
+                    doc.getObjectsByLabel(self.profileName + "_Upper")[0]
+                )
+                gui.Selection.addSelection(
+                    doc.getObjectsByLabel(self.profileName + "_Lower")[0]
+                )
+            else:
+                gui.Selection.addSelection(doc.getObjectsByLabel(self.profileName)[0])
+            gui.runCommand("Std_Copy")
+            for i in range(quantity_ - 1):
+                gui.runCommand("Std_Paste")
+                if self.designsplit:
+                    doc.getObjectsByLabel(
+                        "AeroFoil_" + str(refNum) + "_Upper" + str(i + 1).zfill(3)
+                    )[0].Label = ("AeroFoil_" + str(refNum + i + 1) + "_Upper")
+                    doc.getObjectsByLabel(
+                        "AeroFoil_" + str(refNum) + "_Lower" + str(i + 1).zfill(3)
+                    )[0].Label = ("AeroFoil_" + str(refNum + i + 1) + "_Lower")
+                else:
+                    doc.getObjectsByLabel("AeroFoil_" + str(refNum + i + 1).zfill(3))[
+                        0
+                    ].Label = "AeroFoil_" + str(refNum + i + 1)
+                if self.designprogressbar.value() < 99:
+                    self.designprogressbar.setValue(
+                        round(75 + (((i + 1) / (4 * quantity_)) * 100))
+                    )
+        self.designprogressbar.setValue(100)
+        time.sleep(1)
+
+    def characterize(self):
+        """
+        This function adds external (read-only) properties to an instance of the AeroFoil object.
+        The user input data has been obtained from the '__init__' module of this class.
+
+        Properties
+        ---------------
+        Airfoil Type:         Options - NACA 4 Digit, NACA 5 Digit, Custom Curves (Symmetric or 
+                              Asymmetric), or Custom Points (DAT or CSV)
+        Design Curve Type:    Options - Unsplit or Open Split or Open Split (End Points Fixed) or 
+                              Closed Split or Closed Split (End Points Fixed) | 
+                              Polygon or BSpline | Draft or Sketch or Surface
+        Airfoil Chord Length: Length in millimetres (mm)
+        Number of Points :    Number of airfoil points
+        """
+        try:
+            objRef = doc.getObjectsByLabel(self.profileName)[0]
+            objRef.addProperty("App::PropertyString", "AirfoilType", "", "", 1)
+            objRef.addProperty("App::PropertyLength", "AirfoilChordLength", "", "", 1)
+            objRef.addProperty("App::PropertyString", "DesignCurveType", "", "", 1)
+            objRef.addProperty("App::PropertyInteger", "NumberOfPoints", "", "", 1)
+            tempStr = ""
+            # Refer to the '__init__' method of this class for more info. on 'objRefData'
+            if self.objRefData[0] == 1:
+                tempStr = "NACA - " + self.objRefData[1]
+            elif self.objRefData[0] == 2:
+                tempStr = "NACA - " + self.objRefData[2]
+            elif self.objRefData[0] == 3 and self.objRefData[3] == 1:
+                tempStr = "Custom Curves (Symmetric)"
+            elif self.objRefData[0] == 3 and self.objRefData[3] == 2:
+                tempStr = "Custom Curves (Asymmetric)"
+            elif self.objRefData[0] == 4 and self.objRefData[4] == 1:
+                tempStr = "Custom Points (DAT)"
+            elif self.objRefData[0] == 4 and self.objRefData[4] == 2:
+                tempStr = "Custom Points (CSV)"
+            objRef.AirfoilType = tempStr
+            objRef.AirfoilChordLength = str(self.chord) + "mm"
+            tempStr = ""
+            if self.designsplit:
+                if self.designsplitmode == 1:
+                    tempStr += "Open Split "
+                else:
+                    tempStr += "Closed Split "
+                tempStr += "(End Points Fixed) " if self.defaultEndPoints else ""
+            else:
+                tempStr += "Unsplit "
+            tempStr += "Polygon " if self.designtype[1] == 1 else "BSpline "
+            if self.designclosed:
+                tempStr += "Surface"
+            elif self.designtype[0] == 1:
+                tempStr += "Sketch"
+            elif self.designtype[0] == 2:
+                tempStr += "Draft"
+            objRef.DesignCurveType = tempStr
+            objRef.NumberOfPoints = self.n_units - 1
+        except Exception:
+            print(
+                "\nCannot generate AeroFoil properties in FreeCAD version &#60;0.19 !\n"
+            )
+            app.Console.PrintWarning(
+                "\nCannot generate AeroFoil properties in FreeCAD version &#60;0.19 !\n"
+            )
+
+    def create(self):
+        """
+        This function is responsible for physical creation of the custom 2D airfoil curves/shapes.
+        The user input data has been obtained from the '__init__' module of this class.
+        This function utilizes the 'try ... except' method to avoid any complications 
+        on the user's end. A simple error message is displayed instead.
+        """
+        constraintIndex = 0
+        # Generating Polygons and BSplines
+        try:
+            if self.designtype[0] == 2:
+                if self.designtype[1] == 1:
+                    if self.designsplit:
+                        self._createSketcherPolyLine(
+                            self.profileName + "_Upper", 0, self.midIndices[0]
+                        )
+                        self._createSketcherPolyLine(
+                            self.profileName + "_Lower",
+                            self.midIndices[1],
+                            len(self.points[0]) - 1,
+                        )
+                    else:
+                        self._createSketcherPolyLine(
+                            self.profileName, 0, len(self.points[0]) - 1
+                        )
+                elif self.designtype[1] == 2:
+                    if self.designsplit:
+                        self._createSketcherBSpline(
+                            self.profileName + "_Upper", 0, self.midIndices[0]
+                        )
+                        self._createSketcherBSpline(
+                            self.profileName + "_Lower",
+                            self.midIndices[1],
+                            len(self.points[0]) - 1,
+                        )
+                    else:
+                        self._createSketcherBSpline(
+                            self.profileName, 0, len(self.points[0]) - 1
+                        )
+            elif self.designtype[0] == 1:
+                tempXif, tempXm = 0, 0
+                i_count, iteration = 0, 1
+                if self.designsplit:
+                    iteration = 2
+                while i_count < iteration:
+                    DWireOrBSpline_, pointsVector, draftCurveClosed = 0, [], True
+                    startIndex, endIndex = 0, len(self.points[0]) - 1
+                    draftOutputName = self.profileName
+                    n_ = len(self.points[0])
+                    if self.designsplit:
+                        draftCurveClosed = False
+                        startIndex, endIndex = (
+                            (0, self.midIndices[0])
+                            if i_count == 0
+                            else (self.midIndices[1], len(self.points[0]) - 1)
+                        )
+                        tempXif, tempXm = self._create_tempX_var(startIndex, endIndex)
+                        draftOutputName = (
+                            self.profileName + "_Upper"
+                            if i_count == 0
+                            else self.profileName + "_Lower"
+                        )
+                        n_ = endIndex - startIndex + 1
+                    if self.designsplit and (
+                        tempXif != self.points[0][startIndex]
+                        or self.points[1][startIndex] != 0
+                    ):
+                        pointsVector.append(app.Vector(tempXif, 0, 0))
+                    for i in range(startIndex, endIndex + 1):
+                        pointsVector.append(
+                            app.Vector(self.points[0][i], 0, self.points[1][i])
+                        )
+                        if not self.designsplit:
+                            if self.designprogressbar.value() < 75:
+                                self.designprogressbar.setValue(
+                                    round(50 + ((i / (4 * n_)) * 100))
+                                )
+                        elif self.designsplit and i_count == 0:
+                            if self.designprogressbar.value() < 62.5:
+                                self.designprogressbar.setValue(
+                                    round(50 + ((i / (8 * n_)) * 100))
+                                )
+                        else:
+                            if self.designprogressbar.value() < 75:
+                                self.designprogressbar.setValue(
+                                    round(62.5 + ((i / (8 * n_)) * 100))
+                                )
+                    if self.designsplit and (
+                        tempXm != self.points[0][endIndex]
+                        or self.points[1][endIndex] != 0
+                    ):
+                        pointsVector.append(app.Vector(tempXm, 0, 0))
+                    if self.designtype[1] == 1:
+                        # if self.designclosed is determined by face=self.designclosed
+                        DWireOrBSpline_ = Draft.makeWire(
+                            pointsVector,
+                            closed=draftCurveClosed,
+                            placement=None,
+                            face=self.designclosed,
+                            support=None,
+                        )
+                    elif self.designtype[1] == 2:
+                        # if self.designclosed is determined by face=self.designclosed
+                        DWireOrBSpline_ = Draft.makeBSpline(
+                            pointsVector,
+                            closed=draftCurveClosed,
+                            placement=None,
+                            face=self.designclosed,
+                            support=None,
+                        )
+                        if self.designsplit and self.designsplitmode == 2:
+                            pointsVector_aux = [pointsVector[0], pointsVector[-1]]
+                            DWire_aux = Draft.makeWire(
+                                pointsVector_aux,
+                                closed=False,
+                                placement=None,
+                                face=False,
+                                support=None,
+                            )
+                            addList, deleteList = Draft.upgrade(
+                                [DWireOrBSpline_, DWire_aux], delete=True, force=None
+                            )
+                    doc.recompute()
+                    if self.designsplit and self.designsplitmode == 2:
+                        doc.getObject(addList[0].Name).Label = draftOutputName
+                    else:
+                        shape_ = doc.addObject("Part::Feature", draftOutputName)
+                        shape_.Shape = DWireOrBSpline_.Shape
+                        doc.removeObject(DWireOrBSpline_.Label)
+                    i_count += 1
+        except Exception:
+            # Unexpected Error Occurred while Processing
+            try:
+                doc.removeObject(self.profileName)
+                doc.removeObject(self.profileName + "_Upper")
+                doc.removeObject(self.profileName + "_Lower")
+            except Exception:
+                pass
+            doc.recompute()
+            return False
+        doc.recompute()
+        gui.activeDocument().activeView().viewFront()
+        gui.SendMsgToActiveView("ViewFit")
+        return True
+
+    def _create_tempX_var(self, startIndex, endIndex):
+        """
+        This function determines the start and end points of a 'split' curve.
+        This function generates additional start and end points if 
+        their existing counterparts do not have a Y-axis value of zero (0).
+        This function calls the linear interpolation method to achieve the same.
+
+        Arguments
+        ----------
+        startIndex: (Integer) Zero-based index of the data points list to begin from.
+        endIndex:   (Integer) Zero-based index of the data points list to end to.
+        """
+        if self.defaultEndPoints:
+            tempXif = round(self.points[0][startIndex], 2)
+            tempXm = round(self.points[0][endIndex], 2)
+            self.points[0][startIndex] = round(self.points[0][startIndex], 2)
+            self.points[0][endIndex] = round(self.points[0][endIndex], 2)
+        else:
+            xi_, yi_, xf_, yf_ = 0, 0, 0, 0
+            x1m_, y1m_, x2m_, y2m_ = 0, 0, 0, 0
+            if startIndex == 0:
+                xi_, yi_ = self.points[0][0], self.points[1][0]
+                xf_, yf_ = (
+                    (self.points[0][-1], self.points[1][-1])
+                    if (
+                        self.points[0][0] != self.points[0][-1]
+                        or self.points[1][0] != self.points[1][-1]
+                    )
+                    else (self.points[0][-2], self.points[1][-2])
+                )
+                x1m_, y1m_ = self.points[0][endIndex], self.points[1][endIndex]
+                x2m_, y2m_ = (
+                    (self.points[0][endIndex + 1], self.points[1][endIndex + 1])
+                    if self.points[0][endIndex] != self.points[0][endIndex + 1]
+                    or self.points[1][endIndex] != self.points[1][endIndex + 1]
+                    else (self.points[0][endIndex + 2], self.points[1][endIndex + 2])
+                )
+            else:
+                xi_, yi_ = self.points[0][startIndex], self.points[1][startIndex]
+                xf_, yf_ = (
+                    (self.points[0][startIndex - 1], self.points[1][startIndex - 1])
+                    if (
+                        self.points[0][startIndex] != self.points[0][startIndex - 1]
+                        or self.points[1][startIndex] != self.points[1][startIndex - 1]
+                    )
+                    else (
+                        self.points[0][startIndex - 2],
+                        self.points[1][startIndex - 2],
+                    )
+                )
+                x1m_, y1m_ = self.points[0][-1], self.points[1][-1]
+                x2m_, y2m_ = (
+                    (self.points[0][0], self.points[1][0])
+                    if self.points[0][-1] != self.points[0][0]
+                    or self.points[1][-1] != self.points[1][0]
+                    else (self.points[0][1], self.points[1][1])
+                )
+            tempXif = interpolateNum(yi_, xi_, yf_, xf_, 0)
+            tempXm = interpolateNum(y1m_, x1m_, y2m_, x2m_, 0)
+        return tempXif, tempXm
+
+    def _createSketcherPolyLine(self, sketchName, startIndex, endIndex):
+        """
+        This function creates the Sketcher Workbench based PolyLine curve.
+
+        Arguments
+        ----------
+        sketchName: (String)  The name/label of the generated sketch.
+        startIndex: (Integer) Zero-based index of the data points list to begin from.
+        endIndex:   (Integer) Zero-based index of the data points list to end to.
+        """
+        # Sketch Preparation and Naming
+        sketchObj = doc.addObject("Sketcher::SketchObject", sketchName)
+        sketchObj.Placement = app.Placement(
+            app.Vector(0.000000, 0.000000, 0.000000),
+            app.Rotation(-0.707107, 0.000000, 0.000000, -0.707107),
+        )
+        sketchObj.MapMode = "Deactivated"
+        # Sketch PolyLine Procedure
+        count, tempBool = 0, False
+        tempXif, tempXm = 0, 0
+        if self.designsplit:
+            tempXif, tempXm = self._create_tempX_var(startIndex, endIndex)
+            if (
+                tempXif == self.points[0][startIndex]
+                and self.points[1][startIndex] == 0
+            ):
+                tempBool = False
+            else:
+                tempBool = True
+                sketchObj.addGeometry(
+                    Part.LineSegment(
+                        app.Vector(tempXif, 0, 0),
+                        app.Vector(
+                            self.points[0][startIndex], self.points[1][startIndex], 0
+                        ),
+                    ),
+                    False,
+                )
+                constraintIndex = sketchObj.addConstraint(
+                    Sketcher.Constraint("DistanceX", 0, 1, tempXif)
+                )
+                sketchObj.setDatum(
+                    constraintIndex, app.Units.Quantity(str(tempXif) + "mm")
+                )
+                constraintIndex = sketchObj.addConstraint(
+                    Sketcher.Constraint("DistanceY", 0, 1, 0)
+                )
+                sketchObj.setDatum(constraintIndex, app.Units.Quantity(str(0) + "mm"))
+                constraintIndex = sketchObj.addConstraint(
+                    Sketcher.Constraint("DistanceX", 0, 2, self.points[0][startIndex])
+                )
+                sketchObj.setDatum(
+                    constraintIndex,
+                    app.Units.Quantity(str(self.points[0][startIndex]) + "mm"),
+                )
+                constraintIndex = sketchObj.addConstraint(
+                    Sketcher.Constraint("DistanceY", 0, 2, self.points[1][startIndex])
+                )
+                sketchObj.setDatum(
+                    constraintIndex,
+                    app.Units.Quantity(str(self.points[1][startIndex]) + "mm"),
+                )
+        sketchObj.addGeometry(
+            Part.LineSegment(
+                app.Vector(self.points[0][startIndex], self.points[1][startIndex], 0),
+                app.Vector(
+                    self.points[0][startIndex + 1], self.points[1][startIndex + 1], 0
+                ),
+            ),
+            False,
+        )
+        if tempBool:
+            sketchObj.addConstraint(Sketcher.Constraint("Coincident", 0, 2, 1, 1))
+            count = 2
+        else:
+            count = 1
+        n_ = endIndex - startIndex + 1
+        for i in range(startIndex + 1, endIndex):
+            sketchObj.addGeometry(
+                Part.LineSegment(
+                    app.Vector(self.points[0][i], self.points[1][i], 0),
+                    app.Vector(self.points[0][i + 1], self.points[1][i + 1], 0),
+                ),
+                False,
+            )
+            sketchObj.addConstraint(
+                Sketcher.Constraint("Coincident", count - 1, 2, count, 1)
+            )
+            if self.designprogressbar.value() < 62.5:
+                self.designprogressbar.setValue(round(50 + ((count / (8 * n_)) * 100)))
+            count += 1
+        tempVar1, tempVar2 = self.points[0][endIndex], self.points[1][endIndex]
+        if self.designsplit and (
+            tempXm != self.points[0][endIndex] or self.points[1][endIndex] != 0
+        ):
+            sketchObj.addGeometry(
+                Part.LineSegment(
+                    app.Vector(self.points[0][endIndex], self.points[1][endIndex], 0),
+                    app.Vector(tempXm, 0, 0),
+                ),
+                False,
+            )
+            sketchObj.addConstraint(
+                Sketcher.Constraint("Coincident", count - 1, 2, count, 1)
+            )
+            tempVar1, tempVar2 = tempXm, 0
+            count += 1
+        if self.designsplitmode == 2:
+            sketchObj.addGeometry(
+                Part.LineSegment(
+                    app.Vector(tempVar1, tempVar2, 0),
+                    app.Vector(
+                        self.points[0][startIndex], self.points[1][startIndex], 0
+                    ),
+                ),
+                False,
+            )
+            sketchObj.addConstraint(
+                Sketcher.Constraint("Coincident", count - 1, 2, count, 1)
+            )
+            sketchObj.addConstraint(Sketcher.Constraint("Coincident", count, 2, 0, 1))
+        if self.designsplit:
+            # Here, 'count; denotes the sketcher line number
+            count = 1 if tempBool else 0
+        else:
+            sketchObj.addConstraint(
+                Sketcher.Constraint("Coincident", count - 1, 2, 0, 1)
+            )
+            count = 0
+        for j in range(startIndex, endIndex - 1):
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint("DistanceX", count, 2, self.points[0][j + 1])
+            )
+            sketchObj.setDatum(
+                constraintIndex, app.Units.Quantity(str(self.points[0][j + 1]) + "mm")
+            )
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint("DistanceY", count, 2, self.points[1][j + 1])
+            )
+            sketchObj.setDatum(
+                constraintIndex, app.Units.Quantity(str(self.points[1][j + 1]) + "mm")
+            )
+            if self.designprogressbar.value() < 75:
+                self.designprogressbar.setValue(
+                    round(62.5 + ((count / (8 * n_)) * 100))
+                )
+            count += 1
+        if self.designsplit:
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint("DistanceX", count, 2, self.points[0][endIndex])
+            )
+            sketchObj.setDatum(
+                constraintIndex,
+                app.Units.Quantity(str(self.points[0][endIndex]) + "mm"),
+            )
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint("DistanceY", count, 2, self.points[1][endIndex])
+            )
+            sketchObj.setDatum(
+                constraintIndex,
+                app.Units.Quantity(str(self.points[1][endIndex]) + "mm"),
+            )
+            count += 1
+            if tempXm != self.points[0][endIndex] or self.points[1][endIndex] != 0:
+                constraintIndex = sketchObj.addConstraint(
+                    Sketcher.Constraint("DistanceX", count, 2, tempXm)
+                )
+                sketchObj.setDatum(
+                    constraintIndex, app.Units.Quantity(str(tempXm) + "mm")
+                )
+                constraintIndex = sketchObj.addConstraint(
+                    Sketcher.Constraint("DistanceY", count, 2, 0)
+                )
+                sketchObj.setDatum(constraintIndex, app.Units.Quantity(str(0) + "mm"))
+                count += 1
+            if not tempBool and self.designsplitmode == 2:
+                constraintIndex = sketchObj.addConstraint(
+                    Sketcher.Constraint(
+                        "DistanceX", count, 2, self.points[0][startIndex]
+                    )
+                )
+                sketchObj.setDatum(
+                    constraintIndex,
+                    app.Units.Quantity(str(self.points[0][startIndex]) + "mm"),
+                )
+                constraintIndex = sketchObj.addConstraint(
+                    Sketcher.Constraint(
+                        "DistanceY", count, 2, self.points[1][startIndex]
+                    )
+                )
+                sketchObj.setDatum(
+                    constraintIndex,
+                    app.Units.Quantity(str(self.points[1][startIndex]) + "mm"),
+                )
+                count += 1
+        if not tempBool and self.designsplitmode != 2:
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint("DistanceX", 0, 1, self.points[0][startIndex])
+            )
+            sketchObj.setDatum(
+                constraintIndex,
+                app.Units.Quantity(str(self.points[0][startIndex]) + "mm"),
+            )
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint("DistanceY", 0, 1, self.points[1][startIndex])
+            )
+            sketchObj.setDatum(
+                constraintIndex,
+                app.Units.Quantity(str(self.points[1][startIndex]) + "mm"),
+            )
+
+    def _createSketcherBSpline(self, sketchName, startIndex, endIndex):
+        """
+        This function creates the Sketcher Workbench based BSpline curve.
+
+        Arguments
+        ----------
+        sketchName: (String)  The name/label of the generated sketch.
+        startIndex: (Integer) Zero-based index of the data points list to begin from.
+        endIndex:   (Integer) Zero-based index of the data points list to end to.
+        """
+        # Sketch Preparation and Naming
+        sketchObj = doc.addObject("Sketcher::SketchObject", sketchName)
+        sketchObj.Placement = app.Placement(
+            app.Vector(0.000000, 0.000000, 0.000000),
+            app.Rotation(-0.707107, 0.000000, 0.000000, -0.707107),
+        )
+        sketchObj.MapMode = "Deactivated"
+        # Sketch BSpline Procedure
+        count, points, conList = 0, [], []
+        n_ = endIndex - startIndex + 1
+        isXif, isXm = False, False
+        tempXif, tempXm = 0, 0
+        if self.designsplit:
+            tempXif, tempXm = self._create_tempX_var(startIndex, endIndex)
+        if self.designsplit and (
+            tempXif != self.points[0][startIndex] or self.points[1][startIndex] != 0
+        ):
+            sketchObj.addGeometry(
+                Part.Circle(app.Vector(tempXif, 0, 0), app.Vector(0, 0, 1), 10), True
+            )
+            sketchObj.addGeometry(
+                Part.Circle(
+                    app.Vector(
+                        self.points[0][startIndex], self.points[1][startIndex], 0
+                    ),
+                    app.Vector(0, 0, 1),
+                    10,
+                ),
+                True,
+            )
+            sketchObj.addConstraint(Sketcher.Constraint("Radius", 0, 1.000000))
+            sketchObj.addConstraint(Sketcher.Constraint("Equal", 0, 1))
+            sketchObj.addGeometry(
+                Part.Circle(
+                    app.Vector(
+                        self.points[0][startIndex + 1],
+                        self.points[1][startIndex + 1],
+                        0,
+                    ),
+                    app.Vector(0, 0, 1),
+                    10,
+                ),
+                True,
+            )
+            sketchObj.addConstraint(Sketcher.Constraint("Equal", 0, 2))
+            isXif = True
+            count = 3
+        else:
+            sketchObj.addGeometry(
+                Part.Circle(
+                    app.Vector(
+                        self.points[0][startIndex], self.points[1][startIndex], 0
+                    ),
+                    app.Vector(0, 0, 1),
+                    10,
+                ),
+                True,
+            )
+            sketchObj.addGeometry(
+                Part.Circle(
+                    app.Vector(
+                        self.points[0][startIndex + 1],
+                        self.points[1][startIndex + 1],
+                        0,
+                    ),
+                    app.Vector(0, 0, 1),
+                    10,
+                ),
+                True,
+            )
+            sketchObj.addConstraint(Sketcher.Constraint("Radius", 0, 1.000000))
+            sketchObj.addConstraint(Sketcher.Constraint("Equal", 0, 1))
+            count = 2
+        for h in range(startIndex + 2, endIndex + 1):
+            sketchObj.addGeometry(
+                Part.Circle(
+                    app.Vector(self.points[0][h], self.points[1][h], 0),
+                    app.Vector(0, 0, 1),
+                    10,
+                ),
+                True,
+            )
+            sketchObj.addConstraint(Sketcher.Constraint("Equal", 0, count))
+            if self.designprogressbar.value() < 60:
+                self.designprogressbar.setValue(round(50 + ((h / (10 * n_)) * 100)))
+            count += 1
+        if self.designsplit and (
+            tempXm != self.points[0][endIndex] or self.points[1][endIndex] != 0
+        ):
+            sketchObj.addGeometry(
+                Part.Circle(app.Vector(tempXm, 0, 0), app.Vector(0, 0, 1), 10), True
+            )
+            sketchObj.addConstraint(Sketcher.Constraint("Equal", 0, count))
+            isXm = True
+            count += 1
+        tempVal = count
+        if isXif:
+            points.append(app.Vector(tempXif, 0))
+            conList.append(
+                Sketcher.Constraint(
+                    "InternalAlignment:Sketcher::BSplineControlPoint", 0, 3, tempVal, 0
+                )
+            )
+        count = 0 + isXif
+        for i in range(startIndex, endIndex + 1):
+            points.append(app.Vector(self.points[0][i], self.points[1][i]))
+            conList.append(
+                Sketcher.Constraint(
+                    "InternalAlignment:Sketcher::BSplineControlPoint",
+                    count,
+                    3,
+                    tempVal,
+                    count,
+                )
+            )
+            if self.designprogressbar.value() < 70:
+                self.designprogressbar.setValue(round(60 + ((i / (10 * n_)) * 100)))
+            count += 1
+        if isXm:
+            points.append(app.Vector(tempXm, 0))
+            conList.append(
+                Sketcher.Constraint(
+                    "InternalAlignment:Sketcher::BSplineControlPoint",
+                    count,
+                    3,
+                    tempVal,
+                    count,
+                )
+            )
+            count += 1
+        if self.designsplit:
+            sketchObj.addGeometry(
+                Part.BSplineCurve(points, None, None, False, 3, None, False), False
+            )
+        else:
+            sketchObj.addGeometry(
+                Part.BSplineCurve(points, None, None, True, 3, None, False), False
+            )
+        sketchObj.addConstraint(conList)
+        sketchObj.exposeInternalGeometry(tempVal)
+        tempVar1x = tempXif if isXif else self.points[0][startIndex]
+        tempVar1y = 0 if isXif else self.points[1][startIndex]
+        tempVar1bx = (
+            self.points[0][startIndex] if isXif else self.points[0][startIndex + 1]
+        )
+        tempVar1by = (
+            self.points[1][startIndex] if isXif else self.points[1][startIndex + 1]
+        )
+        tempVar2x = tempXm if isXm else self.points[0][endIndex]
+        tempVar2y = 0 if isXm else self.points[1][endIndex]
+        count, startFrom = 0, 0
+        if isXif:
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint("DistanceX", -1, 1, tempVal, 1, tempVar1x)
+            )
+            sketchObj.setDatum(
+                constraintIndex, app.Units.Quantity(str(tempVar1x) + "mm")
+            )
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint("DistanceY", -1, 1, tempVal, 1, tempVar1y)
+            )
+            sketchObj.setDatum(
+                constraintIndex, app.Units.Quantity(str(tempVar1y) + "mm")
+            )
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint("DistanceX", -1, 1, count + 1, 3, tempVar1bx)
+            )
+            sketchObj.setDatum(
+                constraintIndex, app.Units.Quantity(str(tempVar1bx) + "mm")
+            )
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint("DistanceY", -1, 1, count + 1, 3, tempVar1by)
+            )
+            sketchObj.setDatum(
+                constraintIndex, app.Units.Quantity(str(tempVar1by) + "mm")
+            )
+            startFrom = startIndex + 1
+            count += 2
+        else:
+            startFrom = startIndex
+        if self.designsplit:
+            endTo = endIndex
+            if not isXif:
+                constraintIndex = sketchObj.addConstraint(
+                    Sketcher.Constraint(
+                        "DistanceX", -1, 1, tempVal, 1, self.points[0][startIndex]
+                    )
+                )
+                sketchObj.setDatum(
+                    constraintIndex,
+                    app.Units.Quantity(str(self.points[0][startIndex]) + "mm"),
+                )
+                constraintIndex = sketchObj.addConstraint(
+                    Sketcher.Constraint(
+                        "DistanceY", -1, 1, tempVal, 1, self.points[1][startIndex]
+                    )
+                )
+                sketchObj.setDatum(
+                    constraintIndex,
+                    app.Units.Quantity(str(self.points[1][startIndex]) + "mm"),
+                )
+                startFrom = startIndex + 1
+                count += 1
+        else:
+            endTo = endIndex + 1
+        for j in range(startFrom, endTo):
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint("DistanceX", -1, 1, count, 3, self.points[0][j])
+            )
+            sketchObj.setDatum(
+                constraintIndex, app.Units.Quantity(str(self.points[0][j]) + "mm")
+            )
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint("DistanceY", -1, 1, count, 3, self.points[1][j])
+            )
+            sketchObj.setDatum(
+                constraintIndex, app.Units.Quantity(str(self.points[1][j]) + "mm")
+            )
+            if self.designprogressbar.value() < 75:
+                self.designprogressbar.setValue(round(70 + ((j / (20 * n_)) * 100)))
+            count += 1
+        if self.designsplit:
+            tempVar1, tempVar2 = 0, 0
+            if isXm:
+                tempVar1, tempVar2 = count, 3
+            else:
+                tempVar1, tempVar2 = tempVal, 2
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint(
+                    "DistanceX", -1, 1, tempVar1, tempVar2, self.points[0][endIndex]
+                )
+            )
+            sketchObj.setDatum(
+                constraintIndex,
+                app.Units.Quantity(str(self.points[0][endIndex]) + "mm"),
+            )
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint(
+                    "DistanceY", -1, 1, tempVar1, tempVar2, self.points[1][endIndex]
+                )
+            )
+            sketchObj.setDatum(
+                constraintIndex,
+                app.Units.Quantity(str(self.points[1][endIndex]) + "mm"),
+            )
+            startFrom = startIndex + 1
+            count += 1
+        if isXm:
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint("DistanceX", -1, 1, tempVal, 2, tempVar2x)
+            )
+            sketchObj.setDatum(
+                constraintIndex, app.Units.Quantity(str(tempVar2x) + "mm")
+            )
+            constraintIndex = sketchObj.addConstraint(
+                Sketcher.Constraint("DistanceY", -1, 1, tempVal, 2, tempVar2y)
+            )
+            sketchObj.setDatum(
+                constraintIndex, app.Units.Quantity(str(tempVar2y) + "mm")
+            )
+        if self.designsplitmode == 2:
+            sketchObj.addGeometry(
+                Part.LineSegment(
+                    app.Vector(tempVar1x, tempVar1y, 0),
+                    app.Vector(tempVar2x, tempVar2y, 0),
+                ),
+                False,
+            )
+            sketchObj.addConstraint(
+                Sketcher.Constraint("Coincident", (tempVal * 2) - 1, 2, tempVal, 1)
+            )
+            sketchObj.addConstraint(
+                Sketcher.Constraint("Coincident", (tempVal * 2) - 1, 1, tempVal, 2)
+            )
+
+
+
+# Sub-main Function Class
+# ------------------------------------------------------------------------------------------------
+
+class AeroFoilDialog:
+
+    """
+    The 'AeroFoilDialog' class itself is the AeroFoil GUI interface. 
+    It contains dialog boxes that go to and fro, from the initial input dialog box 
+    to the final creation dialog box. This class accumulates the user's inputs on 
+    how the airfoils are to be created: their dimensions, their design type, 
+    their resolution, their multiplicity, etc. 
+
+    This class is also responsible for validating the input choices and values, 
+    and notifying or warning the user accordingly.
+
+    Functions include:
+    __init__
+    _d
+    _createDialogs
+    _close
+    _next
+    _okay
+    _loadFile
+    _create
+    _af_d2c_radio_toggled
+    _af_d3_spinbox_1_toggled
+    _af_d3_spinbox_2_toggled
+    _af_d3_checkbox_1_toggled
+    _af_d3_checkbox_2_toggled
+    _af_d3_checkbox_5_toggled
+    _af_d3_checkbox_3_toggled
+    _af_d3_checkbox_4_toggled
+    _af_d3_radio_toggled
+    _functionsList
+    """
+
+    def __init__(self):
+        """
+        This function initializes of the 'AeroFoilDialog' class.
+        """
+        # Variables Pertaining to the Entire Program
+        (
+            self.canMirror,
+            self.functionElements,
+            self.functionElements_Pos,
+            self.pointsX,
+            self.pointsY,
+        ) = (True, [], [], [], [])
+        self.tempStart, self.tempEnd = 0, 0
+        self.midIndex1, self.midIndex2 = 0, 0
+        # Variables Pertaining to AeroFoil_Initial_Dialog
+        self.airfoilType = 1
+        # Variables Pertaining to AeroFoil_NACA4Digit_Dialog
+        self.airfoil4DNumber = ""
+        # Variables Pertaining to AeroFoil_NACA5Digit_Dialog
+        self.airfoil5DNumber = ""
+        # Variables Pertaining to AeroFoil_CurvesInput_Dialog
+        self.airfoilProfileType, self.topCurveFunction, self.bottomCurveFunction = (
+            1,
+            "",
+            "",
+        )
+        # Variables Pertaining to AeroFoil_PointsInput_Dialog
+        self.importFrom, self.mirroring = 1, False
+        # Variables Pertaining to AeroFoil_DATInput_Dialog
+        self.lineStart, self.lineEnd, self.decimalType = 0, 0, 1
+        # Variables Pertaining to AeroFoil_CSVInput_Dialog
+        self.col1, self.col2, self.row1, self.row2 = 1, 2, 0, 0
+        # Variables Pertaining to AeroFoil_FileLoad_Dialog
+        (
+            self.loadSuccess,
+            self.loadedFilePath,
+            self.loadedFile,
+            self.loadedFileContents,
+        ) = (False, [""], "", [])
+        # Variables Pertaining to AeroFoil_Final_Dialog
+        (
+            self.refine,
+            self.refineParam,
+            self.multi,
+            self.multiParam,
+            self.closed_,
+            self.workbench,
+            self.curveType,
+            self.maxRefineParamWarned,
+            self.maxQuantityParamWarned,
+            self.chordLength,
+            self.chordUnits,
+            self.progressBar_,
+            self.splitCurve,
+            self.splitCurveMode,
+            self.defaultEndPoints,
+        ) = (False, 2, False, 2, False, 1, 1, False, False, 0, 1, 0, False, 1, False)
+        # Actual Functions begin here
+        dialogIndex[0] = 1
+        self._createDialogs()
+
+    def _d(self, qcode, objStr):
+        """
+        This function is a shortcut for obtaining a dialog's UI element.
+
+        Arguments
+        ----------
+        qcode: A distinct code for each UI element as listed below.
+        objStr: The UI element's name/label.
+        """
+        qkey = [
+            0,
+            QPushButton,
+            QLineEdit,
+            QComboBox,
+            QRadioButton,
+            QCheckBox,
+            QSpinBox,
+            QDoubleSpinBox,
+            QLabel,
+            QProgressBar,
+        ]
+        # Elements 2 to 10 are the various UI elements employed in this macro.
+        # Ignore the 1st element; it's superfluous.
+        return self.dialog.findChild(qkey[qcode], objStr)
+
+    def _createDialogs(self):
+        """
+        This function generates and displays the AeroFoil GUI interface, that is, 
+        it creates all the dialog boxes for user interaction and input.
+        """
+        global MACRO_DIR
+        global dialogIndex
+        if dialogIndex[0] == 1:
+            self.dialog = gui.PySideUic.loadUi(MACRO_DIR + "Initial_Dialog.ui")
+            self._d(1, "af_d1_close_button").clicked.connect(lambda: self._close())
+            self._d(1, "af_d1_next_button").clicked.connect(lambda: self._next(1))
+            self._d(3, "af_d1_combo").setCurrentIndex(self.airfoilType - 1)
+        elif dialogIndex[0] == 2:
+            self.dialog = gui.PySideUic.loadUi(MACRO_DIR + "NACA4Digit_Dialog.ui")
+            self._d(1, "af_d2a_next_button").clicked.connect(lambda: self._next(1))
+            self._d(1, "af_d2a_back_button").clicked.connect(lambda: self._next(-1))
+            self._d(2, "af_d2a_textbox").setText(self.airfoil4DNumber)
+        elif dialogIndex[0] == 3:
+            self.dialog = gui.PySideUic.loadUi(MACRO_DIR + "NACA5Digit_Dialog.ui")
+            self._d(1, "af_d2b_next_button").clicked.connect(lambda: self._next(1))
+            self._d(1, "af_d2b_back_button").clicked.connect(lambda: self._next(-1))
+            self._d(2, "af_d2b_textbox").setText(self.airfoil5DNumber)
+        elif dialogIndex[0] == 4:
+            self.dialog = gui.PySideUic.loadUi(MACRO_DIR + "CurvesInput_Dialog.ui")
+            self._d(2, "af_d2c_textbox_1").setText(self.topCurveFunction)
+            self._d(2, "af_d2c_textbox_2").setText(self.bottomCurveFunction)
+            self._d(4, "af_d2c_radio_1").toggled.connect(
+                lambda: self._af_d2c_radio_toggled()
+            )
+            if self.airfoilProfileType == 1:
+                self._d(4, "af_d2c_radio_1").setChecked(True)
+            else:
+                self._d(4, "af_d2c_radio_2").setChecked(True)
+            self._d(1, "af_d2c_list_button").clicked.connect(
+                lambda: self._functionsList()
+            )
+            self._d(1, "af_d2c_next_button").clicked.connect(lambda: self._next(1))
+            self._d(1, "af_d2c_back_button").clicked.connect(lambda: self._next(-1))
+        elif dialogIndex[0] == 5:
+            self.dialog = gui.PySideUic.loadUi(MACRO_DIR + "PointsInput_Dialog.ui")
+            if self.importFrom == 1:
+                self._d(4, "af_d2d_radio_1").setChecked(True)
+            else:
+                self._d(4, "af_d2d_radio_2").setChecked(True)
+            if self.mirroring:
+                self._d(5, "af_d2d_checkbox").setChecked(True)
+            else:
+                self._d(5, "af_d2d_checkbox").setChecked(False)
+            self._d(1, "af_d2d_next_button").clicked.connect(lambda: self._next(1))
+            self._d(1, "af_d2d_back_button").clicked.connect(lambda: self._next(-1))
+        elif dialogIndex[0] == 6:
+            self.dialog = gui.PySideUic.loadUi(MACRO_DIR + "DATInput_Dialog.ui")
+            self._d(6, "af_d2d1a_spinBox_1").setValue(self.tempStart)
+            self._d(6, "af_d2d1a_spinBox_2").setValue(self.tempEnd)
+            if self.decimalType == 1:
+                self._d(4, "af_d2d1a_radio_1").setChecked(True)
+            else:
+                self._d(4, "af_d2d1a_radio_2").setChecked(True)
+            self._d(1, "af_d2d1a_next_button").clicked.connect(lambda: self._next(1))
+            self._d(1, "af_d2d1a_back_button").clicked.connect(lambda: self._next(-1))
+        elif dialogIndex[0] == 7:
+            self.dialog = gui.PySideUic.loadUi(MACRO_DIR + "CSVInput_Dialog.ui")
+            self._d(6, "af_d2d1b_spinBox_1").setValue(self.col1)
+            self._d(6, "af_d2d1b_spinBox_2").setValue(self.col2)
+            self._d(6, "af_d2d1b_spinBox_3").setValue(self.tempStart)
+            self._d(6, "af_d2d1b_spinBox_4").setValue(self.tempEnd)
+            if self.decimalType == 1:
+                self._d(4, "af_d2d1b_radio_1").setChecked(True)
+            else:
+                self._d(4, "af_d2d1b_radio_2").setChecked(True)
+            self._d(1, "af_d2d1b_next_button").clicked.connect(lambda: self._next(1))
+            self._d(1, "af_d2d1b_back_button").clicked.connect(lambda: self._next(-1))
+        elif dialogIndex[0] == 8:
+            self.dialog = gui.PySideUic.loadUi(MACRO_DIR + "FileLoad_Dialog.ui")
+            self._d(2, "af_d2cd2_textbox").setText(self.loadedFilePath[0])
+            if self.loadedFilePath[0] == "":
+                self.loadSuccess = False
+                self._d(8, "af_d2cd2_label_2").setText("File Not Loaded")
+                self._d(8, "af_d2cd2_label_2").setStyleSheet("color: black;")
+            else:
+                if self.loadSuccess:
+                    self._d(8, "af_d2cd2_label_2").setText("File Loaded Successfully")
+                    self._d(8, "af_d2cd2_label_2").setStyleSheet("color: darkgreen;")
+                else:
+                    self._d(8, "af_d2cd2_label_2").setText(
+                        "File Loaded Un-successfully"
+                    )
+                    self._d(8, "af_d2cd2_label_2").setStyleSheet("color: crimson;")
+            self._d(1, "af_d2cd2_load_button").clicked.connect(lambda: self._loadFile())
+            self._d(1, "af_d2cd2_next_button").clicked.connect(lambda: self._next(1))
+            self._d(1, "af_d2cd2_back_button").clicked.connect(lambda: self._next(-1))
+        elif dialogIndex[0] == 9:
+            self.dialog = gui.PySideUic.loadUi(MACRO_DIR + "Final_Dialog.ui")
+            if self.refine:
+                self._d(6, "af_d3_spinbox_1").setValue(self.refineParam)
+                self._d(6, "af_d3_spinbox_1").setEnabled(True)
+                self._d(5, "af_d3_checkbox_1").setChecked(True)
+            else:
+                self.refineParam = 2
+                self._d(6, "af_d3_spinbox_1").setValue(2)
+                self._d(6, "af_d3_spinbox_1").setEnabled(False)
+                self._d(5, "af_d3_checkbox_1").setChecked(False)
+            if self.multi:
+                self._d(6, "af_d3_spinbox_2").setValue(self.multiParam)
+                self._d(6, "af_d3_spinbox_2").setEnabled(True)
+                self._d(5, "af_d3_checkbox_2").setChecked(True)
+            else:
+                self.multiParam = 2
+                self._d(6, "af_d3_spinbox_2").setValue(2)
+                self._d(6, "af_d3_spinbox_2").setEnabled(False)
+                self._d(5, "af_d3_checkbox_2").setChecked(False)
+            if self.splitCurve:
+                self._d(5, "af_d3_checkbox_5").setChecked(False)
+                self._d(5, "af_d3_checkbox_5").setEnabled(False)
+                self._d(5, "af_d3_checkbox_6").setChecked(False)
+                self._d(5, "af_d3_checkbox_6").setEnabled(True)
+                if self.splitCurveMode == 1:
+                    self._d(5, "af_d3_checkbox_3").setChecked(True)
+                    self._d(5, "af_d3_checkbox_4").setChecked(False)
+                else:
+                    self._d(5, "af_d3_checkbox_3").setChecked(False)
+                    self._d(5, "af_d3_checkbox_4").setChecked(True)
+                self._af_d3_checkbox_5_toggled()
+            else:
+                self._d(5, "af_d3_checkbox_3").setChecked(False)
+                self._d(5, "af_d3_checkbox_4").setChecked(False)
+                self._d(5, "af_d3_checkbox_6").setChecked(False)
+                self._d(5, "af_d3_checkbox_6").setEnabled(False)
+                self._d(5, "af_d3_checkbox_5").setChecked(False)
+                self._d(5, "af_d3_checkbox_5").setEnabled(True)
+                if self.closed_:
+                    self._d(5, "af_d3_checkbox_3").setEnabled(False)
+                    self._d(5, "af_d3_checkbox_4").setEnabled(False)
+                    self._d(5, "af_d3_checkbox_5").setChecked(True)
+                    self._af_d3_checkbox_5_toggled()
+                else:
+                    self._d(5, "af_d3_checkbox_5").setChecked(False)
+                    self._d(4, "af_d3_radio_1").setEnabled(True)
+                    self._d(4, "af_d3_radio_2").setEnabled(True)
+                    if self.workbench == 1:
+                        self._d(4, "af_d3_radio_1").setChecked(True)
+                        self._d(4, "af_d3_radio_1a").setEnabled(True)
+                        self._d(4, "af_d3_radio_1b").setEnabled(True)
+                        self._d(4, "af_d3_radio_2a").setEnabled(False)
+                        self._d(4, "af_d3_radio_2b").setEnabled(False)
+                        if self.curveType == 1:
+                            self._d(4, "af_d3_radio_1a").setChecked(True)
+                        else:
+                            self._d(4, "af_d3_radio_1b").setChecked(True)
+                    else:
+                        self._d(4, "af_d3_radio_2").setChecked(True)
+                        self._d(4, "af_d3_radio_1a").setEnabled(False)
+                        self._d(4, "af_d3_radio_1b").setEnabled(False)
+                        self._d(4, "af_d3_radio_2a").setEnabled(True)
+                        self._d(4, "af_d3_radio_2b").setEnabled(True)
+                        if self.curveType == 1:
+                            self._d(4, "af_d3_radio_2a").setChecked(True)
+                        else:
+                            self._d(4, "af_d3_radio_2b").setChecked(True)
+            self.progressBar_ = self._d(9, "af_d3_progressbar")
+            self.progressBar_.setEnabled(False)
+            self.progressBar_.setValue(0)
+            self._d(7, "af_d3_spinbox_3").setValue(self.chordLength)
+            self._d(3, "af_d3_combobox").setCurrentIndex(self.chordUnits - 1)
+            self._d(4, "af_d3_radio_1").toggled.connect(
+                lambda: self._af_d3_radio_toggled()
+            )
+            self._d(5, "af_d3_checkbox_1").toggled.connect(
+                lambda: self._af_d3_checkbox_1_toggled()
+            )
+            self._d(5, "af_d3_checkbox_2").toggled.connect(
+                lambda: self._af_d3_checkbox_2_toggled()
+            )
+            self._d(5, "af_d3_checkbox_5").toggled.connect(
+                lambda: self._af_d3_checkbox_5_toggled()
+            )
+            self._d(5, "af_d3_checkbox_3").clicked.connect(
+                lambda: self._af_d3_checkbox_3_toggled()
+            )
+            self._d(5, "af_d3_checkbox_4").clicked.connect(
+                lambda: self._af_d3_checkbox_4_toggled()
+            )
+            self._d(6, "af_d3_spinbox_1").valueChanged.connect(
+                lambda: self._af_d3_spinbox_1_toggled()
+            )
+            self._d(6, "af_d3_spinbox_2").valueChanged.connect(
+                lambda: self._af_d3_spinbox_2_toggled()
+            )
+            self._d(1, "af_d3_create_button").clicked.connect(
+                lambda: self._startCreating()
+            )
+            self._d(1, "af_d3_close_button").clicked.connect(lambda: self._close())
+            self._d(1, "af_d3_back_button").clicked.connect(lambda: self._next(-1))
+        elif dialogIndex[0] == 10:
+            self.dialog = gui.PySideUic.loadUi(MACRO_DIR + "Math_Functions_Box.ui")
+            self._d(8, "af_mfb_label_6").setText(
+                "<img src=" + MACRO_DIR + "mfb_img.gif>"
+            )
+            self._d(1, "af_mfb_okay_button").clicked.connect(lambda: self._okay())
+        self.dialog.setWindowIcon(
+            QtGui.QIcon(app.getUserMacroDir(True) + "/AeroFoil_UI_Files/AeroFoil.svg")
+        )
+        self.dialog.exec_()
+
+# Button Functions
+# ----------------------------------------------------------------
+
+    def _close(self):
+        """
+        This function closes an open dialog box.
+        This function is called when the 'Close' button is clicked.
+        """
+        self.dialog.done(1)
+
+    def _next(self, direction):
+        """
+        This function takes the user from one dialog box to another.
+        This function is called when the 'Next' or 'Back' buttons are clicked.
+
+        Arguments
+        ----------
+        direction: '1' denotes a 'Go Next'; and '-1' denotes a 'Go Back'
+        """
+        global dialogIndex
+        global MIN_DATA_POINTS
+        if direction == -1:
+            if dialogIndex[0] == 2:
+                self.airfoil4DNumber = ""
+            elif dialogIndex[0] == 3:
+                self.airfoil5DNumber = ""
+            elif dialogIndex[0] == 4:
+                (
+                    self.airfoilProfileType,
+                    self.topCurveFunction,
+                    self.bottomCurveFunction,
+                ) = (1, "", "")
+            elif dialogIndex[0] == 5:
+                self.importFrom, self.mirroring = 1, False
+            elif dialogIndex[0] == 6:
+                self.lineStart, self.lineEnd, self.decimalType = 0, 0, 1
+                self.tempStart, self.tempEnd, = (
+                    0,
+                    0,
+                )
+                self.midIndex1, self.midIndex2 = 0, 0
+            elif dialogIndex[0] == 7:
+                self.col1, self.col2, self.row1, self.row2 = 1, 2, 0, 0
+                self.tempStart, self.tempEnd, = (
+                    0,
+                    0,
+                )
+                self.midIndex1, self.midIndex2 = 0, 0
+            elif dialogIndex[0] == 8:
+                (
+                    self.loadedFilePath,
+                    self.loadSuccess,
+                    self.loadedFile,
+                    self.loadedFileContents,
+                ) = ([""], False, "", [])
+            elif dialogIndex[0] == 9:
+                (
+                    self.refine,
+                    self.refineParam,
+                    self.multi,
+                    self.multiParam,
+                    self.closed_,
+                    self.workbench,
+                    self.curveType,
+                    self.maxRefineParamWarned,
+                    self.maxQuantityParamWarned,
+                    self.chordLength,
+                    self.chordUnits,
+                    self.splitCurve,
+                    self.splitCurveMode,
+                    self.defaultEndPoints,
+                ) = (
+                    False,
+                    2,
+                    False,
+                    2,
+                    False,
+                    1,
+                    1,
+                    False,
+                    False,
+                    0,
+                    1,
+                    False,
+                    1,
+                    False,
+                )
+            dialogIndex[0] = dialogIndex[dialogIndex[0]]
+        else:
+            if dialogIndex[0] == 1:
+                self.airfoilType = self._d(3, "af_d1_combo").currentIndex() + 1
+                if self.airfoilType == 1:
+                    _setDialogIndex(2)
+                elif self.airfoilType == 2:
+                    _setDialogIndex(3)
+                elif self.airfoilType == 3:
+                    _setDialogIndex(4)
+                elif self.airfoilType == 4:
+                    _setDialogIndex(5)
+            elif dialogIndex[0] == 2:
+                self.airfoil4DNumber = self._d(2, "af_d2a_textbox").text()
+                if _validateAirfoilNumber(self, 4):
+                    _setDialogIndex(9)
+                else:
+                    return
+            elif dialogIndex[0] == 3:
+                self.airfoil5DNumber = self._d(2, "af_d2b_textbox").text()
+                if _validateAirfoilNumber(self, 5):
+                    _setDialogIndex(9)
+                else:
+                    return
+            elif dialogIndex[0] == 4:
+                self.topCurveFunction = self._d(2, "af_d2c_textbox_1").text()
+                self.bottomCurveFunction = self._d(2, "af_d2c_textbox_2").text()
+                if not self._d(4, "af_d2c_radio_2").isChecked():
+                    self.airfoilProfileType = 1
+                    if _validateFunction(self, 1):
+                        _setDialogIndex(9)
+                    else:
+                        return
+                else:
+                    self.airfoilProfileType = 2
+                    if _validateFunction(self, 2):
+                        _setDialogIndex(9)
+                    else:
+                        return
+            elif dialogIndex[0] == 5:
+                if self._d(4, "af_d2d_radio_1").isChecked():
+                    self.importFrom = 1
+                    _setDialogIndex(6)
+                else:
+                    self.importFrom = 2
+                    _setDialogIndex(7)
+                if self._d(5, "af_d2d_checkbox").isChecked():
+                    self.mirroring = True
+                else:
+                    self.mirroring = False
+            elif dialogIndex[0] == 6:
+                tempVar1 = self._d(6, "af_d2d1a_spinBox_1").value()
+                tempVar2 = self._d(6, "af_d2d1a_spinBox_2").value()
+                tempVar3 = (
+                    0 if tempVar1 == 0 or tempVar2 == 0 else tempVar2 - tempVar1 + 1
+                )
+                if tempVar3 == 0 or tempVar3 >= MIN_DATA_POINTS:
+                    self.tempStart = self.lineStart = self._d(
+                        6, "af_d2d1a_spinBox_1"
+                    ).value()
+                    self.tempEnd = self.lineEnd = self._d(
+                        6, "af_d2d1a_spinBox_2"
+                    ).value()
+                    if self._d(4, "af_d2d1a_radio_1").isChecked():
+                        self.decimalType = 1
+                    else:
+                        self.decimalType = 2
+                    _setDialogIndex(8)
+                else:
+                    setAlertBox(
+                        "There must be a minimum of "
+                        + str(MIN_DATA_POINTS)
+                        + " selected file lines,\nthat is, pairs of data points !",
+                        True,
+                    )
+                    return
+            elif dialogIndex[0] == 7:
+                tempVar = (
+                    self._d(6, "af_d2d1b_spinBox_4").value()
+                    - self._d(6, "af_d2d1b_spinBox_3").value()
+                    + 1
+                )
+                if tempVar >= MIN_DATA_POINTS:
+                    if (
+                        self._d(6, "af_d2d1b_spinBox_1").value()
+                        == self._d(6, "af_d2d1b_spinBox_2").value()
+                    ):
+                        self.col1 = self._d(6, "af_d2d1b_spinBox_1").value()
+                        self.col2 = self._d(6, "af_d2d1b_spinBox_2").value()
+                        self.tempStart = self.row1 = self._d(
+                            6, "af_d2d1b_spinBox_3"
+                        ).value()
+                        self.tempEnd = self.row2 = self._d(
+                            6, "af_d2d1b_spinBox_4"
+                        ).value()
+                        if self._d(4, "af_d2d1b_radio_1").isChecked():
+                            self.decimalType = 1
+                        else:
+                            self.decimalType = 2
+                        _setDialogIndex(8)
+                    else:
+                        setAlertBox("The two file columns cannot be the same !", True)
+                        return
+                else:
+                    setAlertBox(
+                        "There must be a minimum of "
+                        + str(MIN_DATA_POINTS)
+                        + " selected file rows,\nthat is, pairs of data points !",
+                        True,
+                    )
+                    return
+            elif dialogIndex[0] == 8:
+                if self.loadSuccess:
+                    _setDialogIndex(9)
+                else:
+                    setAlertBox(
+                        "Cannot proceed further with an invalid/null file !", True
+                    )
+                    return
+        self._close()
+        self._createDialogs()
+
+    def _okay(self):
+        """
+        This function closes an open dialog box, and 
+        reverts back to the previous dialog box.
+        This function is called when the 'Okay' button is clicked.
+        """
+        global dialogIndex
+        if dialogIndex[0] == 10:
+            dialogIndex[0] = dialogIndex[10]
+        self._close()
+        self._createDialogs()
+
+    def _loadFile(self):
+        """
+        This function open up the file loader with custom settings.
+        This function is called when the 'Load File' button from the.
+        'AeroFoil_FileLoad_Dialog' is clicked.
+        This function calls the '_validateFile' function/method
+        post-loading to verify the file's contents, and then
+        notifies the user whether or not the file load was successful.
+        """
+        fileType = ""
+        homeDirPath = str(Path.home())
+        if self.importFrom == 1:
+            fileType = "Text Files (*.dat)"
+        elif self.importFrom == 2:
+            fileType = "CSV Files (*.dat)"
+        self.loadedFilePath = PySide.QtGui.QFileDialog.getOpenFileName(
+            None, "Load 'Airfoil Points' Data File", homeDirPath, fileType
+        )
+        try:
+            self.loadedFile.close()
+        except Exception:
+            pass
+        try:
+            self.loadedFile = open(self.loadedFilePath[0], "r")
+        except Exception:
+            self.loadedFile = ""
+        if self.loadedFile == "":
+            setAlertBox("No file has been selected!", True)
+        else:
+            if _validateFile(self):
+                self.loadSuccess = True
+                if self.mirroring and not self.canMirror:
+                    setAlertBox(
+                        "Airfoil profile is complete and cannot be mirrored.", False
+                    )
+            else:
+                self.loadSuccess = False
+        self._close()
+        self._createDialogs()
+
+    def _startCreating(self):
+        """
+        This function begins the airfoil creation process.
+        This function accumulates and stores the final dialog's input data.
+        This function also notifies the user whether or not the entire 
+        'AeroFoil' procedure has been successfully completed.
+        This function is called when the 'Create AeroFoil' button from the 
+        'AeroFoil_Final_Dialog' is clicked.
+        This function is responsible for launching the second (Top) macro call.
+        """
+        global UNITSCONVERSION
+        global MIN_CHORD_LENGTH_MM
+        if self._d(5, "af_d3_checkbox_1").isChecked():
+            self.refine = True
+            self.refineParam = self._d(6, "af_d3_spinbox_1").value()
+        if self._d(5, "af_d3_checkbox_2").isChecked():
+            self.multi = True
+            self.multiParam = self._d(6, "af_d3_spinbox_2").value()
+        if self._d(5, "af_d3_checkbox_5").isChecked():
+            self.closed_ = True
+        if self._d(5, "af_d3_checkbox_3").isChecked():
+            self.splitCurve = True
+            self.splitCurveMode = 1
+        if self._d(5, "af_d3_checkbox_4").isChecked():
+            self.splitCurve = True
+            self.splitCurveMode = 2
+        if self._d(5, "af_d3_checkbox_6").isChecked():
+            self.defaultEndPoints = True
+        if self._d(4, "af_d3_radio_1").isChecked():
+            self.workbench = 1
+            if self._d(4, "af_d3_radio_1a").isChecked():
+                self.curveType = 1
+            else:
+                self.curveType = 2
+        else:
+            self.workbench = 2
+            if self._d(4, "af_d3_radio_2a").isChecked():
+                self.curveType = 1
+            else:
+                self.curveType = 2
+        self.chordLength = self._d(7, "af_d3_spinbox_3").value()
+        self.chordUnits = self._d(3, "af_d3_combobox").currentIndex() + 1
+        chordLength_conv = self.chordLength * UNITSCONVERSION[self.chordUnits]
+        if chordLength_conv >= MIN_CHORD_LENGTH_MM:
+            if _prepareAeroFoil(self):
+                if AeroFoil_generate(self):
+                    self._close()
+                    alertBox = QtGui.QMessageBox(
+                        QtGui.QMessageBox.Warning,
+                        "AeroFoil",
+                        "The process has been completed successfully !",
+                    )
+                    alertBox.setWindowModality(QtCore.Qt.ApplicationModal)
+                    alertBox.exec_()
+                    app.Console.PrintMessage(
+                        "\nThe AeroFoil process has been completed successfully !\n"
+                    )
+                    return
+            setAlertBox(
+                "Unexpected error has occurred while processing !\nPlease report.", True
+            )
+            self.progressBar_.setEnabled(False)
+            self.progressBar_.setValue(0)
+            app.Console.PrintError(
+                "\nUnexpected error has occurred while processing! Please report.\n"
+            )
+        else:
+            setAlertBox(
+                "Airfoil chord length cannot be less than "
+                + str(MIN_CHORD_LENGTH_MM)
+                + "mm !",
+                True,
+            )
+
+# Other Design Functions
+# ------------------------------------------------------------------------------------------
+
+    def _af_d2c_radio_toggled(self):
+        if self._d(4, "af_d2c_radio_1").isChecked():
+            self.airfoilProfileType = 1
+            self._d(2, "af_d2c_textbox_2").setEnabled(False)
+        else:
+            self.airfoilProfileType = 2
+            self._d(2, "af_d2c_textbox_2").setEnabled(True)
+
+    def _af_d3_spinbox_1_toggled(self):
+        global MAX_REFINE_PARAM
+        if not self.maxRefineParamWarned:
+            if self._d(6, "af_d3_spinbox_1").value() > MAX_REFINE_PARAM:
+                setAlertBox(
+                    "Increase in refinement parameter leads to increase\nin time and memory usage.",
+                    False,
+                )
+                self.maxRefineParamWarned = True
+
+    def _af_d3_spinbox_2_toggled(self):
+        global MAX_QUANTITY_PARAM
+        if not self.maxQuantityParamWarned:
+            if self._d(6, "af_d3_spinbox_2").value() > MAX_QUANTITY_PARAM:
+                setAlertBox(
+                    "Increase in quantity parameter leads to increase\nin time and memory usage.",
+                    False,
+                )
+                self.maxQuantityParamWarned = True
+
+    def _af_d3_checkbox_1_toggled(self):
+        self._d(6, "af_d3_spinbox_1").setValue(2)
+        if self._d(5, "af_d3_checkbox_1").isChecked():
+            self._d(6, "af_d3_spinbox_1").setEnabled(True)
+        else:
+            self._d(6, "af_d3_spinbox_1").setEnabled(False)
+
+    def _af_d3_checkbox_2_toggled(self):
+        self._d(6, "af_d3_spinbox_2").setValue(2)
+        if self._d(5, "af_d3_checkbox_2").isChecked():
+            self._d(6, "af_d3_spinbox_2").setEnabled(True)
+        else:
+            self._d(6, "af_d3_spinbox_2").setEnabled(False)
+
+    def _af_d3_checkbox_5_toggled(self):
+        self._d(4, "af_d3_radio_1").setChecked(True)
+        self._d(4, "af_d3_radio_1a").setChecked(True)
+        self._d(4, "af_d3_radio_2a").setChecked(True)
+        self._d(4, "af_d3_radio_1a").setEnabled(True)
+        self._d(4, "af_d3_radio_1b").setEnabled(True)
+        self._d(4, "af_d3_radio_2a").setEnabled(False)
+        self._d(4, "af_d3_radio_2b").setEnabled(False)
+        if self._d(5, "af_d3_checkbox_5").isChecked():
+            self.closed_ = True
+            self._d(4, "af_d3_radio_1").setEnabled(False)
+            self._d(4, "af_d3_radio_2").setEnabled(False)
+            self._d(5, "af_d3_checkbox_3").setEnabled(False)
+            self._d(5, "af_d3_checkbox_4").setEnabled(False)
+            self._d(5, "af_d3_checkbox_6").setEnabled(False)
+        else:
+            if self.closed_:
+                self._d(5, "af_d3_checkbox_3").setEnabled(True)
+                self._d(5, "af_d3_checkbox_4").setEnabled(True)
+                self._d(5, "af_d3_checkbox_6").setEnabled(True)
+            self.closed_ = False
+            self._d(4, "af_d3_radio_1").setEnabled(True)
+            self._d(4, "af_d3_radio_2").setEnabled(True)
+
+    def _af_d3_checkbox_3_toggled(self):
+        if self._d(5, "af_d3_checkbox_3").isChecked():
+            self._d(5, "af_d3_checkbox_5").setEnabled(False)
+            self._d(5, "af_d3_checkbox_6").setEnabled(True)
+            self._d(5, "af_d3_checkbox_4").setChecked(False)
+        else:
+            self._d(5, "af_d3_checkbox_5").setEnabled(True)
+            self._d(5, "af_d3_checkbox_6").setEnabled(False)
+            self._d(5, "af_d3_checkbox_6").setChecked(False)
+        self._d(5, "af_d3_checkbox_5").setChecked(False)
+        self._af_d3_checkbox_5_toggled()
+
+    def _af_d3_checkbox_4_toggled(self):
+        if self._d(5, "af_d3_checkbox_4").isChecked():
+            self._d(5, "af_d3_checkbox_5").setEnabled(False)
+            self._d(5, "af_d3_checkbox_6").setEnabled(True)
+            self._d(5, "af_d3_checkbox_3").setChecked(False)
+        else:
+            self._d(5, "af_d3_checkbox_5").setEnabled(True)
+            self._d(5, "af_d3_checkbox_6").setEnabled(False)
+            self._d(5, "af_d3_checkbox_6").setChecked(False)
+        self._d(5, "af_d3_checkbox_5").setChecked(False)
+        self._af_d3_checkbox_5_toggled()
+
+    def _af_d3_radio_toggled(self):
+        self._d(4, "af_d3_radio_1a").setChecked(True)
+        self._d(4, "af_d3_radio_2a").setChecked(True)
+        if self._d(4, "af_d3_radio_1").isChecked():
+            self._d(4, "af_d3_radio_1a").setEnabled(True)
+            self._d(4, "af_d3_radio_1b").setEnabled(True)
+            self._d(4, "af_d3_radio_2a").setEnabled(False)
+            self._d(4, "af_d3_radio_2b").setEnabled(False)
+        else:
+            self._d(4, "af_d3_radio_1a").setEnabled(False)
+            self._d(4, "af_d3_radio_1b").setEnabled(False)
+            self._d(4, "af_d3_radio_2a").setEnabled(True)
+            self._d(4, "af_d3_radio_2b").setEnabled(True)
+
+    def _functionsList(self):
+        self.topCurveFunction = self._d(2, "af_d2c_textbox_1").text()
+        self.bottomCurveFunction = self._d(2, "af_d2c_textbox_2").text()
+        _setDialogIndex(10)
+        self._close()
+        self._createDialogs()
+
+
+
+def _setDialogIndex(index):
+    """
+    This function sets the appropriate dialog box, when the 
+    'Next', 'Back', and 'Okay' buttons are clicked.
+    This function is NOT responsible for loading any dialog boxes.
+
+    The 'index' argument denotes the next or previous dialog box to go to.
+    The 'index' number corresponds to the global variable list 'dialogIndex' 
+    as well as the dialog names table mentioned in the macro's main DocString.
+
+    The first element in the global variable 'dialogIndex' is the index number 
+    of the currently open dialog box. The other elements too are eventually 
+    replaced with the index numbers of the dialog box that was opened prior 
+    to the current one. This allows the macro to remember its backward 
+    journey through the various dialog boxes.
+
+    Arguments
+    ----------
+    index:  A dialog box code (Integer) as listed in the global variable 
+            'dialogIndex'.
+    """
+    global dialogIndex
+    dialogIndex[index] = dialogIndex[0]
+    # Here, the first element which contains the current dialog box
+    # index number is assigned to the Nth element, where 'N' is the
+    # index number of the next dialog box.
+    # This ensures that when the 'Back' button is clicked, the macro
+    # can approach the previous dialog box. This way, regardless of 'N',
+    # the macro can approach the 1st dialog box by maximum.
+    dialogIndex[0] = index
+    # Here, the first element is set to the 'index' number argument.
+    # This sets the macro to open up a specific next dialog box.
+    # The macro then opens up the next dialog box when the
+    # '_createDialogs' method from the 'AeroFoilDialog' class is called.
+
+def setAlertBox(message, error):
+    """
+    This function sets the error and warning pop-up messages.
+
+    Arguments
+    ----------
+    message: The string-based message to be displayed.
+    error:   'True' opens up the 'Critical' message box, and 
+             'False' opens up the 'Warning' message box.
+    """
+    msgbox_ = 0
+    if error:
+        msgbox_ = QtGui.QMessageBox(
+            QtGui.QMessageBox.Critical, "AeroFoil - Error Message", message
+        )
+    else:
+        msgbox_ = QtGui.QMessageBox(
+            QtGui.QMessageBox.Warning, "AeroFoil - Warning Message", message
+        )
+    msgbox_.setWindowModality(QtCore.Qt.ApplicationModal)
+    msgbox_.exec_()
+
+
+
+# Operating and Math Functions
+# ------------------------------------------------------------------------------------------
+
+def _prepareAeroFoil(objRef):
+    """
+    This function utilizes the various user input data as a basis 
+    for creating a list of refined, verified, and finalized 
+    airfoil data points to be used later for physical creation.
+    This function is called from the '_startCreating' method 
+    of the 'AeroFoilDialog' class.
+
+    Arguments
+    ----------
+    objRef: An instance of the 'AeroFoilDialog' object.
+    """
+    tempList1, tempList2 = [], []
+    global UNITSCONVERSION
+    global NACA_NUMBER_OF_POINTS
+    chordLength_conv = objRef.chordLength * UNITSCONVERSION[objRef.chordUnits]
+    # Enable Progress Bar
+    objRef.progressBar_.setEnabled(True)
+    objRef.progressBar_.setValue(0)
+    # Generating and Furnishing Points
+    if objRef.airfoilType == 1:
+        _naca4digit(objRef)
+    elif objRef.airfoilType == 2:
+        _naca5digit(objRef)
+    elif objRef.airfoilType == 3:
+        xu_, yu_, xl_, yl_ = [], [], [], []
+        n_ = (
+            round(NACA_NUMBER_OF_POINTS / 2)
+            * ((objRef.refine * (objRef.refineParam - 1)) + 1)
+        ) + 1
+        for points_i in range(n_):
+            xu_.append((points_i / (n_ - 1)) * chordLength_conv)
+            xl_.append((points_i / (n_ - 1)) * chordLength_conv)
+            try:
+                yu_.append(solveFx(objRef.topCurveFunction, xu_[-1]) * chordLength_conv)
+                if objRef.airfoilProfileType == 1:
+                    yl_.append(
+                        -1
+                        * solveFx(objRef.topCurveFunction, xu_[-1])
+                        * chordLength_conv
+                    )
+                elif objRef.airfoilProfileType == 2:
+                    yl_.append(
+                        solveFx(objRef.bottomCurveFunction, xu_[-1]) * chordLength_conv
+                    )
+            except Exception:
+                # Unexpected Error Occurred while Processing
+                return False
+            if objRef.progressBar_.value() < 50:
+                objRef.progressBar_.setValue(round((points_i / (2 * n_)) * 100))
+        xl_.reverse()
+        yl_.reverse()
+        objRef.midIndex1, objRef.midIndex2 = len(xu_) - 1, len(xu_)
+        objRef.pointsX, objRef.pointsY = xu_ + xl_, yu_ + yl_
+    elif objRef.airfoilType == 4:
+        i_start, i_end, count, tempVar, pointsInLine, pointsInLine_prev = (
+            0,
+            0,
+            1,
+            "",
+            [],
+            [],
+        )
+        i_start, i_end = (
+            (objRef.lineStart, objRef.lineEnd)
+            if objRef.importFrom == 1
+            else (objRef.row1, objRef.row2)
+        )
+        n_ = len(objRef.loadedFileContents)
+        for lineOrRow in objRef.loadedFileContents:
+            if objRef.decimalType == 1:
+                tempVar = lineOrRow
+            elif objRef.decimalType == 2:
+                tempVar = (
+                    lineOrRow.replace(",", ".")
+                    if objRef.importFrom == 1
+                    else [element_.replace(",", ".") for element_ in lineOrRow]
+                )
+            tempVar = tempVar.replace("-.", "-0.")
+            tempVar = tempVar.replace(" .", "0.")
+            tempVar = "0" + tempVar if tempVar[0] == "." else tempVar
+            pointsInLine = (
+                re.findall(r"[+-]?\d+(?:\.\d+)?", tempVar)
+                if objRef.importFrom == 1
+                else re.findall(
+                    r"[+-]?\d+(?:\.\d+)?", tempVar[col1 - 1] + " " + tempVar[col2 - 1]
+                )
+            )
+            if objRef.refine and count > 1:
+                n_ = (
+                    float(pointsInLine[0]) - float(pointsInLine_prev[0])
+                ) / objRef.refineParam
+                for i in range(objRef.refineParam - 1):
+                    tempVar = float(pointsInLine_prev[0]) + n_
+                    objRef.pointsX.append(tempVar * chordLength_conv)
+                    objRef.pointsY.append(
+                        interpolateNum(
+                            float(pointsInLine_prev[0]),
+                            float(pointsInLine_prev[1]),
+                            float(pointsInLine[0]),
+                            float(pointsInLine[1]),
+                            tempVar,
+                        )
+                        * chordLength_conv
+                    )
+            pointsInLine_prev = pointsInLine
+            objRef.pointsX.append(float(pointsInLine[0]) * chordLength_conv)
+            objRef.pointsY.append(float(pointsInLine[1]) * chordLength_conv)
+            if objRef.progressBar_.value() < 50:
+                objRef.progressBar_.setValue(round((count / (2 * n_)) * 100))
+            count += 1
+    if (
+        objRef.pointsX[len(objRef.pointsX) - 1] != objRef.pointsX[0]
+        or objRef.pointsY[len(objRef.pointsY) - 1] != objRef.pointsY[0]
+    ) and not objRef.splitCurve:
+        objRef.pointsX.append(objRef.pointsX[0])
+        objRef.pointsY.append(objRef.pointsY[0])
+    return True
+
+
+
+def interpolateNum(x1_, y1_, x2_, y2_, x_):
+    """
+    This function performs a linear interpolation of any given number.
+
+    Arguments
+    ----------
+    x1_, y1_, x2_, y2_: X and Y-axis values of a pair of data points.
+    x: Input value of one of the axes of the data point sought.
+    """
+    return y1_ + (((x_ - x1_) * (y2_ - y1_)) / (x2_ - x1_))
+
+
+
+def generateName(inputName):
+    """
+    This function correctly provides a given name/label with 
+    appropriate and non-dulplicate numbering.
+    e.g.  'AeroFoil' results in 'AeroFoil_1' if such a labelled  
+          object does not exist; else, it becomes 'AeroFoil_2'.
+
+    Arguments
+    ----------
+    inputName: A non-numbered (simple) name/label
+    """
+    nameIndex = 1
+    while True:
+        if (
+            not doc.getObjectsByLabel(inputName + "_" + str(nameIndex))
+            and not doc.getObjectsByLabel(inputName + "_" + str(nameIndex) + "_Upper")
+            and not doc.getObjectsByLabel(inputName + "_" + str(nameIndex) + "_Lower")
+        ):
+            return inputName + "_" + str(nameIndex)
+        nameIndex += 1
+
+
+
+def _naca4digit(objRef):
+    """
+    This function generates a list of airfoil data points
+    for a typical NACA 4 Digit airfoil model.
+    This function is called from the '_startCreating' method 
+    of the 'AeroFoilDialog' class.
+
+    Arguments
+    ----------
+    objRef: An instance of the 'AeroFoilDialog' object.
+    """
+    global UNITSCONVERSION
+    global NACA_NUMBER_OF_POINTS
+    chordLength_conv = objRef.chordLength * UNITSCONVERSION[objRef.chordUnits]
+    xu_, yu_, xl_, yl_ = [], [], [], []
+    yc_ = yt_ = theta_ = 0
+    a0_, a1_, a2_, a3_, a4_ = 0.2969, -0.126, -0.3516, 0.2843, -0.1015
+    m_, p_, t_ = (
+        int(objRef.airfoil4DNumber[0]) / 100,
+        int(objRef.airfoil4DNumber[1]) / 10,
+        int(objRef.airfoil4DNumber[2] + objRef.airfoil4DNumber[3]) / 100,
+    )
+    n_ = (
+        round(NACA_NUMBER_OF_POINTS / 2)
+        * ((objRef.refine * (objRef.refineParam - 1)) + 1)
+    ) + 1
+    for i in range(n_):
+        x_ = i / (n_ - 1)
+        yt_ = (
+            5
+            * t_
+            * (
+                (a0_ * pow(x_, 0.5))
+                + (a1_ * x_)
+                + (a2_ * pow(x_, 2))
+                + (a3_ * pow(x_, 3))
+                + (a4_ * pow(x_, 4))
+            )
+        )
+        if x_ < p_:
+            yc_ = (m_ * ((2 * p_ * x_) - (x_ * x_))) / (p_ * p_)
+            theta_ = math.degrees(math.atan((2 * m_ * (p_ - x_)) / (p_ * p_)))
+        else:
+            yc_ = (m_ * (1 - (2 * p_) + (2 * p_ * x_) - (x_ * x_))) / pow(1 - p_, 2)
+            theta_ = math.degrees(math.atan((2 * m_ * (p_ - x_)) / pow(1 - p_, 2)))
+        xu_.append((x_ - (yt_ * math.sin(math.radians(theta_)))) * chordLength_conv)
+        yu_.append((yc_ + (yt_ * math.cos(math.radians(theta_)))) * chordLength_conv)
+        xl_.append((x_ + (yt_ * math.sin(math.radians(theta_)))) * chordLength_conv)
+        yl_.append((yc_ - (yt_ * math.cos(math.radians(theta_)))) * chordLength_conv)
+        if objRef.progressBar_.value() < 50:
+            objRef.progressBar_.setValue(round((i / (2 * n_)) * 100))
+    xl_.reverse()
+    yl_.reverse()
+    objRef.midIndex1, objRef.midIndex2 = len(xu_) - 1, len(xu_)
+    objRef.pointsX, objRef.pointsY = xu_ + xl_, yu_ + yl_
+
+
+
+def _naca5digit(objRef):
+    """
+    This function generates a list of airfoil data points
+    for a typical NACA 5 Digit airfoil model.
+    This function is called from the '_startCreating' method 
+    of the 'AeroFoilDialog' class.
+
+    Arguments
+    ----------
+    objRef: An instance of the 'AeroFoilDialog' object.
+    """
+    global UNITSCONVERSION
+    global NACA_NUMBER_OF_POINTS
+    chordLength_conv = objRef.chordLength * UNITSCONVERSION[objRef.chordUnits]
+    xu_, yu_, xl_, yl_ = [], [], [], []
+    yc_ = yt_ = theta_ = 0
+    a0_, a1_, a2_, a3_, a4_ = 0.2969, -0.126, -0.3516, 0.2843, -0.1015
+    R_ = [0.0580, 0.1260, 0.2025, 0.2900, 0.3910, 0.1300, 0.2170, 0.3180, 0.4410]
+    K1_ = [361.400, 51.640, 15.957, 6.643, 3.230, 51.990, 15.793, 6.520, 3.191]
+    K2K1_ = [0, 0, 0, 0, 0, 0.000764, 0.00677, 0.0303, 0.1355]
+    index = int(objRef.airfoil5DNumber[1]) - 1 + (4 * int(objRef.airfoil5DNumber[2]))
+    r_, k1_, k2k1_, t_ = (
+        R_[index],
+        K1_[index],
+        K2K1_[index],
+        int(objRef.airfoil5DNumber[3] + objRef.airfoil5DNumber[4]) / 100,
+    )
+    n_ = (
+        round(NACA_NUMBER_OF_POINTS / 2)
+        * ((objRef.refine * (objRef.refineParam - 1)) + 1)
+    ) + 1
+    for i in range(n_):
+        x_ = i / (n_ - 1)
+        yt_ = (
+            5
+            * t_
+            * (
+                (a0_ * pow(x_, 0.5))
+                + (a1_ * x_)
+                + (a2_ * pow(x_, 2))
+                + (a3_ * pow(x_, 3))
+                + (a4_ * pow(x_, 4))
+            )
+        )
+        if int(objRef.airfoil5DNumber[2]) == 0:
+            if x_ < r_:
+                yc_ = (
+                    k1_ * (pow(x_, 3) - (3 * r_ * x_ * x_) + (x_ * r_ * r_ * (3 - r_)))
+                ) / 6
+                theta_ = math.degrees(
+                    math.atan(
+                        (k1_ * ((3 * x_ * x_) - (6 * r_ * x_) + (r_ * r_ * (3 - r_))))
+                        / 6
+                    )
+                )
+            else:
+                yc_ = (k1_ * pow(r_, 3) * (1 - x_)) / 6
+                theta_ = math.degrees(math.atan(-(k1_ * pow(r_, 3)) / 6))
+        elif int(objRef.airfoil5DNumber[2]) == 1:
+            if x_ < r_[int(objRef.airfoil5DNumber[1] + objRef.airfoil5DNumber[2])]:
+                yc_ = (
+                    k1_
+                    * (
+                        pow(x_ - r_, 3)
+                        - (k2k1_ * x_ * pow(1 - r_, 3))
+                        - (x_ * pow(r_, 3))
+                        + pow(r_, 3)
+                    )
+                ) / 6
+                theta_ = math.degrees(
+                    math.atan(
+                        (
+                            k1_
+                            * (
+                                (3 * pow(x_ - r_, 2))
+                                - (k2k1_ * pow(1 - r_, 3))
+                                - (pow(r_, 3))
+                            )
+                        )
+                        / 6
+                    )
+                )
+            else:
+                yc_ = (
+                    k1_
+                    * (
+                        (k2k1_ * pow(x_ - r_, 3))
+                        - (k2k1_ * x_ * pow(1 - r_, 3))
+                        - (x_ * pow(r_, 3))
+                        + pow(r_, 3)
+                    )
+                ) / 6
+                theta_ = math.degrees(
+                    math.atan(
+                        (
+                            k1_
+                            * (
+                                (3 * k2k1_ * pow(x_ - r_, 2))
+                                - (k2k1_ * pow(1 - r_, 3))
+                                - (pow(r_, 3))
+                            )
+                        )
+                        / 6
+                    )
+                )
+        xu_.append((x_ - (yt_ * math.sin(math.radians(theta_)))) * chordLength_conv)
+        yu_.append((yc_ + (yt_ * math.cos(math.radians(theta_)))) * chordLength_conv)
+        xl_.append((x_ + (yt_ * math.sin(math.radians(theta_)))) * chordLength_conv)
+        yl_.append((yc_ - (yt_ * math.cos(math.radians(theta_)))) * chordLength_conv)
+        if objRef.progressBar_.value() < 50:
+            objRef.progressBar_.setValue(round((i / (2 * n_)) * 100))
+    xl_.reverse()
+    yl_.reverse()
+    objRef.midIndex1, objRef.midIndex2 = len(xu_) - 1, len(xu_)
+    objRef.pointsX, objRef.pointsY = xu_ + xl_, yu_ + yl_
+
+
+
+def convTrig(mode, inputVal):
+    """
+    This function converts specific, unconventional trigonometric code 
+    into a Python-based (Math module) trigonometric code.
+    This function is called from the 'solveFx' method.
+
+    Arguments
+    ----------
+    mode: A code number denoting a specific trignometric function.
+    inputVal: An unconventional trigonometric code string.
+    """
+    if mode == 1:
+        return math.sin(math.radians(inputVal))
+    if mode == 2:
+        return math.cos(math.radians(inputVal))
+    if mode == 3:
+        return math.tan(math.radians(inputVal))
+    if mode == 4:
+        return math.degrees(math.asin(inputVal))
+    if mode == 5:
+        return math.degrees(math.acos(inputVal))
+    if mode == 6:
+        return math.degrees(math.atan(inputVal))
+
+
+
+def solveFx(f_, x_):
+    """
+    This function generates a list of airfoil data points
+    for a typical NACA 4 Digit airfoil model.
+    This function is called from the '_validateFunction'  
+    and the '_startCreating' methods of the 
+    'AeroFoilDialog' class.
+
+    Arguments
+    ----------
+    objRef: An instance of the 'AeroFoilDialog' object.
+    """
+    f_ = f_.replace("x", "x_")
+    f_ = f_.replace("^", "**")
+    f_ = f_.replace("e", "math.e")
+    f_ = f_.replace("pi", "math.pi")
+    f_ = f_.replace("ln", "math.log")
+    f_ = f_.replace("log", "math.log10")
+    f_ = f_.replace("sqrt", "math.sqrt")
+    f_ = f_.replace("sin(", "convTrig(1,")
+    f_ = f_.replace("cos(", "convTrig(2,")
+    f_ = f_.replace("tan(", "convTrig(3,")
+    f_ = f_.replace("asin(", "convTrig(4,")
+    f_ = f_.replace("acos(", "convTrig(5,")
+    f_ = f_.replace("atan(", "convTrig(6,")
+    try:
+        return eval(f_)
+    except Exception:
+        return
+
+
+
+def _validateAirfoilNumber(objRef, digit):
+    """
+    This function validates whether or not the inputted NACA airfoil model code 
+    is valid and existing.
+    This function is called from the '_next' method of the 'AeroFoilDialog' class.
+    This function is called when the 'Next' button from the 'AeroFoil_NACA4Digit_Dialog' 
+    or the 'AeroFoil_NACA5Digit_Dialog' is clicked.
+
+    Arguments
+    ----------
+    objRef: An instance of the 'AeroFoilDialog' object.
+    digit:  An integer number denoting the NACA airfoil type.
+            Options: 4 or 5.
+    """
+    global NACA_5_2ND_3RD_DIGITS
+    airfoilNumber = ""
+    airfoilNumber = objRef.airfoil4DNumber if digit == 4 else objRef.airfoil5DNumber
+    if airfoilNumber.isnumeric():
+        if len(airfoilNumber) == digit:
+            if int(airfoilNumber[-2:]) == 0:
+                setAlertBox(
+                    "The last two digits of the airfoil code cannot be a\nzero value !",
+                    True,
+                )
+            else:
+                if digit == 4:
+                    return True
+                elif digit == 5:
+                    if int(airfoilNumber[0]) == 2:
+                        if int(airfoilNumber[2]) <= 1:
+                            for numRef in NACA_5_2ND_3RD_DIGITS:
+                                if airfoilNumber[1] + airfoilNumber[2] == numRef:
+                                    return True
+                            if airfoilNumber[2] == 0:
+                                setAlertBox(
+                                    "The second digit of the airfoil code must be\nbetween one and five, both inclusive !",
+                                    True,
+                                )
+                            elif airfoilNumber[2] == 1:
+                                setAlertBox(
+                                    "The second digit of the airfoil code must be\nbetween two and five, both inclusive !",
+                                    True,
+                                )
+                        else:
+                            setAlertBox(
+                                "The third digit of the airfoil code must be either\na zero or a one !",
+                                True,
+                            )
+                    else:
+                        setAlertBox(
+                            "The first digit of the airfoil code must be a two !", True
+                        )
+        else:
+            setAlertBox(
+                "Airfoil code must contain exactly " + str(digit) + " digits !", True
+            )
+    else:
+        setAlertBox("Airfoil code must be numeric !", True)
+    objRef.airfoil4DNumber, objRef.airfoil5DNumber = "", ""
+    return False
+
+
+
+def _validateFunction(objRef, mode):
+    """
+    This function parses the inputted curve functions, and validates them, 
+    resulting in whether or not the inputted functions are valid from points 
+    0 to 1, both inclusive, in the X-axis of a typical graph.
+    This function is called from the '_next' method of the 'AeroFoilDialog' class.
+    This function is called when the 'Next' button from the 'AeroFoil_CurvesInput_Dialog'
+    is clicked.
+
+    Arguments
+    ----------
+    objRef:   An instance of the 'AeroFoilDialog' object.
+    mode:     An integer number specifying the function input mode.
+    Options:  '1' denotes that one function has been inputted, 
+              and the function is to be symmetrically mirrored 
+              to produce the lower airfoil points.
+              '2' denotes that two functions have been inputted, 
+              one for the upper, and one for the lower airfoil points.
+    """
+    global FUNCTIONSARRAY
+    function = [
+        objRef.topCurveFunction.replace(" ", ""),
+        objRef.bottomCurveFunction.replace(" ", ""),
+    ]
+    badFunctionCombinations = [
+        "()",
+        "(+",
+        "(-",
+        "(*",
+        "(/",
+        "(^",
+        ")(",
+        "+)",
+        "-)",
+        "*)",
+        "/)",
+        "^)",
+        ".)",
+        ").",
+        ".(",
+        "(.",
+        "++",
+        "--",
+        "**",
+        "//",
+        "^^",
+        "xx",
+        "ee",
+        "pipi",
+        "xe",
+        "ex",
+        "xpi",
+        "pix",
+        "epi",
+        "pie",
+        "x(",
+        "e(",
+        "pi(",
+        ")x",
+        ")e",
+        ")pi",
+        ")ln",
+        ")log",
+        ")sqrt",
+        ")sin",
+        ")cos",
+        ")tan",
+        ")asin",
+        ")acos",
+        ")atan",
+    ]
+    modeName = ["Top", "Bottom"]
+    for i in range(mode):
+        if len(function[i]) > 0:
+            if function[i].count("(") == function[i].count(")"):
+                tempVar = function[i].replace(",", ".")
+                for stringRef in FUNCTIONSARRAY:
+                    tempVar = tempVar.replace(stringRef, "")
+                if len(tempVar) == 0 or tempVar.isnumeric():
+                    badFunction, badFunctionFound = "", False
+                    for stringRef in badFunctionCombinations:
+                        if function[i].count(stringRef) != 0:
+                            badFunction, badFunctionFound = stringRef, True
+                            break
+                    if not badFunctionFound:
+                        try:
+                            if mode == 1:
+                                if (
+                                    solveFx(function[i], 0) >= 0
+                                    and solveFx(function[i], 1) >= 0
+                                ):
+                                    return True
+                                else:
+                                    setAlertBox(
+                                        "Top curve function 'range' should not be less than zero !",
+                                        True,
+                                    )
+                            elif mode == 2 and i == 1:
+                                if solveFx(function[i], 0) <= solveFx(
+                                    function[i - 1], 0
+                                ) and solveFx(function[i], 1) <= solveFx(
+                                    function[i - 1], 1
+                                ):
+                                    return True
+                                else:
+                                    setAlertBox(
+                                        "Top and Bottom curve function 'ranges' should not intersect!",
+                                        True,
+                                    )
+                        except Exception:
+                            setAlertBox(
+                                modeName[i]
+                                + " curve function contains unrecognizable,\ninvalid components !",
+                                True,
+                            )
+                    else:
+                        setAlertBox(
+                            modeName[i]
+                            + " curve function contains this invalidly\nwritten component ::  "
+                            + badFunction,
+                            True,
+                        )
+                else:
+                    setAlertBox(
+                        modeName[i]
+                        + " curve function contains one or more\ninvalid, extraneous components !",
+                        True,
+                    )
+            else:
+                setAlertBox(
+                    modeName[i] + " curve function contains unequal parantheses !", True
+                )
+        else:
+            setAlertBox(modeName[i] + " curve function cannot be empty !", True)
+    objRef.topCurveFunction, objRef.bottomCurveFunction = "", ""
+    return False
+
+
+
+def _validateFile(objRef):
+    """
+    This function parses the file contents of the inputted file path, and validates them, 
+    resulting in whether or not the file is valid (that is, contains minimum number of points, 
+    valid data points structure, etc.)
+    This function is called from the '_loadFile' method of the 'AeroFoilDialog' class.
+
+    Arguments
+    ----------
+    objRef: An instance of the 'AeroFoilDialog' object.
+    """
+    global MIN_DATA_POINTS
+    objRef.midIndex1, objRef.midIndex2 = 0, 0
+    i_start, i_end, tempVar, tempStr, count, objRef.canMirror, x_prev, dir_ = (
+        0,
+        0,
+        "",
+        "",
+        1,
+        True,
+        0,
+        [1, 1],
+    )
+    i_start, i_end, fileReader_ = (
+        (objRef.tempStart, objRef.tempEnd, objRef.loadedFile)
+        if objRef.importFrom == 1
+        else (objRef.row1, objRef.row2, csv.reader(objRef.loadedFile))
+    )
+    objRef.loadedFileContents = []
+    objRef.loadedFile.seek(0)
+    if i_start == 0:
+        i_start = i_end = 0
+        for lineOrRow in fileReader_:
+            if objRef.decimalType == 1:
+                tempVar = lineOrRow
+            elif objRef.decimalType == 2:
+                tempVar = (
+                    lineOrRow.replace(",", ".")
+                    if objRef.importFrom == 1
+                    else [element_.replace(",", ".") for element_ in lineOrRow]
+                )
+            pointsInLine = (
+                re.findall(r"[+-]?\d+(?:\.\d+)?", tempVar)
+                if objRef.importFrom == 1
+                else re.findall(
+                    r"[+-]?\d+(?:\.\d+)?",
+                    tempVar[objRef.col1 - 1] + " " + tempVar[objRef.col2 - 1],
+                )
+            )
+            if len(pointsInLine) == 2:
+                i_start = count if i_start == 0 else i_start
+                objRef.loadedFileContents.append(lineOrRow)
+            else:
+                if i_start != 0:
+                    i_end = count - 1
+                    break
+            if i_start != 0:
+                if tempStr == "":
+                    tempStr = "1"
+                elif tempStr == "1":
+                    dir_[0] = dir_[1]
+                    dir_[1] = (float(pointsInLine[0]) - x_prev) / abs(
+                        float(pointsInLine[0]) - x_prev
+                    )
+                    if dir_[0] != dir_[1] and (count - i_start) > 2:
+                        if objRef.canMirror:
+                            objRef.midIndex1, objRef.midIndex2 = (
+                                count - i_start - 1,
+                                count - i_start,
+                            )
+                            swapVar = objRef.loadedFileContents[-1]
+                            objRef.loadedFileContents[-1] = objRef.loadedFileContents[
+                                -2
+                            ]
+                            objRef.loadedFileContents.append(swapVar)
+                        objRef.canMirror = False
+                        tempStr = "0"
+                x_prev = float(pointsInLine[0])
+            count += 1
+        if i_start == 0:
+            tempStr = (
+                "File Line :: " + str(count)
+                if objRef.importFrom == 1
+                else "File Row :: " + str(count)
+            )
+            setAlertBox(
+                "File is invalid, or file is of incorrect format !\n" + tempStr, True
+            )
+            return False
+        elif i_end == 0:
+            i_end = count - 1
+            # return True
+    else:
+        for lineOrRow in fileReader_:
+            if count >= i_start:
+                if objRef.decimalType == 1:
+                    tempVar = lineOrRow
+                elif objRef.decimalType == 2:
+                    tempVar = (
+                        lineOrRow.replace(",", ".")
+                        if objRef.importFrom == 1
+                        else [element_.replace(",", ".") for element_ in lineOrRow]
+                    )
+                pointsInLine = (
+                    re.findall(r"[+-]?\d+(?:\.\d+)?", tempVar)
+                    if objRef.importFrom == 1
+                    else re.findall(
+                        r"[+-]?\d+(?:\.\d+)?",
+                        tempVar[objRef.col1 - 1] + " " + tempVar[objRef.col2 - 1],
+                    )
+                )
+                if len(pointsInLine) == 2:
+                    objRef.loadedFileContents.append(lineOrRow)
+                else:
+                    if i_end == 0 and count != 1:
+                        count += 1
+                        break
+                    else:
+                        tempStr = (
+                            "File Line :: " + str(count)
+                            if objRef.importFrom == 1
+                            else "File Row :: " + str(count)
+                        )
+                        setAlertBox(
+                            "File is invalid, or file is of incorrect format !\n"
+                            + tempStr,
+                            True,
+                        )
+                        return False
+                if tempStr == "":
+                    tempStr = "1"
+                elif tempStr == "1":
+                    dir_[0] = dir_[1]
+                    dir_[1] = (float(pointsInLine[0]) - x_prev) / abs(
+                        float(pointsInLine[0]) - x_prev
+                    )
+                    if dir_[0] != dir_[1] and (count - i_start) > 2:
+                        if objRef.canMirror:
+                            objRef.midIndex1, objRef.midIndex2 = (
+                                count - i_start - 1,
+                                count - i_start,
+                            )
+                            swapVar = objRef.loadedFileContents[-1]
+                            objRef.loadedFileContents[-1] = objRef.loadedFileContents[
+                                -2
+                            ]
+                            objRef.loadedFileContents.append(swapVar)
+                        objRef.canMirror = False
+                        tempStr = "0"
+                x_prev = float(pointsInLine[0])
+                if i_end != 0 and count == i_end:
+                    count += 1
+                    break
+            count += 1
+    i_end = count - 1
+    # if i_end - i_start + 1 >= MIN_DATA_POINTS:
+    # return True
+    if i_end - i_start + 1 < MIN_DATA_POINTS:
+        setAlertBox(
+            "There must be a minimum of "
+            + str(MIN_DATA_POINTS)
+            + " selected file rows,\nthat is, pairs of data points !",
+            True,
+        )
+        return False
+    objRef.lineStart, objRef.row1, objRef.lineEnd, objRef.row2 = (
+        (i_start, i_start, i_end, i_end)
+        if objRef.importFrom == 1
+        else (objRef.lineStart, objRef.row1, objRef.lineEnd, objRef.row2)
+    )
+    objRef.loadedFile.close()
+    return True
+
+
+
+######################################################################
+###----------------------------------------------------------------###
+### 		AEROFOIL MACRO CALLS - Bottom (check Top)	   ###
+###----------------------------------------------------------------###
+								   ###
+    """
+    This is the main macro call. The code below commences 
+    the AeroFoil GUI interface. This script cannot be 
+    called externally.
+    """								   ###
+								   ###
+if __name__ == "__main__":					   ###
+    AeroFoilDialog()						   ###
+								   ###
+###----------------------------------------------------------------###
+### 		AEROFOIL MACRO CALLS - Bottom (check Top)	   ###
+###----------------------------------------------------------------###
+######################################################################
+
+
+

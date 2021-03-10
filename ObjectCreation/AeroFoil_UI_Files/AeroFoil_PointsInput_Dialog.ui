@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>425</width>
+    <height>222</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>425</width>
+    <height>222</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>425</width>
+    <height>222</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>AeroFoil :  Custom Points</string>
+  </property>
+  <widget class="QPushButton" name="af_d2d_next_button">
+   <property name="geometry">
+    <rect>
+     <x>295</x>
+     <y>180</y>
+     <width>100</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Next</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="af_d2d_back_button">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>180</y>
+     <width>100</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Back</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="af_d2d_checkbox">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>120</y>
+     <width>201</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Mirror the Airfoil Profile</string>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="autoExclusive">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QFrame" name="frame">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>25</y>
+     <width>371</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::StyledPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
+   </property>
+   <widget class="QLabel" name="af_d2d_label_2">
+    <property name="geometry">
+     <rect>
+      <x>25</x>
+      <y>10</y>
+      <width>191</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Import from :</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="af_d2d_radio_1">
+    <property name="geometry">
+     <rect>
+      <x>225</x>
+      <y>10</y>
+      <width>125</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Text File (*.dat)</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+    <property name="autoExclusive">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="af_d2d_radio_2">
+    <property name="geometry">
+     <rect>
+      <x>225</x>
+      <y>35</y>
+      <width>210</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>CSV File (*.csv)</string>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>af_d2d_radio_1</tabstop>
+  <tabstop>af_d2d_radio_2</tabstop>
+  <tabstop>af_d2d_checkbox</tabstop>
+  <tabstop>af_d2d_next_button</tabstop>
+  <tabstop>af_d2d_back_button</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>

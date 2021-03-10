@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>235</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>500</width>
+    <height>235</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>500</width>
+    <height>235</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>AeroFoil :  Load 'Data Points'</string>
+  </property>
+  <widget class="QPushButton" name="af_d2cd2_next_button">
+   <property name="geometry">
+    <rect>
+     <x>375</x>
+     <y>190</y>
+     <width>100</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Next</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="af_d2cd2_back_button">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>190</y>
+     <width>100</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Back</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="af_d2cd2_label_1">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>25</y>
+     <width>341</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enter a File Name or Load a File :</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="af_d2cd2_load_button">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>90</y>
+     <width>450</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Load File</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="af_d2cd2_textbox">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>55</y>
+     <width>450</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="af_d2cd2_label_2">
+   <property name="geometry">
+    <rect>
+     <x>34</x>
+     <y>125</y>
+     <width>431</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Ubuntu Mono</family>
+     <pointsize>12</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+     <underline>true</underline>
+     <strikeout>false</strikeout>
+     <kerning>true</kerning>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color: black;</string>
+   </property>
+   <property name="text">
+    <string>File Not Loaded</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>af_d2cd2_load_button</tabstop>
+  <tabstop>af_d2cd2_next_button</tabstop>
+  <tabstop>af_d2cd2_back_button</tabstop>
+  <tabstop>af_d2cd2_textbox</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
