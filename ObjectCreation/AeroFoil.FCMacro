@@ -105,19 +105,19 @@
 
 
 
-__Title__ = "AeroFoil"
-__Author__ = "Melwyncarlo"
-__Version__ = "2.0.0"
-__Date__ = "2021-03-09"
-__Comment__ = "AeroFoil creates airfoil curves and faces using pre-defined models, algebraic functions, and DAT or CSV Files"
-__Web__ = "https://github.com/melwyncarlo/AeroFoil"
-__Wiki__ = "http://www.freecadweb.org/wiki/index.php?title=Macro_AeroFoil"
-__Icon__ = "AeroFoil_UI_Files/AeroFoil.png"
-__Help__ = "Click on the AeroFoil button/macro, and follow the instructions in the subsequent dialog boxes."
-__Status__ = "stable"
-__Requires__ = "Freecad >= v0.17"
+__Title__         = "AeroFoil"
+__Author__        = "Melwyncarlo"
+__Version__       = "2.0.0"
+__Date__          = "2021-03-09"
+__Comment__       = "AeroFoil creates airfoil curves and faces using pre-defined models, algebraic functions, and DAT or CSV Files"
+__Web__           = "https://github.com/melwyncarlo/AeroFoil"
+__Wiki__          = "http://www.freecadweb.org/wiki/index.php?title=Macro_AeroFoil"
+__Icon__          = "AeroFoil_UI_Files/AeroFoil.png"
+__Help__          = "Click on the AeroFoil button/macro, and follow the instructions in the subsequent dialog boxes."
+__Status__        = "stable"
+__Requires__      = "Freecad >= v0.17"
 __Communication__ = "https://github.com/melwyncarlo/AeroFoil/issues"
-__Files__ = "AeroFoil_UI_Files/AeroFoil_Initial_Dialog.ui, AeroFoil_UI_Files/AeroFoil_NACA4Digit_Dialog.ui, \
+__Files__         = "AeroFoil_UI_Files/AeroFoil_Initial_Dialog.ui, AeroFoil_UI_Files/AeroFoil_NACA4Digit_Dialog.ui, \
 AeroFoil_UI_Files/AeroFoil_NACA5Digit_Dialog.ui, AeroFoil_UI_Files/AeroFoil_CurvesInput_Dialog.ui, \
 AeroFoil_UI_Files/AeroFoil_PointsInput_Dialog.ui, AeroFoil_UI_Files/AeroFoil_DATInput_Dialog.ui, \
 AeroFoil_UI_Files/AeroFoil_CSVInput_Dialog.ui, AeroFoil_UI_Files/AeroFoil_FileLoad_Dialog.ui, \
@@ -416,7 +416,6 @@ class AeroFoil:
         This function utilizes the 'try ... except' method to avoid any complications 
         on the user's end. A simple error message is displayed instead.
         """
-        constraintIndex = 0
         # Generating Polygons and BSplines
         try:
             if self.designtype[0] == 2:
@@ -465,7 +464,7 @@ class AeroFoil:
                             if i_count == 0
                             else (self.midIndices[1], len(self.points[0]) - 1)
                         )
-                        tempXif, tempXm = self._create_tempX_var(startIndex, endIndex)
+                        tempXif, tempXm, startIndex, endIndex = self._create_tempX_var(startIndex, endIndex)
                         draftOutputName = (
                             self.profileName + "_Upper"
                             if i_count == 0
@@ -566,15 +565,42 @@ class AeroFoil:
         startIndex: (Integer) Zero-based index of the data points list to begin from.
         endIndex:   (Integer) Zero-based index of the data points list to end to.
         """
+        posVar, negVar, startIndex_new, endIndex_new = 0, 0, startIndex, endIndex
+        for i1 in range(startIndex, startIndex + int(0.1 * (endIndex - startIndex))):
+            if self.points[1][i1] >= 0:
+                posVar += 1
+            else:
+                negVar += 1
+        for j1 in range(startIndex, startIndex + int(0.1 * (endIndex - startIndex))):
+            if posVar >= negVar:
+                if self.points[1][j1] >= 0:
+                    startIndex_new = j1
+                    break
+            else:
+                if self.points[1][j1] < 0:
+                    startIndex_new = j1
+                    break
+        for i2 in range(endIndex, endIndex - int(0.1 * (endIndex - startIndex)), -1):
+            if self.points[1][i2] >= 0:
+                posVar += 1
+            else:
+                negVar += 1
+        for j2 in range(endIndex, endIndex - int(0.1 * (endIndex - startIndex)), -1):
+            if posVar >= negVar:
+                if self.points[1][j2] >= 0:
+                    endIndex_new = j2
+                    break
+            else:
+                if self.points[1][j2] < 0:
+                    endIndex_new = j2
+                    break
         if self.defaultEndPoints:
-            tempXif = round(self.points[0][startIndex], 2)
-            tempXm = round(self.points[0][endIndex], 2)
-            self.points[0][startIndex] = round(self.points[0][startIndex], 2)
-            self.points[0][endIndex] = round(self.points[0][endIndex], 2)
+            tempXif = round(self.points[0][startIndex_new], 2)
+            tempXm = round(self.points[0][endIndex_new], 2)
+            self.points[0][startIndex_new] = round(self.points[0][startIndex_new], 2)
+            self.points[0][endIndex_new] = round(self.points[0][endIndex_new], 2)
         else:
-            xi_, yi_, xf_, yf_ = 0, 0, 0, 0
-            x1m_, y1m_, x2m_, y2m_ = 0, 0, 0, 0
-            if startIndex == 0:
+            if startIndex_new == 0:
                 xi_, yi_ = self.points[0][0], self.points[1][0]
                 xf_, yf_ = (
                     (self.points[0][-1], self.points[1][-1])
@@ -584,24 +610,24 @@ class AeroFoil:
                     )
                     else (self.points[0][-2], self.points[1][-2])
                 )
-                x1m_, y1m_ = self.points[0][endIndex], self.points[1][endIndex]
+                x1m_, y1m_ = self.points[0][endIndex_new], self.points[1][endIndex_new]
                 x2m_, y2m_ = (
-                    (self.points[0][endIndex + 1], self.points[1][endIndex + 1])
-                    if self.points[0][endIndex] != self.points[0][endIndex + 1]
-                    or self.points[1][endIndex] != self.points[1][endIndex + 1]
-                    else (self.points[0][endIndex + 2], self.points[1][endIndex + 2])
+                    (self.points[0][endIndex_new + 1], self.points[1][endIndex_new + 1])
+                    if self.points[0][endIndex_new] != self.points[0][endIndex_new + 1]
+                    or self.points[1][endIndex_new] != self.points[1][endIndex_new + 1]
+                    else (self.points[0][endIndex_new + 2], self.points[1][endIndex_new + 2])
                 )
             else:
-                xi_, yi_ = self.points[0][startIndex], self.points[1][startIndex]
+                xi_, yi_ = self.points[0][startIndex_new], self.points[1][startIndex_new]
                 xf_, yf_ = (
-                    (self.points[0][startIndex - 1], self.points[1][startIndex - 1])
+                    (self.points[0][startIndex_new - 1], self.points[1][startIndex_new - 1])
                     if (
-                        self.points[0][startIndex] != self.points[0][startIndex - 1]
-                        or self.points[1][startIndex] != self.points[1][startIndex - 1]
+                        self.points[0][startIndex_new] != self.points[0][startIndex_new - 1]
+                        or self.points[1][startIndex_new] != self.points[1][startIndex_new - 1]
                     )
                     else (
-                        self.points[0][startIndex - 2],
-                        self.points[1][startIndex - 2],
+                        self.points[0][startIndex_new - 2],
+                        self.points[1][startIndex_new - 2],
                     )
                 )
                 x1m_, y1m_ = self.points[0][-1], self.points[1][-1]
@@ -613,7 +639,7 @@ class AeroFoil:
                 )
             tempXif = interpolateNum(yi_, xi_, yf_, xf_, 0)
             tempXm = interpolateNum(y1m_, x1m_, y2m_, x2m_, 0)
-        return tempXif, tempXm
+        return tempXif, tempXm, startIndex_new, endIndex_new
 
     def _createSketcherPolyLine(self, sketchName, startIndex, endIndex):
         """
@@ -636,7 +662,7 @@ class AeroFoil:
         count, tempBool = 0, False
         tempXif, tempXm = 0, 0
         if self.designsplit:
-            tempXif, tempXm = self._create_tempX_var(startIndex, endIndex)
+            tempXif, tempXm, startIndex, endIndex = self._create_tempX_var(startIndex, endIndex)
             if (
                 tempXif == self.points[0][startIndex]
                 and self.points[1][startIndex] == 0
@@ -849,7 +875,7 @@ class AeroFoil:
         isXif, isXm = False, False
         tempXif, tempXm = 0, 0
         if self.designsplit:
-            tempXif, tempXm = self._create_tempX_var(startIndex, endIndex)
+            tempXif, tempXm, startIndex, endIndex = self._create_tempX_var(startIndex, endIndex)
         if self.designsplit and (
             tempXif != self.points[0][startIndex] or self.points[1][startIndex] != 0
         ):
@@ -1081,7 +1107,6 @@ class AeroFoil:
                 constraintIndex,
                 app.Units.Quantity(str(self.points[1][endIndex]) + "mm"),
             )
-            startFrom = startIndex + 1
             count += 1
         if isXm:
             constraintIndex = sketchObj.addConstraint(
@@ -1964,7 +1989,6 @@ def _prepareAeroFoil(objRef):
     ----------
     objRef: An instance of the 'AeroFoilDialog' object.
     """
-    tempList1, tempList2 = [], []
     global UNITSCONVERSION
     global NACA_NUMBER_OF_POINTS
     chordLength_conv = objRef.chordLength * UNITSCONVERSION[objRef.chordUnits]
@@ -2007,18 +2031,11 @@ def _prepareAeroFoil(objRef):
         objRef.midIndex1, objRef.midIndex2 = len(xu_) - 1, len(xu_)
         objRef.pointsX, objRef.pointsY = xu_ + xl_, yu_ + yl_
     elif objRef.airfoilType == 4:
-        i_start, i_end, count, tempVar, pointsInLine, pointsInLine_prev = (
-            0,
-            0,
+        count, tempVar, pointsInLine, pointsInLine_prev = (
             1,
             "",
             [],
             [],
-        )
-        i_start, i_end = (
-            (objRef.lineStart, objRef.lineEnd)
-            if objRef.importFrom == 1
-            else (objRef.row1, objRef.row2)
         )
         n_ = len(objRef.loadedFileContents)
         for lineOrRow in objRef.loadedFileContents:
@@ -2634,9 +2651,6 @@ def _validateFile(objRef):
                 "File is invalid, or file is of incorrect format !\n" + tempStr, True
             )
             return False
-        elif i_end == 0:
-            i_end = count - 1
-            # return True
     else:
         for lineOrRow in fileReader_:
             if count >= i_start:
@@ -2724,12 +2738,12 @@ def _validateFile(objRef):
 ###----------------------------------------------------------------###
 ### 		AEROFOIL MACRO CALLS - Bottom (check Top)	   ###
 ###----------------------------------------------------------------###
-								   ###
-    """
-    This is the main macro call. The code below commences 
-    the AeroFoil GUI interface. This script cannot be 
-    called externally.
-    """								   ###
+###								   ###
+###								   ###
+###	This is the main macro call. The code below commences 	   ###
+###	the AeroFoil GUI interface. This script cannot be 	   ###
+###	called externally.					   ###
+    								   ###
 								   ###
 if __name__ == "__main__":					   ###
     AeroFoilDialog()						   ###
