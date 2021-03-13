@@ -13,6 +13,7 @@ from PySide import QtGui
 from pivy.coin import *
 if App.Version()[1].find('18') == 0: import DraftTrackers, Draft
 if App.Version()[1].find('19') == 0: import draftguitools.gui_trackers as DraftTrackers
+if App.Version()[5].find('LinkStage3') == 0: import draftguitools.gui_trackers as DraftTrackers
 import re, math
 """
 This macro creates a line chain parallel to an existing one.
