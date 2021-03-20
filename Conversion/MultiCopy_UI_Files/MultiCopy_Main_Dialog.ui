@@ -1,0 +1,609 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>510</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>500</width>
+    <height>510</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>500</width>
+    <height>510</height>
+   </size>
+  </property>
+  <property name="focusPolicy">
+   <enum>Qt::StrongFocus</enum>
+  </property>
+  <property name="windowTitle">
+   <string>MultiCopy</string>
+  </property>
+  <widget class="QLabel" name="mc_d_label_1">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>55</y>
+     <width>130</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">text-decoration: underline</string>
+   </property>
+   <property name="text">
+    <string>Copy Selection(s) :</string>
+   </property>
+  </widget>
+  <widget class="QTextEdit" name="mc_d_textbox_1">
+   <property name="geometry">
+    <rect>
+     <x>175</x>
+     <y>60</y>
+     <width>300</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color:#f5f5f5</string>
+   </property>
+   <property name="verticalScrollBarPolicy">
+    <enum>Qt::ScrollBarAlwaysOn</enum>
+   </property>
+   <property name="horizontalScrollBarPolicy">
+    <enum>Qt::ScrollBarAlwaysOn</enum>
+   </property>
+   <property name="documentTitle">
+    <string/>
+   </property>
+   <property name="lineWrapMode">
+    <enum>QTextEdit::NoWrap</enum>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+   <property name="html">
+    <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Ubuntu'; font-size:11pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="overwriteMode">
+    <bool>false</bool>
+   </property>
+   <property name="textInteractionFlags">
+    <set>Qt::NoTextInteraction</set>
+   </property>
+  </widget>
+  <widget class="QTabWidget" name="mc_d_tabset">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>245</y>
+     <width>450</width>
+     <height>200</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="mc_d_tab_1">
+    <attribute name="title">
+     <string>Paste Commands</string>
+    </attribute>
+    <widget class="QRadioButton" name="mc_d_radiobutton_1">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>15</y>
+       <width>155</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Ordinary Numerals</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="mc_d_radiobutton_2">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>35</y>
+       <width>221</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Upper-case Roman Numerals</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="mc_d_radiobutton_3">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>55</y>
+       <width>221</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Lower-case Roman Numerals</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="mc_d_radiobutton_4">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>75</y>
+       <width>221</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Upper-case Alphabet</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="mc_d_radiobutton_5">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>95</y>
+       <width>221</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Lower-case Alphabet</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="mc_d_label_2">
+     <property name="geometry">
+      <rect>
+       <x>285</x>
+       <y>15</y>
+       <width>50</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>From :</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="mc_d_label_5">
+     <property name="geometry">
+      <rect>
+       <x>285</x>
+       <y>55</y>
+       <width>25</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>To :</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="mc_d_combobox_1">
+     <property name="geometry">
+      <rect>
+       <x>330</x>
+       <y>15</y>
+       <width>100</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">padding-left: 10px;</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="mc_d_combobox_2">
+     <property name="geometry">
+      <rect>
+       <x>330</x>
+       <y>55</y>
+       <width>100</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">padding-left: 10px;</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="mc_d_textbox_3">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>280</x>
+       <y>125</y>
+       <width>70</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="mc_d_checkbox_2">
+     <property name="geometry">
+      <rect>
+       <x>290</x>
+       <y>95</y>
+       <width>51</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Sep.</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="mc_d_checkbox_3">
+     <property name="geometry">
+      <rect>
+       <x>370</x>
+       <y>95</y>
+       <width>51</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Pad.</string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="mc_d_spinbox">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>360</x>
+       <y>125</y>
+       <width>70</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>10</number>
+     </property>
+     <property name="value">
+      <number>1</number>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="mc_d_checkbox_4">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>133</y>
+       <width>161</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>With Dependencies</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="mc_d_hseparator_2">
+     <property name="geometry">
+      <rect>
+       <x>17</x>
+       <y>128</y>
+       <width>231</width>
+       <height>3</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: #aaaaaa;</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QLabel" name="mc_d_hseparator_3">
+     <property name="geometry">
+      <rect>
+       <x>262</x>
+       <y>10</y>
+       <width>3</width>
+       <height>150</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: #aaaaaa;</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="mc_d_tab_2">
+    <attribute name="title">
+     <string>Paste Code</string>
+    </attribute>
+    <widget class="QPlainTextEdit" name="mc_d_textbox_2">
+     <property name="geometry">
+      <rect>
+       <x>5</x>
+       <y>5</y>
+       <width>435</width>
+       <height>145</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="lineWrapMode">
+      <enum>QPlainTextEdit::NoWrap</enum>
+     </property>
+     <property name="plainText">
+      <string/>
+     </property>
+     <property name="tabStopWidth">
+      <number>25</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="mc_d_label_3">
+     <property name="geometry">
+      <rect>
+       <x>5</x>
+       <y>150</y>
+       <width>435</width>
+       <height>10</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color:#1c1c1c</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QLabel" name="mc_d_label_4">
+   <property name="geometry">
+    <rect>
+     <x>200</x>
+     <y>465</y>
+     <width>100</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="mc_d_paste_button">
+   <property name="geometry">
+    <rect>
+     <x>375</x>
+     <y>465</y>
+     <width>100</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Paste</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="mc_d_close_button">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>465</y>
+     <width>100</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Close</string>
+   </property>
+  </widget>
+  <widget class="QFrame" name="frame">
+   <property name="geometry">
+    <rect>
+     <x>175</x>
+     <y>10</y>
+     <width>301</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::StyledPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
+   </property>
+   <widget class="QRadioButton" name="mc_d_radio_1">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>5</y>
+      <width>125</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Standard Copy</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+    <property name="autoExclusive">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="mc_d_radio_2">
+    <property name="geometry">
+     <rect>
+      <x>185</x>
+      <y>5</y>
+      <width>110</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Simple Copy</string>
+    </property>
+    <property name="autoExclusive">
+     <bool>true</bool>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QFrame" name="frame_2">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>95</y>
+     <width>125</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::StyledPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
+   </property>
+   <widget class="QCheckBox" name="mc_d_checkbox_1">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>5</y>
+      <width>110</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <property name="text">
+     <string>      Delete
+  selection(s)
+        after</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QLabel" name="mc_d_label_6">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>15</y>
+     <width>130</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">text-decoration: underline</string>
+   </property>
+   <property name="text">
+    <string>Object Copy Type :</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="mc_d_label_7">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>175</y>
+     <width>151</width>
+     <height>40</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Choose a document :
+to paste into</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="mc_d_combobox_3">
+   <property name="geometry">
+    <rect>
+     <x>175</x>
+     <y>174</y>
+     <width>301</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">padding-left: 10px;</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="mc_d_pcc_button">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>240</y>
+     <width>165</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">text-decoration: underline;
+color: navy;
+border: 0px;</string>
+   </property>
+   <property name="text">
+    <string>Paste Code Commands</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="mc_d_hseparator_1">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>227</y>
+     <width>450</width>
+     <height>3</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: #aaaaaa;</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>mc_d_radio_1</tabstop>
+  <tabstop>mc_d_radio_2</tabstop>
+  <tabstop>mc_d_textbox_1</tabstop>
+  <tabstop>mc_d_checkbox_1</tabstop>
+  <tabstop>mc_d_tabset</tabstop>
+  <tabstop>mc_d_radiobutton_1</tabstop>
+  <tabstop>mc_d_radiobutton_2</tabstop>
+  <tabstop>mc_d_radiobutton_3</tabstop>
+  <tabstop>mc_d_radiobutton_4</tabstop>
+  <tabstop>mc_d_radiobutton_5</tabstop>
+  <tabstop>mc_d_combobox_1</tabstop>
+  <tabstop>mc_d_combobox_2</tabstop>
+  <tabstop>mc_d_checkbox_2</tabstop>
+  <tabstop>mc_d_textbox_3</tabstop>
+  <tabstop>mc_d_textbox_2</tabstop>
+  <tabstop>mc_d_paste_button</tabstop>
+  <tabstop>mc_d_close_button</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
