@@ -1,0 +1,1439 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
+
+##########################################################################################
+#####				L I C E N S E					     #####
+##########################################################################################
+#
+#  GNU LESSER GENERAL PUBLIC LICENSE
+#  Version 2.1, February 1999
+#
+#  Copyright (C) 1991, 1999 Free Software Foundation, Inc.
+#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+#  Everyone is permitted to copy and distribute verbatim copies
+#  of this license document, but changing it is not allowed.
+#
+#  [This is the first released version of the Lesser GPL. It also counts
+#  as the successor of the GNU Library Public License, version 2, hence
+#  the version number 2.1.]
+#
+#  'MultiCopy' is a FreeCAD macro. MultiCopy allows the duplication
+#  (copy and paste) of multiple FreeCAD objects that can be labelled
+#  sequentially and in a custom manner.
+#
+#  Copyright (C) 2021  Melwyn Francis Carlo
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 2.1 of the License, or (at your option) any later version.
+#
+#  This library is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with this library; if not, write to the Free Software Foundation, Inc.,
+#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+#  Contact Information :-
+#  Email :  carlo.melwyn@outlook.com
+#  FreeCAD UserTalk :  http://www.freecadweb.org/wiki/index.php?title=User:Melwyncarlo
+#
+##########################################################################################
+#####				L I C E N S E					     #####
+##########################################################################################
+#
+#
+#
+#  The MultiCopy macro was developed and tested on a platform containing the
+#  following system and FreeCAD software specifications :
+#
+#  - OS			: Ubuntu 18.04.5 LTS (LXDE/Lubuntu)
+#  - Word size of OS	: 64-bit
+#  - Word size of FreeCAD: 64-bit
+#  - Version		: 0.19
+#  - Build type		: Release
+#  - Branch		: unknown
+#  - Hash		: 32200b604d421c4dad527fe587a7d047cf953b4f
+#  - Python version	: 3.6.9
+#  - Qt version		: 5.9.5
+#  - Coin version	: 4.0.0a
+#  - OCC version	: 7.3.0
+#  - Locale		: English/UnitedKingdom (en_GB)
+
+
+
+"""
+  To use this macro, the steps to be followed are simple and straightforward :
+  select one or more FreeCAD objects from the Tree view, and then select 'MultiCopy'.
+  In the dialog box that pops up, choose the copy method, select and input the relevant 
+  paste parameters and commands, and then click on 'Paste'.
+
+  Note (1)	The single underscore prefix (e.g. _name) denotes a private 
+		function or a private variable.
+  Note (2)	Some of the short forms used in this script are as follows:
+		  'mc' stands for MultiCopy
+  		  'pcc' stands for Paste Code Commands
+  		  'd' stands for Dialog (e.g. _d_, etc.)
+"""
+
+
+
+__Title__ = "MultiCopy"
+__Author__ = "Melwyncarlo"
+__Version__ = "1.0.1"
+__Date__ = "2021-03-18"
+__Comment__ = "MultiCopy allows the duplication (copy and paste) of multiple FreeCAD objects that can be labelled sequentially and in a custom manner."
+__Web__ = "https://github.com/melwyncarlo/MultiCopy"
+__Wiki__ = "http://www.freecadweb.org/wiki/index.php?title=Macro_MultiCopy"
+__Icon__ = "MultiCopy_UI_Files/MultiCopy.png"
+__Help__ = "Select one or more FreeCAD objects, then click on the MultiCopy button/macro, and follow the instructions in the dialog box."
+__Status__ = "stable"
+__Requires__ = "Freecad >= v0.17"
+__Communication__ = "https://github.com/melwyncarlo/MultiCopy/issues"
+__Files__ = "MultiCopy_UI_Files/MultiCopy_Main_Dialog.ui, MultiCopy_UI_Files/MultiCopy_Commands_Dialog.ui, MultiCopy_UI_Files/mc_d_imgs.gif, MultiCopy_UI_Files/MultiCopy.svg"
+
+
+
+# Library Imports
+# ------------------------------------------------------------------------------------------------
+
+import FreeCAD as app
+import FreeCADGui as gui
+from PySide import QtGui, QtCore
+from PySide.QtGui import *
+from PySide.QtCore import *
+import re, math, time
+
+
+
+# Constant Variables
+# ------------------------------------------------------------------------------------------------
+
+RANDOMSTRING = "✍✉☏⌨"
+# It is a random string, to be used as a placeholder while changing certain variables
+# and then testing against it to determine if the variable has indeed changed.
+NUMERALSCODE = [
+    "n#",
+    "N#",
+    "ru#",
+    "RU#",
+    "R#",
+    "r#",
+    "rl#",
+    "RL#",
+    "au#",
+    "AU#",
+    "A#",
+    "a#",
+    "al#",
+    "AL#",
+]
+# It is a set of partial Paste Code Commands that deals with the various
+# numbering types: n, N for Ordinary Numerals; ru, RU, R for Upper-case
+# Roman Numerals; r, rl, RL, for Lower-case Roman Numerals;
+# au, AU, A for the Upper-case Alphabet; and a, al, AL for the
+# Lower-case Alphabet. Note that the multiplicity of choices
+# allows the user to use the ones that are preferable.
+MAX_PAD_DIGITS = 5
+# It is the maximum digits for padding numbered labels of objects.
+# e.g. 00001, 00111, etc.
+
+
+
+# Global Variables
+# ------------------------------------------------------------------------------------------------
+
+objIDList = []
+# It contains the integer-based ID's of the objects being dealt with.
+doc2List = []
+# It contains a list of available documents within FreeCAD.
+random_string = "ugmfdkGNxL"
+# This variable is used solely by the '_solve_paste_code' function.
+# The random string will act as the count variable prefix within the parsed python code.
+doc = doc2 = app.activeDocument()
+# doc and doc2 are the document object variables for the
+# copy and paste documents respectively.
+
+
+
+# Main Function Class
+# ------------------------------------------------------------------------------------------------
+
+class MultiCopy:
+
+    """
+    The 'MultiCopy' class is the MultiCopy object itself. It is both a GUI as well as 
+    a console-based class that is responsible for physical creation of the custom 
+    2D airfoil curves/shapes. The gathered user input data is used for the process.
+
+    Functions include:
+    __init__
+    ready
+    show
+    _d
+    _enable
+    _disable
+    _start_loader
+    _stop_loader
+    _paste
+    _close
+    _okay
+    _show_paste_commands
+    _radio_operation
+    _mc_d_radiobutton_clicked
+    _mc_d_checkbox1_toggled
+    _mc_d_checkbox2_toggled
+    _mc_d_checkbox3_toggled
+    _mc_d_tab_toggled
+    _OrdinaryNumerals
+    _UpperCaseRomanNumerals
+    _LowerCaseRomanNumerals
+    _UpperCaseAlphabet
+    _LowerCaseAlphabet
+    _stdCopy_op
+    _simpleCopy_op
+    _rename
+    _validate_check_from_to
+    _validate_check_assignment
+    _getFirstWord
+    _validate
+    _get_tabs_n
+    _toNumerics
+    _solveNumeralsCode
+    _solve_paste_code
+    """
+
+    def __init__(self):
+        """
+        This function initializes of the 'MultiCopy' class.
+        This function transfers get the list of objects selected by the user.
+        """
+        self._loader, self.validated, self.radio_prev = 0, False, ""
+        self.selected_objs = gui.Selection.getSelection()
+
+    def ready(self):
+        """
+        This function checks whether or not the user has selected one or more objects.
+        """
+        global doc2List
+        if len(self.selected_objs) > 0:
+            doc2List.append(doc.Name)
+            for itemsSet in app.listDocuments().items():
+                for itemElem in itemsSet:
+                    if itemElem != doc2List[0]:
+                        doc2List.append(itemElem)
+                    break
+            return True
+        else:
+            return False
+
+    def _d(self, qcode, objStr):
+        """
+        This function is a shortcut for obtaining a dialog's UI element.
+
+        Arguments
+        ----------
+        qcode: A distinct code for each UI element as listed below.
+        objStr: The UI element's name/label.
+        """
+        qkey = [
+            0,
+            QPushButton,
+            QTextEdit,
+            QPlainTextEdit,
+            QRadioButton,
+            QComboBox,
+            QLabel,
+            QCheckBox,
+            QLineEdit,
+            QSpinBox,
+        ]
+        return self.dialog.findChild(qkey[qcode], objStr)
+
+    def _enable(self):
+        """
+        This function enables certain GUI elements in the main dialog box.
+        """
+        self._d(1, "mc_d_paste_button").setEnabled(True)
+        self._d(4, "mc_d_radio_1").setEnabled(True)
+        self._d(4, "mc_d_radio_2").setEnabled(True)
+        self._d(7, "mc_d_checkbox_1").setEnabled(True)
+        self.dialog.findChild(QTabWidget, "mc_d_tabset").setEnabled(True)
+
+    def _disable(self):
+        """
+        This function disables certain GUI elements in the main dialog box.
+        """
+        self._d(1, "mc_d_paste_button").setEnabled(False)
+        self._d(4, "mc_d_radio_1").setEnabled(False)
+        self._d(4, "mc_d_radio_2").setEnabled(False)
+        self._d(7, "mc_d_checkbox_1").setEnabled(False)
+        self.dialog.findChild(QTabWidget, "mc_d_tabset").setEnabled(False)
+
+    def _start_loader(self):
+        """
+        This function begins the loader animation.
+        """
+        self._loader = QtGui.QMovie(
+            app.getUserMacroDir(True) + "MultiCopy_UI_Files/mc_d_imgs.gif"
+        )
+        self._d(6, "mc_d_label_4").setMovie(self._loader)
+        self._disable()
+        self._loader.start()
+
+    def _stop_loader(self):
+        """
+        This function ends the loader animation.
+        """
+        self._loader.stop()
+        self._d(6, "mc_d_label_4").clear()
+        self._enable()
+
+    def show(self):
+        """
+        This function generates and displays the MultiCopy GUI interface, that is, 
+        it creates all the dialog boxes for user interaction and input.
+        """
+        text1_ = ""
+        self.dialog = gui.PySideUic.loadUi(
+            app.getUserMacroDir(True) + "/MultiCopy_UI_Files/MultiCopy_Main_Dialog.ui"
+        )
+        textbox1_ = self._d(2, "mc_d_textbox_1")
+        textbox2_ = self._d(3, "mc_d_textbox_2")
+        self._filter = Filter()
+        textbox2_.installEventFilter(self._filter)
+        text1_ = "<table>"
+        for i_, selected_obj in enumerate(self.selected_objs, 1):
+            text1_ += (
+                "<tr><td>["
+                + str(i_)
+                + "]</td><td>&nbsp;&nbsp;"
+                + selected_obj.Label
+                + "</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&#60;"
+                + str(selected_obj.TypeId).replace("'", "")
+                + "&#62;</td></tr>"
+            )
+        text1_ += "</table>"
+        textbox1_.setHtml(text1_)
+        textbox2_.setPlainText("from ")
+        textbox2_.moveCursor(QtGui.QTextCursor.End, QTextCursor.MoveAnchor)
+        self._mc_d_radiobutton_clicked()
+        for docElem in doc2List:
+            self._d(5, "mc_d_combobox_3").addItem(app.getDocument(docElem).Label)
+        self._d(4, "mc_d_radiobutton_1").clicked.connect(
+            lambda: self._mc_d_radiobutton_clicked()
+        )
+        self._d(4, "mc_d_radiobutton_2").clicked.connect(
+            lambda: self._mc_d_radiobutton_clicked()
+        )
+        self._d(4, "mc_d_radiobutton_3").clicked.connect(
+            lambda: self._mc_d_radiobutton_clicked()
+        )
+        self._d(4, "mc_d_radiobutton_4").clicked.connect(
+            lambda: self._mc_d_radiobutton_clicked()
+        )
+        self._d(4, "mc_d_radiobutton_5").clicked.connect(
+            lambda: self._mc_d_radiobutton_clicked()
+        )
+        self._d(7, "mc_d_checkbox_1").toggled.connect(
+            lambda: self._mc_d_checkbox1_toggled()
+        )
+        self._d(7, "mc_d_checkbox_2").toggled.connect(
+            lambda: self._mc_d_checkbox2_toggled()
+        )
+        self._d(7, "mc_d_checkbox_3").toggled.connect(
+            lambda: self._mc_d_checkbox3_toggled()
+        )
+        self._d(1, "mc_d_pcc_button").clicked.connect(
+            lambda: self._show_paste_commands()
+        )
+        self._d(1, "mc_d_paste_button").clicked.connect(lambda: self._paste())
+        self._d(1, "mc_d_close_button").clicked.connect(lambda: self._close())
+        self.dialog.findChild(QTabWidget, "mc_d_tabset").currentChanged.connect(
+            lambda: self._mc_d_tab_toggled()
+        )
+        self.dialog.setWindowIcon(
+            QtGui.QIcon(app.getUserMacroDir(True) + "/MultiCopy_UI_Files/MultiCopy.svg")
+        )
+        self.dialog.exec_()
+
+    def _paste(self):
+        """
+        This is the main and ultimate function of this macro. 
+        This function performs the 'Paste' operation based on the user's various input parameters.
+        This function is called when the 'Paste' button is clicked.
+        """
+        global objIDList
+        global doc2List
+        global doc2
+        if (self.dialog.findChild(QTabWidget, "mc_d_tabset").currentIndex() == 0) or (
+            self.dialog.findChild(QTabWidget, "mc_d_tabset").currentIndex() == 1
+            and self.validated
+        ):
+            self._start_loader()
+            objIDList = []
+            for obj in doc.Objects:
+                objIDList.append(str(obj.ID))
+            copy_op = (
+                self._stdCopy_op
+                if self._d(4, "mc_d_radio_1").isChecked()
+                else self._simpleCopy_op
+            )
+            del_sel = True if self._d(7, "mc_d_checkbox_1").isChecked() else False
+            sep_text = self._d(8, "mc_d_textbox_3").text()
+            pad_digits = self._d(9, "mc_d_spinbox").value()
+            from_index = self._d(5, "mc_d_combobox_1").currentIndex()
+            to_index = self._d(5, "mc_d_combobox_2").currentIndex()
+            if int(from_index) > int(to_index):
+                setAlertBox(
+                    "The 'From' value cannot be greater than the 'To' value!", True
+                )
+                self._stop_loader()
+                self._enable()
+                return
+            dependency = 1 if self._d(7, "mc_d_checkbox_4").isChecked() else 0
+            doc2 = app.getDocument(
+                doc2List[self._d(5, "mc_d_combobox_3").currentIndex()]
+            )
+            naming_func = self._OrdinaryNumerals
+            if self._d(4, "mc_d_radiobutton_2").isChecked():
+                from_index += 1
+                to_index += 1
+                naming_func = self._UpperCaseRomanNumerals
+            elif self._d(4, "mc_d_radiobutton_3").isChecked():
+                from_index += 1
+                to_index += 1
+                naming_func = self._LowerCaseRomanNumerals
+            elif self._d(4, "mc_d_radiobutton_4").isChecked():
+                from_index += 1
+                to_index += 1
+                naming_func = self._UpperCaseAlphabet
+            elif self._d(4, "mc_d_radiobutton_5").isChecked():
+                from_index += 1
+                to_index += 1
+                naming_func = self._LowerCaseAlphabet
+            if self.dialog.findChild(QTabWidget, "mc_d_tabset").currentIndex() == 0:
+                tempBool = True
+                for selected_obj in self.selected_objs:
+                    if tempBool:
+                        for i_ in range(from_index, to_index + 1):
+                            tempStr = (
+                                selected_obj.Label
+                                + sep_text
+                                + naming_func(i_, i_ + 1)[0].zfill(pad_digits)
+                            )
+                            if len(doc2.getObjectsByLabel(tempStr)) > 0:
+                                tempBool = False
+                                break
+                    else:
+                        break
+                if not tempBool:
+                    alertMessage = "An object containing the following label already exists in the document :\n\n"
+                    alertMessage += tempStr
+                    setAlertBox(alertMessage, True)
+                    self._stop_loader()
+                    self._enable()
+                    return
+                for selected_obj in self.selected_objs:
+                    for j_ in range(from_index, to_index + 1):
+                        copy_op(selected_obj, dependency)
+                        self._rename(
+                            selected_obj,
+                            selected_obj.Label
+                            + sep_text
+                            + naming_func(j_, j_ + 1)[0].zfill(pad_digits),
+                        )
+            else:
+                execStr, execBool = self._solve_paste_code()
+                if execBool:
+                    exec(execStr)
+                else:
+                    self._stop_loader()
+                    self._enable()
+                    return
+            if del_sel:
+                for selected_obj in self.selected_objs:
+                    doc.getObject(selected_obj.Name).removeObjectsFromDocument()
+                    doc.removeObject(selected_obj.Name)
+            app.getDocument(doc2.Name).recompute()
+            app.getDocument(doc.Name).recompute()
+            self._close()
+            alertBox = QtGui.QMessageBox(
+                QtGui.QMessageBox.Warning,
+                "MultiCopy",
+                "The selected objects have been copy-pasted successfully!",
+            )
+            alertBox.setWindowModality(QtCore.Qt.ApplicationModal)
+            alertBox.exec_()
+            app.Console.PrintMessage(
+                "\nThe selected objects have been copy-pasted successfully!\n"
+            )
+
+    def _close(self):
+        """
+        This function closes the main dialog box.
+        This function is called when the 'Close' button is clicked.
+        """
+        try:
+            self._stop_loader()
+            time.sleep(0.5)
+        except Exception:
+            time.sleep(0.25)
+        self.dialog.done(1)
+
+    def _show_paste_commands(self):
+        """
+        This function launches the 'Paste Code Commands List' dialog box
+        over the main open dialog box.
+        This function is called when the 'Paste Code Commands' button is clicked.
+        """
+        pccdialog = gui.PySideUic.loadUi(
+            app.getUserMacroDir(True)
+            + "/MultiCopy_UI_Files/MultiCopy_Commands_Dialog.ui"
+        )
+        pccdialog.findChild(QPushButton, "mc_pcc_okay_button").clicked.connect(
+            lambda: self._okay(pccdialog)
+        )
+        pccdialog.setWindowIcon(
+            QtGui.QIcon(app.getUserMacroDir(True) + "/MultiCopy_UI_Files/MultiCopy.svg")
+        )
+        pccdialog.exec_()
+
+    def _okay(self, argDialog):
+        """
+        This function closes the 'Paste Code Commands List' dialog box, and 
+        reverts back to the main dialog box.
+        This function is called when the 'Okay' button is clicked.
+        """
+        argDialog.done(1)
+
+    def _radio_operation(self, radioObjName, radioFunc):
+        """
+        This function takes the user from one dialog box to another.
+        This function is called when a radio buttons pertaining to one of 
+        the various 'Numbering Types' functions are toggled.
+
+        Arguments
+        ----------
+        radioObjName: The object name of the clicked/toggled radio button.
+        radioFunc: The 'Numbering Types' function associated with the radio button.
+        """
+        self._d(5, "mc_d_combobox_1").clear()
+        self._d(5, "mc_d_combobox_2").clear()
+        self._d(5, "mc_d_combobox_1").addItems(radioFunc)
+        self._d(5, "mc_d_combobox_2").addItems(radioFunc)
+        self._d(5, "mc_d_combobox_1").setCurrentIndex(0)
+        self._d(5, "mc_d_combobox_2").setCurrentIndex(0)
+        self.radio_prev = radioObjName
+
+    def _mc_d_radiobutton_clicked(self):
+        if (
+            self._d(4, "mc_d_radiobutton_1").isChecked()
+            and self.radio_prev != "mc_d_radiobutton_1"
+        ):
+            self._radio_operation("mc_d_radiobutton_1", self._OrdinaryNumerals(0, 501))
+        elif (
+            self._d(4, "mc_d_radiobutton_2").isChecked()
+            and self.radio_prev != "mc_d_radiobutton_2"
+        ):
+            self._radio_operation(
+                "mc_d_radiobutton_2", self._UpperCaseRomanNumerals(1, 201)
+            )
+        elif (
+            self._d(4, "mc_d_radiobutton_3").isChecked()
+            and self.radio_prev != "mc_d_radiobutton_3"
+        ):
+            self._radio_operation(
+                "mc_d_radiobutton_3", self._LowerCaseRomanNumerals(1, 201)
+            )
+        elif (
+            self._d(4, "mc_d_radiobutton_4").isChecked()
+            and self.radio_prev != "mc_d_radiobutton_4"
+        ):
+            self._radio_operation("mc_d_radiobutton_4", self._UpperCaseAlphabet(1, 703))
+        elif (
+            self._d(4, "mc_d_radiobutton_5").isChecked()
+            and self.radio_prev != "mc_d_radiobutton_5"
+        ):
+            self._radio_operation("mc_d_radiobutton_5", self._LowerCaseAlphabet(1, 703))
+
+    def _mc_d_checkbox1_toggled(self):
+        if self._d(7, "mc_d_checkbox_1").isChecked():
+            quest_reply = QMessageBox.question(
+                None,
+                "MultiCopy - Warning Question",
+                "Are you sure you want to delete the selected object(s)?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            if quest_reply == QMessageBox.No:
+                self._d(7, "mc_d_checkbox_1").setChecked(False)
+
+    def _mc_d_checkbox2_toggled(self):
+        self._d(8, "mc_d_textbox_3").setText("")
+        if self._d(7, "mc_d_checkbox_2").isChecked():
+            self._d(8, "mc_d_textbox_3").setEnabled(True)
+        else:
+            self._d(8, "mc_d_textbox_3").setEnabled(False)
+
+    def _mc_d_checkbox3_toggled(self):
+        self._d(9, "mc_d_spinbox").setValue(1)
+        if self._d(7, "mc_d_checkbox_3").isChecked():
+            self._d(9, "mc_d_spinbox").setEnabled(True)
+        else:
+            self._d(9, "mc_d_spinbox").setEnabled(False)
+
+    def _mc_d_tab_toggled(self):
+        if self.dialog.findChild(QTabWidget, "mc_d_tabset").currentIndex() == 1:
+            self._d(3, "mc_d_textbox_2").setFocus()
+        self._d(1, "mc_d_paste_button").setEnabled(True)
+
+    # Numbering Types Function - Ordinary Numerals
+    def _OrdinaryNumerals(self, start_, end_):
+        tempList = []
+        for i_ in range(start_, end_):
+            tempList.append(str(i_))
+        return tempList
+
+    # Numbering Types Function - Upper-case Roman Numerals
+    def _UpperCaseRomanNumerals(self, start_, end_):
+        tempList = []
+        for i_ in range(start_, end_):
+            tempList.append(IntToRoman(i_))
+        return tempList
+
+    # Numbering Types Function - Lower-case Roman Numerals
+    def _LowerCaseRomanNumerals(self, start_, end_):
+        tempList = []
+        for i_ in range(start_, end_):
+            tempList.append(IntToRoman(i_).lower())
+        return tempList
+
+    # Numbering Types Function - Upper-case Alphabet
+    def _UpperCaseAlphabet(self, start_, end_):
+        tempList = []
+        for i_ in range(start_, end_):
+            tempList.append(IntToAlpha(i_).upper())
+        return tempList
+
+    # Numbering Types Function - Lower-case Alphabet
+    def _LowerCaseAlphabet(self, start_, end_):
+        tempList = []
+        for i_ in range(start_, end_):
+            tempList.append(IntToAlpha(i_))
+        return tempList
+
+    def _stdCopy_op(self, obj, dependencyArg):
+        """
+        This function performs a 'Standard Copy' of an object.
+
+        Arguments
+        ----------
+        obj: An object.
+        dependencyArg:	A boolean value representing whether the duplication 
+                        is with the dependencies (1) or without (0).
+        """
+        global doc2
+        dependency = True if dependencyArg == 1 else False
+        doc2.copyObject(doc.getObjectsByLabel(obj.Label)[0], dependency)
+
+    def _simpleCopy_op(self, obj, dummyVar):
+        """
+        This function performs a 'Simple Copy' of an object.
+
+        Arguments
+        ----------
+        obj: An object.
+        dummyVar: A dummy variable.
+        """
+        gui.Selection.clearSelection()
+        gui.Selection.addSelection(doc.getObjectsByLabel(obj.Label)[0])
+        app.setActiveDocument(doc2.Name)
+        gui.runCommand("Part_SimpleCopy")
+        app.setActiveDocument(doc.Name)
+
+    def _rename(self, refObj, newName):
+        """
+        This function searches the document for a newly added object and renames it.
+
+        Arguments
+        ----------
+        refObj: The copied (not pasted) object.
+        newName: The renaming text string.
+        """
+        global objIDList
+        global doc2
+        tempList = [
+            tempElem for tempElem in doc2.Objects if not str(tempElem.ID) in objIDList
+        ]
+        for tempElem in tempList:
+            if tempElem.TypeId == refObj.TypeId and tempElem.ID != refObj.ID:
+                try:
+                    tempStr1 = tempElem.Label.replace(
+                        re.findall(r"\d+", tempElem.Label)[-1], ""
+                    )
+                except Exception:
+                    tempStr1 = tempElem.Label
+                try:
+                    tempStr2 = refObj.Label.replace(
+                        re.findall(r"\d+", refObj.Label)[-1], ""
+                    )
+                except Exception:
+                    tempStr2 = refObj.Label
+                if tempStr1 == tempStr2:
+                    objIDList.append(str(tempElem.ID))
+                    break
+        tempElem.Label = newName
+
+    def _validate_check_from_to(self, lineOfText, tags_list, tabs_n, isFixed):
+        """
+        This function performs an auxiliary operation that is part of 
+        the '_validate' function itself. It is responsible for validating 
+        the generic 'from ... to ...' parts of the inputted Paste Code.
+
+        Arguments
+        ----------
+        lineOfText: Text string containing a line of the inputted Paste Code.
+        tabs_n: Maximum number of tabs to be present in the given line of code.
+        isFixed: True, if the 'tabs_n' argument is to considered as fixed.
+                 (meaning, equal to, and not maximum)
+        """
+        if tabs_n == 0 or (self._get_tabs_n(lineOfText) <= tabs_n):
+            if isFixed and self._get_tabs_n(lineOfText) != tabs_n:
+                return False
+            if (
+                lineOfText.count("from") == 1
+                and lineOfText.count("to") == 1
+                and (lineOfText.count(":") == 1 or lineOfText.count(":") == 2)
+            ):
+                tempList1 = lineOfText.rstrip().split(" ")
+                tempList1 = [i_ for i_ in tempList1 if i_ != " " and i_ != "\t"]
+                if len(tempList1) == 5 or len(tempList1) == 7:
+                    if tempList1[4] == ":":
+                        if len(tempList1) == 7:
+                            # digits_exist = False
+                            # for charElem in tempList1[5]:
+                            # 	if charElem.isnumeric():
+                            # 		digits_exist = True
+                            # 		break
+                            if len(tempList1[5]) == 0:
+                                return False
+                            if (
+                                tempList1[6] != ":"
+                                or not tempList1[5][0].isalpha()
+                                or not tempList1[5].isalnum()
+                            ):  # or not digits_exist:
+                                return False
+                            tags_list.append(tempList1[5])
+                        if tempList1[1].isnumeric() and tempList1[3].isnumeric():
+                            if int(tempList1[1]) == int(tempList1[3]) == 0:
+                                return True
+                            if int(tempList1[3]) == 0:
+                                return False
+                            if (
+                                abs(int(tempList1[1])) / float(tempList1[1]) == 1
+                                and abs(int(tempList1[3])) / float(tempList1[3]) == 1
+                                and int(tempList1[1]) <= 500
+                                and int(tempList1[3]) <= 500
+                                and int(tempList1[1]) <= int(tempList1[3])
+                            ):
+                                return True
+                        elif (
+                            not tempList1[1].isnumeric()
+                            and not tempList1[3].isnumeric()
+                        ):
+                            tempStr3 = tempList1[1] + tempList1[3]
+                            elemType1Exists, elemType2Exists = True, True
+                            for tempStr3Elem in tempStr3:
+                                try:
+                                    tempVar0 = alphaMap.index(tempStr3Elem.lower())
+                                except Exception:
+                                    del tempVar0
+                                    elemType1Exists = False
+                                    break
+                            for tempStr3Elem in tempStr3:
+                                try:
+                                    tempVar0 = romanNumeralMap[0].index(
+                                        tempStr3Elem.upper()
+                                    )
+                                except Exception:
+                                    del tempVar0
+                                    if elemType1Exists:
+                                        elemType2Exists = False
+                                        break
+                                    else:
+                                        return False
+                            if not elemType1Exists or (
+                                elemType1Exists and elemType2Exists
+                            ):
+                                if RomanToInt(tempList1[3].upper()) >= RomanToInt(
+                                    tempList1[1].upper()
+                                ):
+                                    return True
+                            else:
+                                if AlphaToInt(tempList1[3].lower()) >= AlphaToInt(
+                                    tempList1[1].lower()
+                                ):
+                                    return True
+        return False
+
+    def _validate_check_assignment(self, lineOfText, tags_list, tabs_n):
+        """
+        This function performs an auxiliary operation that is part of 
+        the '_validate' function itself. It is responsible for validating 
+        the generic '[...] =  ...' parts of the inputted Paste Code.
+
+        Arguments
+        ----------
+        lineOfText: Text string containing a line of the inputted Paste Code.
+        tabs_n: Maximum number of tabs to be present in the given line of code.
+        """
+        global RANDOMSTRING
+        global NUMERALSCODE
+        global MAX_PAD_DIGITS
+        if tabs_n == 0 or (self._get_tabs_n(lineOfText) <= tabs_n):
+            tempStr2 = lineOfText
+            if tabs_n > 0:
+                tempStr2 = lineOfText.replace("\t", "")
+            tempList1 = tempStr2.split(" ")
+            tempList1 = [i_ for i_ in tempList1 if i_ != " " or i_ != ""]
+            if len(tempList1[0]) >= 3:
+                if (
+                    tempList1[0][0] == "["
+                    and tempList1[0][-1] == "]"
+                    and tempList1[1] == "="
+                ):
+                    tempStr5 = tempList1[0][1:-1]
+                    if "|" in tempStr5:
+                        tempVar1 = tempStr5[0 : tempStr5.index("|")]
+                        tempVar2 = tempStr5[tempStr5.index("|") + 1 :]
+                        if tempVar1.isnumeric() and tempVar2.isnumeric():
+                            tempBool = (
+                                True
+                                if int(tempVar2) == 0 or int(tempVar2) == 1
+                                else False
+                            )
+                        else:
+                            tempBool = False
+                    else:
+                        tempBool = True if tempStr5.isnumeric() else tempBool
+                    if tempBool:
+                        tempStr3 = "".join(tempList1[2:])
+                        tempStr3 = tempStr3.replace("\t", "")
+                        tempStr3 = tempStr3.replace("\n", "")
+                        tempStr3 = tempStr3.replace("\r", "")
+                        tempStr3 = tempStr3.strip()
+                        if tempStr3.count("\{") == tempStr3.count("\}"):
+                            tempStr3 = tempStr3.replace("\{", "")
+                            tempStr3 = tempStr3.replace("\}", "")
+                            if tempStr3.count("{") == tempStr3.count("}"):
+                                while tempStr3.count("{") > 0:
+                                    tempStr4 = RANDOMSTRING
+                                    codeFound = False
+                                    try:
+                                        tempStr4 = tempStr3[
+                                            tempStr3.index("{") : tempStr3.index("}")
+                                        ]
+                                    except Exception:
+                                        return False
+                                    for ncElem in NUMERALSCODE:
+                                        if ncElem in tempStr4:
+                                            codeFound = True
+                                            break
+                                    if codeFound:
+                                        if tempStr4.count("|") > 1:
+                                            return False
+                                        if tempStr4.count("|") == 1:
+                                            tempVar = tempStr4[
+                                                tempStr4.index("#")
+                                                + 1 : tempStr4.index("|")
+                                            ]
+                                            tempStr5 = tempStr4[
+                                                tempStr4.index("|") + 1 :
+                                            ]
+                                            if len(tempStr5) == 0:
+                                                return False
+                                            if not tempStr5 in tags_list:
+                                                return False
+                                        else:
+                                            tempVar = tempStr4[
+                                                tempStr4.index("#") + 1 :
+                                            ]
+                                        if (
+                                            len(tempVar) != 0
+                                            and not tempVar.isnumeric()
+                                        ):
+                                            return False
+                                        if len(tempVar) != 0 and int(tempVar) != float(
+                                            tempVar
+                                        ):
+                                            return False
+                                        if (
+                                            len(tempVar) != 0
+                                            and int(tempVar) > MAX_PAD_DIGITS
+                                        ):
+                                            return False
+                                        tempStr3 = tempStr3.replace(
+                                            tempStr4 + "}", "", 1
+                                        )
+                                    else:
+                                        return False
+                                return True
+        return False
+
+    def _getFirstWord(self, lineOfText):
+        """
+        This function retrieves the first word in a text string.
+
+        Arguments
+        ----------
+        lineOfText: Text string containing a line of the inputted Paste Code.
+        """
+        resultStr = ""
+        charFound = False
+        for textElem in lineOfText:
+            if (
+                textElem == "\n"
+                or textElem == "\r"
+                or textElem == "\t"
+                or textElem == " "
+            ):
+                if charFound:
+                    break
+            else:
+                resultStr += textElem
+                charFound = True
+        return resultStr
+
+    def _validate(self):
+        """
+        This function performs syntactic validation of the inputted Paste Code when 
+        the user focusses out of the associated input text box. If the code is valid, 
+        the function returns a true; else, it returns a false.
+        """
+        self._disable()
+        tempVar, tab_n, isValid_, fromCodeCompleted, tags_list = 0, 0, False, False, []
+        paste_code_list = self._d(3, "mc_d_textbox_2").toPlainText().split("\n")
+        paste_code_list = [i_ for i_ in paste_code_list if i_ != "\n" and i_ != ""]
+        try:
+            tempVar = len(paste_code_list[0])
+        except Exception:
+            tempVar = 0
+        if len(self._d(3, "mc_d_textbox_2").toPlainText()) > 0 and tempVar > 0:
+            if self._getFirstWord(paste_code_list[0]) == "from":
+                for i_ in range(len(paste_code_list)):
+                    tempStr1 = self._getFirstWord(paste_code_list[i_])
+                    if tempStr1 == "from":
+                        if fromCodeCompleted:
+                            fromCodeCheck = self._validate_check_from_to(
+                                paste_code_list[i_], tags_list, tab_n, False
+                            )
+                            tab_n = self._get_tabs_n(paste_code_list[i_])
+                        else:
+                            fromCodeCheck = self._validate_check_from_to(
+                                paste_code_list[i_], tags_list, tab_n, True
+                            )
+                        fromCodeCompleted = False
+                        if fromCodeCheck and i_ < len(paste_code_list) - 1:
+                            if paste_code_list[i_ + 1][0 : tab_n + 1] == "\t" * (
+                                tab_n + 1
+                            ):
+                                tab_n += 1
+                                isValid_ = True
+                            else:
+                                isValid_ = False
+                                break
+                        else:
+                            isValid_ = False
+                            break
+                    elif len(tempStr1) >= 3:
+                        if self._validate_check_assignment(
+                            paste_code_list[i_], tags_list, tab_n
+                        ):
+                            isValid_ = True
+                            fromCodeCompleted = True
+                        else:
+                            isValid_ = False
+                            break
+                    else:
+                        isValid_ = False
+                        break
+        self._enable()
+        self.validated = True
+        return isValid_
+
+    def _get_tabs_n(self, testString):
+        """
+        This function performs an auxiliary operation that is part of 
+        the '_solve_paste_code' and the validation functions. It returns 
+        the number of tabs (\\t) at the start of the line of a given text string.
+        """
+        n_sum = 0
+        for testChar in testString:
+            if testChar == "\t":
+                n_sum += 1
+            else:
+                break
+        return n_sum
+
+    def _toNumerics(self, argStr):
+        """
+        This function performs an auxiliary operation that is part of 
+        the '_solve_paste_code' function itself. It is responsible for 
+        converting Alphabetic and Roman Numeral characters into 
+        ordinary numerical digits. It returns in the string format.
+        """
+        try:
+            return str(alphaMap.index(argStr.lower()))
+        except Exception:
+            try:
+                return str(romanNumeralMap[0].index(argStr.upper()))
+            except Exception:
+                return argStr
+
+    def _solveNumeralsCode(self, codeStr, indexStr):
+        """
+        This function performs an auxiliary operation that is part of 
+        the '_solve_paste_code' function itself. It is responsible for 
+        parsing the paste code commands that contain data relevant to 
+        the global variable 'NUMERALSCODE'.
+        """
+        codeStr1, codeStr2 = codeStr[0 : codeStr.index("#")], "0"
+        if len(codeStr) - len(codeStr1) > 1:
+            if codeStr.count("|") == 1:
+                indexStr = codeStr[codeStr.index("|") + 1 :]
+                codeStr2 = codeStr[codeStr.index("#") + 1 : codeStr.index("|")]
+            else:
+                codeStr2 = codeStr[codeStr.index("#") + 1 :]
+        codeStr2 = "0" if len(codeStr2) == 0 else codeStr2
+        if codeStr1 == "n" or codeStr1 == "N":
+            return '" + str(' + indexStr + ").zfill(" + codeStr2 + ') + "'
+        elif codeStr1 == "ru" or codeStr1 == "RU" or codeStr1 == "R":
+            return (
+                '" + self._UpperCaseRomanNumerals('
+                + indexStr
+                + ","
+                + indexStr
+                + "+1)[0].zfill("
+                + codeStr2
+                + ') + "'
+            )
+        elif codeStr1 == "r" or codeStr1 == "rl" or codeStr1 == "RL":
+            return (
+                '" + self._LowerCaseRomanNumerals('
+                + indexStr
+                + ","
+                + indexStr
+                + "+1)[0].zfill("
+                + codeStr2
+                + ') + "'
+            )
+        elif codeStr1 == "au" or codeStr1 == "AU" or codeStr1 == "A":
+            return (
+                '" + self._UpperCaseAlphabet('
+                + indexStr
+                + ","
+                + indexStr
+                + "+1)[0].zfill("
+                + codeStr2
+                + ') + "'
+            )
+        elif codeStr1 == "a" or codeStr1 == "al" or codeStr1 == "AL":
+            return (
+                '" + self._LowerCaseAlphabet('
+                + indexStr
+                + ","
+                + indexStr
+                + "+1)[0].zfill("
+                + codeStr2
+                + ') + "'
+            )
+
+    def _solve_paste_code(self):
+        """
+        This function parses the inputted paste code commands into the 
+        python code format and tests for its validity. It returns 
+        true variables: a boolean denoting the function's success, 
+        and the parsed code itself.
+        """
+        global doc2
+        global random_string
+        assignedLabelsList = []
+        paste_code_list = self._d(3, "mc_d_textbox_2").toPlainText().split("\n")
+        paste_code_list = [i_ for i_ in paste_code_list if i_ != "\n" and i_ != ""]
+        parsableCode, testCode = "", ""
+        i_count, from_index, testFailed = 0, 0, False
+        for i_ in range(len(paste_code_list)):
+            tempStr1 = self._getFirstWord(paste_code_list[i_])
+            tempList1 = paste_code_list[i_].split(" ")
+            tempList1 = [i_.replace("\t", "") for i_ in tempList1]
+            if tempStr1 == "from":
+                i_count += 1
+                tempStr0 = (
+                    ("\t" * self._get_tabs_n(paste_code_list[i_]))
+                    + "for "
+                    + random_string
+                    + str(i_count)
+                    + " in range("
+                    + self._toNumerics(tempList1[1])
+                    + ","
+                    + str(int(self._toNumerics(tempList1[3])) + 1)
+                    + "):\n"
+                )
+                from_index = int(self._toNumerics(tempList1[1]))
+                to_index = int(self._toNumerics(tempList1[3])) + 1
+                if from_index > to_index:
+                    setAlertBox(
+                        "The 'From' value cannot be greater than the 'To' value!", True
+                    )
+                    testFailed = True
+                    break
+                parsableCode += tempStr0
+                if len(tempList1) == 7:
+                    parsableCode += "\t" * (self._get_tabs_n(paste_code_list[i_]) + 1)
+                    parsableCode += (
+                        tempList1[5] + "=" + random_string + str(i_count) + "\n"
+                    )
+            else:
+                if "|" in tempList1[0]:
+                    assignedIndex = (
+                        int("".join(tempList1[0][1 : tempList1[0].index("|")])) - 1
+                    )
+                    dependency = (
+                        1
+                        if int("".join(tempList1[0][tempList1[0].index("|") + 1 : -1]))
+                        == 1
+                        else 0
+                    )
+                else:
+                    assignedIndex = int("".join(tempList1[0][1:-1])) - 1
+                    dependency = 0
+                if assignedIndex < 0 or assignedIndex > len(self.selected_objs):
+                    alertMessage = "Only numbers between 1 and " + str(
+                        len(self.selected_objs)
+                    )
+                    alertMessage += " are allowed within the brackets. "
+                    alertMessage += "The following snippet produced the error :\n\n"
+                    alertMessage += "[" + str(assignedIndex) + "]"
+                    setAlertBox(alertMessage, True)
+                    testFailed = True
+                    break
+                assignedString = "".join(tempList1[2:])
+                assignedString = (
+                    assignedString.replace("\t", "").replace("\n", "").replace("\r", "")
+                )
+                assignedString = assignedString.strip()
+                j_, assignedLabel = 0, ""
+                while j_ < len(assignedString):
+                    if assignedString[j_] == "{":
+                        tempVar1 = j_
+                        for ncElem in NUMERALSCODE:
+                            if (
+                                ncElem
+                                in assignedString[
+                                    j_ : assignedString.index("#", j_ + 1) + 1
+                                ]
+                            ):
+                                tempStr2 = assignedString[
+                                    j_ + 1 : assignedString.index("}", j_ + 1)
+                                ]
+                                if "n#" in ncElem or "N#" in ncElem:
+                                    tempVar2 = str(i_count)
+                                else:
+                                    tempVar2 = (
+                                        str(i_count) + "+1"
+                                        if from_index == 0
+                                        else str(i_count)
+                                    )
+                                tempStr2 = self._solveNumeralsCode(
+                                    tempStr2, random_string + tempVar2
+                                )
+                                assignedLabel += tempStr2
+                                j_ = assignedString.index("}", j_ + 1) + 1
+                                break
+                        if j_ == tempVar1:
+                            tempVar2 = int(
+                                assignedString[
+                                    j_ + 1 : assignedString.index("}", j_ + 1)
+                                ]
+                            )
+                            if tempVar2 > 0 and tempVar2 <= len(self.selected_objs):
+                                assignedLabel += self.selected_objs[tempVar2 - 1].Label
+                                j_ = assignedString.index("}", j_ + 1) + 1
+                            else:
+                                alertMessage = "Only numbers between 1 and " + str(
+                                    len(self.selected_objs)
+                                )
+                                alertMessage += " are allowed within the brackets. "
+                                alertMessage += (
+                                    "The following snippet produced the error :\n\n"
+                                )
+                                alertMessage += "{" + str(tempVar2) + "}"
+                                setAlertBox(alertMessage, True)
+                                testFailed = True
+                                break
+                    else:
+                        if assignedString[j_] == "\\":
+                            assignedLabel += "\\"
+                        elif assignedString[j_] == "'":
+                            assignedLabel += "'"
+                        elif assignedString[j_] == '"':
+                            assignedLabel += '"'
+                        else:
+                            assignedLabel += assignedString[j_]
+                        j_ += 1
+                if testFailed:
+                    break
+                if not assignedLabel in assignedLabelsList:
+                    assignedLabelsList.append(assignedLabel)
+                else:
+                    alertMessage = "The following label creates duplicates within the input code :\n\n"
+                    alertMessage += assignedLabel
+                    setAlertBox(alertMessage, True)
+                    testFailed = True
+                    break
+                parsableCode += (
+                    ("\t" * self._get_tabs_n(paste_code_list[i_]))
+                    + "copy_op(self.selected_objs["
+                    + str(assignedIndex)
+                )
+                parsableCode += (
+                    "], "
+                    + str(dependency)
+                    + ")\n"
+                    + ("\t" * self._get_tabs_n(paste_code_list[i_]))
+                )
+                parsableCode += (
+                    "self._rename(self.selected_objs["
+                    + str(assignedIndex)
+                    + '], "'
+                    + assignedLabel
+                    + '")\n'
+                )
+        testCode = "for labelElem in assignedLabelsList:\n\t"
+        testCode += "if len(doc2.getObjectsByLabel(labelElem)) > 0:\n\t\t"
+        testCode += "testVar = labelElem\n\t\t"
+        testCode += "testFailed = True\n\t\t"
+        testCode += "break\n\n"
+        testCode += "if testFailed:\n\talertMessage = "
+        testCode += '"An object containing the following label already exists in the document :\\n\\n"\n\t'
+        testCode += "alertMessage += testVar\n\t"
+        testCode += "setAlertBox (alertMessage, True)\n"
+        exec(testCode)
+        if testFailed:
+            return "", False
+        else:
+            return parsableCode, True
+
+
+
+# Alert Message Box Dialog
+# ------------------------------------------------------------------------------------------------
+
+def setAlertBox(message, error):
+    """
+    This function sets the error and warning pop-up messages.
+
+    Arguments
+    ----------
+    message: The string-based message to be displayed.
+    error:   'True' opens up the 'Critical' message box, and 
+             'False' opens up the 'Warning' message box.
+    """
+    msgbox_ = 0
+    if error:
+        msgbox_ = QtGui.QMessageBox(
+            QtGui.QMessageBox.Critical, "MultiCopy - Error Message", message
+        )
+    else:
+        msgbox_ = QtGui.QMessageBox(
+            QtGui.QMessageBox.Warning, "MultiCopy - Warning Message", message
+        )
+    msgbox_.setWindowModality(QtCore.Qt.ApplicationModal)
+    msgbox_.exec_()
+
+
+
+# Sub-main Function Class
+# ------------------------------------------------------------------------------------------------
+
+class Filter(QtCore.QObject):
+    """
+    This class has only one function which is responsible for validating 
+    the input paste code commands when the user focusses out of the input 
+    text box. Appropriately, the GUI interface may change by blocking access 
+    to certain GUI elements if the validation returns a false value.
+    """
+    def eventFilter(self, widget, event):
+        if event.type() == QtCore.QEvent.FocusIn:
+            widget.moveCursor(QtGui.QTextCursor.End, QTextCursor.MoveAnchor)
+            mcObj._d(6, "mc_d_label_3").setStyleSheet("background-color:#1c1c1c")
+            mcObj._d(1, "mc_d_paste_button").setEnabled(True)
+            mcObj.validated = False
+            return False
+        elif event.type() == QtCore.QEvent.FocusOut:
+            if mcObj._validate():
+                mcObj._d(6, "mc_d_label_3").setStyleSheet("background-color:darkgreen")
+            else:
+                mcObj._d(6, "mc_d_label_3").setStyleSheet("background-color:crimson")
+                mcObj._d(1, "mc_d_paste_button").setEnabled(False)
+            return False
+        else:
+            return False
+
+
+
+# Roman Numerals Conversion
+# Reference :  https://pypi.org/project/roman/
+# ------------------------------------------------------------------------------------------------
+
+romanNumeralMap = (
+    ("M", 1000),
+    ("CM", 900),
+    ("D", 500),
+    ("CD", 400),
+    ("C", 100),
+    ("XC", 90),
+    ("L", 50),
+    ("XL", 40),
+    ("X", 10),
+    ("IX", 9),
+    ("V", 5),
+    ("IV", 4),
+    ("I", 1),
+)
+
+def IntToRoman(n_):
+    result = ""
+    try:
+        for numeral, integer in romanNumeralMap:
+            while n_ >= integer:
+                result += numeral
+                n_ -= integer
+    except Exception:
+        result = ""
+    return result
+
+def RomanToInt(inputStr_):
+    result = 0
+    index = 0
+    try:
+        for numeral, integer in romanNumeralMap:
+            while inputStr_[index : index + len(numeral)] == numeral:
+                result += integer
+                index += len(numeral)
+    except Exception:
+        result = 0
+    return result
+
+
+
+# Alphabet Conversion
+# ------------------------------------------------------------------------------------------------
+
+alphaMap = [
+    RANDOMSTRING,
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g",
+    "h",
+    "i",
+    "j",
+    "k",
+    "l",
+    "m",
+    "n",
+    "o",
+    "p",
+    "q",
+    "r",
+    "s",
+    "t",
+    "u",
+    "v",
+    "w",
+    "x",
+    "y",
+    "z",
+]
+
+def IntToAlpha(n_):
+    result = ""
+    try:
+        if n_ >= 1 and n_ <= 26:
+            result = alphaMap[n_]
+        elif n_ >= 27 and n_ <= 702:
+            result = (
+                alphaMap[math.ceil((n_ - 26) / 26)]
+                + alphaMap[n_ - (26 * math.ceil((n_ - 26) / 26))]
+            )
+        elif n_ >= 703 and n_ <= 18278:
+            tempVar1 = math.ceil((n_ - 702) / 26) % 26
+            tempVar2 = math.ceil(n_ - 702) % 26
+            tempVar1 = 26 if tempVar1 == 0 else tempVar1
+            tempVar2 = 26 if tempVar2 == 0 else tempVar2
+            result = (
+                alphaMap[math.ceil((n_ - 702) / 676)]
+                + alphaMap[tempVar1]
+                + alphaMap[tempVar2]
+            )
+    except Exception:
+        result = ""
+    return result
+
+def AlphaToInt(inputStr_):
+    result = 0
+    try:
+        if len(inputStr_) == 1:
+            result = alphaMap.index(inputStr_)
+        elif len(inputStr_) == 2:
+            result = (26 * alphaMap.index(inputStr_[0])) + alphaMap.index(inputStr_[1])
+        elif len(inputStr_) == 3:
+            result = (
+                (676 * alphaMap.index(inputStr_[1]))
+                + (26 * alphaMap.index(inputStr_[1]))
+                + alphaMap.index(inputStr_[2])
+            )
+    except Exception:
+        result = 0
+    return result
+
+
+
+###################################################################################################################
+###-------------------------------------------------------------------------------------------------------------###
+### 					MULTICOPY MACRO CALLS							###
+###-------------------------------------------------------------------------------------------------------------###
+###						  		   						###
+###								   						###
+###	This is the main macro call. The code below commences 	   						###
+###	the MultiCopy GUI interface. This script cannot be 	   						###
+###	called externally.					   						###
+														###
+														###
+if __name__ == "__main__":											###
+    mcObj = MultiCopy()												###
+    if mcObj.ready():												###
+        mcObj.show()												###
+    else:													###
+        message = "No FreeCAD objects have been selected for MultiCopy!"					###
+        msgbox_ = QtGui.QMessageBox(
+            QtGui.QMessageBox.Critical, "MultiCopy - Error Message", message
+        )													###
+        msgbox_.setWindowModality(QtCore.Qt.ApplicationModal)							###
+        msgbox_.exec_()												###
+        app.Console.PrintWarning("\n" + message + "\n")								###
+														###
+###-------------------------------------------------------------------------------------------------------------###
+### 					MULTICOPY MACRO CALLS	   						###
+###-------------------------------------------------------------------------------------------------------------###
+###################################################################################################################
