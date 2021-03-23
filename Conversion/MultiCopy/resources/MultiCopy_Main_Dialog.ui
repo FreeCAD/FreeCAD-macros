@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <class>multicopy_dialog</class>
+ <widget class="QDialog" name="multicopy_dialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -44,7 +44,7 @@
     <string>Copy Selection(s) :</string>
    </property>
   </widget>
-  <widget class="QTextEdit" name="mc_d_textbox_1">
+  <widget class="QTextEdit" name="objects_list_textbox">
    <property name="geometry">
     <rect>
      <x>175</x>
@@ -85,7 +85,7 @@ p, li { white-space: pre-wrap; }
     <set>Qt::NoTextInteraction</set>
    </property>
   </widget>
-  <widget class="QTabWidget" name="mc_d_tabset">
+  <widget class="QTabWidget" name="tabset">
    <property name="geometry">
     <rect>
      <x>25</x>
@@ -101,7 +101,7 @@ p, li { white-space: pre-wrap; }
     <attribute name="title">
      <string>Paste Commands</string>
     </attribute>
-    <widget class="QRadioButton" name="mc_d_radiobutton_1">
+    <widget class="QRadioButton" name="numbering_type_n_radio">
      <property name="geometry">
       <rect>
        <x>20</x>
@@ -117,7 +117,7 @@ p, li { white-space: pre-wrap; }
       <bool>true</bool>
      </property>
     </widget>
-    <widget class="QRadioButton" name="mc_d_radiobutton_2">
+    <widget class="QRadioButton" name="numbering_type_ru_radio">
      <property name="geometry">
       <rect>
        <x>20</x>
@@ -130,7 +130,7 @@ p, li { white-space: pre-wrap; }
       <string>Upper-case Roman Numerals</string>
      </property>
     </widget>
-    <widget class="QRadioButton" name="mc_d_radiobutton_3">
+    <widget class="QRadioButton" name="numbering_type_rl_radio">
      <property name="geometry">
       <rect>
        <x>20</x>
@@ -143,7 +143,7 @@ p, li { white-space: pre-wrap; }
       <string>Lower-case Roman Numerals</string>
      </property>
     </widget>
-    <widget class="QRadioButton" name="mc_d_radiobutton_4">
+    <widget class="QRadioButton" name="numbering_type_au_radio">
      <property name="geometry">
       <rect>
        <x>20</x>
@@ -156,7 +156,7 @@ p, li { white-space: pre-wrap; }
       <string>Upper-case Alphabet</string>
      </property>
     </widget>
-    <widget class="QRadioButton" name="mc_d_radiobutton_5">
+    <widget class="QRadioButton" name="numbering_type_al_radio">
      <property name="geometry">
       <rect>
        <x>20</x>
@@ -195,7 +195,7 @@ p, li { white-space: pre-wrap; }
       <string>To :</string>
      </property>
     </widget>
-    <widget class="QComboBox" name="mc_d_combobox_1">
+    <widget class="QComboBox" name="from_combobox">
      <property name="geometry">
       <rect>
        <x>330</x>
@@ -208,7 +208,7 @@ p, li { white-space: pre-wrap; }
       <string notr="true">padding-left: 10px;</string>
      </property>
     </widget>
-    <widget class="QComboBox" name="mc_d_combobox_2">
+    <widget class="QComboBox" name="to_combobox">
      <property name="geometry">
       <rect>
        <x>330</x>
@@ -221,7 +221,7 @@ p, li { white-space: pre-wrap; }
       <string notr="true">padding-left: 10px;</string>
      </property>
     </widget>
-    <widget class="QLineEdit" name="mc_d_textbox_3">
+    <widget class="QLineEdit" name="add_separator_textbox">
      <property name="enabled">
       <bool>false</bool>
      </property>
@@ -237,7 +237,7 @@ p, li { white-space: pre-wrap; }
       <set>Qt::AlignCenter</set>
      </property>
     </widget>
-    <widget class="QCheckBox" name="mc_d_checkbox_2">
+    <widget class="QCheckBox" name="add_separator_check">
      <property name="geometry">
       <rect>
        <x>290</x>
@@ -250,7 +250,7 @@ p, li { white-space: pre-wrap; }
       <string>Sep.</string>
      </property>
     </widget>
-    <widget class="QCheckBox" name="mc_d_checkbox_3">
+    <widget class="QCheckBox" name="add_padding_check">
      <property name="geometry">
       <rect>
        <x>370</x>
@@ -263,7 +263,7 @@ p, li { white-space: pre-wrap; }
       <string>Pad.</string>
      </property>
     </widget>
-    <widget class="QSpinBox" name="mc_d_spinbox">
+    <widget class="QSpinBox" name="add_padding_spinbox">
      <property name="enabled">
       <bool>false</bool>
      </property>
@@ -288,7 +288,7 @@ p, li { white-space: pre-wrap; }
       <number>1</number>
      </property>
     </widget>
-    <widget class="QCheckBox" name="mc_d_checkbox_4">
+    <widget class="QCheckBox" name="dependencies_check">
      <property name="geometry">
       <rect>
        <x>20</x>
@@ -338,7 +338,7 @@ p, li { white-space: pre-wrap; }
     <attribute name="title">
      <string>Paste Code</string>
     </attribute>
-    <widget class="QPlainTextEdit" name="mc_d_textbox_2">
+    <widget class="QPlainTextEdit" name="commands_input_textbox">
      <property name="geometry">
       <rect>
        <x>5</x>
@@ -362,7 +362,7 @@ p, li { white-space: pre-wrap; }
       <number>25</number>
      </property>
     </widget>
-    <widget class="QLabel" name="mc_d_label_3">
+    <widget class="QLabel" name="validation_signal_label">
      <property name="geometry">
       <rect>
        <x>5</x>
@@ -380,20 +380,7 @@ p, li { white-space: pre-wrap; }
     </widget>
    </widget>
   </widget>
-  <widget class="QLabel" name="mc_d_label_4">
-   <property name="geometry">
-    <rect>
-     <x>200</x>
-     <y>465</y>
-     <width>100</width>
-     <height>30</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="mc_d_paste_button">
+  <widget class="QPushButton" name="paste_button">
    <property name="geometry">
     <rect>
      <x>375</x>
@@ -406,7 +393,7 @@ p, li { white-space: pre-wrap; }
     <string>Paste</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="mc_d_close_button">
+  <widget class="QPushButton" name="close_button">
    <property name="geometry">
     <rect>
      <x>25</x>
@@ -434,7 +421,7 @@ p, li { white-space: pre-wrap; }
    <property name="frameShadow">
     <enum>QFrame::Raised</enum>
    </property>
-   <widget class="QRadioButton" name="mc_d_radio_1">
+   <widget class="QRadioButton" name="standard_copy_radio">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -453,7 +440,7 @@ p, li { white-space: pre-wrap; }
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QRadioButton" name="mc_d_radio_2">
+   <widget class="QRadioButton" name="simple_copy_radio">
     <property name="geometry">
      <rect>
       <x>185</x>
@@ -485,7 +472,7 @@ p, li { white-space: pre-wrap; }
    <property name="frameShadow">
     <enum>QFrame::Raised</enum>
    </property>
-   <widget class="QCheckBox" name="mc_d_checkbox_1">
+   <widget class="QCheckBox" name="delete_selections_check">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -534,7 +521,7 @@ p, li { white-space: pre-wrap; }
 to paste into</string>
    </property>
   </widget>
-  <widget class="QComboBox" name="mc_d_combobox_3">
+  <widget class="QComboBox" name="documents_list_combobox">
    <property name="geometry">
     <rect>
      <x>175</x>
@@ -547,7 +534,7 @@ to paste into</string>
     <string notr="true">padding-left: 10px;</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="mc_d_pcc_button">
+  <widget class="QPushButton" name="command_list_button">
    <property name="geometry">
     <rect>
      <x>310</x>
@@ -586,23 +573,23 @@ border: 0px;</string>
   </widget>
  </widget>
  <tabstops>
-  <tabstop>mc_d_radio_1</tabstop>
-  <tabstop>mc_d_radio_2</tabstop>
-  <tabstop>mc_d_textbox_1</tabstop>
-  <tabstop>mc_d_checkbox_1</tabstop>
-  <tabstop>mc_d_tabset</tabstop>
-  <tabstop>mc_d_radiobutton_1</tabstop>
-  <tabstop>mc_d_radiobutton_2</tabstop>
-  <tabstop>mc_d_radiobutton_3</tabstop>
-  <tabstop>mc_d_radiobutton_4</tabstop>
-  <tabstop>mc_d_radiobutton_5</tabstop>
-  <tabstop>mc_d_combobox_1</tabstop>
-  <tabstop>mc_d_combobox_2</tabstop>
-  <tabstop>mc_d_checkbox_2</tabstop>
-  <tabstop>mc_d_textbox_3</tabstop>
-  <tabstop>mc_d_textbox_2</tabstop>
-  <tabstop>mc_d_paste_button</tabstop>
-  <tabstop>mc_d_close_button</tabstop>
+  <tabstop>standard_copy_radio</tabstop>
+  <tabstop>simple_copy_radio</tabstop>
+  <tabstop>objects_list_textbox</tabstop>
+  <tabstop>delete_selections_check</tabstop>
+  <tabstop>tabset</tabstop>
+  <tabstop>numbering_type_n_radio</tabstop>
+  <tabstop>numbering_type_ru_radio</tabstop>
+  <tabstop>numbering_type_rl_radio</tabstop>
+  <tabstop>numbering_type_au_radio</tabstop>
+  <tabstop>numbering_type_al_radio</tabstop>
+  <tabstop>from_combobox</tabstop>
+  <tabstop>to_combobox</tabstop>
+  <tabstop>add_separator_check</tabstop>
+  <tabstop>add_separator_textbox</tabstop>
+  <tabstop>commands_input_textbox</tabstop>
+  <tabstop>paste_button</tabstop>
+  <tabstop>close_button</tabstop>
  </tabstops>
  <resources/>
  <connections/>

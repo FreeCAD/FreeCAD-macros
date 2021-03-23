@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 
 ##########################################################################################
@@ -16,8 +18,8 @@
 #  as the successor of the GNU Library Public License, version 2, hence
 #  the version number 2.1.]
 #
-#  'MultiCopy' is a FreeCAD macro package. MultiCopy allows the duplication 
-#  (copy and paste) of multiple FreeCAD objects that can be labelled 
+#  'MultiCopy' is a FreeCAD macro package. MultiCopy allows the duplication
+#  (copy and paste) of multiple FreeCAD objects that can be labelled
 #  sequentially and in a custom manner.
 #
 #  Copyright (C) 2021  Melwyn Francis Carlo
@@ -43,41 +45,47 @@
 ##########################################################################################
 #####				L I C E N S E					     #####
 ##########################################################################################
-#
-#
-#
-#  The MultiCopy macro was developed and tested on a platform containing the 
-#  following system and FreeCAD software specifications : 
-#
-#  - OS			: Ubuntu 18.04.5 LTS (LXDE/Lubuntu)
-#  - Word size of OS	: 64-bit
-#  - Word size of FreeCAD: 64-bit
-#  - Version		: 0.19
-#  - Build type		: Release
-#  - Branch		: unknown
-#  - Hash		: 32200b604d421c4dad527fe587a7d047cf953b4f
-#  - Python version	: 3.6.9
-#  - Qt version		: 5.9.5
-#  - Coin version	: 4.0.0a
-#  - OCC version	: 7.3.0
-#  - Locale		: English/UnitedKingdom (en_GB)
 
 
+"""This is the MultiCopy package documentation.
 
+NAME
+--------------------
+MultiCopy
+
+VERSION
+--------------------
+v2.0.0
+
+DESCRIPTION
+--------------------
+'MultiCopy' is a user-created macro to be used within the FreeCAD application. 
+MultiCopy allows the duplication (copy and paste) of multiple FreeCAD objects 
+that can be labelled sequentially and in a custom manner.
+
+Key features include:
+ > Two input methods: by mouse, or by keyboard (Paste Code Commands)
+ > Standard Copy and Simple Copy methods supported
+ > Duplication across two different documents
+ > Delete selected objects after duplication
+ > Duplicate with or without dependencies
+ > Add custom label separators
+ > Add padded numbering to labels
+ > Numbering types: Ordinary numerals, upper/lower-case roman numerals and 
+   upper/lower-case alphabetic characters
+ > Unique 'Paste Code Commands' that allow multiple duplication procedurally 
+   as well as in nested loops
+ > Both CUI and GUI methods available
+
+For more details, visit:
+https://github.com/melwyncarlo/MultiCopy
+https://wiki.freecadweb.org/Macro_MultiCopy
+
+PACKAGE CONTENTS
+--------------------
+MultiCopyCore.py
+MultiCopyGui.py
 """
-  To use this macro, the steps to be followed are simple and straightforward :
-  select one or more FreeCAD objects from the Tree view, and then select 'MultiCopy'.
-  In the dialog box that pops up, choose the copy method, select and input the relevant 
-  paste parameters and commands, and then click on 'Paste'.
-
-  Note (1)	The single underscore prefix (e.g. _name) denotes a private 
-		function or a private variable.
-  Note (2)	Some of the short forms used in this script are as follows:
-		  'mc' stands for MultiCopy
-  		  'pcc' stands for Paste Code Commands
-  		  'd' stands for Dialog (e.g. _d_, etc.)
-"""
-
 
 
 __Title__='MultiCopy'
@@ -87,40 +95,22 @@ __Date__='2021-03-23'
 __Comment__='MultiCopy allows the duplication (copy and paste) of multiple FreeCAD objects that can be labelled sequentially and in a custom manner.'
 __Web__='https://github.com/melwyncarlo/MultiCopy'
 __Wiki__='http://www.freecadweb.org/wiki/index.php?title=Macro_MultiCopy'
-__Icon__='MultiCopy.svg'
 __Help__='Select one or more FreeCAD objects, then click on the MultiCopy button/macro, and follow the instructions in the dialog box.'
 __Status__='stable'
 __Requires__='Freecad >= v0.17'
 __Communication__='https://github.com/melwyncarlo/MultiCopy/issues'
-__Files__='MultiCopyGui.py, MultiCopyCore.py, MultiCopyAuxFunc.py, MultiCopy/resources/MultiCopy_Main_Dialog.ui, MultiCopy/resources/MultiCopy_Commands_Dialog.ui, MultiCopy/resources/MultiCopy.svg'
-
-
+__Files__='MultiCopyGui.py, MultiCopyCore.py, MultiCopyAuxFunc.py, resources/MultiCopy_Main_Dialog.ui, resources/MultiCopy_Commands_Dialog.ui, resources/MultiCopy.svg'
 
 
 # Library Imports
-#------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
-import MultiCopy
-
-
-
-###################################################################
-###-------------------------------------------------------------###
-### 			MULTICOPY MACRO CALLS			###
-###-------------------------------------------------------------###
-###								###
-###	This is the main macro call. The code below commences 	###
-###	the MultiCopy GUI interface. This script cannot be 	###
-###	called externally.					###
-								###
-								###
-if __name__ == '__main__':					###
-	MultiCopy.Gui.Launch()					###
-								###
-###-------------------------------------------------------------###
-### 			MULTICOPY MACRO CALLS	   		###
-###-------------------------------------------------------------###
-###################################################################
+from . import MultiCopyGui as Gui
+from . import MultiCopyCore as Core
 
 
+# Alias Functions
+# ------------------------------------------------------------------------------------------------
 
+Run = Core.Run
+Launch = Gui.Launch
