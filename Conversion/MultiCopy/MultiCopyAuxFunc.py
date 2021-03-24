@@ -51,7 +51,8 @@
 # ------------------------------------------------------------------------------------------------
 
 from PySide import QtCore, QtGui
-import math, string
+import math
+import string
 
 
 # Constant Variables
@@ -59,22 +60,22 @@ import math, string
 
 # It is a random string, to be used as a placeholder while changing certain variables
 # and then testing against it to determine if the variable has indeed changed.
-RANDOM_STRING = '✍✉☏⌨'
+RANDOM_STRING = "✍✉☏⌨"
 # Reference :  https://pypi.org/project/roman/
 ROMAN_NUMERAL_MAP = (
-    ('M', 1000),
-    ('CM', 900),
-    ('D', 500),
-    ('CD', 400),
-    ('C', 100),
-    ('XC', 90),
-    ('L', 50),
-    ('XL', 40),
-    ('X', 10),
-    ('IX', 9),
-    ('V', 5),
-    ('IV', 4),
-    ('I', 1),
+    ("M", 1000),
+    ("CM", 900),
+    ("D", 500),
+    ("CD", 400),
+    ("C", 100),
+    ("XC", 90),
+    ("L", 50),
+    ("XL", 40),
+    ("X", 10),
+    ("IX", 9),
+    ("V", 5),
+    ("IV", 4),
+    ("I", 1),
 )
 # Alphabetic characters string list
 # The first element is a dummy string
@@ -106,14 +107,14 @@ def IntToRoman(n):
     >>> IntToRoman(100)
     'C'
     """
-    result = ''
+    result = ""
     try:
         for numeral, integer in ROMAN_NUMERAL_MAP:
             while n >= integer:
                 result += numeral
                 n -= integer
     except Exception:
-        result = ''
+        result = ""
     return result
 
 
@@ -170,7 +171,7 @@ def IntToAlpha(n):
     >>> IntToAlpha(52)
     'az'
     """
-    result = ''
+    result = ""
     try:
         if 1 <= n <= 26:
             result = ALPHA_MAP[n]
@@ -190,9 +191,9 @@ def IntToAlpha(n):
                 + ALPHA_MAP[tempVar2]
             )
         else:
-            raise Exception('Input value too large')
+            raise Exception("Input value too large")
     except Exception:
-        result = ''
+        result = ""
     return result
 
 
@@ -230,7 +231,7 @@ def AlphaToInt(inputStr):
                 + ALPHA_MAP.index(inputStr[2])
             )
         else:
-            raise Exception('Input value too large')
+            raise Exception("Input value too large")
     except Exception:
         result = 0
     return result
@@ -385,16 +386,16 @@ def setAlertBox(message, error=False, neither=False):
     """
     if neither:
         messagebox = QtGui.QMessageBox(
-            QtGui.QMessageBox.Information, 'MultiCopy - Info. Message', message
+            QtGui.QMessageBox.Information, "MultiCopy - Info. Message", message
         )
     else:
         if error:
             messagebox = QtGui.QMessageBox(
-                QtGui.QMessageBox.Critical, 'MultiCopy - Error Message', message
+                QtGui.QMessageBox.Critical, "MultiCopy - Error Message", message
             )
         else:
             messagebox = QtGui.QMessageBox(
-                QtGui.QMessageBox.Warning, 'MultiCopy - Warning Message', message
+                QtGui.QMessageBox.Warning, "MultiCopy - Warning Message", message
             )
     messagebox.setWindowModality(QtCore.Qt.ApplicationModal)
     messagebox.exec_()

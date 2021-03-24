@@ -88,18 +88,18 @@ MultiCopyGui.py
 """
 
 
-__Title__='MultiCopy'
-__Author__='Melwyncarlo'
-__Version__='2.0.0'
-__Date__='2021-03-23'
-__Comment__='MultiCopy allows the duplication (copy and paste) of multiple FreeCAD objects that can be labelled sequentially and in a custom manner.'
-__Web__='https://github.com/melwyncarlo/MultiCopy'
-__Wiki__='http://www.freecadweb.org/wiki/index.php?title=Macro_MultiCopy'
-__Help__='Select one or more FreeCAD objects, then click on the MultiCopy button/macro, and follow the instructions in the dialog box.'
-__Status__='stable'
-__Requires__='Freecad >= v0.17'
-__Communication__='https://github.com/melwyncarlo/MultiCopy/issues'
-__Files__='MultiCopyGui.py, MultiCopyCore.py, MultiCopyAuxFunc.py, resources/MultiCopy_Main_Dialog.ui, resources/MultiCopy_Commands_Dialog.ui, resources/MultiCopy.svg'
+__Title__ = "MultiCopy"
+__Author__ = "Melwyncarlo"
+__Version__ = "2.0.0"
+__Date__ = "2021-03-23"
+__Comment__ = "MultiCopy allows the duplication (copy and paste) of multiple FreeCAD objects that can be labelled sequentially and in a custom manner."
+__Web__ = "https://github.com/melwyncarlo/MultiCopy"
+__Wiki__ = "http://www.freecadweb.org/wiki/index.php?title=Macro_MultiCopy"
+__Help__ = "Select one or more FreeCAD objects, then click on the MultiCopy button/macro, and follow the instructions in the dialog box."
+__Status__ = "stable"
+__Requires__ = "Freecad >= v0.17"
+__Communication__ = "https://github.com/melwyncarlo/MultiCopy/issues"
+__Files__ = "MultiCopyGui.py, MultiCopyCore.py, MultiCopyAuxFunc.py, resources/MultiCopy_Main_Dialog.ui, resources/MultiCopy_Commands_Dialog.ui, resources/MultiCopy.svg"
 
 
 # Library Imports
