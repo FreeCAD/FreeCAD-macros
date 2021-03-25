@@ -25,7 +25,7 @@
   <property name="windowTitle">
    <string>Paste Code Commands</string>
   </property>
-  <widget class="QLabel" name="mc_pcc_label_1">
+  <widget class="QLabel" name="label_1">
    <property name="geometry">
     <rect>
      <x>135</x>
@@ -43,7 +43,7 @@
     <string>List of specimen paste code commands :</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="mc_pcc_okay_button">
+  <widget class="QPushButton" name="okay_button">
    <property name="geometry">
     <rect>
      <x>225</x>
@@ -71,7 +71,7 @@
    <property name="frameShadow">
     <enum>QFrame::Raised</enum>
    </property>
-   <widget class="QLabel" name="mc_pcc_label_2b">
+   <widget class="QLabel" name="label_2b">
     <property name="geometry">
      <rect>
       <x>210</x>
@@ -84,7 +84,7 @@
      <string>     Shape object 1 without dependencies</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_5b">
+   <widget class="QLabel" name="label_5b">
     <property name="geometry">
      <rect>
       <x>210</x>
@@ -97,7 +97,7 @@
      <string>     Shape object 1 label</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_4a">
+   <widget class="QLabel" name="label_4a">
     <property name="geometry">
      <rect>
       <x>15</x>
@@ -110,7 +110,7 @@
      <string>[1|1]</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_5a">
+   <widget class="QLabel" name="label_5a">
     <property name="geometry">
      <rect>
       <x>15</x>
@@ -123,7 +123,7 @@
      <string>{1}</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_3b">
+   <widget class="QLabel" name="label_3b">
     <property name="geometry">
      <rect>
       <x>210</x>
@@ -136,7 +136,7 @@
      <string>     Shape object 1 without dependencies</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_3a">
+   <widget class="QLabel" name="label_3a">
     <property name="geometry">
      <rect>
       <x>15</x>
@@ -149,7 +149,7 @@
      <string>[1|0]</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_4b">
+   <widget class="QLabel" name="label_4b">
     <property name="geometry">
      <rect>
       <x>210</x>
@@ -162,7 +162,7 @@
      <string>     Shape object 1 with dependencies</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_2a">
+   <widget class="QLabel" name="label_2a">
     <property name="geometry">
      <rect>
       <x>15</x>
@@ -175,7 +175,7 @@
      <string>[1]</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_vseparator_1">
+   <widget class="QLabel" name="vseparator_1">
     <property name="geometry">
      <rect>
       <x>200</x>
@@ -207,7 +207,7 @@
    <property name="frameShadow">
     <enum>QFrame::Raised</enum>
    </property>
-   <widget class="QLabel" name="mc_pcc_label_6a">
+   <widget class="QLabel" name="label_6a">
     <property name="geometry">
      <rect>
       <x>15</x>
@@ -220,7 +220,7 @@
      <string>{n#} or {N#}</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_8b">
+   <widget class="QLabel" name="label_8b">
     <property name="geometry">
      <rect>
       <x>210</x>
@@ -233,7 +233,7 @@
      <string>     i-th Lower-case Roman Numeral</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_6b">
+   <widget class="QLabel" name="label_6b">
     <property name="geometry">
      <rect>
       <x>210</x>
@@ -246,7 +246,7 @@
      <string>     i-th Ordinary Numeral</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_9b">
+   <widget class="QLabel" name="label_9b">
     <property name="geometry">
      <rect>
       <x>210</x>
@@ -259,7 +259,7 @@
      <string>     i-th Upper-case Alphabet</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_10b">
+   <widget class="QLabel" name="label_10b">
     <property name="geometry">
      <rect>
       <x>210</x>
@@ -272,7 +272,7 @@
      <string>     i-th Lower-case Alphabet</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_7b">
+   <widget class="QLabel" name="label_7b">
     <property name="geometry">
      <rect>
       <x>210</x>
@@ -285,7 +285,7 @@
      <string>     i-th Upper-case Roman Numeral</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_7a">
+   <widget class="QLabel" name="label_7a">
     <property name="geometry">
      <rect>
       <x>15</x>
@@ -298,7 +298,7 @@
      <string>{ru#}  or  {RU#}  or  {R#}</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_10a">
+   <widget class="QLabel" name="label_10a">
     <property name="geometry">
      <rect>
       <x>15</x>
@@ -311,7 +311,7 @@
      <string>{a#}  or  {al#}  or  {AL#}</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_9a">
+   <widget class="QLabel" name="label_9a">
     <property name="geometry">
      <rect>
       <x>15</x>
@@ -324,7 +324,7 @@
      <string>{au#}  or  {AU#}  or  {A#}</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_8a">
+   <widget class="QLabel" name="label_8a">
     <property name="geometry">
      <rect>
       <x>15</x>
@@ -337,7 +337,7 @@
      <string>{r#}  or  {rl#}  or  {RL#}</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_vseparator_2">
+   <widget class="QLabel" name="vseparator_2">
     <property name="geometry">
      <rect>
       <x>200</x>
@@ -369,7 +369,7 @@
    <property name="frameShadow">
     <enum>QFrame::Raised</enum>
    </property>
-   <widget class="QLabel" name="mc_pcc_label_11a">
+   <widget class="QLabel" name="label_11a">
     <property name="geometry">
      <rect>
       <x>15</x>
@@ -382,7 +382,7 @@
      <string>{n#3} or {N#3}</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_12a">
+   <widget class="QLabel" name="label_12a">
     <property name="geometry">
      <rect>
       <x>15</x>
@@ -395,7 +395,7 @@
      <string>and so on . . .</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_label_11b">
+   <widget class="QLabel" name="label_11b">
     <property name="geometry">
      <rect>
       <x>210</x>
@@ -410,7 +410,7 @@
       e.g. 001, 002, 00i, . . . , 00n</string>
     </property>
    </widget>
-   <widget class="QLabel" name="mc_pcc_vseparator_3">
+   <widget class="QLabel" name="vseparator_3">
     <property name="geometry">
      <rect>
       <x>200</x>
@@ -430,8 +430,8 @@
   <zorder>frame_3</zorder>
   <zorder>frame_2</zorder>
   <zorder>frame</zorder>
-  <zorder>mc_pcc_label_1</zorder>
-  <zorder>mc_pcc_okay_button</zorder>
+  <zorder>label_1</zorder>
+  <zorder>okay_button</zorder>
  </widget>
  <resources/>
  <connections/>
