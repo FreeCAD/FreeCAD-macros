@@ -420,7 +420,7 @@ class OffsetInSketcher():
                     if len(DistanceLines) > 1: Sketch.equal(DistanceLines[0 ],DistanceLines[-1]) 
                     Sketch.perpendicular(OffsetEdge,DistanceLines[-1]) 
                     Sketch.perpendicular(BaseEdge,DistanceLines[-1])
-                    Sketch.pointOnObject(DistanceLines[-1],1,OffsetEdge) 
+                    # Sketch.pointOnObject(DistanceLines[-1],1,OffsetEdge)
                     Sketch.pointOnObject(DistanceLines[-1],2,BaseEdge)
 
             DistanceLines = []
