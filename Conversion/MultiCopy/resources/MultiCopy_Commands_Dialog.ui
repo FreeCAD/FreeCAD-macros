@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>550</width>
+    <height>475</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>550</width>
+    <height>475</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>550</width>
+    <height>475</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Paste Code Commands</string>
+  </property>
+  <widget class="QLabel" name="label_1">
+   <property name="geometry">
+    <rect>
+     <x>135</x>
+     <y>15</y>
+     <width>280</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <underline>true</underline>
+    </font>
+   </property>
+   <property name="text">
+    <string>List of specimen paste code commands :</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="okay_button">
+   <property name="geometry">
+    <rect>
+     <x>225</x>
+     <y>433</y>
+     <width>100</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Okay</string>
+   </property>
+  </widget>
+  <widget class="QFrame" name="frame">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>60</y>
+     <width>500</width>
+     <height>120</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::StyledPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
+   </property>
+   <widget class="QLabel" name="label_2b">
+    <property name="geometry">
+     <rect>
+      <x>210</x>
+      <y>7</y>
+      <width>281</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>     Shape object 1 without dependencies</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_5b">
+    <property name="geometry">
+     <rect>
+      <x>210</x>
+      <y>82</y>
+      <width>161</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>     Shape object 1 label</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_4a">
+    <property name="geometry">
+     <rect>
+      <x>15</x>
+      <y>57</y>
+      <width>31</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>[1|1]</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_5a">
+    <property name="geometry">
+     <rect>
+      <x>15</x>
+      <y>82</y>
+      <width>21</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>{1}</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3b">
+    <property name="geometry">
+     <rect>
+      <x>210</x>
+      <y>32</y>
+      <width>281</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>     Shape object 1 without dependencies</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3a">
+    <property name="geometry">
+     <rect>
+      <x>15</x>
+      <y>32</y>
+      <width>31</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>[1|0]</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_4b">
+    <property name="geometry">
+     <rect>
+      <x>210</x>
+      <y>57</y>
+      <width>261</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>     Shape object 1 with dependencies</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2a">
+    <property name="geometry">
+     <rect>
+      <x>15</x>
+      <y>7</y>
+      <width>21</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>[1]</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="vseparator_1">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>10</y>
+      <width>3</width>
+      <height>100</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: #aaaaaa;</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QFrame" name="frame_2">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>190</y>
+     <width>500</width>
+     <height>140</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::StyledPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
+   </property>
+   <widget class="QLabel" name="label_6a">
+    <property name="geometry">
+     <rect>
+      <x>15</x>
+      <y>5</y>
+      <width>91</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>{n#} or {N#}</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_8b">
+    <property name="geometry">
+     <rect>
+      <x>210</x>
+      <y>55</y>
+      <width>241</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>     i-th Lower-case Roman Numeral</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_6b">
+    <property name="geometry">
+     <rect>
+      <x>210</x>
+      <y>5</y>
+      <width>171</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>     i-th Ordinary Numeral</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_9b">
+    <property name="geometry">
+     <rect>
+      <x>210</x>
+      <y>80</y>
+      <width>241</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>     i-th Upper-case Alphabet</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_10b">
+    <property name="geometry">
+     <rect>
+      <x>210</x>
+      <y>105</y>
+      <width>241</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>     i-th Lower-case Alphabet</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_7b">
+    <property name="geometry">
+     <rect>
+      <x>210</x>
+      <y>30</y>
+      <width>241</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>     i-th Upper-case Roman Numeral</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_7a">
+    <property name="geometry">
+     <rect>
+      <x>15</x>
+      <y>30</y>
+      <width>171</width>
+      <height>35</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>{ru#}  or  {RU#}  or  {R#}</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_10a">
+    <property name="geometry">
+     <rect>
+      <x>15</x>
+      <y>105</y>
+      <width>161</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>{a#}  or  {al#}  or  {AL#}</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_9a">
+    <property name="geometry">
+     <rect>
+      <x>15</x>
+      <y>80</y>
+      <width>171</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>{au#}  or  {AU#}  or  {A#}</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_8a">
+    <property name="geometry">
+     <rect>
+      <x>15</x>
+      <y>55</y>
+      <width>161</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>{r#}  or  {rl#}  or  {RL#}</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="vseparator_2">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>10</y>
+      <width>3</width>
+      <height>125</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: #aaaaaa;</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QFrame" name="frame_3">
+   <property name="geometry">
+    <rect>
+     <x>25</x>
+     <y>340</y>
+     <width>500</width>
+     <height>75</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::StyledPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
+   </property>
+   <widget class="QLabel" name="label_11a">
+    <property name="geometry">
+     <rect>
+      <x>15</x>
+      <y>10</y>
+      <width>111</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>{n#3} or {N#3}</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_12a">
+    <property name="geometry">
+     <rect>
+      <x>15</x>
+      <y>35</y>
+      <width>111</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>and so on . . .</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_11b">
+    <property name="geometry">
+     <rect>
+      <x>210</x>
+      <y>10</y>
+      <width>211</width>
+      <height>55</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>     i-th Ordinary Numeral with 
+      three-digit padding 
+      e.g. 001, 002, 00i, . . . , 00n</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="vseparator_3">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>10</y>
+      <width>3</width>
+      <height>57</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: #aaaaaa;</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+  </widget>
+  <zorder>frame_3</zorder>
+  <zorder>frame_2</zorder>
+  <zorder>frame</zorder>
+  <zorder>label_1</zorder>
+  <zorder>okay_button</zorder>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
