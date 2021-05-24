@@ -1,8 +1,8 @@
 __Name__   = "TechDrawTools"
 __Author__  = "edi and domad"
-__Version__ = "0.4.1-multilanguage"
+__Version__ = "0.4.1"
 __License__ = "LGPL v2"
-__Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=35&t=55029'
+__Web__ = "https://forum.freecadweb.org/viewtopic.php?f=35&t=55029"
 __Communication__ = "https://github.com/FreeCAD/FreeCAD-macros/blob/master/TechDraw/TechDrawTools.FCMacro"
 __Files__ = "TechDrawTools.svg"
 __Help__ = "Start the macro. Select one of the 30 helper tools."
@@ -272,7 +272,7 @@ class Ui_MainWindow(object):
 
         self.window = MainWindow
         MainWindow.setObjectName("MainWindow")
-        MainWindow.setWindowTitle("TechDrawTools V- 0.4.0-multilanguage")
+        MainWindow.setWindowTitle("TechDrawTools V- 0.4.1-multilanguage")
         self.centralWidget = QtGui.QWidget(MainWindow)
         self.layout = QtGui.QHBoxLayout(self.centralWidget)        
         # Initialize tab screen
