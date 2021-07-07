@@ -1,23 +1,24 @@
-__Name__   = "TechDrawTools"
-__Author__  = "edi and domad"
-__Version__ = "0.4.1"
-__License__ = "LGPL v2"
-__Web__ = "https://forum.freecadweb.org/viewtopic.php?f=35&t=55029"
-__Communication__ = "https://github.com/FreeCAD/FreeCAD-macros/blob/master/TechDraw/TechDrawTools.FCMacro"
-__Files__ = "TechDrawTools.svg"
-__Help__ = "Start the macro. Select one of the 30 helper tools."
-__Status__ = "stable"
-__Requires__ = "e.g. FreeCAD >= v0.19"
-__Date__    = "2021-05-05"
-import PySide
-from PySide import QtCore, QtGui 
+from PySide2 import QtCore, QtGui, QtWidgets # PySide2
 import TechDraw
 import math
 from functools import partial
 import FreeCAD as app
 import FreeCADGui as gui
+__Name__   = 'TechDrawTools'
+__Author__  = 'edi and domad'
+__Version__ = '0.4.3'
+__Comment__ = 'A container, including 38 helper tools to improve the appearance of drawings'
+__License__ = 'LGPL v2'
+__Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=35&t=59334'
+__Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/blob/master/TechDraw/TechDrawTools.FCMacro'
+__Files__ = 'TechDrawTools.svg'
+__Help__ = 'Start the macro. Select one of the 38 helper tools.'
+__Status__ = 'stable'
+__Requires__ = 'e.g. FreeCAD >= v0.19'
+__Date__    = '2021-07-07'
+
 """
-This macro is a container, including 30 helper tools to improve the appearance of drawings
+This macro is a container, including 38 helper tools to improve the appearance of drawings
 created in the TechDraw workbench. There are tools to:
 - create circle and bolt cicle center lines
 - draw cosmetic threads in ground and side view
@@ -27,10 +28,15 @@ created in the TechDraw workbench. There are tools to:
 - append special characters ahead of dimension values
 - create chain- and coordinate dimensions
 - position and cascade dimensions
+- create dimension/development of arches
+- create cosmetic circumferences
+- create a line cosmetic perpendicular
+- create a line cosmetic parallel 
 - create a hole table
 - extend and shorten cosmetic lines
 - create a cosmetic line arch
 - position section view orthogonal to ancestor view
+- create an annotation showing the area
 
 All written user informations appear in English/German/Italian/French/Spanish
 depending on the selected FreeCAD language.
@@ -66,6 +72,7 @@ class LineAttributes:
 
     def getColorHex(color):
         return LineAttributes.Colors[color][1]
+#        return LineAttributes.Colors["black"][1]
 
     def setStyle(self,Style):
         self.LineStyle = self.Styles[Style]
@@ -87,33 +94,33 @@ class translate:
     def getLanguage(self):
         '''get local language key'''
         langDict = {}
-        langDict["English"] = 0
-        langDict["German"] = 1
-        langDict["Italian"] = 2
-        langDict["French"] = 3
-        langDict["Spanish"] = 4
-        self.langKey = 0
+        langDict["English"] = 'English'
+        langDict["German"] = 'German'
+        langDict["Italian"] = 'Italian'
+        langDict["French"] = 'French'
+        langDict["Spanish"] = 'Spanish'
+        self.langKey = 'English'
         if App.Gui.getLocale() in langDict.keys():
             self.langKey = langDict[App.Gui.getLocale()]
         return self.langKey
 
     def tr(self,textEnglish):
-        if self.langKey == 0:
+        if self.langKey == 'English':
             return self.englishDict(textEnglish)
-        elif self.langKey == 1:
+        elif self.langKey == 'German':
             return self.germanDict(textEnglish)
-        elif self.langKey == 2:
+        elif self.langKey == 'Italian':
             return self.italianDict(textEnglish)
-        elif self.langKey == 3:
+        elif self.langKey == 'French':
             return self.frenchDict(textEnglish)
-        elif self.langKey == 4:
+        elif self.langKey == 'Spanish':
             return self.spanishDict(textEnglish)
 
     def englishDict(self,textEnglish):
         return textEnglish
     
     def germanDict(self,textEnglish):
-        dict = {"Attributes and Modifications":"Eigenschaften und Änderungen",\
+        dict_ = {"Attributes and Modifications":"Eigenschaften und Änderungen",\
                 "Centerlines and Threading":"Mittellinien und Gewinde",\
                 "Dimensions":"Bemaßungen",\
                 "Line attributes:":"Eigenschaften:",\
@@ -137,10 +144,10 @@ class translate:
                 "magenta":"magenta",\
                 "cyan":"cyan",\
                 "yellow":"gelb"}
-        return dict[textEnglish]
+        return dict_.get(textEnglish,textEnglish)
 
     def italianDict(self,textEnglish):
-        dict = {"Attributes and Modifications":"Strumenti di editing",\
+        dict_ = {"Attributes and Modifications":"Strumenti di editing",\
                 "Centerlines and Threading":"Mezzerie e filettature",\
                 "Dimensions":"Quotature",\
                 "Line attributes:":"Attributi:",\
@@ -164,10 +171,10 @@ class translate:
                 "magenta":"magenta",\
                 "cyan":"ciano",\
                 "yellow":"giallo"}
-        return dict[textEnglish]
+        return dict_.get(textEnglish,textEnglish)
 
     def frenchDict(self,textEnglish):
-        dict = {"Attributes and Modifications":"Outils d'édition",\
+        dict_ = {"Attributes and Modifications":"Outils d'édition",\
                 "Centerlines and Threading":"Lignes médianes et filettage",\
                 "Dimensions":"Dimensionnement",\
                 "Line attributes:":"Les attributs:",\
@@ -191,10 +198,10 @@ class translate:
                 "magenta":"magenta",\
                 "cyan":"cyan",\
                 "yellow":"Jaune"}
-        return dict[textEnglish]
+        return dict_.get(textEnglish,textEnglish)
 
     def spanishDict(self,textEnglish):
-        dict = {"Attributes and Modifications":"Herramientas de edición",\
+        dict_ = {"Attributes and Modifications":"Herramientas de edición",\
                 "Centerlines and Threading":"Líneas centrales y roscado",\
                 "Dimensions":"Dimensionamiento",\
                 "Line attributes:":"Atributos:",\
@@ -218,7 +225,7 @@ class translate:
                 "magenta":"magenta",\
                 "cyan":"cian",\
                 "yellow":"amarillo"}
-        return dict[textEnglish]
+        return dict_.get(textEnglish,textEnglish)
 
 class DimensionAttributes:
     '''Operate all dimension attributes'''
@@ -228,22 +235,22 @@ class DimensionAttributes:
     def getDimLineDistance(self):
         return self.DimLineDistance
 
-class commandWidget(QtGui.QWidget):
+class commandWidget(QtWidgets.QWidget):
     '''Widget containing the command buttons'''
     def __init__(self):
         super().__init__()
 
     def oneCommandButton(self,cmd,win):
         '''Create a command push button'''
-        Button = QtGui.QPushButton()
+        Button = QtWidgets.QPushButton()
         Text = cmd.textEnglish()
-        if Lang.langKey == 1 and hasattr(cmd,"textGerman"):
+        if Lang.langKey == 'German'  and hasattr(cmd,"textGerman"):
             Text = cmd.textGerman()
-        elif Lang.langKey == 2 and hasattr(cmd,"textItalian"):
+        elif Lang.langKey == 'Italian' and hasattr(cmd,"textItalian"):
             Text = cmd.textItalian()
-        elif Lang.langKey == 3 and hasattr(cmd,"textFrench"):
+        elif Lang.langKey == 'French' and hasattr(cmd,"textFrench"):
             Text = cmd.textFrench()
-        elif Lang.langKey == 4 and hasattr(cmd,"textSpanish"):
+        elif Lang.langKey == 'Spanish' and hasattr(cmd,"textSpanish"):
             Text = cmd.textSpanish()
         Button.setText(Text[0]) 
         Button.setToolTip(Text[1])
@@ -252,86 +259,92 @@ class commandWidget(QtGui.QWidget):
         Button.clicked.connect(partial(win.on_PB_clicked,cmd))
         self.layout.addWidget(Button)
 
-class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
+class DialogContainer(QtWidgets.QDialog):
 
-        def radioButton(Box,Slot,Tip,Text,Color='black',Checked = False,Row=-1,Column=-1):
-            ''' create a radio button '''
-            Button = QtGui.QRadioButton(Box)
-            if Checked:
-                Button.setMouseTracking(True)
-                Button.setChecked(True)
-            Button.setText(Lang.tr(Text))
-            Button.setStyleSheet("color : #"+LineAttributes.getColorHex(Color)) 
-            Button.setToolTip(Lang.tr(Tip)+Lang.tr(Text))
-            Button.clicked.connect(partial(Slot,Text))
-            if Row == -1:
-                Box.layout.addWidget(Button)
-            else:
-                Box.layout.addWidget(Button,Row,Column)
+    def __init__(self, parent=gui.getMainWindow()):
+        ''' constructor creating a permanent opened dialog window'''
+        super().__init__(parent, QtCore.Qt.Tool)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+        self.setAttribute(QtCore.Qt.WA_WindowPropagation, True)
+        self.setObjectName("DialogContainer")
+        self.initUI()
 
-        self.window = MainWindow
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.setWindowTitle("TechDrawTools V- 0.4.1-multilanguage")
-        self.centralWidget = QtGui.QWidget(MainWindow)
-        self.layout = QtGui.QHBoxLayout(self.centralWidget)        
+    def radioButton(self,Box,Slot,Tip,Text,Color='black',Checked = False,Row=-1,Column=-1):
+        ''' create a radio button '''
+        Button = QtWidgets.QRadioButton(Box)
+        if Checked:
+            Button.setMouseTracking(True)
+            Button.setChecked(True)
+        Button.setText(Lang.tr(Text))
+        Button.setStyleSheet("color : #"+LineAttributes.getColorHex(Color)) 
+        Button.setToolTip(Lang.tr(Tip)+Lang.tr(Text))
+        Button.clicked.connect(partial(Slot,Text))
+        if Row == -1:
+            Box.layout.addWidget(Button)
+        else:
+            Box.layout.addWidget(Button,Row,Column)
+
+    def initUI(self):
+        """Specifically handles the UI initialization"""
+        self.setWindowTitle("TechDrawTools V- 0.4.3-multilanguage")
+        self.layout = QtWidgets.QVBoxLayout(self)
         # Initialize tab screen
-        self.tabs = QtGui.QTabWidget()
-        self.tabs.setTabPosition(QtGui.QTabWidget.East)
-        self.tabs.setTabShape(QtGui.QTabWidget.Triangular)
-        self.tab1 = QtGui.QWidget()
+        self.tabs = QtWidgets.QTabWidget()
+        self.tabs.setTabPosition(QtWidgets.QTabWidget.East)
+        self.tabs.setTabShape(QtWidgets.QTabWidget.Triangular)
+        self.tab1 = QtWidgets.QWidget()
         self.tabs.addTab(self.tab1,Lang.tr("Attributes and Modifications"))
         self.tab2 = commandWidget()
         self.tabs.addTab(self.tab2,Lang.tr("Centerlines and Threading"))
         self.tab3 = commandWidget()
         self.tabs.addTab(self.tab3,Lang.tr("Dimensions"))
         # Create layouts of tab1
-        self.tab1.layout = QtGui.QVBoxLayout()
+        self.tab1.layout = QtWidgets.QVBoxLayout()
         self.topBox1 = commandWidget()
-        self.topBox1.layout =QtGui.QVBoxLayout()
-        self.bottomBox = QtGui.QWidget()
-        self.bottomBox.layout =QtGui.QHBoxLayout()
-        self.bottomBoxLeftTop = QtGui.QGroupBox(Lang.tr("Line attributes:"))
-        self.bottomBoxLeftTop.layout =QtGui.QVBoxLayout()
-        self.bottomBoxLeftBottom = QtGui.QGroupBox()
-        self.bottomBoxLeftBottom.layout =QtGui.QVBoxLayout()
-        self.bottomBoxRight = QtGui.QGroupBox()
-        self.bottomBoxRight.layout =QtGui.QGridLayout()
+        self.topBox1.layout =QtWidgets.QVBoxLayout()
+        self.bottomBox = QtWidgets.QWidget()
+        self.bottomBox.layout =QtWidgets.QHBoxLayout()
+        self.bottomBoxLeftTop = QtWidgets.QGroupBox(Lang.tr("Line attributes:"))
+        self.bottomBoxLeftTop.layout =QtWidgets.QVBoxLayout()
+        self.bottomBoxLeftBottom = QtWidgets.QGroupBox()
+        self.bottomBoxLeftBottom.layout =QtWidgets.QVBoxLayout()
+        self.bottomBoxRight = QtWidgets.QGroupBox()
+        self.bottomBoxRight.layout =QtWidgets.QGridLayout()
         # Create layouts of tab2
-        self.tab2.layout = QtGui.QVBoxLayout()
+        self.tab2.layout = QtWidgets.QVBoxLayout()
         self.topBox2 = commandWidget()
-        self.topBox2.layout =QtGui.QVBoxLayout()
-        self.bottomBox2 = QtGui.QWidget()
-        self.bottomBox2.layout =QtGui.QHBoxLayout()
-        self.spinContainerBox = QtGui.QWidget()
-        self.spinContainerBox.layout =QtGui.QHBoxLayout()
+        self.topBox2.layout =QtWidgets.QVBoxLayout()
+        self.bottomBox2 = QtWidgets.QWidget()
+        self.bottomBox2.layout =QtWidgets.QHBoxLayout()
+        self.spinContainerBox = QtWidgets.QWidget()
+        self.spinContainerBox.layout =QtWidgets.QHBoxLayout()
         # Create layouts of tab3
-        self.tab3.layout = QtGui.QVBoxLayout()
+        self.tab3.layout = QtWidgets.QVBoxLayout()
         self.topBox3 = commandWidget()
-        self.topBox3.layout =QtGui.QVBoxLayout()
+        self.topBox3.layout =QtWidgets.QVBoxLayout()
 
         # Radio buttons for line attributes --------------------------------------------
 
-        radioButton(self.bottomBoxLeftTop,self.on_RB_ChangeStyle_Clicked,"set lines to ","solid")
-        radioButton(self.bottomBoxLeftTop,self.on_RB_ChangeStyle_Clicked,"set lines to ","dashed")
-        radioButton(self.bottomBoxLeftTop,self.on_RB_ChangeStyle_Clicked,"set lines to ","dotted")
-        radioButton(self.bottomBoxLeftTop,self.on_RB_ChangeStyle_Clicked,"set lines to ","dashdot","black",True)
+        self.radioButton(self.bottomBoxLeftTop,self.on_RB_ChangeStyle_Clicked,"set lines to ","solid")
+        self.radioButton(self.bottomBoxLeftTop,self.on_RB_ChangeStyle_Clicked,"set lines to ","dashed")
+        self.radioButton(self.bottomBoxLeftTop,self.on_RB_ChangeStyle_Clicked,"set lines to ","dotted")
+        self.radioButton(self.bottomBoxLeftTop,self.on_RB_ChangeStyle_Clicked,"set lines to ","dashdot","black",True)
 
-        radioButton(self.bottomBoxLeftBottom,self.on_RB_ChangeWidth_Clicked,"set lines width to ","thick 0,70")
-        radioButton(self.bottomBoxLeftBottom,self.on_RB_ChangeWidth_Clicked,"set lines width to ","middle 0,35","black",True)
-        radioButton(self.bottomBoxLeftBottom,self.on_RB_ChangeWidth_Clicked,"set lines width to ","thin 0,18")
+        self.radioButton(self.bottomBoxLeftBottom,self.on_RB_ChangeWidth_Clicked,"set lines width to ","thick 0,70")
+        self.radioButton(self.bottomBoxLeftBottom,self.on_RB_ChangeWidth_Clicked,"set lines width to ","middle 0,35","black",True)
+        self.radioButton(self.bottomBoxLeftBottom,self.on_RB_ChangeWidth_Clicked,"set lines width to ","thin 0,18")
 
-        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","black","black",True,0,0)
-        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","grey","grey",False,1,0)
-        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","red","red",False,2,0)
-        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","green","green",False,3,0)
-        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","blue","blue",False,0,1)
-        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","magenta","magenta",False,1,1)
-        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","cyan","cyan",False,2,1)
-        radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","yellow","yellow",False,3,1)
+        self.radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","black","black",True,0,0)
+        self.radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","grey","grey",False,1,0)
+        self.radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","red","red",False,2,0)
+        self.radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","green","green",False,3,0)
+        self.radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","blue","blue",False,0,1)
+        self.radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","magenta","magenta",False,1,1)
+        self.radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","cyan","cyan",False,2,1)
+        self.radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","yellow","yellow",False,3,1)
 
         # Button: Quit in  centralWidget -------------------------------------------------------------
-        self.PB_Quit = QtGui.QPushButton(self.centralWidget)
+        self.PB_Quit = QtWidgets.QPushButton(self)
         self.PB_Quit.setText(Lang.tr("Quit"))
         self.PB_Quit.clicked.connect(self.on_PB_Quit_clicked) 
         # insert buttons into tab 1
@@ -341,8 +354,10 @@ class Ui_MainWindow(object):
         self.topBox1.oneCommandButton(positionSectionView(),self)
         self.topBox1.oneCommandButton(positionHorizDimChain(),self)
         self.topBox1.oneCommandButton(positionVertDimChain(),self)
+        self.topBox1.oneCommandButton(positionObliqueDimChain(),self)
         self.topBox1.oneCommandButton(cascadeHorizDimensions(),self)
         self.topBox1.oneCommandButton(cascadeVertDimensions(),self)
+        self.topBox1.oneCommandButton(cascadeObliqueDimension(),self)
         self.topBox1.oneCommandButton(ChangeLineStyle(),self)
         self.topBox1.setLayout(self.topBox1.layout)
         self.bottomBoxLeftTop.setLayout(self.bottomBoxLeftTop.layout)
@@ -353,8 +368,8 @@ class Ui_MainWindow(object):
         self.bottomBox.layout.addWidget(self.bottomBoxRight)
         self.bottomBox.setLayout(self.bottomBox.layout)
         # create spin label to define cascade spacing
-        self.spinLabel = QtGui.QLabel(Lang.tr("Cascade spacing:"))
-        self.SpinBox = QtGui.QSpinBox()
+        self.spinLabel = QtWidgets.QLabel(Lang.tr("Cascade spacing:"))
+        self.SpinBox = QtWidgets.QSpinBox()
         self.SpinBox.setValue(7)
         self.SpinBox.valueChanged.connect(self.on_SB_clicked)
         self.spinContainerBox.layout.addWidget(self.spinLabel)
@@ -370,6 +385,9 @@ class Ui_MainWindow(object):
         self.topBox2.oneCommandButton(DrawHoleCircle(),self)
         self.topBox2.oneCommandButton(IntersectionVertex(),self)
         self.topBox2.oneCommandButton(drawArc(),self)
+        self.topBox2.oneCommandButton(drawCirc(),self)
+        self.topBox2.oneCommandButton(drawPerpendicular(),self)
+        self.topBox2.oneCommandButton(drawParallel(),self)
         self.topBox2.oneCommandButton(CenterLine(),self)
         self.topBox2.oneCommandButton(DrawCosmeticThreadHole(),self)
         self.topBox2.oneCommandButton(DrawCosmeticThreadBolt(),self)
@@ -383,22 +401,22 @@ class Ui_MainWindow(object):
         self.topBox3.oneCommandButton(drawRectangleSign(),self)
         self.topBox3.oneCommandButton(createHorizDimChain(),self)
         self.topBox3.oneCommandButton(createVertDimChain(),self)
+        self.topBox3.oneCommandButton(createObliqueDimChain(),self)
         self.topBox3.oneCommandButton(createHorizCoordDim(),self)
         self.topBox3.oneCommandButton(createVertCoordDim(),self)
+        self.topBox3.oneCommandButton(createObliqueCoordDim(),self)
         self.topBox3.oneCommandButton(createHorizChamferDim(),self)
         self.topBox3.oneCommandButton(createVertChamferDim(),self)
         self.topBox3.oneCommandButton(createArcLengthDim(),self)
         self.topBox3.oneCommandButton(holeTable(),self)
         self.topBox3.oneCommandButton(increaseComma(),self)
         self.topBox3.oneCommandButton(decreaseComma(),self)
+        self.topBox3.oneCommandButton(areaAnnot(),self)
         self.topBox3.setLayout(self.topBox3.layout)
         self.tab3.layout.addWidget(self.topBox3)
         self.tab3.setLayout(self.tab3.layout)
         # Add tabs to widget
         self.layout.addWidget(self.tabs)
-        MainWindow.setCentralWidget(self.centralWidget)
-        MainWindow.setWindowFlags(PySide.QtCore.Qt.WindowStaysOnTopHint)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
 # slots --------------------------------------------------------------------------------------------------
 
@@ -421,7 +439,7 @@ class Ui_MainWindow(object):
 
     def on_PB_Quit_clicked(self): 
         app.Console.PrintMessage("End of TechDraw Tools" + "\n")
-        self.window.close()
+        super().accept()
 
 # define all commands: each command an own class ---------------------------------
 
@@ -492,13 +510,31 @@ class commonTools:
         Edge = View.getEdgeBySelection(ObjectList[0])
         StartPt, EndPt = Edge.Vertexes[0].Point, Edge.Vertexes[1].Point
         Direction = (EndPt-StartPt).normalize()
-        Gui.runCommand('TechDraw_CosmeticEraser',0)
+        gui.runCommand('TechDraw_CosmeticEraser',0) # ... welche linie wird hier gelöscht ?
         Delta = Direction*2/View.Scale
         if Extend:
             StartPt, EndPt = StartPt - Delta, EndPt + Delta
         else:
             StartPt, EndPt = StartPt + Delta, EndPt - Delta
         View.makeCosmeticLine(StartPt,EndPt,OldFormat[0],OldFormat[1],OldFormat[2])
+
+    def getViewCoords(View):
+        ''' position of View in Template coordinates'''
+        XView, YView = View.X, View.Y
+        if View.TypeId == 'TechDraw::DrawProjGroupItem':
+            XView = XView+View.InList[0].X
+            YView = YView+View.InList[0].Y
+        return (XView,YView)
+
+    def createAnnot(Name,Text,XPos,YPos):
+        '''Create an annotation'''
+        Doc = App.ActiveDocument
+        Annot = Doc.addObject('TechDraw::DrawViewAnnotation',Name)
+        Doc.Page.addView(Annot)
+        Annot.Text = Text
+        Annot.TextSize = 4
+        Annot.X = XPos
+        Annot.Y = YPos
 
 class CircleCenterLines:
     '''Draw a center line cross at  circles'''
@@ -3712,7 +3748,7 @@ class cascadeHorizDimensions:
                    "- haga clic en este botón"
         return(buttonText,helpText)
 
-    def activated(self):
+    def activated(self): # cascadeHorizDimensions
         Selected = gui.Selection.getSelectionEx()
         HorizontalDimList = [Select.Object for Select in Selected if Select.Object.Type == 'DistanceX']
         if len(HorizontalDimList) > 1:
@@ -4080,7 +4116,7 @@ class createHorizCoordDim:
                    "- haga clic en este botón"
         return(buttonText,helpText)
 
-    def activated(self):
+    def activated(self): # createHorizCoordDim
         def sortVertex(Vertex):
             return Vertex.Point.x
 
@@ -4581,13 +4617,6 @@ class holeTable:
         return(buttonText,helpText)
 
     def activated(self):
-        def getViewCoords(View):
-            ''' position of View in Template coordinates'''
-            XView, YView = View.X, View.Y
-            if View.TypeId == 'TechDraw::DrawProjGroupItem':
-                XView = XView+View.InList[0].X
-                YView = YView+View.InList[0].Y
-            return (XView,YView)
 
         def drawArrow(Origin,P1,P2,P3,P4,P5):
             '''Draw arrows at origin'''
@@ -4596,19 +4625,10 @@ class holeTable:
             View.makeCosmeticLine(P3,P4,1)
             View.makeCosmeticLine(P3,P5,1)
 
-        def createAnnot(Name,Text,XPos,YPos):
-            '''Create an annotation'''
-            Annot = Doc.addObject('TechDraw::DrawViewAnnotation',Name)
-            Doc.Page.addView(Annot)
-            Annot.Text = Text
-            Annot.TextSize = 4
-            Annot.X = XPos
-            Annot.Y = YPos
-
         (OK,ObjectList,View) = commonTools.selectionOK()
         if OK:
             Doc = app.ActiveDocument
-            XView,YView = getViewCoords(View)
+            XView,YView = commonTools.getViewCoords(View)
             if ObjectList[0][0:6] == 'Vertex':
                 Origin = View.getVertexBySelection(ObjectList[0]).Point
                 P1X, P1Y = Origin + app.Vector(0,-10,0), Origin + app.Vector(-10,0,0)
@@ -4618,8 +4638,8 @@ class holeTable:
                 P5X, P5Y = Origin + app.Vector(7,-6,0), Origin + app.Vector(-6,7,0)
                 drawArrow(Origin,P1X,P2X,P3X,P4X,P5X)
                 drawArrow(Origin,P1Y,P2Y,P3Y,P4Y,P5Y)
-                createAnnot('OriginX','X',float(XView)+Origin.x+12,float(YView)+Origin.y-7)
-                createAnnot('OriginY','Y',float(XView)+Origin.x-5,float(YView)+Origin.y+12)
+                commonTools.createAnnot('OriginX','X',float(XView)+Origin.x+12,float(YView)+Origin.y-7)
+                commonTools.createAnnot('OriginY','Y',float(XView)+Origin.x-5,float(YView)+Origin.y+12)
                 Spread =Doc.addObject('Spreadsheet::Sheet','Spreadsheet')
                 HoleTable = Doc.addObject('TechDraw::DrawViewSpreadsheet','HoleTable')
                 HoleTable.Source = Doc.Spreadsheet
@@ -4638,12 +4658,149 @@ class holeTable:
                             Spread.set('B'+str(Num),str(Center.x-Origin.x))
                             Spread.set('C'+str(Num),str(Center.y-Origin.y))
                             Spread.set('D'+str(Num),str(2*Radius))
-                            createAnnot('A'+str(Num-1),'A'+str(Num-1),float(XView)+Center.x+Radius,float(YView)+Center.y+Radius)
+                            commonTools.createAnnot('A'+str(Num-1),'A'+str(Num-1),float(XView)+Center.x+Radius,float(YView)+Center.y+Radius)
                             Num +=1
                 HoleTable.CellEnd = 'D'+str(Num-1)
                 app.ActiveDocument.recompute()
                 Doc.Page.addView(HoleTable)
             app.ActiveDocument.recompute()
+
+class drawCirc:
+    '''Draw a Circle'''
+    Icon = QtGui.QPixmap([  \
+        "64 64 16 1",\
+        " 	c None",\
+        ".	c #FF0000",\
+        "+	c #FFFF00",\
+        "@	c #2B2200",\
+        "#	c #FFFD00",\
+        "$	c #FFF700",\
+        "%	c #FF1500",\
+        "&	c #FFFE00",\
+        "*	c #FFF300",\
+        "=	c #FF1400",\
+        "-	c #FFF600",\
+        ";	c #FFFB00",\
+        ">	c #DFDF00",\
+        ",	c #FBFB00",\
+        "'	c #C5C400",\
+        ")	c #EAEA00",\
+        "                                                                ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                         .........                              ",\
+        "                       ..............                           ",\
+        "                     ................                           ",\
+        "                   ..................     ..    ++++            ",\
+        "                   .........     ...     .... +++@@+++          ",\
+        "                   ......               .....++@@@@@@++         ",\
+        "                    ..                    .+++@@++++@@++        ",\
+        "                                           ++@@++..+#@@++       ",\
+        "            ..                            ++@@++....+$@@+       ",\
+        "           ....                          ++@@++......++@@+      ",\
+        "          ......                         ++@++.......%&+@++     ",\
+        "         .....                           ++@++........*+@++     ",\
+        "        ......                           ++@++.......=++@++     ",\
+        "       ......                            ++@@++......++@@+      ",\
+        "       .....                              ++@+++....+-@@+       ",\
+        "      .....                                +@@+++..+;@@++.      ",\
+        "      .....                                ++@@@+++++@++...     ",\
+        "      ....                                +++++@@@@@@@++...     ",\
+        "     .....                                +++ +++@@@+++....     ",\
+        "     ....                              ++  ++   +++++  ...      ",\
+        "    .....                      ++++   ++++              .       ",\
+        "    .....                    +++@@+++ ++++                      ",\
+        "      ..                    ++@@@@@@++ ++                       ",\
+        "                          +++@@++++@@++                         ",\
+        "                          ++@@++..+#@@++                  ...   ",\
+        "                         ++@@++....+$@@+                 ....   ",\
+        "                         +@@++......++@@+                .....  ",\
+        "                        ++@++.......%&+@++               .....  ",\
+        "                        ++@++........*+@++               .....  ",\
+        "     ...                ++@++.......=++@++               .....  ",\
+        "    ....                 +@@++......++@@+                .....  ",\
+        "    ....                 ++@+++....+-@@+                 .....  ",\
+        "   .....                  +@@+++..+;@@++                 ....   ",\
+        "   .....                  >,@@@+++++@++                  ....   ",\
+        "   .....                   '++@@@@@@@++                 .....   ",\
+        "    ....                     )++@@@+++                  ....    ",\
+        "    .....                      +++++                    ....    ",\
+        "     ....                                              .....    ",\
+        "     ....                                              ....     ",\
+        "     .....                                            .....     ",\
+        "      ....                                             ....     ",\
+        "      .....                                              .      ",\
+        "       .....                                                    ",\
+        "       .....                                                    ",\
+        "        ...                                        .            ",\
+        "         .                                        ...           ",\
+        "                                                 .....          ",\
+        "                                                ......          ",\
+        "               ...                            .......           ",\
+        "               ....                          .......            ",\
+        "               .....                        .......             ",\
+        "               .......                    ........              ",\
+        "                .........               ........                ",\
+        "                 .............          .......                 ",\
+        "                   ...........          ......                  ",\
+        "                     .........          ....                    ",\
+        "                         .....                                  ",\
+        "                           ...                                  ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                                                                "])
+
+    def textEnglish(self):
+        buttonText = "Draw an cosmetic circumference (center and 1 vertex)"
+        helpText = "Draw a cosmetic circumference using two vertices:"+ "\n"\
+                   "- choose the line attributes:"+ "\n"\
+                   "- select the first vertex (center) -> in sequence the second (radius)"+ "\n"\
+                   "- click this button"
+        return(buttonText,helpText)
+
+    def textGerman(self):
+        buttonText = "Kosmetischer Umfang (Zentrum und 1 Scheitelpunkt)"
+        helpText = "Zeichnen Sie einen kosmetischen Kreis mit zwei Scheitelpunkt:"+ "\n"\
+                   "- Wählen Sie die Linienattribute:"+ "\n"\
+                   "- Wählen Sie den ersten Scheitelpunkt (Mitte) -> nacheinander den zweiten (Radius)"+ "\n"\
+                   "- drücke diesen Knopf"
+        return(buttonText,helpText)
+
+    def textItalian(self):
+        buttonText = "Circonferenza cosmetica (centro e 1 vertice)"
+        helpText = "Disegna una circonferenza cosmetica utilizzando due vertici:"+ "\n"\
+                   "- scegliere gli attributi linea"+"\n"\
+                   "- selezionare il primo vertice (centro) -->in sequenza il secondo (raggio)"+ "\n"\
+                   "- fare clic su questo pulsante"
+        return(buttonText,helpText)
+
+    def textFrench(self):
+        buttonText = "Circonférence cosmétique (centre et 1 sommet)"
+        helpText = "Dessinez une circonférence cosmétique en utilisant deux sommets:"+ "\n"\
+                   "- choisir des attributs"+ "\n"\
+                   "- sélectionner le premier sommet (centre) --> en séquence le second (rayon)"+ "\n"\
+                   "- cliquez sur ce bouton"
+        return(buttonText,helpText)
+
+    def textSpanish(self):
+        buttonText = "Circunferencia cosmética (centro y 1 vértice)"
+        helpText = "Dibuja un círculo cosmético usando dos vértices:"+ "\n"\
+                   "- elegir atributos"+ "\n"\
+                   "- seleccione el primer vértice (centro) --> en secuencia el segundo (radio)"+ "\n"\
+                   "- haga clic en este botón"
+        return(buttonText,helpText)
+
+    def activated(self): # drawCirc
+
+        (OK,ObjectList,View) = commonTools.selectionOK()
+        if OK:
+            if len(ObjectList) == 2:
+                if ObjectList[0][0:6] == 'Vertex' and ObjectList[1][0:6] == 'Vertex':
+                    Center =  View.getVertexBySelection(ObjectList[0]).Point
+                    Point =  View.getVertexBySelection(ObjectList[1]).Point
+                    Radius = (Point-Center).Length
+                    View.makeCosmeticCircle(Center, Radius,Attrib.getStyle(), Attrib.getWidth(), Attrib.getColorTuple())
+            gui.Selection.clearSelection()
 
 class drawArc:
     '''Draw an arc rotating math. positive'''
@@ -4872,7 +5029,8 @@ class drawArc:
     def textEnglish(self):
         buttonText = "Draw an cosmetic arc (center and two vertexes)"
         helpText = "Draw an arc rotating math. positive:"+ "\n"\
-                   "- Select three vertexes:"+ "\n"\
+                   "- Choose the line attributes"+ "\n"\
+                   "- select three vertexes:"+ "\n"\
                    "- center, start, end"+ "\n"\
                    "- start defines the radius"+ "\n"\
                    "- click this button"
@@ -4881,6 +5039,7 @@ class drawArc:
     def textGerman(self):
         buttonText = "Kosmetischer Bogen (Mitte und 2 Punkte)"
         helpText = "Zeichnet einen math. positiv rotierenden Kreisbogen:"+ "\n"\
+                   "- Wählen Sie die Linienattribute"+ "\n"\
                    "- wähle drei Kontrollpunkte:"+ "\n"\
                    "- Mittelpunkt, Startpunkt , Endpunkt"+ "\n"\
                    "- der Startpunkt legt den Radius fest"+ "\n"\
@@ -4917,7 +5076,7 @@ class drawArc:
                    "- haga clic en este botón"
         return(buttonText,helpText)
 
-    def activated(self):
+    def activated(self): # drawArc
 
         def returnAngle(Center,Point):
             X= App.Vector(1,0,0)
@@ -4933,7 +5092,7 @@ class drawArc:
 
         (OK,ObjectList,View) = commonTools.selectionOK()
         if OK:
-            if len(ObjectList) >= 2:
+            if len(ObjectList) >= 3:
                 ThreeVertex = True
                 for ObjectString in ObjectList:
                     if ObjectString[0:6] != 'Vertex':
@@ -5312,10 +5471,1565 @@ class createArcLengthDim:
                     ArcDim.FormatSpec = FormatStr.replace(".",",")
             gui.Selection.clearSelection()
 
+class drawPerpendicular:
+    '''draw a line perpendicular to another line'''
+    Icon = QtGui.QPixmap([  \
+        "64 64 12 1",\
+        " 	c None",\
+        ".	c #2B2200",\
+        "+	c #2D2400",\
+        "@	c #FFFF00",\
+        "#	c #2F2600",\
+        "$	c #F9F900",\
+        "%	c #FF0000",\
+        "&	c #2C2300",\
+        "*	c #393100",\
+        "=	c #F8F800",\
+        "-	c #342C00",\
+        ";	c #2A2200",\
+        "                                                                ",\
+        "                             ......                             ",\
+        "                           ..........                           ",\
+        "                          ...+@@@@#...                          ",\
+        "                         ...@@@@@@@@...                         ",\
+        "                         ..@@@@@@@@$@..                         ",\
+        "                        ...@@%%%%%%@@&..                        ",\
+        "                        ..@@@%%%%%%@@@..                        ",\
+        "                        ..@@@%%%%%%@@@..                        ",\
+        "                        ..@@@%%%%%%@@@..                        ",\
+        "                        ..*=@%%%%%%@@-..                        ",\
+        "                         ..@@%%%%%%@@..                         ",\
+        "                         ..#@@@@@@@@+..                         ",\
+        "                          ..&.@@@@....                          ",\
+        "                           ..........                           ",\
+        "                            .%%%%%%.                            ",\
+        "                             %%%%%%                             ",\
+        "                             %%%%%%                             ",\
+        "                             %%%%%%                             ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                             %%%%%%                             ",\
+        "                             %%%%%%                             ",\
+        "                             %%%%%%                             ",\
+        "                             %%%%%%                             ",\
+        "                             %%%%%%                             ",\
+        "                             %%%%%%                             ",\
+        "                             %%%%%%                             ",\
+        "                             %%%%%%                             ",\
+        "                             %%%%%%                             ",\
+        "                             %%%%%%                             ",\
+        "                             %%%%%%                             ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                            %%%%%%%                             ",\
+        "                            %%%%%%%                             ",\
+        "                            %%%%%%%                             ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                            %%%%%%%                             ",\
+        "                            %%%%%%%                             ",\
+        "                            %%%%%%%                             ",\
+        "                            %%%%%%%                             ",\
+        "                            %%%%%%%                             ",\
+        "                            %%%%%%%                             ",\
+        " .............................................................; ",\
+        " .............................................................; ",\
+        " ..@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.; ",\
+        " ..@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.; ",\
+        " ..@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.; ",\
+        " ..@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.; ",\
+        " ..@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.; ",\
+        " ...............................;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; ",\
+        " ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; ",\
+        "                                                                ",\
+        "                                                                "])
+
+    def textEnglish(self):
+        buttonText = "Create a line perpendicular to another line"
+        helpText = "Create a line perpendicular to another line through a vertex"+ "\n"\
+                   "- choose the line attributes"+ "\n"\
+                   "- select one line"+ "\n"\
+                   "- select one vertex"+ "\n"\
+                   "- click this button"
+        return(buttonText,helpText)
+
+    def textGerman(self):
+        buttonText = "Erzeuge eine Linie im rechten Winkel"
+        helpText = "Erzeuge eine Linie im rechten Winkel zu einer Linie durch einen Punkt"+ "\n"\
+                   "- Wählen Sie die Linienattribute"+ "\n"\
+                   "- wähle eine Linie"+ "\n"\
+                   "- wähle einen Punkt"+ "\n"\
+                   "- drücke diesen Knopf"
+        return(buttonText,helpText)
+
+    def textItalian(self):
+        buttonText = "Perpendicolare cosmetica"
+        helpText = "Crea una perpendicolare cosmetica ad una linea da un vertice:"+ "\n"\
+                   "- scegliere gli attributi"+"\n"\
+                   "- selezionare una linea"+ "\n"\
+                   "- selezionare un vertice"+ "\n"\
+                   "- fare clic su questo pulsante"
+        return(buttonText,helpText)
+
+    def textFrench(self):
+        buttonText = "Cosmétique perpendiculaire"
+        helpText = "Créer une ligne cosmétique perpendiculaire à une ligne à partir d'un sommet:"+ "\n"\
+                   "- choisir des attributs"+"\n"\
+                   "- sélectionnez une ligne"+ "\n"\
+                   "- sélectionnez un sommet"+ "\n"\
+                   "- cliquez sur ce bouton"
+        return(buttonText,helpText)
+
+    def textSpanish(self):
+        buttonText = "Cosmética perpendicular"
+        helpText = "Crea una línea cosmética perpendicular a una línea desde un vértice:"+ "\n"\
+                   "- elegir atributos"+"\n"\
+                   "- seleccionar una línea"+ "\n"\
+                   "- seleccionar un vértice"+ "\n"\
+                   "- haga clic en este botón"
+        return(buttonText,helpText)
+
+    def activated(self): # drawPerpendicular
+        (OK,ObjectList,View) = commonTools.selectionOK()
+        if OK:
+            if len(ObjectList) == 2:
+                if ObjectList[0][0:4] == "Edge" and ObjectList[1][0:6] == "Vertex":
+                    Edge = View.getEdgeBySelection(ObjectList[0])
+                    if Edge.Curve.TypeId == 'Part::GeomLine':
+                        StartPt, EndPt = Edge.Vertexes[0].Point, Edge.Vertexes[1].Point
+                        MidPt = View.getVertexBySelection(ObjectList[1]).Point
+                        HalfVec = (StartPt.sub(EndPt)/2).cross(App.Vector(0,0,1))
+                        View.makeCosmeticLine(MidPt.add(HalfVec),MidPt.sub(HalfVec),Attrib.getStyle(), Attrib.getWidth(), Attrib.getColorTuple())
+
+class drawParallel:
+    '''draw a line parallel to another line'''
+    Icon = QtGui.QPixmap([  \
+        "64 64 26 1",\
+        " 	c None",\
+        ".	c #FF0000",\
+        "+	c #2B2200",\
+        "@	c #2B2100",\
+        "#	c #2C2400",\
+        "$	c #FFFF00",\
+        "%	c #F8F800",\
+        "&	c #FF0D00",\
+        "*	c #FFFE00",\
+        "=	c #FB0200",\
+        "-	c #FF0200",\
+        ";	c #2C2300",\
+        ">	c #F9F900",\
+        ",	c #342100",\
+        "'	c #FD0000",\
+        ")	c #FCFC00",\
+        "!	c #F8F700",\
+        "~	c #2F2600",\
+        "{	c #FDFC00",\
+        "]	c #FBFB00",\
+        "^	c #F5F500",\
+        "/	c #332B00",\
+        "(	c #F7F600",\
+        "_	c #FDFD00",\
+        ":	c #FEFE00",\
+        "<	c #F6F500",\
+        "                                              .                 ",\
+        "                                             ...                ",\
+        "                                            .....               ",\
+        "                                           .......              ",\
+        "                                          .........             ",\
+        "                                           .........            ",\
+        "                                            .......             ",\
+        "                                      .      .....              ",\
+        "                                     ...      ...               ",\
+        "                                    .....      .                ",\
+        "                                   .......                      ",\
+        "                                  .........                     ",\
+        "                                 ...........                    ",\
+        "                                ...........                     ",\
+        "                               ...........                      ",\
+        "                         ++++ ...........                       ",\
+        "                      +++++++...........                        ",\
+        "                     ++@++++...........                         ",\
+        "                     ++#++$...........                  +       ",\
+        "                    +++++$$..........                  +++      ",\
+        "                    +++%$$$$........                  +++++     ",\
+        "                   ++++$$$$$$......                  +++++++    ",\
+        "                   ++.$$$$$$$$.&..+                 ++++$++++   ",\
+        "                   +...*$$$$$$$.=++                ++++$$$++++  ",\
+        "                   ..=..$$$$$$$$+++               ++++$$$$$++++ ",\
+        "                  .....-.$$$$$$$;++              ++++$$$$$$$++++",\
+        "                 .........$$$$$+++              ++++$$$$$$$++++ ",\
+        "                ...........$$+++++             ++++$$$$$$>++++  ",\
+        "               ...........+++++++             ++++$$$$$$$++++   ",\
+        "              ...........+,+++++             ++++$$$$$$$++++    ",\
+        "             ..........'  +++               ++++$$$$$$$++++     ",\
+        "            ...........                    ++++$$$$$$$++++      ",\
+        "           ...........                    ++++$$$$$$$++++       ",\
+        "          ...........                    ++++$$$$$)$++++        ",\
+        "           .........                    ++++$$$$$$$++++         ",\
+        "            .......                    ++++$$$$$$$++++          ",\
+        "      .      .....                    ++++$$$$$$$++++           ",\
+        "     ...      ...                    ++++$$$$$$$++;+            ",\
+        "    .....      .                    ++++$$$$!$$++++             ",\
+        "   .......                         ++++$$$$$$$++++              ",\
+        "  .........                       ++++$$$$$$$++++               ",\
+        " ...........                     ++++$$$$$$$++++                ",\
+        "...........                     ++++$$$$$$$+~++                 ",\
+        " .........                     ++++$$$$$${++++                  ",\
+        "  .......                     ++++$$$]$$^++++                   ",\
+        "   .....                     ++++$$$$$$$++++                    ",\
+        "    ...                     ++++$$$$$$$++++                     ",\
+        "     .                     ++++$$$$$$$/+++                      ",\
+        "                          ++++$$$$$$$++++                       ",\
+        "                         ++++$$($$>$++++                        ",\
+        "                        ++++$$_$$$>++++                         ",\
+        "                       ++++$$$$$$$++++                          ",\
+        "                      ++++$$$$$$$++++                           ",\
+        "                     ++++$$$$$$$++++                            ",\
+        "                    ++++$$$$:$$++++                             ",\
+        "                   ++++$$$$<$$++++                              ",\
+        "                  ++++$$$$$$$++++                               ",\
+        "                 ++++$$$$$$$++++                                ",\
+        "                  ++++$$$$$++++                                 ",\
+        "                   ++++$$$++++                                  ",\
+        "                    ++++$++++                                   ",\
+        "                     +++++++                                    ",\
+        "                      +++++                                     ",\
+        "                       +++                                      "])
+
+    def textEnglish(self):
+        buttonText = "Create a line parallel to another line"
+        helpText = "Create a line parallel to another line through a vertex"+ "\n"\
+                   "- choose the line attributes"+ "\n"\
+                   "- select one line"+ "\n"\
+                   "- select one vertex"+ "\n"\
+                   "- click this button"
+        return(buttonText,helpText)
+
+    def textGerman(self):
+        buttonText = "Erzeuge eine parallele Liniel"
+        helpText = "Erzeuge eine parallele zu einer Linie durch einen Punkt"+ "\n"\
+                   "- Wählen Sie die Linienattribute"+ "\n"\
+                   "- wähle eine Linie"+ "\n"\
+                   "- wähle einen Punkt"+ "\n"\
+                   "- drücke diesen Knopf"
+        return(buttonText,helpText)
+
+    def textItalian(self):
+        buttonText = "Parallela cosmetica"
+        helpText = "Crea una parallela cosmetica ad una linea da un vertice:"+ "\n"\
+                   "- scegliere gli attributi"+"\n"\
+                   "- selezionare una linea"+ "\n"\
+                   "- selezionare un vertice"+ "\n"\
+                   "- fare clic su questo pulsante"
+        return(buttonText,helpText)
+
+    def textFrench(self):
+        buttonText = "Parallèle cosmétique"
+        helpText = "Créer une ligne cosmétique parallèle à une ligne à partir d'un sommet:"+ "\n"\
+                   "- choisir des attributs"+"\n"\
+                   "- sélectionnez une ligne"+ "\n"\
+                   "- sélectionnez un sommet"+ "\n"\
+                   "- cliquez sur ce bouton"
+        return(buttonText,helpText)
+
+    def textSpanish(self):
+        buttonText = "Cosmética paralela"
+        helpText = "Crea una línea cosmética paralela a una línea desde un vértice:"+ "\n"\
+                   "- elegir atributos"+"\n"\
+                   "- seleccionar una línea"+ "\n"\
+                   "- seleccionar un vértice"+ "\n"\
+                   "- haga clic en este botón"
+        return(buttonText,helpText)
+
+    def activated(self): # drawParallel
+        (OK,ObjectList,View) = commonTools.selectionOK()
+        if OK:
+            if len(ObjectList) == 2:
+                if ObjectList[0][0:4] == "Edge" and ObjectList[1][0:6] == "Vertex":
+                    Edge = View.getEdgeBySelection(ObjectList[0])
+                    if Edge.Curve.TypeId == 'Part::GeomLine':
+                        StartPt, EndPt = Edge.Vertexes[0].Point, Edge.Vertexes[1].Point
+                        MidPt = View.getVertexBySelection(ObjectList[1]).Point
+                        HalfVec = StartPt.sub(EndPt)/2
+                        View.makeCosmeticLine(MidPt.add(HalfVec),MidPt.sub(HalfVec),Attrib.getStyle(), Attrib.getWidth(), Attrib.getColorTuple())
+
+class areaAnnot:
+    ''' create an annotation showing the area of a closed polygon'''
+    Icon = QtGui.QPixmap([  \
+        "64 64 15 1",\
+        " 	c None",\
+        ".	c #2B2200",\
+        "+	c #FFFF00",\
+        "@	c #2F2600",\
+        "#	c #2D2400",\
+        "$	c #FDFC00",\
+        "%	c #FDFD00",\
+        "&	c #FAFA00",\
+        "*	c #F8F800",\
+        "=	c #2E2500",\
+        "-	c #2D2300",\
+        ";	c #FF0000",\
+        ">	c #FFAEAE",\
+        ",	c #2C2300",\
+        "'	c #F7F600",\
+        "    .......                                          .......    ",\
+        "   .........                                        .........   ",\
+        "  ...+++++@..                                      ...+++++...  ",\
+        " ..#+$+++++...                                    ...+++++%+... ",\
+        "...+++++++++........................................+%+++++++...",\
+        "..+++++++++++......................................+++++++++++..",\
+        "..+++++++++++..++++++++++++++++++++++++++++++++++..+++++++++++..",\
+        "..+++++++++++#.++++++++++++++++++++++++++++++++++..++++++++++$#.",\
+        "..+++++++++++..++++++++++++++++++++++++++++++++++..+++++++++++..",\
+        "...+++++++++.......................................+++++++++++..",\
+        " ...+++++++.........................................++++++++&...",\
+        "  .#.+++++...                                     ...++++++*... ",\
+        "   .......@.                                       ..=+++++...  ",\
+        "    .......                                         .........   ",\
+        "    ..+++..                                          ......-    ",\
+        "    ..+++..                                          ..+++..    ",\
+        "    ..+++..                              ;;;;;;      ..+++..    ",\
+        "    ..+++..                             ;;;;;;;;     ..+++..    ",\
+        "    ..+++..                            ;;;;;;;;;;    ..+++..    ",\
+        "    ..+++..            ;;;;;;;;        ;;;   ;;;;    ..+++..    ",\
+        "    ..+++..           ;;;;;;;;;        ;;;   ;;;;    ..+++..    ",\
+        "    ..+++..           ;;;;;;;;;;             ;;;;    ..+++..    ",\
+        "    ..+++..           ;;;;;;;;;;            ;;;;;    ..+++..    ",\
+        "    ..+++..          ;;;;;;;;;;;           ;;;;;     ..+++..    ",\
+        "    ..+++..          ;;;;;;;;;;;;         ;;;;;      ..+++..    ",\
+        "    ..+++..          ;;;;;;;;;;;;        ;;;;;       ..+++..    ",\
+        "    ..+++..         ;;;;;;;;;;;;;;      ;;;;;        ..+++..    ",\
+        "    ..+++..         ;;;;;;;;;;;;;;      ;;;;         ..+++..    ",\
+        "    ..+++..         ;;;;;;  ;;;;;;     ;;;;;;;;;;    ..+++..    ",\
+        "    ..+++..        ;;;;;;;  ;;;;;;;    ;;;;;;;;;;    ..+++..    ",\
+        "    ..+++..        ;;;;;;;  ;;;;;;;    ;;;;;;;;;;    ..+++..    ",\
+        "    ..+++..       ;;;;;;;    ;;;;;;>                 ..+++..    ",\
+        "    ..+++..       ;;;;;;;    ;;;;;;;                 ..+++..    ",\
+        "    ..+++..       ;;;;;;      ;;;;;;                 ..+++..    ",\
+        "    ..+++..      ;;;;;;;      ;;;;;;;                ..+++..    ",\
+        "    ..+++..      ;;;;;;;      ;;;;;;;                ..+++..    ",\
+        "    ..+++..      ;;;;;;;;;;;;;;;;;;;;                ..+++..    ",\
+        "    ..+++..     ;;;;;;;;;;;;;;;;;;;;;;               ..+++..    ",\
+        "    ..+++..     ;;;;;;;;;;;;;;;;;;;;;;               ..+++..    ",\
+        "    ..+++..     ;;;;;;;;;;;;;;;;;;;;;;               ..+++..    ",\
+        "    ..+++..    ;;;;;;;;;;;;;;;;;;;;;;;;              ..+++..    ",\
+        "    ..+++..    ;;;;;;;          ;;;;;;;              ..+++..    ",\
+        "    ..+++..   ;;;;;;;;          ;;;;;;;;             ..+++..    ",\
+        "    ..+++..   ;;;;;;;            ;;;;;;;             ..+++..    ",\
+        "    ..+++..   ;;;;;;;            ;;;;;;;             ..+++..    ",\
+        "    ..+++..  ;;;;;;;              ;;;;;;;            ..+++..    ",\
+        "    ..+++..  ;;;;;;;              ;;;;;;;            ..+++..    ",\
+        "    ..+++..  ;;;;;;;              ;;;;;;;            ..+++..    ",\
+        "    ..+++..                                          ..+++..    ",\
+        "    ..+++..                                          ..+++..    ",\
+        "    ........                                         .......    ",\
+        "   .........                                        .........   ",\
+        "  ...+++++.,.                                      ...+++++...  ",\
+        " ...+++++++.,......................................#.+++++++.#. ",\
+        "...+++++++++..,.....................................+++++++++...",\
+        "..+++++++++++..++++++++++++++++++++++++++++++++++..+++++++++++..",\
+        "..+++++++++++..++++++++++++++++++++++++++++++++++..+++++++++++..",\
+        "..+++++++++++..++++++++++++++++++++++++++++++++++..+++++++++++..",\
+        "..+++++++++++......................................+++++++++++..",\
+        "..,+++++++++.......................................#+++++++++...",\
+        " ...+++++++.#.                                    ...+++++++... ",\
+        "  ...+'+++.#.                                      ...+++++...  ",\
+        "   .........                                        .........   ",\
+        "    .......                                          .......    "])
+
+    def textEnglish(self):
+        buttonText = "Create an annotation showing the area"
+        helpText = "Creates an annotation of the area value, the unit"+ "\n"\
+                   "of which is determined by the preferences "+"\n"\
+                   "- select a closed closed polygon of lines"+ "\n"\
+                   "- click this button"
+        return(buttonText,helpText)
+
+    def textGerman(self):
+        buttonText = "Erzeuge eine Anmerkung mit dem Flächeninhalt"
+        helpText = "Erstellen Sie eine Anmerkung zum Flächenwert, deren Einheit"+ "\n"\
+                   "aus den Einstellungen entnommen wird "+"\n"\
+                   "- Wählen Sie Linien die ein geschlossenes Polygon bilden"+ "\n"\
+                   "- drücke diesen Knopf"
+        return(buttonText,helpText)
+
+    def textItalian(self):
+        buttonText = "Annotazione valore area poligono"
+        helpText = "Crea un'annotazione del valore dell'area, la cui "+ "\n"\
+                   "unità viene rilevata dalle preferenze"+"\n"\
+                   "- selezionare le linee che formano il poligono chiuso"+ "\n"\
+                   "- fare clic su questo pulsante"
+        return(buttonText,helpText)
+
+    def textFrench(self):
+        buttonText = "Annotation de valeur de surface de polygone"
+        helpText = "Crée une annotation de la valeur de surface, dont "+ "\n"\
+                   "l'unité est extraite des préférences"+"\n"\
+                   "- sélectionnez les lignes qui forment le polygone fermé"+ "\n"\
+                   "- cliquez sur ce bouton"
+        return(buttonText,helpText)
+
+    def textSpanish(self):
+        buttonText = "Anotación de valor de área de polígono"
+        helpText = "Cree una anotación del valor del área, cuya "+ "\n"\
+                   "unidad se toma de las preferencias "+"\n"\
+                   "- seleccione las líneas que forman el polígono cerrado"+ "\n"\
+                   "- haga clic en este botón"
+        return(buttonText,helpText)
+
+    def activated(self):
+        Sel = Gui.Selection.getSelectionEx()[0]
+        ObjectList = Sel.SubElementNames
+        View = Gui.Selection.getCompleteSelection()[0]
+        XView,YView = commonTools.getViewCoords(View)
+        selEdges = []
+        for Obj in ObjectList:
+            selEdges.append(View.getEdgeBySelection(Obj))
+        wire = TechDraw.findOuterWire(selEdges)
+        sumArea, sumLength, sumProduct = 0, 0, App.Vector()
+        for Edge in wire.Edges:
+            sumArea = sumArea + Edge.Vertexes[0].Point.x*Edge.Vertexes[1].Point.y-Edge.Vertexes[0].Point.y*Edge.Vertexes[1].Point.x
+            sumLength = sumLength + Edge.Length
+            sumProduct = sumProduct+Edge.Vertexes[0].Point.add(Edge.Vertexes[1].Point)/2*Edge.Length
+        center = App.Vector(sumProduct.x/sumLength,sumProduct.y/sumLength,0)
+        factor = App.Units.Quantity('m').getUserPreferred()[1]
+        sumArea = abs(int(sumArea/(2*factor*factor)))
+        commonTools.createAnnot('Area',str(sumArea)+App.Units.Quantity('m').getUserPreferred()[2]+'2',float(XView)+center.x,float(YView)+center.y-2)
+
+class createObliqueDimChain:
+    '''create an oblique chain dimension'''
+    Icon = QtGui.QPixmap([  \
+        "64 64 2 1",\
+        " 	c None",\
+        ".	c #FF0000",\
+        "                                 ..                             ",\
+        "                                 ...                            ",\
+        "                                .....                           ",\
+        "                                 .....                          ",\
+        "                                  .....                         ",\
+        "                                   .....                        ",\
+        "                                    .....                       ",\
+        "                                     .....                      ",\
+        "                                      .....                     ",\
+        "                                       .....                    ",\
+        "                                        .....                   ",\
+        "                                         .....                  ",\
+        "                                          .....            .    ",\
+        "                                           .....          ...   ",\
+        "                                            .....        .....  ",\
+        "                   .                         .....      .....   ",\
+        "                  ...                         ..............    ",\
+        "                 .....                         ............     ",\
+        "                  .....                         ..........      ",\
+        "                   .....                        ..........      ",\
+        "                    .....                       ..........      ",\
+        "                     .....                      ..........      ",\
+        "                      .....                     .........       ",\
+        "                       .....                    ..........      ",\
+        "                        .....                  ............     ",\
+        "                         .....                ............      ",\
+        "                          .....              .....      .       ",\
+        "                           .....            .....               ",\
+        "                            .....          .....                ",\
+        "                             .....        .....                 ",\
+        "                              .....      .....                  ",\
+        "                               .....    .....                   ",\
+        "  ...                           ............                    ",\
+        " .....                           ..........                     ",\
+        "  .....                          .........                      ",\
+        "   .....                         ..........                     ",\
+        "    .....                        ..........                     ",\
+        "     .....                       ..........                     ",\
+        "      .....                      ..........                     ",\
+        "       .....                    ............                    ",\
+        "        .....                  ............                     ",\
+        "         .....                .....      .                      ",\
+        "          .....              .....                              ",\
+        "           .....            .....                               ",\
+        "            .....          .....                                ",\
+        "             .....        .....                                 ",\
+        "              .....      .....                                  ",\
+        "               ..... .. .....                                   ",\
+        "                ............                                    ",\
+        "                 ..........                                     ",\
+        "                 .........                                      ",\
+        "                 ..........                                     ",\
+        "                 ..........                                     ",\
+        "                 .........                                      ",\
+        "                 ..........                                     ",\
+        "                ............                                    ",\
+        "               ............                                     ",\
+        "              .....      .                                      ",\
+        "              ....                                              ",\
+        "               ..                                               ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                                                                ",\
+        "                                                                "])
+
+    def textEnglish(self):
+        buttonText = "Create an oblique dimension chain"
+        helpText = "Create an oblique dimension chain"+ "\n"\
+                   "- select three or more  vertexes"+ "\n"\
+                   "- the first two define the direction"+ "\n"\
+                   "- click this button"
+        return(buttonText,helpText)
+
+    def textGerman(self):
+        buttonText = "Erzeuge eine schräge Kettenbemaßung"
+        helpText = "Erzeuge ein schräges Kettenmaß"+ "\n"\
+                   "- wähle drei oder mehr Konstruktionspunkte"+ "\n"\
+                   "- die beiden Ersten bestimmen die Richtung"+ "\n"\
+                   "- drücke diesen Knopf"
+        return(buttonText,helpText)
+
+    def textItalian(self):
+        buttonText = "Dimensioni oblique in serie continue"
+        helpText = "Seleziona tre o più vertici"+ "\n"\
+                   "- fare clic su questo pulsante"
+        return(buttonText,helpText)
+
+    def textFrench(self):
+        buttonText = "Dimensions obliques en série continue"
+        helpText = "Sélectionnez trois sommets ou plus"+ "\n"\
+                   "- cliquez sur ce bouton"
+        return(buttonText,helpText)
+
+    def textSpanish(self):
+        buttonText = "Dimensiones oblicuas en serie continua"
+        helpText = "Seleccione tres o más vértices"+ "\n"\
+                   "- haga clic en este botón"
+        return(buttonText,helpText)
+
+
+    def activated(self): # createObliqueDimChain
+        def sortPoints(Point):
+            return Point.x
+
+        (OK,ElementNames,View) = commonTools.selectionOK()
+        if OK:
+            VertexNames = [VertexName for VertexName in ElementNames if VertexName[:6]=='Vertex']
+            Vertexes = [View.getVertexBySelection(VertexName) for VertexName in VertexNames]
+            if len(Vertexes) > 2:
+                DimPoints = [Vertexes[0].Point,Vertexes[1].Point]
+                Direction = Vertexes[0].Point.sub(Vertexes[1].Point).normalize()
+                Normal = App.Vector(Direction.y,-Direction.x,0)
+                Carrier = Part.Line(Vertexes[0].Point,Vertexes[1].Point)
+                DistLine = Part.Line(App.Vector(),Normal)
+                Ip = Carrier.intersect(DistLine)
+                Delta = App.Vector(Ip[0].X,Ip[0].Y,Ip[0].Z).normalize()*7
+                for Num in range(2,len(Vertexes)):
+                    Pt = Vertexes[Num].Point
+                    Extension = Part.Line(Pt,Pt.add(Normal))
+                    Ip = Carrier.intersect(Extension)
+                    IpVec = App.Vector(Ip[0].X,Ip[0].Y,Ip[0].Z)
+                    if not IpVec.isEqual(Pt,0.01):
+                        DimPoints.append(IpVec)
+                        View.makeCosmeticLine(Pt,IpVec,1, 0.15, (0,0,0,0))
+                    else:
+                        DimPoints.append(Pt)
+                DimPoints.sort(key=sortPoints)
+                for i  in range(len(DimPoints)-1):
+                    DistanceDim=TechDraw.makeDistanceDim(View,'Distance',DimPoints[i],DimPoints[i+1])
+                    DistanceDim.X = (DimPoints[i].x+DimPoints[i+1].x)/2+Delta.x
+                    DistanceDim.Y = (DimPoints[i].y+DimPoints[i+1].y)/2+Delta.y
+
+class createObliqueCoordDim:
+    '''Create oblique coordinate dimension'''
+    Icon = QtGui.QPixmap([  \
+        "64 64 2 1",\
+        " 	c None",\
+        ".	c #FF0000",\
+        "                   .......           ......                     ",\
+        "         ...        ......           .......                    ",\
+        "         ...         ......            ......                   ",\
+        "        .....         ......            .....                   ",\
+        "         .....         ......           ......                  ",\
+        "         ......         ......           ......                 ",\
+        "          ......         ......           ......                ",\
+        "           ......         ......           ......               ",\
+        "            .......        ......           ......              ",\
+        "             ...........    ......           ......             ",\
+        "              ..........     ......           ......            ",\
+        "               .........     ......            ......           ",\
+        "               .........      ......            .....           ",\
+        "               .........       ......            .....          ",\
+        "               .........        ...........       .....         ",\
+        "               .........         ...........      ......        ",\
+        "              ...........         ..........       ......       ",\
+        "             ............         ..........        ......      ",\
+        "            ............          ..........         .........  ",\
+        "           ......                 ..........          ..........",\
+        "          ......                  ..........           .........",\
+        "         .......                  ..........           .........",\
+        "         ......                  ............           ........",\
+        ".       ......                  ............           .........",\
+        "..     .....                    .....                   ........",\
+        "...   ......                  ......                   .........",\
+        "...........                  .......                  ..........",\
+        "..........                   ......                  ...........",\
+        ".........                   ......                  .......   ..",\
+        ".........                  ......                  ......       ",\
+        ".........                 ......                  .......       ",\
+        ".........                ......                  .......        ",\
+        ".........               ......                   ......         ",\
+        "..........             ......                   ......          ",\
+        "...........           ......                   ......           ",\
+        "............         ......                   ......            ",\
+        "..     ......        .....                   ......             ",\
+        "        ......      ......                  ......              ",\
+        "        .......   .......                  ......               ",\
+        "         ...............                  ......                ",\
+        "          .............                  .......                ",\
+        "           ...........                  .......                 ",\
+        "            .........                   ......                  ",\
+        "            .........                  ......                   ",\
+        "            .........                 ......                    ",\
+        "            .........                ......                     ",\
+        "           ...........              ......                      ",\
+        "           ............            ......                       ",\
+        "           .............          ......                        ",\
+        "           ....    .....         ......                         ",\
+        "            ..      .....       .......                         ",\
+        "                     .....     .......                          ",\
+        "                      .....   .......                           ",\
+        "                       .............                            ",\
+        "                       ............                             ",\
+        "                        ..........                              ",\
+        "                        ..........                              ",\
+        "                        ..........                              ",\
+        "                        ..........                              ",\
+        "                        ..........                              ",\
+        "                       ...........                              ",\
+        "                       ...........                              ",\
+        "                       ...........                              ",\
+        "                        ...                                     "])
+
+    def textEnglish(self):
+        buttonText = "Create an oblique coordinate dimension"
+        helpText = "Create an oblique coordinate dimension"+ "\n"\
+                   "- select three or more  vertexes"+ "\n"\
+                   "- the first two define the direction"+ "\n"\
+                   "- click this button"
+        return(buttonText,helpText)
+
+    def textGerman(self):
+        buttonText = "Erzeuge eine schräge Koordinatenbemaßung"
+        helpText = "Erzeuge ein schräges Koordinatenmaß"+ "\n"\
+                   "- wähle drei oder mehr Konstruktionspunkte"+ "\n"\
+                   "- die beiden Ersten bestimmen die Richtung"+ "\n"\
+                   "- drücke diesen Knopf"
+        return(buttonText,helpText)
+
+    def textItalian(self):
+        buttonText = "Dimensioni parallele/coordinate oblique"
+        helpText = "- impostare Valore distanziamento"+ "\n"\
+                   "- selezionare tre o più vertici"+ "\n"\
+                   "- fare clic su questo pulsante"
+        return(buttonText,helpText)
+
+    def textFrench(self):
+        buttonText = "Dimensions parallèles/coordonnées oblique"
+        helpText = "- définir Valeur d'espacement"+ "\n"\
+                          "- sélectionnez trois sommets ou plus"+ "\n"\
+                          "- cliquez sur ce bouton"
+        return(buttonText,helpText)
+
+    def textSpanish(self):
+        buttonText = "Dimensiones paralelas/coordenadas oblicuas"
+        helpText = "- establecer Valor de espaciado"+ "\n"\
+                   "- seleccione tres o más vértices"+ "\n"\
+                   "- haga clic en este botón"
+        return(buttonText,helpText)
+
+    def activated(self): # createObliqueCoordDim
+        def sortPoints(Point):
+            return Point.x
+
+        (OK,ElementNames,View) = commonTools.selectionOK()
+        if OK:
+            VertexNames = [VertexName for VertexName in ElementNames if VertexName[:6]=='Vertex']
+            Vertexes = [View.getVertexBySelection(VertexName) for VertexName in VertexNames]
+            if len(Vertexes) > 2:
+                DimPoints = [Vertexes[0].Point,Vertexes[1].Point]
+                Direction = Vertexes[0].Point.sub(Vertexes[1].Point).normalize()
+                Normal = App.Vector(Direction.y,-Direction.x,0)
+                Carrier = Part.Line(Vertexes[0].Point,Vertexes[1].Point)
+                DistLine = Part.Line(App.Vector(),Normal)
+                Ip = Carrier.intersect(DistLine)
+                Delta = App.Vector(Ip[0].X,Ip[0].Y,Ip[0].Z).normalize()*DimAttrib.getDimLineDistance()
+                for Num in range(2,len(Vertexes)):
+                    Pt = Vertexes[Num].Point
+                    Extension = Part.Line(Pt,Pt.add(Normal))
+                    Ip = Carrier.intersect(Extension)
+                    IpVec = App.Vector(Ip[0].X,Ip[0].Y,Ip[0].Z)
+                    if not IpVec.isEqual(Pt,0.01):
+                        DimPoints.append(IpVec)
+                        View.makeCosmeticLine(Pt,IpVec,1, 0.15, (0,0,0,0))
+                    else:
+                        DimPoints.append(Pt)
+                DimPoints.sort(key=sortPoints)
+                for i  in range(len(DimPoints)-1):
+                    DistanceDim=TechDraw.makeDistanceDim(View,'Distance',DimPoints[0],DimPoints[i+1])
+                    DistanceDim.X = (DimPoints[0].x+DimPoints[i+1].x)/2+Delta.x*(i+1)
+                    DistanceDim.Y = (DimPoints[0].y+DimPoints[i+1].y)/2+Delta.y*(i+1)
+
+class positionObliqueDimChain:
+    '''Position oblique dimension'''
+    Icon = QtGui.QPixmap([  \
+        "64 64 240 2",\
+        "  	c None",\
+        ". 	c #FF0000",\
+        "+ 	c #262600",\
+        "@ 	c #323200",\
+        "# 	c #4F5000",\
+        "$ 	c #7B7B00",\
+        "% 	c #848400",\
+        "& 	c #4E4E00",\
+        "* 	c #464600",\
+        "= 	c #939400",\
+        "- 	c #CCCD00",\
+        "; 	c #D8D800",\
+        "> 	c #9A9A00",\
+        ", 	c #373700",\
+        "' 	c #919100",\
+        ") 	c #D5D500",\
+        "! 	c #FBFC00",\
+        "~ 	c #FCFD00",\
+        "{ 	c #DBDC00",\
+        "] 	c #151500",\
+        "^ 	c #8E8E00",\
+        "/ 	c #D9D900",\
+        "( 	c #FBFB00",\
+        "_ 	c #FFFF00",\
+        ": 	c #F8F800",\
+        "< 	c #D4D400",\
+        "[ 	c #000000",\
+        "} 	c #898900",\
+        "| 	c #DDDE00",\
+        "1 	c #FCFC00",\
+        "2 	c #D0D000",\
+        "3 	c #737400",\
+        "4 	c #8A8A00",\
+        "5 	c #E1E100",\
+        "6 	c #F7F800",\
+        "7 	c #CBCB00",\
+        "8 	c #7A7A00",\
+        "9 	c #141400",\
+        "0 	c #E2E300",\
+        "a 	c #F6F700",\
+        "b 	c #C7C700",\
+        "c 	c #808000",\
+        "d 	c #212100",\
+        "e 	c #3D3D00",\
+        "f 	c #929200",\
+        "g 	c #E3E300",\
+        "h 	c #F6F600",\
+        "i 	c #C4C400",\
+        "j 	c #838300",\
+        "k 	c #353500",\
+        "l 	c #4F4F00",\
+        "m 	c #FDFD00",\
+        "n 	c #C2C200",\
+        "o 	c #838400",\
+        "p 	c #595900",\
+        "q 	c #9FA000",\
+        "r 	c #DFDF00",\
+        "s 	c #C1C100",\
+        "t 	c #828200",\
+        "u 	c #404000",\
+        "v 	c #5F5F00",\
+        "w 	c #A4A400",\
+        "x 	c #C0C100",\
+        "y 	c #7D7E00",\
+        "z 	c #3C3C00",\
+        "A 	c #616100",\
+        "B 	c #A7A700",\
+        "C 	c #DDDD00",\
+        "D 	c #F3F400",\
+        "E 	c #767600",\
+        "F 	c #303000",\
+        "G 	c #606000",\
+        "H 	c #A8A800",\
+        "I 	c #DEDE00",\
+        "J 	c #F1F100",\
+        "K 	c #C3C400",\
+        "L 	c #6C6C00",\
+        "M 	c #090900",\
+        "N 	c #5C5C00",\
+        "O 	c #DFE000",\
+        "P 	c #FEFE00",\
+        "Q 	c #F0F000",\
+        "R 	c #C4C500",\
+        "S 	c #242400",\
+        "T 	c #555500",\
+        "U 	c #E2E200",\
+        "V 	c #EFEF00",\
+        "W 	c #6D6D00",\
+        "X 	c #444400",\
+        "Y 	c #6F7000",\
+        "Z 	c #545400",\
+        "` 	c #494900",\
+        " .	c #E5E600",\
+        "..	c #2F2F00",\
+        "+.	c #969700",\
+        "@.	c #D3D300",\
+        "#.	c #A3A300",\
+        "$.	c #646500",\
+        "%.	c #030300",\
+        "&.	c #A0A000",\
+        "*.	c #EAEA00",\
+        "=.	c #EFF000",\
+        "-.	c #BEBF00",\
+        ";.	c #6A6A00",\
+        ">.	c #848500",\
+        ",.	c #EAEB00",\
+        "'.	c #EDEE00",\
+        ").	c #AAAB00",\
+        "!.	c #5E5E00",\
+        "~.	c #161600",\
+        "{.	c #070700",\
+        "].	c #0A0A00",\
+        "^.	c #3F3F00",\
+        "/.	c #9B9B00",\
+        "(.	c #EEEF00",\
+        "_.	c #B9B900",\
+        ":.	c #666600",\
+        "<.	c #9C9C00",\
+        "[.	c #F5F600",\
+        "}.	c #EEEE00",\
+        "|.	c #ACAC00",\
+        "1.	c #363600",\
+        "2.	c #1E1E00",\
+        "3.	c #4A4A00",\
+        "4.	c #F4F400",\
+        "5.	c #F3F300",\
+        "6.	c #B2B300",\
+        "7.	c #A9A900",\
+        "8.	c #DADA00",\
+        "9.	c #F2F200",\
+        "0.	c #AEAF00",\
+        "a.	c #474700",\
+        "b.	c #ABAB00",\
+        "c.	c #FAFA00",\
+        "d.	c #FAFB00",\
+        "e.	c #AAAA00",\
+        "f.	c #656500",\
+        "g.	c #1B1B00",\
+        "h.	c #565600",\
+        "i.	c #ACAD00",\
+        "j.	c #E7E700",\
+        "k.	c #FEFF00",\
+        "l.	c #F5F500",\
+        "m.	c #8D8D00",\
+        "n.	c #414100",\
+        "o.	c #5A5A00",\
+        "p.	c #C6C600",\
+        "q.	c #F0F100",\
+        "r.	c #343400",\
+        "s.	c #BCBC00",\
+        "t.	c #F2F300",\
+        "u.	c #E9E900",\
+        "v.	c #7E7E00",\
+        "w.	c #010100",\
+        "x.	c #3B3B00",\
+        "y.	c #BEBE00",\
+        "z.	c #626200",\
+        "A.	c #1D1E00",\
+        "B.	c #313100",\
+        "C.	c #A8A900",\
+        "D.	c #E4E400",\
+        "E.	c #C2C300",\
+        "F.	c #6F6F00",\
+        "G.	c #272700",\
+        "H.	c #686800",\
+        "I.	c #B3B300",\
+        "J.	c #E5E500",\
+        "K.	c #F9F900",\
+        "L.	c #F1F200",\
+        "M.	c #BBBB00",\
+        "N.	c #7B7C00",\
+        "O.	c #CBCC00",\
+        "P.	c #C8C800",\
+        "Q.	c #CECE00",\
+        "R.	c #E3E400",\
+        "S.	c #FDFE00",\
+        "T.	c #7E7F00",\
+        "U.	c #414200",\
+        "V.	c #525200",\
+        "W.	c #9D9E00",\
+        "X.	c #E6E600",\
+        "Y.	c #333300",\
+        "Z.	c #999900",\
+        "`.	c #C0C000",\
+        " +	c #7C7C00",\
+        ".+	c #141500",\
+        "++	c #E4E500",\
+        "@+	c #727200",\
+        "#+	c #404100",\
+        "$+	c #505000",\
+        "%+	c #979700",\
+        "&+	c #BABA00",\
+        "*+	c #959600",\
+        "=+	c #E1E000",\
+        "-+	c #DBDB00",\
+        ";+	c #FDFC00",\
+        ">+	c #393900",
+        ",+	c #9E9E00",\
+        "'+	c #B4B400",\
+        ")+	c #020200",\
+        "!+	c #969600",\
+        "~+	c #E0E000",\
+        "{+	c #6A6B00",\
+        "]+	c #959500",\
+        "^+	c #939300",\
+        "/+	c #4A4B00",\
+        "(+	c #D7D700",\
+        "_+	c #797A00",\
+        ":+	c #EBEB00",\
+        "<+	c #E6E700",\
+        "[+	c #646400",\
+        "}+	c #B0B000",\
+        "|+	c #D1D100",\
+        "1+	c #D2D200",\
+        "2+	c #9C9D00",\
+        "3+	c #3A3B00",\
+        "4+	c #AFB000",\
+        "5+	c #BDBD00",\
+        "6+	c #787800",\
+        "7+	c #202000",\
+        "8+	c #ADAE00",\
+        "9+	c #E8E800",\
+        "0+	c #BCBD00",\
+        "a+	c #696900",\
+        "b+	c #1F1F00",\
+        "c+	c #585800",\
+        "d+	c #A6A600",\
+        "e+	c #ECEC00",\
+        "f+	c #B6B600",\
+        "g+	c #676700",\
+        "h+	c #B0B100",\
+        "i+	c #5D5D00",\
+        "j+	c #A9AA00",\
+        "k+	c #AFAF00",
+        "l+	c #A2A300",\
+        "m+	c #B5B600",\
+        "n+	c #545500",\
+        "o+	c #ECED00",\
+        "p+	c #505100",\
+        "q+	c #121200",\
+        "                                                      . . . . . .                                                               ",\
+        "                                                    . . . . . .                                                                 ",\
+        "                                                  . . . . . .                                                                   ",\
+        "                                                . . . . . .                                                                     ",\
+        "                                              . . . . . .                                                                       ",\
+        "                                            . . . . . .                                                                         ",\
+        "                                          . . . . . .                                                                           ",\
+        "                    . .                 . . . . . .                                                                             ",\
+        "                  . . . . . . . . . . . . . . . .                                                                               ",\
+        "                  . . . . . . . . . . . . . . .                                                                                 ",\
+        "                  . . . . . . . . . . . . . .                                                                                   ",\
+        "                    . . . . . . . . . . . .                                                                                     ",\
+        "                    . . . . . . . . . . . .                                                                                     ",\
+        "                    . . . . . . . . . . . .                                                                                     ",\
+        "                    . . . . . . . . . . . .                                                                               + @   ",\
+        "                    . . . . . . . . . . . .                                                                             # $ % & ",\
+        "                    . . . . . . . . . . . .                                                                           * = - ; > ",\
+        "                  . . . . . . . . . . . . . .                                                                       , ' ) ! ~ { ",\
+        "                . . . . . . . . . . . . . . . .                                                                   ] ^ / ( _ : < ",\
+        "              . . . . . . . . . . . . . . . . . .                                                               [ } | 1 _ : 2 3 ",\
+        "            . . . . . .                 . . . . . .                                                           [ 4 5 ( _ 6 7 8 [ ",\
+        "          . . . . . . .                   . . . . . .                                                       9 4 0 ( _ a b c d   ",\
+        "        . . . . . . .                       . . . . . .                                                   e f g ( _ h i j k     ",\
+        "      . . . . . . .                           . . . . . .                                             [ l > 5 m _ h n o e       ",\
+        "    . . . . . . .                               . . . . . .                                         [ p q r ~ _ h s t u         ",\
+        "  . . . . . . .                                   . . . .                                         [ v w | 1 _ h x y z           ",\
+        ". . . . . . .                                       . . .                                       [ A B C 1 _ D s E F             ",\
+        ". . . . . .                                                                                   [ G H I 1 _ J K L M               ",\
+        ". . . . .                                                                                   [ N H O 1 P Q R L [                 ",\
+        ". . . .                                                               S [                 [ T B U m P V i W [                   ",\
+        ". . .                                                               X Y Z d               ` w  .m _ V n L [                     ",\
+        ".                                                                 ..+.@.#.$.%.          , &.*.P _ =.-.;.[                       ",\
+        "                                                                F >.,._ '.).!.[ ~.{.].^./.(.P _ J _.:.[                         ",\
+        "                                                              [ e <.[._ _ }.|.Z 1.2.3.<.4._ _ 5.6.A [                           ",\
+        "                                                                ] ..7.V P _ V 5 I 8.r J _ _ 9.0.:.[                             ",\
+        "                                                                  [ a.b.,.P 1 c.d.( 1 P _ [.e.f.g.                              ",\
+        "                                                                    [ h.i.j.m k._ _ _ _ _ l.m.n.[                               ",\
+        "                                                                      [ o.p.l._ _ _ _ _ _ q.c r.                                ",\
+        "                                                                      [ d s.t._ _ _ _ _ _ u.v.1.                                ",\
+        "                                                                      w.x.s l._ _ _ _ _ 1 y.z.A.                                ",\
+        "                                                                        B.C.D.m _ _ _ _ ~ E.F.G.                                ",\
+        "                                                                        [ H.I.J.K.: K.m _ L.M.N.1.                              ",\
+        "                                                                          [ :.b.O.P.Q.R.S._ L.s.T.,                             ",\
+        "                                                                            [ U.V.u N W.X.1 _ 9.y.T.@                           ",\
+        "                                                                              [ [ [ [ Y.Z. .( _ t.`. +S [ [ .+                  ",\
+        "                                                                                        [ Z.++( _ D K @+#+X $+w.+               ",\
+        "                                                                                          [ %+0 1 _ l.; s.M.&+p o.F [           ",\
+        "                                                                                            [ *+r m _ _ S.m m =+X.w h.[         ",\
+        "                                                                                              F %+-+~ _ _ _ _ ;+_ L.b.v [       ",\
+        "                                                                                                >+,+5 P _ _ _ _ _ ( '+G [       ",\
+        "                                                                                                )+!+~+_ _ _ _ _ _ _ s.{+[       ",
+        "                                                                                                w.]+O _ _ _ _ _ _ U ^+/+        ",\
+        "                                                                                                [ ^ -+k._ _ _ _ _ (+_+~.        ",\
+        "                                                                                              [ !.I.:+_ _ m m g <+6.H.[         ",\
+        "                                                                                            [ [+}+g ~ S.V |+1+> 2+Y 3+          ",\
+        "                                                                                          [ G 4+J.m S.:+5+6+v.%.7+[             ",\
+        "                                                                                        [ o.8+9+m P :+0+a+[ %.                  ",\
+        "                                                                                      w.$+e.:+P P :+&+;.[                       ",\
+        "                                                                                    b+c+d+V _ P e+f+g+[                         ",\
+        "                                                                                  ~.N B 4._ _ '.h+z.[                           ",\
+        "                                                                                [ i+e.4._ _ Q j+o.[                             ",\
+        "                                                                              [ v k+D _ _ 9.l+Z [                               ",\
+        "                                                                            [ H.m+q._ _ L.q n+[                                 ",\
+        "                                                                          [ W M.V _ P o+,+p+q+                                  "])
+
+    def textEnglish(self):
+        buttonText = "Position an oblique dimension chain"
+        helpText = "Position an oblique dimension chain"+ "\n"\
+                   "- select some  parallel oblique measures"+ "\n"\
+                   "- the first selected maesure defines the position"+ "\n"\
+                   "- click this button"
+        return(buttonText,helpText)
+
+    def textGerman(self):
+        buttonText = "Positioniere eine schräge Kettenbemaßung"
+        helpText = "Positioniere eine schräge Kettenbemaßung"+ "\n"\
+                   "- wähle mehrere parallele schräge Maße"+ "\n"\
+                   "- das Erste bestimmt die Position"+ "\n"\
+                   "- drücke diesen Knopf"
+        return(buttonText,helpText)
+
+    def textItalian(self):
+        buttonText = "Allinea dimensioni oblique"
+        helpText = "Dispone sulla stessa linea le dimensioni oblique selezionate:"+ "\n"\
+                   "- seleziona due o più dimensioni"+"\n"\
+                   "- fare clic su questo pulsante"
+        return(buttonText,helpText)
+
+    def textFrench(self):
+        buttonText = "Aligner les dimensions obliques"
+        helpText = "Réorganise les dimensions obliques sélectionnées sur la même ligne:"+ "\n"\
+                   "- sélectionnez deux ou plusieurs dimensions"+"\n"\
+                   "- cliquez sur ce bouton"
+        return(buttonText,helpText)
+
+    def textSpanish(self):
+        buttonText = "Alinear dimensiones oblicuas"
+        helpText = "Organiza las dimensiones oblicuas seleccionadas en la misma línea:"+ "\n"\
+                   "- seleccione dos o más dimensiones"+"\n"\
+                   "- haga clic en este botón"
+        return(buttonText,helpText)
+
+    def activated(self): # positionObliqueDimChain
+        Selected = gui.Selection.getSelectionEx()
+        ObliqueDimList = [Select.Object for Select in Selected if Select.Object.Type == 'Distance']
+        if len(ObliqueDimList) > 1:
+            DimPoints = ObliqueDimList[0].getArrowPositions()
+            DimPos = App.Vector(ObliqueDimList[0].X,ObliqueDimList[0].Y,0)
+            Direction = DimPoints[0].sub(DimPoints[1])
+            Normal = App.Vector(Direction.y,-Direction.x,0)
+            CarrierLine = Part.Line(DimPos,DimPos.add(Direction))
+            for Dimension in ObliqueDimList:
+                DimPos = App.Vector(Dimension.X,Dimension.Y,0)
+                NormalLine = Part.Line(DimPos,DimPos.add(Normal))
+                Ip = CarrierLine.intersect(NormalLine)
+                Dimension.X, Dimension.Y = Ip[0].X,Ip[0].Y
+
+class cascadeObliqueDimension:
+    '''Cascade oblique dimension'''
+    Icon = QtGui.QPixmap([  \
+        "64 64 356 2",\
+        "  	c None",\
+        ". 	c #1C1C00",\
+        "+ 	c #949400",\
+        "@ 	c #D6D600",\
+        "# 	c #F6F600",\
+        "$ 	c #F5F500",\
+        "% 	c #CACA00",\
+        "& 	c #919100",\
+        "* 	c #585800",\
+        "= 	c #000000",\
+        "- 	c #707100",\
+        "; 	c #CBCB00",\
+        "> 	c #F3F300",\
+        ", 	c #FCFC00",\
+        "' 	c #DBDB00",\
+        ") 	c #9A9A00",\
+        "! 	c #515100",\
+        "~ 	c #1D1D00",\
+        "{ 	c #9F9F00",\
+        "] 	c #F7F800",\
+        "^ 	c #F2F200",\
+        "/ 	c #C1C100",\
+        "( 	c #888800",\
+        "_ 	c #767600",\
+        ": 	c #D0D000",\
+        "< 	c #FBFB00",\
+        "[ 	c #D3D300",\
+        "} 	c #8B8B00",\
+        "| 	c #474700",\
+        "1 	c #3F3F00",\
+        "2 	c #3A3A00",\
+        "3 	c #535300",\
+        "4 	c #A7A700",\
+        "5 	c #E1E100",\
+        "6 	c #FAFA00",\
+        "7 	c #BDBD00",\
+        "8 	c #7C7C00",\
+        "9 	c #424200",\
+        "0 	c #878700",\
+        "a 	c #D5D500",\
+        "b 	c #F9F900",\
+        "c 	c #CFCF00",\
+        "d 	c #7E7E00",\
+        "e 	c #2A2A00",\
+        "f 	c #6F6F00",\
+        "g 	c #6C6C00",\
+        "h 	c #5E5E00",\
+        "i 	c #ACAD00",\
+        "j 	c #E9E900",\
+        "k 	c #FDFD00",\
+        "l 	c #F1F100",\
+        "m 	c #B7B700",\
+        "n 	c #676700",\
+        "o 	c #303000",\
+        "p 	c #8D8D00",\
+        "q 	c #DDDD00",\
+        "r 	c #FEFE00",\
+        "s 	c #CDCD00",\
+        "t 	c #696900",\
+        "u 	c #838300",\
+        "v 	c #CECE00",\
+        "w 	c #D1D100",\
+        "x 	c #414100",\
+        "y 	c #B5B500",\
+        "z 	c #EBEB00",\
+        "A 	c #ADAD00",\
+        "B 	c #5F5F00",\
+        "C 	c #969600",\
+        "D 	c #E7E700",\
+        "E 	c #FFFF00",\
+        "F 	c #C5C500",\
+        "G 	c #606000",\
+        "H 	c #505000",\
+        "I 	c #B8B800",\
+        "J 	c #EFEF00",\
+        "K 	c #F4F400",\
+        "L 	c #8E8E00",\
+        "M 	c #494900",\
+        "N 	c #BEBE00",\
+        "O 	c #E3E300",\
+        "P 	c #A0A000",\
+        "Q 	c #5A5A00",\
+        "R 	c #555500",\
+        "S 	c #A2A200",\
+        "T 	c #F0F000",\
+        "U 	c #F0F100",\
+        "V 	c #B7B800",\
+        "W 	c #5B5B00",\
+        "X 	c #DEDE00",\
+        "Y 	c #EFEE00",\
+        "Z 	c #C4C400",\
+        "` 	c #8A8A00",\
+        " .	c #4A4A00",\
+        "..	c #171700",\
+        "+.	c #7F7F00",\
+        "@.	c #C9C900",\
+        "#.	c #D9D900",\
+        "$.	c #545400",\
+        "%.	c #B3B300",\
+        "&.	c #EEEE00",\
+        "*.	c #E8E800",\
+        "=.	c #6D6D00",\
+        "-.	c #B2B200",\
+        ";.	c #E2E200",\
+        ">.	c #F7F700",\
+        ",.	c #818100",\
+        "'.	c #333300",\
+        ").	c #1B1B00",\
+        "!.	c #929200",\
+        "~.	c #C0C000",\
+        "{.	c #E0E000",\
+        "].	c #A6A600",\
+        "^.	c #575700",\
+        "/.	c #777700",\
+        "(.	c #B9B900",\
+        "_.	c #E6E600",\
+        ":.	c #F8F800",\
+        "<.	c #E4E400",\
+        "[.	c #797900",\
+        "}.	c #242400",\
+        "|.	c #484800",\
+        "1.	c #9E9E00",\
+        "2.	c #4F4F00",\
+        "3.	c #C8C800",\
+        "4.	c #FBFA00",\
+        "5.	c #A09F00",\
+        "6.	c #3A3B00",\
+        "7.	c #5C5C00",\
+        "8.	c #A4A400",\
+        "9.	c #C6C600",\
+        "0.	c #858500",\
+        "a.	c #444400",\
+        "b.	c #2E2E00",\
+        "c.	c #D8D800",\
+        "d.	c #959500",\
+        "e.	c #464600",\
+        "f.	c #383800",\
+        "g.	c #AEAE00",\
+        "h.	c #979800",\
+        "i.	c #313100",\
+        "j.	c #525200",\
+        "k.	c #BABB00",\
+        "l.	c #707000",\
+        "m.	c #373700",\
+        "n.	c #D2D200",\
+        "o.	c #808000",\
+        "p.	c #626200",\
+        "q.	c #202000",\
+        "r.	c #ABAB00",\
+        "s.	c #FEFF00",\
+        "t.	c #A5A500",\
+        "u.	c #868500",\
+        "v.	c #C5C400",\
+        "w.	c #646400",\
+        "x.	c #8C8C00",\
+        "y.	c #DFDF00",\
+        "z.	c #FCFD00",\
+        "A.	c #ECED00",\
+        "B.	c #B0B000",\
+        "C.	c #4B4B00",\
+        "D.	c #9C9C00",\
+        "E.	c #BABA00",\
+        "F.	c #4E4E00",\
+        "G.	c #F9FA00",\
+        "H.	c #DADA00",\
+        "I.	c #8F8F00",\
+        "J.	c #727200",\
+        "K.	c #999900",\
+        "L.	c #454500",\
+        "M.	c #3B3B00",\
+        "N.	c #A9A900",\
+        "O.	c #CCCC00",\
+        "P.	c #979700",\
+        "Q.	c #515200",\
+        "R.	c #B1B100",\
+        "S.	c #AFAF00",\
+        "T.	c #EAEA00",\
+        "U.	c #CDCE00",\
+        "V.	c #D0D100",\
+        "W.	c #E5E500",\
+        "X.	c #E3E400",\
+        "Y.	c #B6B700",\
+        "Z.	c #404000",\
+        "`.	c #868600",\
+        " +	c #3D3D00",\
+        ".+	c #FDFE00",\
+        "++	c #4D4C00",\
+        "@+	c #898900",\
+        "#+	c #434300",\
+        "$+	c #D4D400",\
+        "%+	c #EAEB00",\
+        "&+	c #A3A400",\
+        "*+	c #D8D900",\
+        "=+	c #717100",\
+        "-+	c #D7D700",\
+        ";+	c #FBFC00",\
+        ">+	c #BCBC00",\
+        ",+	c #EFF000",\
+        "'+	c #2D2D00",\
+        ")+	c #FAF900",\
+        "!+	c #818200",\
+        "~+	c #747400",\
+        "{+	c #B6B600",\
+        "]+	c #C7C700",\
+        "^+	c #A8A800",\
+        "/+	c #A1A100",\
+        "(+	c #868700",\
+        "_+	c #353500",\
+        ":+	c #BDBE00",\
+        "<+	c #757500",\
+        "[+	c #636300",\
+        "}+	c #6B6B00",\
+        "|+	c #111100",\
+        "1+	c #585900",\
+        "2+	c #F1F200",\
+        "3+	c #D5D600",\
+        "4+	c #C7C800",\
+        "5+	c #DFDE00",\
+        "6+	c #2B2B00",\
+        "7+	c #282800",\
+        "8+	c #4C4D00",\
+        "9+	c #FF0000",\
+        "0+	c #1F1F00",\
+        "a+	c #656400",\
+        "b+	c #666600",\
+        "c+	c #040400",\
+        "d+	c #939300",\
+        "e+	c #656500",\
+        "f+	c #B4B400",\
+        "g+	c #D2D300",\
+        "h+	c #1E1E00",\
+        "i+	c #635200",\
+        "j+	c #929000",\
+        "k+	c #F2F300",\
+        "l+	c #EEEF00",\
+        "m+	c #C0C100",\
+        "n+	c #777800",\
+        "o+	c #323200",\
+        "p+	c #6A6A00",\
+        "q+	c #BFBF00",\
+        "r+	c #FE0000",\
+        "s+	c #DE0000",\
+        "t+	c #AC5900",\
+        "u+	c #C6B000",\
+        "v+	c #EEEA00",\
+        "w+	c #F8F900",\
+        "x+	c #5D5D00",\
+        "y+	c #212100",\
+        "z+	c #F20000",\
+        "A+	c #DF4E00",\
+        "B+	c #EDAC00",\
+        "C+	c #F9E700",\
+        "D+	c #E5E400",\
+        "E+	c #757600",\
+        "F+	c #090900",\
+        "G+	c #797A00",\
+        "H+	c #161600",\
+        "I+	c #FC1600",\
+        "J+	c #FD6900",\
+        "K+	c #EBB100",\
+        "L+	c #B4A800",\
+        "M+	c #343400",\
+        "N+	c #F90D00",\
+        "O+	c #C23D00",\
+        "P+	c #734200",\
+        "Q+	c #727300",\
+        "R+	c #CECF00",\
+        "S+	c #8B8A00",\
+        "T+	c #FE0200",\
+        "U+	c #EB1800",\
+        "V+	c #BD2900",\
+        "W+	c #C3C300",\
+        "X+	c #CCCD00",\
+        "Y+	c #6E6E00",\
+        "Z+	c #737300",\
+        "`+	c #FC0100",\
+        " @	c #B8B900",\
+        ".@	c #ECEC00",\
+        "+@	c #828200",\
+        "@@	c #909100",\
+        "#@	c #262600",\
+        "$@	c #B3B200",\
+        "%@	c #DCDC00",\
+        "&@	c #A5A600",\
+        "*@	c #2F2F00",\
+        "=@	c #838400",\
+        "-@	c #EEED00",\
+        ";@	c #A6A700",\
+        ">@	c #4C4C00",\
+        ",@	c #989800",\
+        "'@	c #C3C400",\
+        ")@	c #3E3E00",\
+        "!@	c #3C3C00",\
+        "~@	c #7B7B00",\
+        "{@	c #F6F700",\
+        "]@	c #636400",\
+        "^@	c #565600",\
+        "/@	c #888900",\
+        "(@	c #C30000",\
+        "_@	c #7D6100",\
+        ":@	c #BCBB00",\
+        "<@	c #E4E500",\
+        "[@	c #595900",\
+        "}@	c #E50000",\
+        "|@	c #CF5D00",\
+        "1@	c #E9CD00",\
+        "2@	c #FAF800",\
+        "3@	c #B9BA00",\
+        "4@	c #848400",\
+        "5@	c #787800",\
+        "6@	c #DFE000",\
+        "7@	c #676800",\
+        "8@	c #F60000",\
+        "9@	c #F23A00",\
+        "0@	c #FCA200",\
+        "a@	c #F1D900",\
+        "b@	c #C1BE00",\
+        "c@	c #FD4D00",\
+        "d@	c #D49400",\
+        "e@	c #8D7E00",\
+        "f@	c #434500",\
+        "g@	c #B1B200",\
+        "h@	c #FB0000",\
+        "i@	c #C71900",\
+        "j@	c #890000",\
+        "k@	c #F40000",\
+        "l@	c #1A1A00",\
+        "m@	c #0C0C00",
+        "n@	c #E2E300",\
+        "o@	c #8F9000",\
+        "p@	c #E6E700",\
+        "q@	c #ACAC00",\
+        "r@	c #AAAA00",\
+        "s@	c #C2C200",\
+        "t@	c #7D7D00",\
+        "u@	c #9D9D00",\
+        "v@	c #5A1800",\
+        "w@	c #837F00",\
+        "x@	c #232400",\
+        "y@	c #F80000",\
+        "z@	c #843300",\
+        "A@	c #CCBC00",\
+        "B@	c #5E5F00",\
+        "C@	c #E80E00",\
+        "D@	c #F78B00",\
+        "E@	c #FBDF00",\
+        "F@	c #DDDB00",\
+        "G@	c #FD4900",\
+        "H@	c #E79600",\
+        "I@	c #AA9A00",\
+        "J@	c #646200",\
+        "K@	c #FD0E00",\
+        "L@	c #E14B00",\
+        "M@	c #915C00",\
+        "N@	c #EF0000",\
+        "O@	c #B80000",\
+        "                                      . + @ # $ % & *               = - ; > , ' ) !                                             ",\
+        "                                        ~ { ' ] ^ / ( !               = _ : $ < [ } |                                           ",\
+        "                    1 2                   3 4 5 6 ^ 7 8 9               = 0 a b < c d e                                         ",\
+        "                  = f g 9                   h i j k l m n                 o p q r , s t =                                       ",\
+        "                = u v w + x                   t y l k z A B                 ! C D E # F G                                       ",\
+        "                H I J K s L M                   f N > < O P Q                 R S T E U V W                                     ",\
+        "                1 P X b Y Z `  .                ..+.@.^ b #.) $.                h %.&.k *.A W                                   ",\
+        "                  =.-.;.>.j 7 ,.'.                ).!.: > # w C 3                 t ~.&.< {.].^.                                ",\
+        "                    /.(._.:.<.y [.}.=               |.1.@ # $ ; !.2.              = +.3.^ 4.' 5.R                               ",\
+        "                      ,.~.z 6 ;.i =.* $.R 6.          7.8.X 6 K 9.0.a.              b.` c >.< c.d.e.                            ",\
+        "                      f.u 3.^ , {.g.1.) h.f i.          j.4 *.k ^ k.l.                m.` #., 6 n.,.b.                          ",\
+        "                        = o.[ b E , k < >.%.p.            q.r.> s.T t.$.                = u.j E :.v.w.                          ",\
+        "                          o x.y.z.s.s.s.E A.B.g             C.y U k D D.9                 f.C j r ^ E.B                         ",\
+        "                            F.s G.E E E E , H.I.C.            J.~.T < {.K.L.L.M.x           Q N.D , z y Q                       ",\
+        "                            1 O.G.E E E E s._.P.Q.            m.x.@.> b ' R.%.S.A B           _ I T.< _.-.B                     ",\
+        "                            a.U.6 E E E E E *.K.$.              R C V.:.:.W.D W.X.Y.^.        Z.`.~.T < ;.A Q                   ",\
+        "                             +; b E E E E s._.C F.                3 + X..+k .+k k T.r.F.        ++@+3.>.< q P C.                ",\
+        "                          #+_ $+6 r r r r r %+&+h                 = t *+k E E E E E 5 =+=         '.( -+G.:.[ L 2.              ",\
+        "                          8 7 T ;+# $ K K :.K >+l.                = ) ,+r E E E E E > @+=           '+L y.)+$ 3.!+| j.F.C.      ",\
+        "                        ~+{+T., A.V.% ]+]+#.q ^+p.                = /+^ r E E E E E ^ (+=             _++ 5 < ^ :+J.[.<+=+*     ",\
+        "                      [+g.<.< J (.~+W $.$.,.I.}+                  |+t.> r E E E E E T ,.=               1+&+<.z.2+n.3+n.4+d..   ",\
+        "                    a.8.5+b T >+,. ._+6+7+8+Q                     = { l r E E E E E > @+=                 /.B.j , :.b :.> 3+x.= ",\
+        "9+                0+K.#.>.> Z ` $.                                a+9.:.s.E E E k E n.b+=                 |.!+n., E E E r J %.c+",\
+        "9+9+            | d+n.$ $ w C *                                 e+f+z k 2+l &.T g+]+d+M.                    t 3.< E E E E # ~.h+",\
+        "9+9+9+        i+j+% k+>.H.t.b+                                p.N.;.< l+m+E.y (.& n+o+                      p+3.< E E E E # q+|+",\
+        "9+9+9+9+9+r+s+t+u+v+w+{.S.J.                                x+{ ' 6 T 9.t C.2  .y+=                         =.% , E E E E $ >+= ",\
+        "9+9+9+9+9+9+z+A+B+C+D+f+E+                                ! C -+)+K O.u F+                                M.G+c , E E E r 2+{+H+",\
+        "9+9+9+9+9+9+r+I+J+K+L+f                                 M+` a 6 6 [ x.9                                   w.&+W.k k k 6 > H.& = ",\
+        "9+9+9+9+9+9+9+9+N+O+P+                                = Q+R+:.E X S+9                                   | ` q k , z &.-+].+.o   ",\
+        "  9+9+9+9+9+9+9+T+U+V+                                t W+> E D d.H                                   o+_ a < :.X+Y+Z+n F.x     ",\
+        "9+9+9+9+9+9+9+9+9+`+                                t  @.@;+D ].h                                   x +@; # >.@ @@#@m.6+=       ",\
+        "9+9+9+9+9+9+9+9+9+9+                              b+$@_.6 *.y =.                                  e.@+9.^ b %@&@Q               ",\
+        "9+9+9+9+9+9+9+9+9+9+                            n g.5 b .@~.o.*@                                9 =@/ -@, ;.S.f                 ",\
+        "9+9+9+9+9+9+9+9+9+9+9+                        h ;@X 6 ^ ]+x.>@                                  ~+I j , j f+Z+                  ",\
+        "  9+9+9+9+9+9+9+9+9+9+9+                    >@,@#.b :.c p 2.                                  Q 4 W., J (.b+                    ",\
+        "  9+9+9+9+9+9+9+9+9+9+9+9+                |.+@v >., q @+o+                                  ! `.{.r $ '@)@                      ",\
+        "              9+9+9+9+9+9+                =+W+K z.5 L M+                                  !@~@#.s.{@; ]@                        ",\
+        "                9+9+9+9+9+9+            b+7 J < 5 1.^@                                  i.0.$+< :.n./@M+                        ",\
+        "                  9+9+9+9+9+9+9+9+r+(@_@:@z 6 <@B.Z+                                  6+`.v # < *+) [@                          ",\
+        "                    9+9+9+9+9+9+9+9+}@|@1@2@T.3@4@                                    5@]+l k 6@P 7@                            ",\
+        "                    9+9+9+9+9+9+9+9+8@9@0@a@b@@+$.                                  W >+&.k _.S w.                              ",\
+        "                      9+9+9+9+9+9+9+9+9+c@d@e@f@                                  3 ;@j k .@g@|                                 ",\
+        "                        9+9+9+9+9+9+9+9+h@i@j@                                  [+P.O k J ~.^@                                  ",\
+        "                        9+9+9+9+9+9+9+9+9+8@k@                                Q P.X r > 3.~+                                    ",\
+        "                        9+9+9+9+9+9+9+9+9+9+9+                               +L #.r b R+o.l@                                    ",\
+        "                        9+9+9+9+9+9+9+9+9+9+9+                            m@d [ b E @ +@M.                                      ",\
+        "                        9+9+9+9+9+9+9+9+9+9+9+                            n ; # E q +@H                                         ",\
+        "                        9+9+9+9+9+9+9+9+9+9+9+                          j.N ^ k n@o@L.                                          ",\
+        "                          9+9+9+9+9+9+9+9+9+9+9+                      g -..@, p@q@x                                             ",\
+        "                          9+9+9+9+9+9+9+9+9+9+9+9+                  J.S.D , T.E.}+                                              ",\
+        "                                      9+9+9+9+9+9+9+              t r@5 k ,+s@t@                                                ",\
+        "                                        9+9+9+9+9+9+            3 u@%@< >.3.+.*@                                                ",\
+        "                                          9+9+9+9+9+9+9+9+9+9+v@w@@ 6 , w J.x@                                                  ",\
+        "                                            9+9+9+9+9+9+9+9+y@z@A@)+s.#.B@=                                                     ",\
+        "                                              9+9+9+9+9+9+9+9+C@D@E@F@@@!@                                                      ",\
+        "                                              9+9+9+9+9+9+9+9+h@G@H@I@J@                                                        ",\
+        "                                                9+9+9+9+9+9+9+9+K@L@M@                                                          ",\
+        "                                                9+9+9+9+9+9+9+9+r+N@O@                                                          ",\
+        "                                                9+9+9+9+9+9+9+9+9+r+                                                            ",\
+        "                                                9+9+9+9+9+9+9+9+9+9+                                                            ",\
+        "                                                9+9+9+9+9+9+9+9+9+9+                                                            ",\
+        "                                                9+9+9+9+9+9+9+9+9+9+9+                                                          ",\
+        "                                                  9+9+9+9+9+9+9+9+9+9+                                                          ",\
+        "                                                    9+9+9+9+9+9+9+9+                                                            "])
+
+    def textEnglish(self):
+        buttonText = "Cascade oblique dimensions"
+        helpText = "Cascade oblique dimensions"+ "\n"\
+                   "- select the cascading distance"+ "\n"\
+                   "- select some  parallel oblique measures"+ "\n"\
+                   "- the first selected maesure defines the position"+ "\n"\
+                   "- click this button"
+        return(buttonText,helpText)
+
+    def textGerman(self):
+        buttonText = "Kaskadiere schräge Bemaßungen"
+        helpText = "Kaskadiere schräge Bemaßungen"+ "\n"\
+                   "- stelle den Abstand der Kaskadierung ein"+ "\n"\
+                   "- wähle mehrere parallele schräge Maße"+ "\n"\
+                   "- das Erste bestimmt die Position"+ "\n"\
+                   "- drücke diesen Knopf"
+        return(buttonText,helpText)
+
+    def textItalian(self):
+        buttonText = "Distanziamento dimensioni oblique"
+        helpText = "Distanzia (ortogonalmente), al valore impostato, le quote oblique selezionate:"+ "\n"\
+                   "- impostare Valore distanziamento"+ "\n"\
+                   "- selezionare due o più quote oblique"+ "\n"\
+                   "- fare clic su questo pulsante"
+        return(buttonText,helpText)
+
+    def textFrench(self):
+        buttonText = "Espacement des dimensions obliques"
+        helpText = "Espaces (orthogonalement), à la valeur définie, les dimensions obliques sélectionnées:"+ "\n"\
+                   "- définir Valeur d'espacement"+ "\n"\
+                   "- sélectionnez au moins deux dimensions obliques"+ "\n"\
+                   "- cliquez sur ce bouton"
+        return(buttonText,helpText)
+
+    def textSpanish(self):
+        buttonText = "Espaciado de dimensión oblicuas"
+        helpText = "Espacios (ortogonalmente), en el valor establecido, las dimensiones oblicuas seleccionadas:"+ "\n"\
+                   "- establecer Valor de espaciado"+ "\n"\
+                   "- seleccione dos o más dimensiones oblicuas"+ "\n"\
+                   "- haga clic en este botón"
+        return(buttonText,helpText)
+
+    def activated(self): # cascadeObliqueDimension
+        Selected = gui.Selection.getSelectionEx()
+        ObliqueDimList = [Select.Object for Select in Selected if Select.Object.Type == 'Distance']
+        if len(ObliqueDimList) > 1:
+            DimPoints = ObliqueDimList[0].getArrowPositions()
+            DimPos = App.Vector(ObliqueDimList[0].X,ObliqueDimList[0].Y,0)
+            Direction = DimPoints[0].sub(DimPoints[1])
+            Normal = App.Vector(Direction.y,-Direction.x,0)
+            CarrierLine = Part.Line(DimPos,DimPos.add(Direction))
+            DistLine = Part.Line(App.Vector(),Normal)
+            Ip = CarrierLine.intersect(DistLine)
+            Delta = App.Vector(Ip[0].X,Ip[0].Y,Ip[0].Z).normalize()*DimAttrib.getDimLineDistance()
+            for i,Dimension in enumerate(ObliqueDimList):
+                DimPos = App.Vector(Dimension.X,Dimension.Y,0)
+                NormalLine = Part.Line(DimPos,DimPos.add(Normal))
+                Ip = CarrierLine.intersect(NormalLine)
+                Dimension.X, Dimension.Y = Ip[0].X+Delta.x*i,Ip[0].Y+Delta.y*i
+
 Attrib = LineAttributes()
 DimAttrib = DimensionAttributes()
 Lang = translate()
-MainWindow = QtGui.QMainWindow()
-ui = Ui_MainWindow()
-ui.setupUi(MainWindow)
-MainWindow.show()
+if __name__ == "__main__": 
+    DialogContainer().show()
