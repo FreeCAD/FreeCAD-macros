@@ -1,0 +1,170 @@
+# Get the global placement of selected objects, respecting links.
+# Usage: select some objects or some subelements and run.
+
+__Name__ = 'Get Global Placement'
+__Comment__ = 'Get the global placement, respecting links'
+__Author__ = 'galou_breizh'
+__Version__ = '1.0.0'
+__Date__ = '2021-05-25'
+__License__ = 'LGPL-2.0-or-later'
+__Web__ = 'http://forum.freecadweb.org/viewtopic.php?f=?&t=????'
+__Wiki__ = 'http://www.freecadweb.org/wiki/Macro_Title_Of_macro'
+__Icon__ = ''
+__Help__ = 'Select some objects or some subelements and run'
+__Status__ = ''
+__Requires__ = 'FreeCAD >=0.19'
+__Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
+__Files__ = ''
+
+from typing import List
+
+import FreeCAD as app
+
+import FreeCADGui as gui
+
+
+def get_subobject_by_name(object_: app.DocumentObject,
+                          subobject_name: str,
+                          ) -> app.DocumentObject:
+    """Return the appropriate object from object_.OutListRecursive."""
+    for o in object_.OutListRecursive:
+        if o.Name == subobject_name:
+            return o
+
+
+def strip_subelement(sub_fullpath: str) -> str:
+    """Return sub_fullpath without the last sub-element.
+
+    A sub-element is a face, edge or vertex.
+    Parameters
+    ----------
+    - subobject_fullpath: SelectionObject.SubElementNames[i], where
+        SelectionObject is obtained with gui.Selection.getSelectionEx('', 0)
+        (i.e. not gui.Selection.getSelectionEx()).
+        Examples:
+        - 'Face6' if you select the top face of a cube solid made in Part.
+        - 'Body.Box001.' if you select the tip of a Part->Body->"additive
+            primitve" in PartDesign.
+        - 'Body.Box001.Face6' if you select the top face of a Part->Body->
+            "additive primitve" in PartDesign.
+    """
+    if (not sub_fullpath) or ('.' not in sub_fullpath):
+        return ''
+    return sub_fullpath.rsplit('.', maxsplit=1)[0]
+
+
+def get_subobjects_by_full_name(
+        root_object: app.DocumentObject,
+        subobject_fullpath: str,
+        ) -> List[app.DocumentObject]:
+    """Return the list of objects from root_object excluded to the named object.
+
+    The last part of ``subobject_fullpath`` is then a specific vertex, edge or
+    face and is ignored.
+    So, subobject_fullpath has the form 'name0.name1.Edge001', for example; in
+    this case, the returned objects are
+    [object_named_name0, object_named_name1].
+
+    Parameters
+    ----------
+    - root_object: SelectionObject.Object, where SelectionObject is obtained
+        with gui.Selection.getSelectionEx('', 0)
+        (i.e. not gui.Selection.getSelectionEx()).
+    - subobject_fullpath: SelectionObject.SubElementNames[i].
+        Examples:
+        - 'Face6' if you select the top face of a cube solid made in Part.
+        - 'Body.Box001.' if you select the tip of a Part->Body->"additive
+            primitve" in PartDesign.
+        - 'Body.Box001.Face6' if you select the top face of a Part->Body->
+            "additive primitve" in PartDesign.
+    """
+    objects = []
+    names = strip_subelement(subobject_fullpath).split('.')
+    subobject = root_object
+    for name in names:
+        subobject = get_subobject_by_name(subobject, name)
+        if subobject is None:
+            # This should not append.
+            return []
+        objects.append(subobject)
+    return objects
+
+
+def get_global_placement(root_object: app.DocumentObject,
+                         subobject_fullpath: str,
+                         ) -> app.Placement:
+    """Return the global placement by recursively going through parents
+
+    ``object.getGlobalPlacement()`` returns the placement of the original
+    object, not the linked one. This function recursively goes through the
+    hierarchy, including links to retrieve the linked object placement.
+
+    Parameters
+    ----------
+    - root_object: SelectionObject.Object, where SelectionObject is obtained
+        with gui.Selection.getSelectionEx('', 0)
+        (i.e. not gui.Selection.getSelectionEx()).
+    - subobject_fullpath: SelectionObject.SubElementNames[i].
+        Examples:
+        - 'Face6' if you select the top face of a cube solid made in Part.
+        - 'Body.Box001.' if you select the tip of a Part->Body->"additive
+            primitve" in PartDesign.
+        - 'Body.Box001.Face6' if you select the top face of a Part->Body->
+            "additive primitve" in PartDesign.
+    """
+    objects = get_subobjects_by_full_name(root_object, subobject_fullpath)
+    placement = root_object.Placement
+    for o in objects:
+        placement *= o.Placement
+    return placement
+
+
+def print_placement(object_name: str,
+                    sub_fullpath: str,
+                    placement: app.Placement,
+                    ) -> None:
+    """Pretty-print a placement in the console."""
+    dot = '.' if sub_fullpath else ''
+    app.Console.PrintMessage(
+        f'{object_name}{dot}{sub_fullpath}:'
+        + ' {b.x:.3f}, {b.y:.3f}, {b.z:.3f};'.format(b=placement.Base)
+        + ' {q[0]:.4f}, {q[1]:.4f}, {q[2]:.4f}, {q[3]:.4f};'.format(
+            q=placement.Rotation.Q)
+        + ' (rpy: {r[2]:.2f}, {r[1]:.2f}, {r[0]:.2f}) deg'.format(
+            r=placement.Rotation.toEuler())
+        + '\n')
+
+
+def get_and_print_selected_placements():
+    doc = app.activeDocument()
+    if doc is None:
+        return
+
+    selection = gui.Selection.getSelectionEx('', 0)
+    if not selection:
+        app.Console.PrintWarning('Nothing selected, nothing to do\n')
+        return
+
+    shown_paths: List[str] = []
+    for selection_object in selection:
+        object_ = selection_object.Object
+        sub_objects = selection_object.SubObjects
+        sub_fullpaths = selection_object.SubElementNames
+        if not sub_fullpaths:
+            # An object is selected, not a face, edge, vertex.
+            placement = get_global_placement(object_, '')
+            print_placement(object_.Name, '', placement)
+            continue
+        for sub_object, sub_fullpath in zip(sub_objects, sub_fullpaths):
+            # One or more subelements are selected.
+            wo_subelement = strip_subelement(sub_fullpath)
+            path = object_.Name + wo_subelement
+            if path in shown_paths:
+                continue
+            shown_paths.append(path)
+            placement = get_global_placement(object_, sub_fullpath)
+            print_placement(object_.Name, wo_subelement, placement)
+
+
+if __name__ == '__main__':
+    get_and_print_selected_placements()

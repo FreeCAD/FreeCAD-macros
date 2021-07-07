@@ -5,8 +5,8 @@ from __future__ import unicode_literals
 __Name__ = 'Highlight Common parts'
 __Comment__ = 'Compute the common parts between selected shapes'
 __Author__ = 'JMG, galou and other contributors'
-__Version__ = '2.2.2'
-__Date__ = '2020-04-19'
+__Version__ = '2.3.2'
+__Date__ = '2021-07-01'
 __License__ = 'CC0-1.0'
 __Web__ = 'https://freecadweb.org/wiki/Macro_HighlightCommon'
 __Wiki__ = 'https://freecadweb.org/wiki/Macro_HighlightCommon'
@@ -23,10 +23,29 @@ import FreeCAD as app
 import FreeCADGui as gui
 
 
-def main():
+PREFERENCE_PATH = 'User parameter:BaseApp/Preferences/Mod/HighlightCommon'
 
+
+def load_and_save_settings():
+    param_change = 'change_transparency'
+    param_transparency = 'transparency'
+    p = app.ParamGet(PREFERENCE_PATH)
+    change_transparency = p.GetBool(param_change, True)
+    transparency = p.GetInt(param_transparency, 80)
+    p.SetBool(param_change, change_transparency)
+    p.SetInt(param_transparency, transparency)
+    return change_transparency, transparency
+
+
+def main():
     # Store active doc in case it may change during run.
     doc = app.activeDocument()
+
+    if doc is None:
+        return
+
+    change_transparency, transparency = load_and_save_settings()
+
     colli_grp = None  # Group object to group collisions.
     colli_max = 0  # Maximum collision volume.
 
@@ -40,9 +59,11 @@ def main():
     # Ensure list of unique objects.
     object_list = []
     for obj in objectsToEnumerate:
-        if obj not in object_list:
-            if obj.isDerivedFrom('PartDesign::Body'):
-                object_list.append(obj)
+        if ((obj not in object_list)
+                and hasattr(obj, 'Shape')
+                and hasattr(obj, 'getGlobalPlacement')
+                and hasattr(obj, 'Label')):
+            object_list.append(obj)
 
     # Going through selected objects (object A).
     for i, object_a in enumerate(object_list):
@@ -50,9 +71,12 @@ def main():
         shape_a.Placement = object_a.getGlobalPlacement()
         label_a = object_a.Label
 
-        # Making selected objects transparent
-        # comment this line if you don't want it.
-        object_a.ViewObject.Transparency = 80
+        # Making selected objects transparent.
+        if change_transparency:
+            try:
+                object_a.ViewObject.Transparency = transparency
+            except AttributeError:
+                pass
 
         # Comparing object A with all
         # following ones in the list (object B).
@@ -62,6 +86,13 @@ def main():
             shape_b.Placement = object_b.getGlobalPlacement()
             label_b = object_b.Label
             common = shape_a.common(shape_b)
+
+            # Making selected objects transparent.
+            if change_transparency:
+                try:
+                    object_b.ViewObject.Transparency = transparency
+                except AttributeError:
+                    pass
 
             # If object A & object B have a collision
             # display a message with collision volume and
@@ -95,7 +126,7 @@ def main():
     # give a summary (count + max value) to the user.
     if colli_grp:
         doc.commitTransaction()
-        app.Console.PrintWarning(
+        app.Console.PrintMessage(
             '{} collision(s) found between selected objects\nMaximum collision: {:.3f} mm³\n'.format(
                 len(colli_grp.Group),
                 colli_max))
@@ -103,7 +134,11 @@ def main():
     else:
         # If no collision has been found, just inform the user about it.
         doc.abortTransaction()
-        app.Console.PrintWarning('No collision found between selected objects\n')
+        if len(object_list) == 2:
+            app.Console.PrintWarning('No collision found between selected objects\n')
+        else:
+            app.Console.PrintWarning('No suitable objects selected, select at least two objects\n')
+
 
 if __name__ == '__main__':
     main()

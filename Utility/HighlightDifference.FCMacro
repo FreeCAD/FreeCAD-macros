@@ -10,28 +10,26 @@ from __future__ import unicode_literals
 __Name__ = 'Highlight Difference'
 __Comment__ = 'Compute the difference between two shapes'
 __Author__ = 'galou and other contributors'
-__Version__ = '2.1.0'
-__Date__ = '2020-01-25'
+__Version__ = '2.2.0'
+__Date__ = '2021-07-01'
 __License__ = 'CC0-1.0'
 __Web__ = 'https://freecadweb.org/wiki/Macro_HighlightDifference'
 __Wiki__ = 'https://freecadweb.org/wiki/Macro_HighlightDifference'
-__Icon__ = 'HighlightDifference.png'
+__Icon__ = 'HighlightDifference.svg'
 __Help__ = 'Select two objects and run'
 __Status__ = 'Production'
 __Requires__ = 'FreeCAD V0.17+'
 __Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
-__Files__ = 'HighlightDifference.png'
+__Files__ = 'HighlightDifference.svg'
 
-try:
-    from PySide2 import QtCore
-    from PySide2.QtWidgets import QMessageBox
-except ImportError:
-    from PySide import QtCore
-    from PySide.QtGui import QMessageBox
-
+from PySide import QtCore  # FreeCAD's special PySide!
+from PySide.QtGui import QMessageBox  # FreeCAD's special PySide!
 
 import FreeCAD as app
 import FreeCADGui as gui
+
+
+PREFERENCE_PATH = 'User parameter:BaseApp/Preferences/Mod/HighlightDifference'
 
 
 def error_dialog(msg):
@@ -44,6 +42,17 @@ def error_dialog(msg):
     diag.exec_()
 
 
+def load_and_save_settings():
+    param_change = 'change_transparency'
+    param_transparency = 'transparency'
+    p = app.ParamGet(PREFERENCE_PATH)
+    change_transparency = p.GetBool(param_change, True)
+    transparency = p.GetInt(param_transparency, 80)
+    p.SetBool(param_change, change_transparency)
+    p.SetInt(param_transparency, transparency)
+    return change_transparency, transparency
+
+
 def main():
     if len(gui.Selection.getSelection()) < 2:
         error_dialog('Select two objects')
@@ -51,10 +60,15 @@ def main():
 
     object_a = gui.Selection.getSelection()[0]
     object_b = gui.Selection.getSelection()[1]
-    shape_a = object_a.Shape
-    shape_b = object_b.Shape
-    label_a = object_a.Label
-    label_b = object_b.Label
+    try:
+        shape_a = object_a.Shape
+        shape_b = object_b.Shape
+        label_a = object_a.Label
+        label_b = object_b.Label
+    except AttributeError:
+        error_dialog('No suitable objects selected, select two objects\n')
+        return
+
     shape_addition = shape_a.cut(shape_b)
     if shape_addition.Volume < 1e-6:
         app.Console.PrintMessage('No addition from {} to {}\n'.format(
@@ -86,8 +100,14 @@ def main():
     removed.Shape = shape_removal
     removed.ViewObject.ShapeColor = (0.0, 0.5, 0.0, 1.0)
 
-    object_a.ViewObject.Transparency = 80
-    object_b.ViewObject.Transparency = 80
+    change_transparency, transparency = load_and_save_settings()
+    if change_transparency:
+        try:
+            object_a.ViewObject.Transparency = transparency
+            object_b.ViewObject.Transparency = transparency
+        except AttributeError:
+            pass
+
 
 if __name__ == '__main__':
     main()
