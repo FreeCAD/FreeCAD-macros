@@ -2527,7 +2527,7 @@ class ChangeLineStyle:
             gui.Selection.clearSelection()
 
 class drawDiameterSign:
-    '''Inserta  a 'Ø' sign in a measure'''
+    '''Inserta  a '⌀' sign in a measure'''
     Icon = QtGui.QPixmap([  \
         "64 64 10 1",\
         " 	c None",\
@@ -2641,7 +2641,7 @@ class drawDiameterSign:
         return(buttonText,helpText)
 
     def activated(self):
-        DiamSign ='Ø'
+        DiamSign ='⌀'
         Sel = gui.Selection.getSelectionEx()
         for Elem in Sel:
             if Elem.Object.TypeId == 'TechDraw::DrawViewDimension':
@@ -4506,7 +4506,7 @@ class createVertChamferDim:
                 Sign = MaxX/abs(MaxX)
                 ChamferDim.X = MaxX + 7.0*Sign
                 Dx, Dy  = Vertexes[0].Point.x-Vertexes[1].Point.x, Vertexes[0].Point.y-Vertexes[1].Point.y
-                Alpha = str(int(math.degrees(abs(math.atan(Dy/Dx)))))
+                Alpha = str(round(math.degrees(abs(math.atan(Dy/Dx)))))
                 ChamferDim.FormatSpec = ChamferDim.FormatSpec+'x'+Alpha+'°'
             gui.Selection.clearSelection()
 
