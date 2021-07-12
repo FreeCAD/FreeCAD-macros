@@ -1,4 +1,4 @@
-from PySide2 import QtCore, QtGui, QtWidgets # PySide2
+from PySide2 import QtCore, QtGui, QtWidgets # PySide package is FreeCAD's specific package
 import TechDraw
 import math
 from functools import partial
@@ -72,7 +72,6 @@ class LineAttributes:
 
     def getColorHex(color):
         return LineAttributes.Colors[color][1]
-#        return LineAttributes.Colors["black"][1]
 
     def setStyle(self,Style):
         self.LineStyle = self.Styles[Style]
@@ -510,7 +509,7 @@ class commonTools:
         Edge = View.getEdgeBySelection(ObjectList[0])
         StartPt, EndPt = Edge.Vertexes[0].Point, Edge.Vertexes[1].Point
         Direction = (EndPt-StartPt).normalize()
-        gui.runCommand('TechDraw_CosmeticEraser',0) # ... welche linie wird hier gelöscht ?
+        gui.runCommand('TechDraw_CosmeticEraser',0)
         Delta = Direction*2/View.Scale
         if Extend:
             StartPt, EndPt = StartPt - Delta, EndPt + Delta
