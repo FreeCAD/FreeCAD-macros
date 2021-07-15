@@ -1,4 +1,4 @@
-from PySide2 import QtCore, QtGui, QtWidgets # PySide package is FreeCAD's specific package
+from PySide import QtCore, QtGui
 import TechDraw
 import math
 from functools import partial
@@ -234,14 +234,14 @@ class DimensionAttributes:
     def getDimLineDistance(self):
         return self.DimLineDistance
 
-class commandWidget(QtWidgets.QWidget):
+class commandWidget(QtGui.QWidget):
     '''Widget containing the command buttons'''
     def __init__(self):
         super().__init__()
 
     def oneCommandButton(self,cmd,win):
         '''Create a command push button'''
-        Button = QtWidgets.QPushButton()
+        Button = QtGui.QPushButton()
         Text = cmd.textEnglish()
         if Lang.langKey == 'German'  and hasattr(cmd,"textGerman"):
             Text = cmd.textGerman()
@@ -258,7 +258,7 @@ class commandWidget(QtWidgets.QWidget):
         Button.clicked.connect(partial(win.on_PB_clicked,cmd))
         self.layout.addWidget(Button)
 
-class DialogContainer(QtWidgets.QDialog):
+class DialogContainer(QtGui.QDialog):
 
     def __init__(self, parent=gui.getMainWindow()):
         ''' constructor creating a permanent opened dialog window'''
@@ -270,7 +270,7 @@ class DialogContainer(QtWidgets.QDialog):
 
     def radioButton(self,Box,Slot,Tip,Text,Color='black',Checked = False,Row=-1,Column=-1):
         ''' create a radio button '''
-        Button = QtWidgets.QRadioButton(Box)
+        Button = QtGui.QRadioButton(Box)
         if Checked:
             Button.setMouseTracking(True)
             Button.setChecked(True)
@@ -286,41 +286,41 @@ class DialogContainer(QtWidgets.QDialog):
     def initUI(self):
         """Specifically handles the UI initialization"""
         self.setWindowTitle("TechDrawTools V- 0.4.3-multilanguage")
-        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout = QtGui.QVBoxLayout(self)
         # Initialize tab screen
-        self.tabs = QtWidgets.QTabWidget()
-        self.tabs.setTabPosition(QtWidgets.QTabWidget.East)
-        self.tabs.setTabShape(QtWidgets.QTabWidget.Triangular)
-        self.tab1 = QtWidgets.QWidget()
+        self.tabs = QtGui.QTabWidget()
+        self.tabs.setTabPosition(QtGui.QTabWidget.East)
+        self.tabs.setTabShape(QtGui.QTabWidget.Triangular)
+        self.tab1 = QtGui.QWidget()
         self.tabs.addTab(self.tab1,Lang.tr("Attributes and Modifications"))
         self.tab2 = commandWidget()
         self.tabs.addTab(self.tab2,Lang.tr("Centerlines and Threading"))
         self.tab3 = commandWidget()
         self.tabs.addTab(self.tab3,Lang.tr("Dimensions"))
         # Create layouts of tab1
-        self.tab1.layout = QtWidgets.QVBoxLayout()
+        self.tab1.layout = QtGui.QVBoxLayout()
         self.topBox1 = commandWidget()
-        self.topBox1.layout =QtWidgets.QVBoxLayout()
-        self.bottomBox = QtWidgets.QWidget()
-        self.bottomBox.layout =QtWidgets.QHBoxLayout()
-        self.bottomBoxLeftTop = QtWidgets.QGroupBox(Lang.tr("Line attributes:"))
-        self.bottomBoxLeftTop.layout =QtWidgets.QVBoxLayout()
-        self.bottomBoxLeftBottom = QtWidgets.QGroupBox()
-        self.bottomBoxLeftBottom.layout =QtWidgets.QVBoxLayout()
-        self.bottomBoxRight = QtWidgets.QGroupBox()
-        self.bottomBoxRight.layout =QtWidgets.QGridLayout()
+        self.topBox1.layout =QtGui.QVBoxLayout()
+        self.bottomBox = QtGui.QWidget()
+        self.bottomBox.layout =QtGui.QHBoxLayout()
+        self.bottomBoxLeftTop = QtGui.QGroupBox(Lang.tr("Line attributes:"))
+        self.bottomBoxLeftTop.layout =QtGui.QVBoxLayout()
+        self.bottomBoxLeftBottom = QtGui.QGroupBox()
+        self.bottomBoxLeftBottom.layout =QtGui.QVBoxLayout()
+        self.bottomBoxRight = QtGui.QGroupBox()
+        self.bottomBoxRight.layout =QtGui.QGridLayout()
         # Create layouts of tab2
-        self.tab2.layout = QtWidgets.QVBoxLayout()
+        self.tab2.layout = QtGui.QVBoxLayout()
         self.topBox2 = commandWidget()
-        self.topBox2.layout =QtWidgets.QVBoxLayout()
-        self.bottomBox2 = QtWidgets.QWidget()
-        self.bottomBox2.layout =QtWidgets.QHBoxLayout()
-        self.spinContainerBox = QtWidgets.QWidget()
-        self.spinContainerBox.layout =QtWidgets.QHBoxLayout()
+        self.topBox2.layout =QtGui.QVBoxLayout()
+        self.bottomBox2 = QtGui.QWidget()
+        self.bottomBox2.layout =QtGui.QHBoxLayout()
+        self.spinContainerBox = QtGui.QWidget()
+        self.spinContainerBox.layout =QtGui.QHBoxLayout()
         # Create layouts of tab3
-        self.tab3.layout = QtWidgets.QVBoxLayout()
+        self.tab3.layout = QtGui.QVBoxLayout()
         self.topBox3 = commandWidget()
-        self.topBox3.layout =QtWidgets.QVBoxLayout()
+        self.topBox3.layout =QtGui.QVBoxLayout()
 
         # Radio buttons for line attributes --------------------------------------------
 
@@ -343,7 +343,7 @@ class DialogContainer(QtWidgets.QDialog):
         self.radioButton(self.bottomBoxRight,self.on_RB_ChangeColor_Clicked,"set lines color to ","yellow","yellow",False,3,1)
 
         # Button: Quit in  centralWidget -------------------------------------------------------------
-        self.PB_Quit = QtWidgets.QPushButton(self)
+        self.PB_Quit = QtGui.QPushButton(self)
         self.PB_Quit.setText(Lang.tr("Quit"))
         self.PB_Quit.clicked.connect(self.on_PB_Quit_clicked) 
         # insert buttons into tab 1
@@ -367,8 +367,8 @@ class DialogContainer(QtWidgets.QDialog):
         self.bottomBox.layout.addWidget(self.bottomBoxRight)
         self.bottomBox.setLayout(self.bottomBox.layout)
         # create spin label to define cascade spacing
-        self.spinLabel = QtWidgets.QLabel(Lang.tr("Cascade spacing:"))
-        self.SpinBox = QtWidgets.QSpinBox()
+        self.spinLabel = QtGui.QLabel(Lang.tr("Cascade spacing:"))
+        self.SpinBox = QtGui.QSpinBox()
         self.SpinBox.setValue(7)
         self.SpinBox.valueChanged.connect(self.on_SB_clicked)
         self.spinContainerBox.layout.addWidget(self.spinLabel)
