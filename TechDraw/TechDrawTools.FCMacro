@@ -292,7 +292,7 @@ class DialogContainer(QtGui.QDialog):
 
     def initUI(self):
         """Specifically handles the UI initialization"""
-        self.setWindowTitle("TechDrawTools V- 0.4.3-multilanguage")
+        self.setWindowTitle("TechDrawTools V- "+__Version__+"-multilanguage")
         self.layout = QtGui.QVBoxLayout(self)
         # Initialize tab screen
         self.tabs = QtGui.QTabWidget()
