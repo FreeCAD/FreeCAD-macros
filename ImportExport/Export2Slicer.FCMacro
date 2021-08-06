@@ -91,4 +91,4 @@ def main():
 try:
     main()
 except Exception as e:
-    app.Console.PrintMessage('Export2Slicer error: {}\n'.format(e))
+    app.Console.PrintError('Export2Slicer error: {}\n'.format(e))
