@@ -63,27 +63,26 @@
 #  - Locale		: English/UnitedKingdom (en_GB)
 
 
-
 """
   To use this macro, the steps to be followed are simple and straightforward :
-  follow the instructions in the respective dialog boxes, fill in the relevant inputs, 
-  and navigate accordingly. In case of error or warning, you will automatically be 
-  notified the same. In case you are notified to report an unexpected error, 
-  communicate the error by mentioning the FreeCAD version, tracing the steps 
+  follow the instructions in the respective dialog boxes, fill in the relevant inputs,
+  and navigate accordingly. In case of error or warning, you will automatically be
+  notified the same. In case you are notified to report an unexpected error,
+  communicate the error by mentioning the FreeCAD version, tracing the steps
   taken, and mentioning whether (and how much) or not any ouput was generated.
 
-  Note (1)	Performing the macro operation with custom points and refinement 
+  Note (1)	Performing the macro operation with custom points and refinement
 		produces no visible changes.
-  Note (2)	The AeroFoil object properties are only visible on the FreeCAD 
-		software version 0.19. On older versions, you will be shown 
+  Note (2)	The AeroFoil object properties are only visible on the FreeCAD
+		software version 0.19. On older versions, you will be shown
 		a warning on the console.
-  Note (3)	The single underscore prefix (e.g. _name) denotes a private 
+  Note (3)	The single underscore prefix (e.g. _name) denotes a private
 		function or a private variable.
   Note (4)	Some of the short forms used in this script are as follows:
 		  'af' stands for AeroFoil
   		  'mfb' stands for Math Functions Box
   		  'd' stands for Dialog (e.g. d2c, d3, etc.)
-  Note (5)	The dialog boxes and their corresponding UI elements may be 
+  Note (5)	The dialog boxes and their corresponding UI elements may be
 		labelled differently. Here is a map:
 		  d1	= AeroFoil_Initial_Dialog
 		  d2a	= AeroFoil_NACA4Digit_Dialog
@@ -95,13 +94,11 @@
 		  dcd2	= AeroFoil_FileLoad_Dialog
 		  d3	= AeroFoil_Final_Dialog
 		  mfb	= AeroFoil_Math_Functions_Box
-		Read the DocString of the '_setDialogIndex' method in the 
+		Read the DocString of the '_setDialogIndex' method in the
 		'AeroFoilDialog' class to know more about its implementation.
-  Note (6)	The global variable 'dialogIndex' is listed in the exact order 
+  Note (6)	The global variable 'dialogIndex' is listed in the exact order
 		as the above list of dialog boxes.
 """
-
-
 
 __Title__         = "AeroFoil"
 __Author__        = "Melwyncarlo"
@@ -110,14 +107,12 @@ __Date__          = "2021-03-10"
 __Comment__       = "AeroFoil creates airfoil curves and faces using pre-defined models, algebraic functions, and DAT or CSV Files"
 __Web__           = "https://github.com/melwyncarlo/AeroFoil"
 __Wiki__          = "http://www.freecadweb.org/wiki/index.php?title=Macro_AeroFoil"
-__Icon__          = "AeroFoil.svg"
+__Icon__          = "AeroFoil_UI_Files/AeroFoil.png"
 __Help__          = "Click on the AeroFoil button/macro, and follow the instructions in the subsequent dialog boxes."
 __Status__        = "stable"
 __Requires__      = "Freecad >= v0.17"
 __Communication__ = "https://github.com/melwyncarlo/AeroFoil/issues"
 __Files__         = "AeroFoil_UI_Files/AeroFoil_Initial_Dialog.ui, AeroFoil_UI_Files/AeroFoil_NACA4Digit_Dialog.ui, AeroFoil_UI_Files/AeroFoil_NACA5Digit_Dialog.ui, AeroFoil_UI_Files/AeroFoil_CurvesInput_Dialog.ui, AeroFoil_UI_Files/AeroFoil_PointsInput_Dialog.ui, AeroFoil_UI_Files/AeroFoil_DATInput_Dialog.ui, AeroFoil_UI_Files/AeroFoil_CSVInput_Dialog.ui, AeroFoil_UI_Files/AeroFoil_FileLoad_Dialog.ui, AeroFoil_UI_Files/AeroFoil_Final_Dialog.ui, AeroFoil_UI_Files/AeroFoil_Math_Functions_Box.ui, AeroFoil_UI_Files/AeroFoil_mfb_img.gif, AeroFoil_UI_Files/AeroFoil.svg"
-
-
 
 # Library Imports
 # ------------------------------------------------------------------------------------------------
@@ -132,28 +127,26 @@ from PySide.QtGui import *
 from PySide.QtCore import *
 import time, math, csv, re
 
-
-
 ###########################################################################
 ###---------------------------------------------------------------------###
 ### 		AEROFOIL MACRO CALLS - Top (check Bottom)		###
 ###---------------------------------------------------------------------###
-									###
+                                                                        ###
 def AeroFoil_generate(obj):						###
     """
-    The 'AeroFoil_generate' function generates the 2D curves 
-    and shapes, assigns them properties, and creates 
-    multiples of created curves and shapes.	
+    The 'AeroFoil_generate' function generates the 2D curves
+    and shapes, assigns them properties, and creates
+    multiples of created curves and shapes.
 
     Arguments
     ----------
     obj: An instance of the 'AeroFoilDialog' object.
-    
+
     Return
     ----------
-    True:   The airfoil curves/shapes were generated 
+    True:   The airfoil curves/shapes were generated
             successfully.
-    False:  The airfoil curves/shapes were NOT generated 
+    False:  The airfoil curves/shapes were NOT generated
             successfully.
     """									###
     n_ = (obj.multi * (obj.multiParam - 1)) + 1				###
@@ -164,7 +157,7 @@ def AeroFoil_generate(obj):						###
         return False							###
     AeroFoil_object.copy(n_)						###
     return True								###
-									###
+                                                                        ###
 ###---------------------------------------------------------------------###
 ### 		AEROFOIL MACRO CALLS - Top (check Bottom)		###
 ###---------------------------------------------------------------------###
@@ -250,8 +243,8 @@ doc = app.activeDocument()
 class AeroFoil:
 
     """
-    The 'AeroFoil' class is the AeroFoil object itself. It is a non-interactive 
-    console-based class that is responsible for physical creation of the custom 
+    The 'AeroFoil' class is the AeroFoil object itself. It is a non-interactive
+    console-based class that is responsible for physical creation of the custom
     2D airfoil curves/shapes. The gathered user input data is used for the process.
 
     Functions include:
@@ -346,10 +339,10 @@ class AeroFoil:
 
         Properties
         ---------------
-        Airfoil Type:         Options - NACA 4 Digit, NACA 5 Digit, Custom Curves (Symmetric or 
+        Airfoil Type:         Options - NACA 4 Digit, NACA 5 Digit, Custom Curves (Symmetric or
                               Asymmetric), or Custom Points (DAT or CSV)
-        Design Curve Type:    Options - Unsplit or Open Split or Open Split (End Points Fixed) or 
-                              Closed Split or Closed Split (End Points Fixed) | 
+        Design Curve Type:    Options - Unsplit or Open Split or Open Split (End Points Fixed) or
+                              Closed Split or Closed Split (End Points Fixed) |
                               Polygon or BSpline | Draft or Sketch or Surface
         Airfoil Chord Length: Length in millimetres (mm)
         Number of Points :    Number of airfoil points
@@ -406,7 +399,7 @@ class AeroFoil:
         """
         This function is responsible for physical creation of the custom 2D airfoil curves/shapes.
         The user input data has been obtained from the '__init__' module of this class.
-        This function utilizes the 'try ... except' method to avoid any complications 
+        This function utilizes the 'try ... except' method to avoid any complications
         on the user's end. A simple error message is displayed instead.
         """
         # Generating Polygons and BSplines
@@ -549,7 +542,7 @@ class AeroFoil:
     def _create_tempX_var(self, startIndex, endIndex):
         """
         This function determines the start and end points of a 'split' curve.
-        This function generates additional start and end points if 
+        This function generates additional start and end points if
         their existing counterparts do not have a Y-axis value of zero (0).
         This function calls the linear interpolation method to achieve the same.
 
@@ -1137,13 +1130,13 @@ class AeroFoil:
 class AeroFoilDialog:
 
     """
-    The 'AeroFoilDialog' class itself is the AeroFoil GUI interface. 
-    It contains dialog boxes that go to and fro, from the initial input dialog box 
-    to the final creation dialog box. This class accumulates the user's inputs on 
-    how the airfoils are to be created: their dimensions, their design type, 
-    their resolution, their multiplicity, etc. 
+    The 'AeroFoilDialog' class itself is the AeroFoil GUI interface.
+    It contains dialog boxes that go to and fro, from the initial input dialog box
+    to the final creation dialog box. This class accumulates the user's inputs on
+    how the airfoils are to be created: their dimensions, their design type,
+    their resolution, their multiplicity, etc.
 
-    This class is also responsible for validating the input choices and values, 
+    This class is also responsible for validating the input choices and values,
     and notifying or warning the user accordingly.
 
     Functions include:
@@ -1255,7 +1248,7 @@ class AeroFoilDialog:
 
     def _createDialogs(self):
         """
-        This function generates and displays the AeroFoil GUI interface, that is, 
+        This function generates and displays the AeroFoil GUI interface, that is,
         it creates all the dialog boxes for user interaction and input.
         """
         global MACRO_DIR
@@ -1668,7 +1661,7 @@ class AeroFoilDialog:
 
     def _okay(self):
         """
-        This function closes an open dialog box, and 
+        This function closes an open dialog box, and
         reverts back to the previous dialog box.
         This function is called when the 'Okay' button is clicked.
         """
@@ -1722,9 +1715,9 @@ class AeroFoilDialog:
         """
         This function begins the airfoil creation process.
         This function accumulates and stores the final dialog's input data.
-        This function also notifies the user whether or not the entire 
+        This function also notifies the user whether or not the entire
         'AeroFoil' procedure has been successfully completed.
-        This function is called when the 'Create AeroFoil' button from the 
+        This function is called when the 'Create AeroFoil' button from the
         'AeroFoil_Final_Dialog' is clicked.
         This function is responsible for launching the second (Top) macro call.
         """
@@ -1910,23 +1903,23 @@ class AeroFoilDialog:
 
 def _setDialogIndex(index):
     """
-    This function sets the appropriate dialog box, when the 
+    This function sets the appropriate dialog box, when the
     'Next', 'Back', and 'Okay' buttons are clicked.
     This function is NOT responsible for loading any dialog boxes.
 
     The 'index' argument denotes the next or previous dialog box to go to.
-    The 'index' number corresponds to the global variable list 'dialogIndex' 
+    The 'index' number corresponds to the global variable list 'dialogIndex'
     as well as the dialog names table mentioned in the macro's main DocString.
 
-    The first element in the global variable 'dialogIndex' is the index number 
-    of the currently open dialog box. The other elements too are eventually 
-    replaced with the index numbers of the dialog box that was opened prior 
-    to the current one. This allows the macro to remember its backward 
+    The first element in the global variable 'dialogIndex' is the index number
+    of the currently open dialog box. The other elements too are eventually
+    replaced with the index numbers of the dialog box that was opened prior
+    to the current one. This allows the macro to remember its backward
     journey through the various dialog boxes.
 
     Arguments
     ----------
-    index:  A dialog box code (Integer) as listed in the global variable 
+    index:  A dialog box code (Integer) as listed in the global variable
             'dialogIndex'.
     """
     global dialogIndex
@@ -1950,7 +1943,7 @@ def setAlertBox(message, error):
     Arguments
     ----------
     message: The string-based message to be displayed.
-    error:   'True' opens up the 'Critical' message box, and 
+    error:   'True' opens up the 'Critical' message box, and
              'False' opens up the 'Warning' message box.
     """
     msgbox_ = 0
@@ -1972,10 +1965,10 @@ def setAlertBox(message, error):
 
 def _prepareAeroFoil(objRef):
     """
-    This function utilizes the various user input data as a basis 
-    for creating a list of refined, verified, and finalized 
+    This function utilizes the various user input data as a basis
+    for creating a list of refined, verified, and finalized
     airfoil data points to be used later for physical creation.
-    This function is called from the '_startCreating' method 
+    This function is called from the '_startCreating' method
     of the 'AeroFoilDialog' class.
 
     Arguments
@@ -2098,9 +2091,9 @@ def interpolateNum(x1_, y1_, x2_, y2_, x_):
 
 def generateName(inputName):
     """
-    This function correctly provides a given name/label with 
+    This function correctly provides a given name/label with
     appropriate and non-dulplicate numbering.
-    e.g.  'AeroFoil' results in 'AeroFoil_1' if such a labelled  
+    e.g.  'AeroFoil' results in 'AeroFoil_1' if such a labelled
           object does not exist; else, it becomes 'AeroFoil_2'.
 
     Arguments
@@ -2123,7 +2116,7 @@ def _naca4digit(objRef):
     """
     This function generates a list of airfoil data points
     for a typical NACA 4 Digit airfoil model.
-    This function is called from the '_startCreating' method 
+    This function is called from the '_startCreating' method
     of the 'AeroFoilDialog' class.
 
     Arguments
@@ -2181,7 +2174,7 @@ def _naca5digit(objRef):
     """
     This function generates a list of airfoil data points
     for a typical NACA 5 Digit airfoil model.
-    This function is called from the '_startCreating' method 
+    This function is called from the '_startCreating' method
     of the 'AeroFoilDialog' class.
 
     Arguments
@@ -2297,7 +2290,7 @@ def _naca5digit(objRef):
 
 def convTrig(mode, inputVal):
     """
-    This function converts specific, unconventional trigonometric code 
+    This function converts specific, unconventional trigonometric code
     into a Python-based (Math module) trigonometric code.
     This function is called from the 'solveFx' method.
 
@@ -2325,8 +2318,8 @@ def solveFx(f_, x_):
     """
     This function generates a list of airfoil data points
     for a typical NACA 4 Digit airfoil model.
-    This function is called from the '_validateFunction'  
-    and the '_startCreating' methods of the 
+    This function is called from the '_validateFunction'
+    and the '_startCreating' methods of the
     'AeroFoilDialog' class.
 
     Arguments
@@ -2355,10 +2348,10 @@ def solveFx(f_, x_):
 
 def _validateAirfoilNumber(objRef, digit):
     """
-    This function validates whether or not the inputted NACA airfoil model code 
+    This function validates whether or not the inputted NACA airfoil model code
     is valid and existing.
     This function is called from the '_next' method of the 'AeroFoilDialog' class.
-    This function is called when the 'Next' button from the 'AeroFoil_NACA4Digit_Dialog' 
+    This function is called when the 'Next' button from the 'AeroFoil_NACA4Digit_Dialog'
     or the 'AeroFoil_NACA5Digit_Dialog' is clicked.
 
     Arguments
@@ -2418,8 +2411,8 @@ def _validateAirfoilNumber(objRef, digit):
 
 def _validateFunction(objRef, mode):
     """
-    This function parses the inputted curve functions, and validates them, 
-    resulting in whether or not the inputted functions are valid from points 
+    This function parses the inputted curve functions, and validates them,
+    resulting in whether or not the inputted functions are valid from points
     0 to 1, both inclusive, in the X-axis of a typical graph.
     This function is called from the '_next' method of the 'AeroFoilDialog' class.
     This function is called when the 'Next' button from the 'AeroFoil_CurvesInput_Dialog'
@@ -2429,10 +2422,10 @@ def _validateFunction(objRef, mode):
     ----------
     objRef:   An instance of the 'AeroFoilDialog' object.
     mode:     An integer number specifying the function input mode.
-    Options:  '1' denotes that one function has been inputted, 
-              and the function is to be symmetrically mirrored 
+    Options:  '1' denotes that one function has been inputted,
+              and the function is to be symmetrically mirrored
               to produce the lower airfoil points.
-              '2' denotes that two functions have been inputted, 
+              '2' denotes that two functions have been inputted,
               one for the upper, and one for the lower airfoil points.
     """
     global FUNCTIONSARRAY
@@ -2557,8 +2550,8 @@ def _validateFunction(objRef, mode):
 
 def _validateFile(objRef):
     """
-    This function parses the file contents of the inputted file path, and validates them, 
-    resulting in whether or not the file is valid (that is, contains minimum number of points, 
+    This function parses the file contents of the inputted file path, and validates them,
+    resulting in whether or not the file is valid (that is, contains minimum number of points,
     valid data points structure, etc.)
     This function is called from the '_loadFile' method of the 'AeroFoilDialog' class.
 
@@ -2737,14 +2730,11 @@ def _validateFile(objRef):
 ###	the AeroFoil GUI interface. This script cannot be 	   ###
 ###	called externally.					   ###
     								   ###
-								   ###
+                                                                   ###
 if __name__ == "__main__":					   ###
     AeroFoilDialog()						   ###
-								   ###
+                                                                   ###
 ###----------------------------------------------------------------###
 ### 		AEROFOIL MACRO CALLS - Bottom (check Top)	   ###
 ###----------------------------------------------------------------###
 ######################################################################
-
-
-
