@@ -1,0 +1,24 @@
+# Run to activate rotations on Spacemouse device.
+
+__Name__ = 'Spacemouse Rotation On'
+__Comment__ = 'Run to activate rotations on Spacemouse device.'
+__Author__ = 'tja2468,R3D3,galou_breizh'
+__Version__ = '1.0.0'
+__Date__ = '2021-11-01'
+__License__ = 'LGPL-2.0-or-later'
+__Web__ = 'http://forum.freecadweb.org/viewtopic.php?f=?&t=????'
+__Wiki__ = 'http://www.freecadweb.org/wiki/Macro_Title_Of_macro'
+__Icon__ = ''
+__Help__ = 'Run to activate rotations on Spacemouse device.'
+__Status__ = 'production'
+__Requires__ = 'FreeCAD 0.20'
+__Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=61482'
+__Files__ = ''
+
+import FreeCAD as app
+
+# Activate rotations.
+app.ParamGet('User parameter:BaseApp/Spaceball/Motion').SetBool('Rotations', True)
+
+# display message to convey status
+app.Console.PrintMessage('Spacemouse rotations enabled\n')
