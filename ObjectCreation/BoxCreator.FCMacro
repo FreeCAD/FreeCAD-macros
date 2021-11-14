@@ -31,12 +31,9 @@ class BoxcreatorDialog():
     def __init__(self):
         self.ui_file = os.path.join(app.getUserMacroDir(True),
                                     'boxcreator/boxcreator.ui')
-        f, w = gui.PySideUic.loadUiType(self.ui_file)
-        self.form = f()
-        self.widget = w()
-        self.form.setupUi(self.widget)
-        self.widget.show()
+        self.form = gui.PySideUic.loadUi(self.ui_file)
         self._connect_widgets()
+        self.form.show()
 
     def _connect_widgets(self):
         self.form.pushButtonCreate.pressed.connect(self.createBox)
