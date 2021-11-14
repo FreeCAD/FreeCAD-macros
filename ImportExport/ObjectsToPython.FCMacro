@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__Version__ = '0.5'
-__Date__ = '2021-07-17'
+__Version__ = '0.6'
+__Date__ = '2021-11-14'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = 'README.md'
@@ -23,7 +23,7 @@ import FreeCADGui as gui
 import Part
 import re
 import sys
-from FreeCAD import Vector
+from FreeCAD import Vector, Placement, Rotation
 
                
 def exportObjectsToPython(doc = app.activeDocument()):        
@@ -36,7 +36,7 @@ def exportObjectsToPython(doc = app.activeDocument()):
                    ('App::Plane', 'XY_Plane'), ('App::Plane', 'XZ_Plane'), ('App::Plane', 'YZ_Plane'),
                    ('App::Origin', 'Origin')] 
     
-    selection = FreeCADGui.Selection.getSelection() 
+    selection = gui.Selection.getSelection() 
     if not selection:
         selection = doc.Objects
     else:
@@ -309,10 +309,9 @@ def addSketch(obj, objname):
         n = n + 1
     
     splinecount = 0
-    concount = 0
     prop = obj.getPropertyByName('Constraints')
     for con in obj.Constraints:
-        if not concount in exposed:
+        if con.Type != 'Coincident' or not con.First in exposed:
             conargs = ''
             contype = con.Type
             if con.Type == 'Coincident':
@@ -370,8 +369,6 @@ def addSketch(obj, objname):
                 
             if con.Name != "":
                 addScript("%s.renameConstraint(%d, u'%s')"%(objname, concount, con.Name))
-            
-        concount = concount + 1
     
                                  
 def addSpreadsheet(obj, objname): 
@@ -397,16 +394,12 @@ class O2PDialog:
     """Show a dialog for BoxCreator"""
     def __init__(self):
         self.ui_file = os.path.join(app.getUserMacroDir(True), 'ObjectsToPython/ObjectsToPython.ui')
-        f, w = gui.PySideUic.loadUiType(self.ui_file)
-        self.form = f()
-        self.widget = w()
-        self.form.setupUi(self.widget)
-        self.widget.show()
+        self.form = gui.PySideUic.loadUi(self.ui_file)
         self.form.pushButtonClose.pressed.connect(self.form_Close)
+        self.form.show()    
 
     def form_Close(self):
-	    del self.form
-	    del self.widget
+	    self.form.close()
   
 dialog = O2PDialog()     
 exportObjectsToPython()
