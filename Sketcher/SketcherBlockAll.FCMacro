@@ -1,0 +1,53 @@
+# Add a block constraint on all the geometry elements of a sketch.
+
+__Name__ = 'Sketcher Block All'
+__Comment__ = 'Add a block constraint on all the geometry elements of a sketch.'
+__Author__ = 'galou_breizh'
+__Version__ = '1.0.0'
+__Date__ = '2021-11-20'
+__License__ = 'LGPL-2.0-or-later'
+__Web__ = ''
+__Wiki__ = ''
+__Icon__ = ''
+__Help__ = ''
+__Status__ = ''
+__Requires__ = 'FreeCAD >=0.19'
+__Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
+__Files__ = ''
+
+from typing import Optional
+
+import FreeCAD as app
+
+import FreeCADGui as gui
+
+import Sketcher
+
+
+def get_sketch() -> Optional[Sketcher.Sketch]:
+    """Get the opened or selected sketch."""
+    active_workbench = gui.activeWorkbench()
+    if active_workbench.name() == 'SketcherWorkbench':
+        # ActiveSketch is defined by the Sketcher Workbench.
+        return ActiveSketch
+    else:
+        sel = gui.Selection.getSelection()
+        if sel and sel[0].TypeId == 'Sketcher::SketchObject':
+            return sel[0]
+
+
+def block_sketch(sketch: Sketcher.Sketch) -> None:
+    """Add a 'Block' constraint on all geometry elements."""
+    for i in range(len(sketch.Geometry)):
+        try:
+            sketch.addConstraint(Sketcher.Constraint('Block', i))
+        except:
+            pass
+
+
+sketch = get_sketch()
+if sketch is not None:
+    block_sketch(sketch)
+else:
+    app.Console.PrintWarning('No sketch selected, doing nothing')
+
