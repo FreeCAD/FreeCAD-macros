@@ -1,4 +1,4 @@
-# Get the global placement of selected objects, respecting links.
+"""Get the global placement of selected objects, respecting links."""
 # Usage: select some objects or some subelements and run.
 
 __Name__ = 'Get Global Placement'
@@ -47,6 +47,7 @@ def strip_subelement(sub_fullpath: str) -> str:
             primitve" in PartDesign.
         - 'Body.Box001.Face6' if you select the top face of a Part->Body->
             "additive primitve" in PartDesign.
+
     """
     if (not sub_fullpath) or ('.' not in sub_fullpath):
         return ''
@@ -77,6 +78,7 @@ def get_subobjects_by_full_name(
             primitve" in PartDesign.
         - 'Body.Box001.Face6' if you select the top face of a Part->Body->
             "additive primitve" in PartDesign.
+
     """
     objects = []
     names = strip_subelement(subobject_fullpath).split('.')
@@ -93,7 +95,7 @@ def get_subobjects_by_full_name(
 def get_global_placement(root_object: app.DocumentObject,
                          subobject_fullpath: str,
                          ) -> app.Placement:
-    """Return the global placement by recursively going through parents
+    """Return the global placement by recursively going through parents.
 
     ``object.getGlobalPlacement()`` returns the placement of the original
     object, not the linked one. This function recursively goes through the
@@ -111,6 +113,7 @@ def get_global_placement(root_object: app.DocumentObject,
             primitve" in PartDesign.
         - 'Body.Box001.Face6' if you select the top face of a Part->Body->
             "additive primitve" in PartDesign.
+
     """
     objects = get_subobjects_by_full_name(root_object, subobject_fullpath)
     placement = root_object.Placement
@@ -136,6 +139,7 @@ def print_placement(object_name: str,
 
 
 def get_and_print_selected_placements():
+    """Get selected objects and print their placement."""
     doc = app.activeDocument()
     if doc is None:
         return
