@@ -1,13 +1,14 @@
-__Name__   = "SketcherFixAllPoints"
-__Author__  = "edi"
-__Version__ = "0.0.2"
+__Name__ = 'SketcherFixAllPoints'
+__Author__ = 'edi'
+__Version__ = '0.0.3'
+__Date__  = '2021-11-20'
 __License__ = 'LGPL v2'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=13&t=52451'
-__Files__ = 'SketcherFixAllPoints.svg'
+__Icon__ = ''
 __Help__ = 'Open a sketch. Start the macro. All geometry is fixed by constraints.'
 __Status__ = 'Stable'
 __Requires__ = 'e.g. FreeCAD >= v0.19'
-__Date__    = "2021-01-07"
+__Files__ = 'SketcherFixAllPoints.svg'
 """
 This macro is intended to constrain automatically created, incompletely contrained sketches.
 The sketches usually have been imported from IGES, STEP or DXF files.
@@ -23,83 +24,102 @@ Workflow:
 
 Hint: The created sketch may be over constrained. In this case drag an element.
 The redundant constraints will be deleted automatically.
+
 """
+
+from typing import List
+
 import FreeCAD as app
+
 import FreeCADGui as gui
+
+g_all_points: List['Point'] = []
+
+
 class Point:
-	'''defining a Point object, containing it's position and element id's'''
-	def __init__(self,Pos,GeoId,PtId):
-		self.Pos = Pos
-		self.Ident = []
-		self.extend(GeoId,PtId)
+    """Defining a Point object, containing its position and element id's."""
+    def __init__(self, pos, geo_id, pt_id):
+        self.pos = pos
+        self.ident = []
+        self.extend(geo_id, pt_id)
 
-	def extend(self,GeoId,PtId):
-		self.Ident.append([GeoId,PtId])
+    def extend(self, geo_id, pt_id):
+        self.ident.append([geo_id, pt_id])
 
-def addPoint(Pos,GeoId,PtId):
-	''' add a Point to the AllPoints list'''
-	Pt = Point(Pos,GeoId,PtId)
-	AllPoints.append(Pt)
-	for i in range(len(AllPoints)):
-		if Pt.Pos.isEqual(AllPoints[i].Pos,0.01):
-			if i+1 < len(AllPoints):
-				AllPoints[i].extend(GeoId,PtId)
-				AllPoints.pop()
-				break
 
-def getSketch():
-	'''get the open sketch'''
-	ActiveWorkbench = gui.activeWorkbench()
-	if ActiveWorkbench.name() == 'SketcherWorkbench':
-		return ActiveSketch
-	else:
-		Sel = gui.Selection.getSelection()
-		if Sel[0].TypeId == 'Sketcher::SketchObject':
-			return Sel[0]
+def addPoint(pos, geo_id, pt_id):
+    """Add a Point to the g_all_points list."""
+    pt = Point(pos, geo_id, pt_id)
+    # Extend an existing point if at the same position.
+    for existing_pt in g_all_points:
+        if pt.pos.isEqual(existing_pt.pos, 0.01):
+            existing_pt.extend(geo_id, pt_id)
+            return
+    # No point at the same position, add a point.
+    g_all_points.append(pt)
 
-def deleteConstraints(Sketch): 
-	'''delete all external constraints'''
-	Internals = []
-	for i in range(Sketch.ConstraintCount):
-		if Sketch.Constraints[0].Type == 'InternalAlignment':
-			Internals.append(Sketch.Constraints[0])
-		Sketch.delConstraint(0)
-	Sketch.addConstraint(Internals)
 
-def getElements(Sketch):
-	'''add points of next geometry to list of points'''
-	geoList = Sketch.Geometry
-	for i in range(Sketch.GeometryCount):
-		if geoList[i].TypeId == 'Part::GeomLineSegment':
-			addPoint(geoList[i].StartPoint,i,1)
-			addPoint(geoList[i].EndPoint,i,2)
-		elif geoList[i].TypeId == 'Part::GeomArcOfCircle':
-			addPoint(geoList[i].StartPoint,i,1)
-			addPoint(geoList[i].EndPoint,i,2)
-			addPoint(geoList[i].Center,i,3)
-		elif geoList[i].TypeId == 'Part::GeomCircle':
-			addPoint(geoList[i].Center,i,3)		
+def get_sketch():
+    """Get the opened or selected sketch."""
+    active_workbench = gui.activeWorkbench()
+    if active_workbench.name() == 'SketcherWorkbench':
+        # ActiveSketch is defined by the Sketcher Workbench.
+        return ActiveSketch
+    else:
+        sel = gui.Selection.getSelection()
+        if sel and sel[0].TypeId == 'Sketcher::SketchObject':
+            return sel[0]
 
-def makeConstraints(Sketch):
-	'''create the new constraints'''
-	for Pt in AllPoints:
-		Sketch.addConstraint(Sketcher.Constraint('DistanceX',Pt.Ident[0][0],Pt.Ident[0][1],Pt.Pos.x)) 
-		Sketch.addConstraint(Sketcher.Constraint('DistanceY',Pt.Ident[0][0],Pt.Ident[0][1],Pt.Pos.y)) 
-		if len(Pt.Ident) == 2:
-			Sketch.addConstraint(Sketcher.Constraint('Coincident',Pt.Ident[0][0],Pt.Ident[0][1],Pt.Ident[1][0],Pt.Ident[1][1]))
 
-def makeDiameters(Sketch):
-	'''diameter constraints for all circles'''
-	geoList = Sketch.Geometry
-	for i in range(Sketch.GeometryCount):
-		if geoList[i].TypeId == 'Part::GeomCircle':
-			Sketch.addConstraint(Sketcher.Constraint('Diameter',i,geoList[i].Radius*2))
+def delete_constraints(sketch):
+    """Delete all external constraints."""
+    internals = []
+    for i in range(sketch.ConstraintCount):
+        if sketch.Constraints[0].Type == 'InternalAlignment':
+            internals.append(sketch.Constraints[0])
+        sketch.delConstraint(0)
+    sketch.addConstraint(internals)
 
-AllPoints = []
-Sketch = getSketch()
-if Sketch != None:
-	deleteConstraints(Sketch)
-	getElements(Sketch)
-	makeConstraints(Sketch)
-	makeDiameters(Sketch)
-	app.ActiveDocument.recompute()
+
+def get_elements(sketch):
+    """Add points of next geometry to list of points."""
+    for i, geo in enumerate(sketch.Geometry):
+        if geo.TypeId == 'Part::GeomLineSegment':
+            addPoint(geo.StartPoint, i, 1)
+            addPoint(geo.EndPoint, i, 2)
+        elif geo.TypeId == 'Part::GeomArcOfCircle':
+            addPoint(geo.StartPoint, i, 1)
+            addPoint(geo.EndPoint, i, 2)
+            addPoint(geo.Center, i, 3)
+        elif geo.TypeId == 'Part::GeomCircle':
+            addPoint(geo.Center, i, 3)
+
+
+def make_constraints(sketch):
+    """Create the new constraints."""
+    for pt in g_all_points:
+        sketch.addConstraint(Sketcher.Constraint('DistanceX',
+            pt.ident[0][0], pt.ident[0][1], pt.pos.x))
+        sketch.addConstraint(Sketcher.Constraint('DistanceY',
+            pt.ident[0][0], pt.ident[0][1], pt.pos.y))
+        if len(pt.ident) > 1:
+            sketch.addConstraint(Sketcher.Constraint('Coincident',
+                pt.ident[0][0], pt.ident[0][1], pt.ident[1][0], pt.ident[1][1]))
+
+
+def make_diameters(sketch):
+    """Diameter constraints for all circles."""
+    for i, geo in enumerate(sketch.Geometry):
+        if geo.TypeId == 'Part::GeomCircle':
+            sketch.addConstraint(Sketcher.Constraint('Diameter', i, geo.Radius * 2))
+
+
+sketch = get_sketch()
+if sketch is not None:
+    delete_constraints(sketch)
+    get_elements(sketch)
+    make_constraints(sketch)
+    make_diameters(sketch)
+    app.activeDocument().recompute()
+else:
+    app.Console.PrintWarning('No sketch selected, doing nothing')
