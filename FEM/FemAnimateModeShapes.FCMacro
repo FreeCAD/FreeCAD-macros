@@ -73,12 +73,9 @@ class FemAnimateModeShapes():
                                     'fem_animate_mode_shapes.ui')
         self.inc = 1  # TODO: find a better name and use.
 
-        f, w = gui.PySideUic.loadUiType(self.ui_file)
-        self.form = f()
-        self.widget = w()
-        self.form.setupUi(self.widget)
-        self.widget.show()
+        self.form  = gui.PySideUic.loadUi(self.ui_file)
         self._connect_widgets()
+        self.form.show()
         self.box = self._message_box()
 
     def _connect_widgets(self):
