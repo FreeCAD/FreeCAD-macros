@@ -3,8 +3,8 @@
 __Name__ = 'LasercutterSVGExport'
 __Comment__ = 'Creates contour lines for all selected objects and arranges them on a TechDraw page'
 __Author__ = 'christi'
-__Version__ = '0.4'
-__Date__ = '2019-07-14'
+__Version__ = '0.6'
+__Date__ = '2021-12-13'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://github.com/FreeCAD/FreeCAD-macros/tree/master/TechDraw'
 __Wiki__ = 'https://github.com/FreeCAD/FreeCAD-macros/tree/master/TechDraw/LasercutterSVGExport'
@@ -21,167 +21,304 @@ __Files__ = 'LasercutterSVGExport/Readme.md,LasercutterSVGExport/LasercutterSVGE
 #      by: pyside-uic 0.2.15 running on PySide 1.2.2
 #
 
-import math
-from operator import itemgetter, attrgetter
-
+import os
 import FreeCAD as app
 import FreeCADGui as gui
+from FreeCAD import Vector, Rotation
 import Part
-import Draft
-import TechDraw
-from FreeCAD import Base
-
-from PySide import QtCore, QtGui
+import math
 
 
-class Ui_Dialog(object):
-    def setupUi(self, Dialog):
-        Dialog.setObjectName("Dialog")
-        Dialog.resize(246, 178)
-        Dialog.setWindowTitle("Create Lasercutter SVG Export Template")
-        self.gridLayout = QtGui.QGridLayout(Dialog)
-        self.gridLayout.setObjectName("gridLayout")
-        self.label = QtGui.QLabel(Dialog)
-        self.label.setText("Laser beam width [mm]:")
-        self.label.setObjectName("label")
-        self.gridLayout.addWidget(self.label, 0, 1, 1, 1)
-        self.doubleSpinBox = QtGui.QDoubleSpinBox(Dialog)
-        self.doubleSpinBox.setProperty("value", 0.2)
-        self.doubleSpinBox.setObjectName("doubleSpinBox")
-        self.gridLayout.addWidget(self.doubleSpinBox, 0, 2, 1, 1)
-        self.pushButton = QtGui.QPushButton(Dialog)
-        self.pushButton.setText("Create Lasercutter Template")
-        self.pushButton.setObjectName("pushButton")
-        self.gridLayout.addWidget(self.pushButton, 2, 1, 1, 2)
-        self.label_2 = QtGui.QLabel(Dialog)
-        self.label_2.setText("<html><head/><body><p align=\"center\">Select one or more parts in your design.<br/>Then press the button.</p></body></html>")
-        self.label_2.setObjectName("label_2")
-        self.gridLayout.addWidget(self.label_2, 1, 1, 1, 2)
+__dir__ = os.path.dirname(__file__)
+iconPath = os.path.join(__dir__, 'LasercutterSVGExport')
 
-        self.retranslateUi(Dialog)
-        QtCore.QObject.connect(self.pushButton,QtCore.SIGNAL("pressed()"),self.createSVG)
-        QtCore.QMetaObject.connectSlotsByName(Dialog)
+epsilon = 1e-7      
+        
+class LasercutterTechdrawExportItem:
+    def __init__(self, 
+                 fp,    # an instance of Part::FeaturePython
+                 Part = None,
+                 BeamWidth = 0.2,
+                 Normal = Vector(0, 0, 0),
+                 method = 'auto'):
+        self.updating = False
+        fp.addProperty("App::PropertyLink", "Part",  "LasercutterTechdrawExport",  "Selected part").Part = Part
+        fp.addProperty("App::PropertyVector", "Normal", "LasercutterTechdrawExport",  "vertical vector. (0, 0, 0) = rotate the part that it fits best").Normal = Normal
+        fp.addProperty("App::PropertyFloat", "BeamWidth", "LasercutterTechdrawExport",  "Laser beam width in mm").BeamWidth = BeamWidth
+        fp.addProperty("App::PropertyEnumeration", "Method", "LasercutterTechdrawExport",  "How to create the outline").Method = ['auto', '2D', '3D', 'face', 'normal']
+        fp.Method = method
+        fp.Proxy = self
+    
+    def execute(self, fp):
+        '''Do something when doing a recomputation, this method is mandatory'''
+        if fp.Part and fp.Normal and (not self.updating):
+            self.make_outline(fp)
+        
+    def onChanged(self, fp, prop):
+        '''Do something when a property has changed'''
+        props = ["Part", "BeamWidth", "Normal", "Method"]
+        if prop in props:
+            self.execute(fp)         
+            
+    def make_outline(self, fp): 
+        self.updating = True 
+        
+        if fp.Method == 'normal': 
+            outline = fp.Part.Shape.makeOffsetShape(fp.BeamWidth / 2, 1e-7)
+        elif fp.Method == '2D':
+            outline = fp.Part.Shape.makeOffset2D(fp.BeamWidth / 2) 
+            fp.Normal = self.getNormal(fp.Part) 
+        elif fp.Method == '3D':
+            outline = fp.Part.Shape.makeOffsetShape(fp.BeamWidth / 2, 1e-7)
+            fp.Normal = self.getNormal(fp.Part) 
+        else:
+            face = self.get_biggest_face(fp.Part)
+            if face:
+                outline = face.makeOffset2D(fp.BeamWidth / 2)
+                fp.Normal = face.normalAt(0, 0)
+            elif fp.Method == 'auto':
+                try:
+                    outline = fp.Part.Shape.makeOffset2D(fp.BeamWidth / 2) 
+                except Exception as ex:
+                    outline = fp.Part.Shape.makeOffsetShape(fp.BeamWidth / 2, 1e-7)   
+                    
+                fp.Normal = self.getNormal(fp.Part)   
+            
+        fp.Shape = Part.Compound(outline.Wires);
+        fp.Label = fp.Part.Label + " offset"
+        fp.Placement = outline.Placement
+        
+        if fp.Placement.Rotation.Axis.z < 0:
+            fp.Placement.Rotation.Axis = fp.Placement.Rotation.Axis * -1
+        
+        if fp.Method != 'normal':      
+            if fp.Normal.z < 0:
+                fp.Normal = fp.Normal * -1
+                
+            rotation_to_apply = Rotation(fp.Normal, Vector(0, 0, 1))    
+            new_rotation = rotation_to_apply.multiply(fp.Placement.Rotation)
+            fp.Placement.Rotation = new_rotation
+        
+            self.rotate_biggest_side_up(fp)
+            
+        self.updating = False
+        
+    def get_biggest_face(self, part):
+        max_area = 0
+        max_face = None
+        for face in part.Shape.Faces:
+            if face and face.Area > max_area:
+                max_area = face.Area
+                max_face = face
+    
+        if max_face:
+            return max_face
+        
+    def rotate_biggest_side_up(self, fp):
+        bbox = fp.Shape.optimalBoundingBox()
+        xmin = bbox.XLength
+        angle = 0.0
+        r = fp.Placement.Rotation
+        r_best = r
+        step = 180 / 16
+        while angle + step < 180:   
+            angle = angle + step 
+            rotation_to_apply = Rotation()
+            rotation_to_apply.Axis = Vector(0, 0, 1)             
+            rotation_to_apply.Angle = math.radians(angle)              
+            fp.Placement.Rotation = rotation_to_apply.multiply(r)
+            bbox = fp.Shape.optimalBoundingBox()
+    
+            if xmin > bbox.XLength:
+                xmin = bbox.XLength
+                r_best = fp.Placement.Rotation
+                 
+        fp.Placement.Rotation = r_best
+        
+    def getNormal(self, obj):
+        if hasattr(obj, 'Dir'):
+            return obj.Dir
+        else:
+            bbox = obj.Shape.BoundBox
+            if bbox.XLength < epsilon: return Vector(1.0,0.0,0.0)
+            elif bbox.YLength < epsilon: return Vector(0.0,1.0,0.0)
+            elif bbox.ZLength < epsilon: return Vector(0.0,0.0,1.0)
+            return obj.Placement.Rotation.multVec(Vector(0, 0, 1))
+        
+class LasercutterTechdrawExportItemViewProvider:
+    def __init__(self, vobj):
+        '''Set this object to the proxy object of the actual view provider'''
+        vobj.Proxy = self
+        self.Object = vobj.Object
+            
+    def getIcon(self):
+        '''Return the icon which will FreeCADear in the tree view. This method is optional and if not defined a default icon is shown.'''
+        return (os.path.join(iconPath, "LasercutterTechdrawExport.svg"))
 
-    def retranslateUi(self, Dialog):
+    def attach(self, vobj):
+        '''Setup the scene sub-graph of the view provider, this method is mandatory'''
+        self.Object = vobj.Object
+        self.onChanged(vobj, "Base")
+ 
+    def updateData(self, fp, prop):
+        '''If a property of the handled feature has changed we have the chance to handle this here'''
         pass
+    
+    def claimChildren(self):
+        '''Return a list of objects that will be modified by this feature'''
+        pass
+        
+    def onDelete(self, feature, subelements):
+        '''Here we can do something when the feature will be deleted'''
+        return True
+    
+    def onChanged(self, fp, prop):
+        '''Here we can do something when a single property got changed'''
+        pass
+        
+    def setEdit(self, vobj=None, mode=0):
+        return False
+        
+    def __getstate__(self):
+        '''When saving the document this object gets stored using Python's json module.\
+                Since we have some un-serializable parts here -- the Coin stuff -- we must define this method\
+                to return a tuple of all serializable objects or None.'''
+        return None
+ 
+    def __setstate__(self,state):
+        '''When restoring the serialized object from document we have the chance to set some internals here.\
+                Since no data were serialized nothing needs to be done here.'''
+        return None
+        
+        
+class LasercutterTechdrawExport():
+    '''This class will be loaded when the workbench is activated in FreeCAD. You must restart FreeCAD to FreeCADly changes in this class'''  
 
-    def createSVG(self):
-        beamWidth = self.doubleSpinBox.value()
-        selected_to_techdraw(beamWidth)
+    def Activated(self):
+        '''Will be called when the feature is executed.'''
+        self.ui_file = os.path.join(iconPath, 'lasercuttersvg.ui')
+        self.form = FreeCADGui.PySideUic.loadUi(self.ui_file)
+        self.form.pushButton.pressed.connect(self.makeExport)
+        self.form.show()        
+
+    def IsActive(self):
+        """Here you can define if the command must be active or not (greyed) if certain conditions
+        are met or not. This function is optional."""
+        if app.activeDocument():
+            return(True)
+        else:
+            return(False)
+        
+    def GetResources(self):
+        '''Return the icon which will FreeCADear in the tree view. This method is optional and if not defined a default icon is shown.'''
+        return {'Pixmap'  : os.path.join(iconPath, "LasercutterTechdrawExport.svg"),
+                'Accel' : "", # a default shortcut (optional)
+                'MenuText': "Lasercutter Techdraw Export",
+                'ToolTip' : __doc__ }
+                
+    def makeExport(self):          
+        # Generate commands in the FreeCAD python console to create LasercutterTechdrawExport
+        FreeCADGui.doCommand("from LasercutterTechdrawExport import LasercutterTechdrawExport")
+        
+        FreeCADGui.doCommand("parts = []")
+        selection = FreeCADGui.Selection.getSelectionEx()
+        for sel in selection:
+            FreeCADGui.doCommand("parts.append(FreeCAD.ActiveDocument.getObject('%s'))"%(sel.ObjectName))
+            
+        FreeCADGui.doCommand("LasercutterTechdrawExport.makeLasercutterTechdrawExport(parts, BeamWidth = %f, doc = App.activeDocument())"%self.form.doubleSpinBox.value())
+        self.form.close()
+        
+
+FreeCADGui.addCommand('LasercutterTechdrawExport', LasercutterTechdrawExport())
 
 
-# creates contourlines for all selected objects to a TechDraw page
-def selected_to_techdraw(cutterDiameter):
-    doc = app.ActiveDocument
-    selection = gui.Selection.getSelection()
-    if not selection:
-        print("nothing selected !")
-        return
-
-    if not selection[0].Shape:
-        print("selected part has no shape !")
-        return
-
-    # get existing Techdraw page 'LaserCutterExport' or create a new one
-    techdraw = doc.getObject('LaserCutterExport')
-    if techdraw == None:
-        techdraw = doc.addObject('TechDraw::DrawPage','LaserCutterExport')
-        template = doc.addObject('TechDraw::DrawSVGTemplate','Template')
-        techdraw.Template = template
-
-    # make a folder for some objects we will create
-    group = doc.getObject('LaserCutterExportObjects')
-    if group == None:
-        group = doc.addObject("App::DocumentObjectGroup","LaserCutterExportObjects")
-
-    x = cutterDiameter
-    y = float(techdraw.Template.Height)
-
-    for sel in selection:
-        # create a contour line object for every selected object
-        offset = doc.addObject("Part::Offset", sel.Label + "_offset")
-        offset.Source = sel
-        offset.Value = cutterDiameter / 2
-        offset.Mode = 0
-        offset.Join = 2
-        offset.Intersection = False
-        offset.SelfIntersection = False
-        offset.ViewObject.Visibility=False
-
-        # rotate biggest face into xy-plane
-        doc.recompute()
-        face = get_biggest_face(offset)
-        rotate_face_up(offset, face)
-        rotate_biggest_side_up(offset, face)
-
-        group.addObject(offset)
-        doc.recompute()
+def selected_to_techdraw(doc, offsets, techdraw, BeamWidth):
+    x = BeamWidth
+    y = 0
+    
+    for offset in offsets:
+        viewname = offset.Label.replace("offset", "contour")
+        views = doc.getObjectsByLabel(viewname)
+        if len(views) > 0:
+            view = views[0]
+        else:
+            view = doc.addObject('TechDraw::DrawViewPart', viewname)
+            techdraw.addView(view)
+                   
+        try:
+            view.CoarseView = False
+            view.ViewObject.LineWidth = BeamWidth
+            view.Source = offset
+            view.Direction = Vector(0, 0, 1)
+            view.ScaleType = u"Custom"
+            view.Scale = 1.00
+        except Exception as ex:
+            app.Console.PrintError("\nview for " + viewname + " cannot be created ! ")
+            app.Console.PrintError(ex)
+    
+    for view in techdraw.Views:
+        offset = view.Source[0]
         bbox = offset.Shape.BoundBox
-
+        bsize = Vector(bbox.XLength, bbox.YLength, bbox.ZLength)
+        
         # add a 2D view to the TechDraw page right of the last part
-        maxheight = y + bbox.YLength + cutterDiameter
+        maxheight = y + bsize.y + BeamWidth
         if maxheight > techdraw.Template.Height:
             techdraw.Template.Height = maxheight
 
-        maxwidth = x + bbox.XLength + cutterDiameter
+        maxwidth = x + bsize.x + BeamWidth
         if maxwidth > techdraw.Template.Width:
             techdraw.Template.Width = maxwidth
+                          
+        view.X = x + bsize.x / 2
+        view.Y = y + bsize.y - (bsize.y / 2)
+        x = x + bsize.x + BeamWidth
 
-        view = doc.addObject('TechDraw::DrawViewPart', sel.Label + "_contour")
-        view.CoarseView = True
-        view.ViewObject.LineWidth = cutterDiameter
-        view.Source = offset
-        view.Direction = app.Vector(0, 0, 1)
-        techdraw.addView(view)
-        doc.recompute()
-        view.ScaleType = u"Custom"
-        view.Scale = 1.00
-        view.X = x + bbox.XLength / 2
-        view.Y = y + bbox.YLength - (bbox.YLength / 2)
-        x = x + bbox.XLength + cutterDiameter
-
+def makeLasercutterTechdrawExport(parts, BeamWidth = 0.2, doc = app.activeDocument(), method = 'auto', normal = Vector(0, 0, 0)):
+    if len(parts) == 0: return
+             
+    techdraw = doc.addObject('TechDraw::DrawPage','LasercutterTechdraw')
+    template = doc.addObject('TechDraw::DrawSVGTemplate','Template')
+    techdraw.Template = template
     doc.recompute()
-
-
-def get_biggest_face(part):
-    max_area = 0
-    max_face = None
-    for face in part.Shape.Faces:
-        if face.Area > max_area:
-            max_area = face.Area
-            max_face = face
-
-    return max_face
-
-
-# rotate face into xy-plane
-def rotate_face_up(part_feature, face):
-    normal_ref = face.normalAt(0, 0)
-    rotation_to_apply = app.Rotation(normal_ref, app.Vector(0, 0, 1))
-    new_rotation = rotation_to_apply.multiply(part_feature.Placement.Rotation)
-    part_feature.Placement.Rotation = new_rotation
-
-
-def rotate_biggest_side_up(part_feature, face):
-    bbox = part_feature.Shape.BoundBox
-    xmin = bbox.XLength
-    anglemax = 0.0
-    angle = 0.0
-    while angle < 180:
-        Draft.rotate([part_feature], 22.5, app.Vector(bbox.XMin, bbox.YMin, bbox.ZMin), axis=app.Vector(0.0,0.0,1.0), copy=False)
-        angle = angle + 22.5
-
-        if xmin > part_feature.Shape.BoundBox.XLength:
-            xmin = part_feature.Shape.BoundBox.XLength
-            anglemax = angle
-
-    Draft.rotate([part_feature], 180 + anglemax, app.Vector(0.0,0.0,0.0), axis=app.Vector(0.0,0.0,1.0), copy=False)
+    
+    for p in parts:
+        if len(p.Shape.Solids) > 1:
+            for sol in p.Shape.Solids:
+                sfp = doc.addObject('Part::Feature', p.Label) 
+                sfp.Shape = Part.Shape(sol)
+                sfp.ViewObject.hide()
+                addToExportObjects(doc, sfp)
+                addLasercutterTechdrawItem(techdraw, sfp, BeamWidth, doc, method, normal)
+                
+        else:
+            addLasercutterTechdrawItem(techdraw, p, BeamWidth, doc, method, normal)
+        
+    doc.recompute() 
+    techdraw.ViewObject.show() 
+    return techdraw
+    
+    
+def addLasercutterTechdrawItem(techdraw, part, BeamWidth = 0.2, doc = app.activeDocument(), method = 'auto', normal = Vector(0, 0, 0)):       
+    ifp = doc.addObject("Part::FeaturePython", "LasercutterTechdrawExport")
+    LasercutterTechdrawExportItem(ifp, part, BeamWidth, method=method, Normal=normal)
+    LasercutterTechdrawExportItemViewProvider(ifp.ViewObject)
+    doc.recompute()
+    selected_to_techdraw(doc, [ifp], techdraw, BeamWidth)
+    addToExportObjects(doc, ifp)
+    return ifp
+    
+def addToExportObjects(doc, ifp):
+    LaserCutterExportObjects = doc.getObjectsByLabel('LaserCutterExportObjects')
+    if len(LaserCutterExportObjects) == 0:
+        LaserCutterExportObjects = doc.addObject('App::DocumentObjectGroup', 'LaserCutterExportObjects')
+    else:
+        LaserCutterExportObjects = LaserCutterExportObjects[0]
+        
+    LaserCutterExportObjects.Group = LaserCutterExportObjects.Group + [ifp]
+    LaserCutterExportObjects.ViewObject.hide()
+    
 
 if __name__ == '__main__':
-    d = QtGui.QWidget()
-    ui = Ui_Dialog()
-    ui.setupUi(d)
-    d.show()
-
-
-
+	lc = LasercutterTechdrawExport()
+	lc.Activated()
