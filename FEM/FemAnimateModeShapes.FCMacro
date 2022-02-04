@@ -37,16 +37,17 @@ import math
 import os
 import time
 
-from PySide import QtGui
-
 import FreeCAD as app
+
 import FreeCADGui as gui
+
+from PySide import QtGui  # FreeCAD's PySide!
 
 __Name__ = 'Animate Mode Shapes for FEM'
 __Comment__ = 'Animate mode shapes after running CalculiX'
 __Author__ = 'mac_the_bike,galou'
-__Version__ = '1.0.0'
-__Date__ = '2019-12-24'
+__Version__ = '1.0.1'
+__Date__ = '2022-02-04'
 __License__ = 'LGPL-2.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?t=39081'
 __Wiki__ = ''
@@ -73,21 +74,15 @@ class FemAnimateModeShapes():
                                     'fem_animate_mode_shapes.ui')
         self.inc = 1  # TODO: find a better name and use.
 
-        f, w = gui.PySideUic.loadUiType(self.ui_file)
-        self.form = f()
-        self.widget = w()
-        self.form.setupUi(self.widget)
-        self.widget.show()
+        self.form = gui.PySideUic.loadUi(self.ui_file)
         self._connect_widgets()
+        self.form.show()
         self.box = self._message_box()
 
     def _connect_widgets(self):
         self.form.startEndButton.clicked.connect(self.start_stop)
         self.form.amplitude.valueChanged.connect(self._on_amplitude_changed)
         self.form.factor.valueChanged.connect(self._on_factor_changed)
-        # The following is necessary to have the dialog appear.
-        # TODO: explain or fix
-        self.form.steps.valueChanged.connect(lambda dummy: self._on_step_changed(dummy))
 
     def start(self):
         self.do_animation = True
@@ -109,9 +104,6 @@ class FemAnimateModeShapes():
         if self.inc == 0:
             self.form.amplitude.setValue(int(self.form.factor.value()))
         self.inc = 1 - self.inc
-
-    def _on_step_changed(self, dummy):
-        pass
 
     def _message_box(self):
         box = QtGui.QMessageBox()
