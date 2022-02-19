@@ -24,13 +24,13 @@ from __future__ import unicode_literals
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Computation of the center of mass for multiple solids'
 __Author__ = 'schupin'
-__Version__ = '0.4.1'
-__Date__ = '2019-05-25'
+__Version__ = '0.4.2'
+__Date__ = '2022-02-19'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
 __Icon__ = 'https://www.freecadweb.org/wiki/images/d/d7/Centomass.png'
-__Help__ = 'Select or more bodies and launch'
+__Help__ = 'Select one or more bodies and launch'
 __Status__ = 'alpha'
 __Requires__ = 'freecad 0.18'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?p=265270#p265270'
@@ -38,6 +38,7 @@ __Files__ = 'CenterOfMass/Macro_CenterOfMass_import.png,CenterOfMass/Macro_Cente
 
 #todo :
 #   -dockable
+#   -check rotation of parts
 
 import csv
 import glob
@@ -179,10 +180,7 @@ class CenterofmassWidget(QtGui.QWidget):
                     self.destroy()
                 else:
                     self.solid_count += 1
-                    if sel[s].InList and sel[s].InList[0].TypeId == 'PartDesign::Body':
-                        objs.append(sel[s].InList[0].Shape)
-                    else:
-                        objs.append(sel[s].Shape)
+                    objs.append(sel[s].Shape)
             elif hasattr(sel[s], 'Mesh'):
                 if sel[s].Mesh.Volume == 0:
                     error_dialog(u'invalid selection (select a solid or a mesh)')
@@ -227,13 +225,9 @@ class CenterofmassWidget(QtGui.QWidget):
         self.volumes = [0] * self.solid_count
         self.centerofmasses = [0] * self.solid_count
         self.masses = [0] * self.solid_count
+        self.boundingBoxes = [0] * self.solid_count
 
-        self.minBdX = 1e8
-        self.minBdY = 1e8
-        self.minBdZ = 1e8
-        self.maxBdX = -1e8
-        self.maxBdY = -1e8
-        self.maxBdZ = -1e8
+        self.BdBox = FreeCAD.BoundBox(1e8,1e8,1e8,-1e8,-1e8,-1e8)
 
         layout = QtGui.QVBoxLayout(self)
         layout.setSpacing(0)
@@ -306,12 +300,12 @@ class CenterofmassWidget(QtGui.QWidget):
             self.volumes[sol] = objs[sol].Volume
 
             # Find the center of mass depending of the type of object.
-            if hasattr(objs[sol], "CenterOfMass"):
-                self.centerofmasses[sol] = objs[sol].CenterOfMass
+            if hasattr(objs[sol], "CenterOfGravity"):
+                self.centerofmasses[sol] = objs[sol].CenterOfGravity
             elif hasattr(objs[sol], "Solids"):
                 self.centerofmasses[sol] = FreeCAD.Vector(0,0,0)
                 for array_sol in objs[sol].Solids:
-                    self.centerofmasses[sol] += array_sol.CenterOfMass
+                    self.centerofmasses[sol] += array_sol.CenterOfGravity
                 self.centerofmasses[sol] /= objs[sol].Solids.__len__()
             #estimate cdg of a mesh
             elif hasattr(objs[sol],"Points"):
@@ -336,7 +330,7 @@ class CenterofmassWidget(QtGui.QWidget):
                 if sel[sol].ArrayType == 'polar' and sel[sol].NumberPolar > 0:
                     self.centerofmasses[sol] = FreeCAD.Vector(0,0,0)
                     for array_sol in sel[sol].Shape.Solids:
-                        self.centerofmasses[sol] += array_sol.CenterOfMass
+                        self.centerofmasses[sol] += array_sol.CenterOfGravity
                     self.centerofmasses[sol] /= sel[sol].Shape.Solids.__len__()
                 else:
                     xvector = sel[sol].IntervalX
@@ -367,39 +361,31 @@ class CenterofmassWidget(QtGui.QWidget):
                             axis.normalize()
                     self.centerofmasses[sol] += float(sel[sol].Spacing) * axis * (float(sel[sol].Amount - 1) / 2.)
 
-            if objs[sol].BoundBox.XMin < self.minBdX:
-                self.minBdX = objs[sol].BoundBox.XMin
-            if objs[sol].BoundBox.YMin < self.minBdY:
-                self.minBdY = objs[sol].BoundBox.YMin
-            if objs[sol].BoundBox.ZMin < self.minBdZ:
-                self.minBdZ = objs[sol].BoundBox.ZMin
-            if objs[sol].BoundBox.XMax > self.maxBdX:
-                self.maxBdX = objs[sol].BoundBox.XMax
-            if objs[sol].BoundBox.YMax > self.maxBdY:
-                self.maxBdY = objs[sol].BoundBox.YMax
-            if objs[sol].BoundBox.ZMax > self.maxBdZ:
-                self.maxBdZ = objs[sol].BoundBox.ZMax
+            self.boundingBoxes[sol] =objs[sol].BoundBox
 
 # translation for part containers
-            for lis in sel[sol].InList:
-                if hasattr(lis,'Placement'):
+            for lis in sel[sol].InListRecursive:
+                if lis.TypeId=='App::Part':
                     self.centerofmasses[sol] += lis.Placement.Base
-                    if lis.Placement.Base[0]>0:
-                        self.maxBdX += lis.Placement.Base[0]
-                    if lis.Placement.Base[0]<0:
-                        self.minBdX += lis.Placement.Base[0]
-                    if lis.Placement.Base[1]>0:
-                        self.maxBdY += lis.Placement.Base[1]
-                    if lis.Placement.Base[1]<0:
-                        self.minBdY += lis.Placement.Base[1]
-                    if lis.Placement.Base[2]>0:
-                        self.maxBdZ += lis.Placement.Base[2]
-                    if lis.Placement.Base[2]<0:
-                        self.minBdZ += lis.Placement.Base[2]
+                    self.boundingBoxes[sol].move(lis.Placement.Base)
 
             solidLayout.addWidget(self.materials[sol].label, sol, 0)
             solidLayout.addWidget(self.materials[sol].combo, sol, 1)
             solidLayout.addWidget(self.materials[sol].spin, sol, 2)
+
+        for sol in range(self.solid_count):
+            if self.boundingBoxes[sol].XMin < self.BdBox.XMin:
+                self.BdBox.XMin = self.boundingBoxes[sol].XMin
+            if self.boundingBoxes[sol].YMin < self.BdBox.YMin:
+                self.BdBox.YMin = self.boundingBoxes[sol].YMin
+            if self.boundingBoxes[sol].ZMin < self.BdBox.ZMin:
+                self.BdBox.ZMin = self.boundingBoxes[sol].ZMin
+            if self.boundingBoxes[sol].XMax > self.BdBox.XMax:
+                self.BdBox.XMax = self.boundingBoxes[sol].XMax
+            if self.boundingBoxes[sol].YMax > self.BdBox.YMax:
+                self.BdBox.YMax = self.boundingBoxes[sol].YMax
+            if self.boundingBoxes[sol].ZMax > self.BdBox.ZMax:
+                self.BdBox.ZMax = self.boundingBoxes[sol].ZMax
 
         solidGroupBox.setLayout(solidLayout)
         scroll = QtGui.QScrollArea()
@@ -657,18 +643,16 @@ class CenterofmassWidget(QtGui.QWidget):
         self.colorify.setEnabled(True)
 
     def on_pushButton_changeRadius(self):
+#Warning : bug when there is a space in the name of the shape
         doc = FreeCAD.activeDocument()
-        boundBoxLX  = self.maxBdX - self.minBdX
-        boundBoxLY  = self.maxBdY - self.minBdY
-        boundBoxLZ  = self.maxBdZ - self.minBdZ
         radiusCOM = (1+self.changeRadius.value())/100.
         try:
-            doc.getObject('CenterOfMass').Radius = radiusCOM * (max(boundBoxLX, max(boundBoxLY, boundBoxLZ)))
+            doc.getObject('CenterOfMass').Radius = radiusCOM * (max(self.BdBox.XLength, max(self.BdBox.YLength, self.BdBox.ZLength)))
             if self.solid_count > 1:
                 for sol in range(self.solid_count):
-                    doc.getObject('CenterOfMass_' + sel[sol].Label).Radius = radiusCOM * (max(boundBoxLX, max(boundBoxLY, boundBoxLZ)))*math.pow(self.masses[sol]/self.massTot, 1./3.)
+                    doc.getObject('CenterOfMass_' + sel[sol].Label).Radius = radiusCOM * (max(self.BdBox.XLength, max(self.BdBox.YLength, self.BdBox.ZLength)))*math.pow(self.masses[sol]/self.massTot, 1./3.)
         except Exception:
-            None
+            print('Bug Recompute radius')
 
         doc.recompute()
 
@@ -698,9 +682,6 @@ class CenterofmassWidget(QtGui.QWidget):
         except Exception:
             None
 
-        boundBoxLX  = self.maxBdX - self.minBdX
-        boundBoxLY  = self.maxBdY - self.minBdY
-        boundBoxLZ  = self.maxBdZ - self.minBdZ
         FCSpring = doc.addObject('App::DocumentObjectGroup', 'FCPlane' + 'CdG')
         plr = FreeCAD.Placement()
         plr.Base = FreeCAD.Vector(self.TotalCdG[0], self.TotalCdG[1], self.TotalCdG[2])
@@ -709,12 +690,13 @@ class CenterofmassWidget(QtGui.QWidget):
         radiusCOM = (1+self.changeRadius.value())/100.
         sphere = FreeCAD.ActiveDocument.addObject('Part::Sphere', 'CenterOfMass')
         sphere.Placement = plr
-        sphere.Radius = radiusCOM * (max(boundBoxLX, max(boundBoxLY, boundBoxLZ)))
+        sphere.Radius = radiusCOM * (max(self.BdBox.XLength, max(self.BdBox.YLength, self.BdBox.ZLength)))
         sphere.ViewObject.ShapeColor = (0.6, 0.0, 0.0)
         sphere.ViewObject.Transparency = 5
         sphere.ViewObject.LineWidth = 1.0
         FCSpring.addObject(sphere)
 
+        #Radius of the sphere is linked to the mass of the solid : (R = m_sol/m_tot ^1/3)
         if self.solid_count > 1:
             for sol in range(self.solid_count):
                 sphere = FreeCAD.ActiveDocument.addObject('Part::Sphere', 'CenterOfMass_' + sel[sol].Label)
@@ -723,7 +705,7 @@ class CenterofmassWidget(QtGui.QWidget):
                                          self.centerofmasses[sol][1],
                                          self.centerofmasses[sol][2])
                 sphere.Placement = plrSol
-                sphere.Radius = radiusCOM * (max(boundBoxLX, max(boundBoxLY, boundBoxLZ)))*math.pow(self.masses[sol]/self.massTot, 1./3.)
+                sphere.Radius = radiusCOM * (max(self.BdBox.XLength, max(self.BdBox.YLength, self.BdBox.ZLength)))*math.pow(self.masses[sol]/self.massTot, 1./3.)
                 sphere.ViewObject.ShapeColor = (0.0, 0.6, 0.0)
                 sphere.ViewObject.Transparency = 5
                 sphere.ViewObject.LineWidth = 1.0
@@ -731,15 +713,15 @@ class CenterofmassWidget(QtGui.QWidget):
 
         ### PlaneYZ
         plan = FreeCAD.ActiveDocument.addObject('Part::Plane', 'PlaneYZ')
-        plan.Length = boundBoxLZ
-        plan.Width = boundBoxLY
+        plan.Length = self.BdBox.ZLength
+        plan.Width = self.BdBox.YLength
         plp = FreeCAD.Placement()
-        plp.Base = FreeCAD.Vector(self.TotalCdG[0], self.TotalCdG[1]-boundBoxLY/2., self.TotalCdG[2] - boundBoxLZ/2.)
+        plp.Base = FreeCAD.Vector(self.TotalCdG[0], self.TotalCdG[1]-self.BdBox.YLength/2., self.TotalCdG[2] -self.BdBox.ZLength/2.)
         plan.Placement = plp
         plan.Placement.Rotation = plan.Placement.Rotation.multiply(FreeCAD.Rotation(0.0, -90.0, 0.0))
         plan.Placement.Base.x = self.TotalCdG[0]
-        plan.Placement.Base.y = self.minBdY
-        plan.Placement.Base.z = self.minBdZ
+        plan.Placement.Base.y = self.BdBox.YMin
+        plan.Placement.Base.z = self.BdBox.ZMin
 
         plan.ViewObject.LineColor = (1.0, 0.66667, 0.0)
         plan.ViewObject.ShapeColor = (0.6, 0.0, 0.0)
@@ -748,14 +730,14 @@ class CenterofmassWidget(QtGui.QWidget):
         FCSpring.addObject(plan)
         ### PlaneXZ
         plan = FreeCAD.ActiveDocument.addObject('Part::Plane', 'PlaneXZ')
-        plan.Length = boundBoxLX
-        plan.Width = boundBoxLZ
-        plp.Base = FreeCAD.Vector(self.TotalCdG[0]-boundBoxLX/2., self.TotalCdG[1], self.TotalCdG[2]-boundBoxLZ/2.)
+        plan.Length = self.BdBox.XLength
+        plan.Width = self.BdBox.ZLength
+        plp.Base = FreeCAD.Vector(self.TotalCdG[0]-self.BdBox.XLength/2., self.TotalCdG[1], self.TotalCdG[2]-self.BdBox.ZLength/2.)
         plan.Placement = plp
         plan.Placement.Rotation = plan.Placement.Rotation.multiply(FreeCAD.Rotation(0.0, 0.0, 90.0))
-        plan.Placement.Base.x = self.minBdX
+        plan.Placement.Base.x = self.BdBox.XMin
         plan.Placement.Base.y = self.TotalCdG[1]
-        plan.Placement.Base.z = self.minBdZ
+        plan.Placement.Base.z = self.BdBox.ZMin
 
         plan.ViewObject.LineColor = (1.0, 0.66667, 0.0)
         plan.ViewObject.ShapeColor = (0.0, 0.6, 0.0)
@@ -764,12 +746,12 @@ class CenterofmassWidget(QtGui.QWidget):
         FCSpring.addObject(plan)
         ### PlaneXY
         plan = FreeCAD.ActiveDocument.addObject('Part::Plane', 'PlaneXY')
-        plan.Length = boundBoxLX
-        plan.Width = boundBoxLY
-        plp.Base = FreeCAD.Vector(self.TotalCdG[0] - boundBoxLX/2., self.TotalCdG[1] - boundBoxLY/2., self.TotalCdG[2])
+        plan.Length = self.BdBox.XLength
+        plan.Width = self.BdBox.YLength
+        plp.Base = FreeCAD.Vector(self.TotalCdG[0] - self.BdBox.XLength/2., self.TotalCdG[1] - self.BdBox.YLength/2., self.TotalCdG[2])
         plan.Placement = plp
-        plan.Placement.Base.x = self.minBdX
-        plan.Placement.Base.y = self.minBdY
+        plan.Placement.Base.x = self.BdBox.XMin
+        plan.Placement.Base.y = self.BdBox.YMin
         plan.Placement.Base.z = self.TotalCdG[2]
 
         plan.ViewObject.LineColor = (1.0, 0.66667, 0.0)
@@ -779,13 +761,13 @@ class CenterofmassWidget(QtGui.QWidget):
         FCSpring.addObject(plan)
         ### BoundingBox
         plr = FreeCAD.Placement()
-        plr.Base = FreeCAD.Vector( self.minBdX, self.minBdY, self.minBdZ)
+        plr.Base = FreeCAD.Vector( self.BdBox.XMin, self.BdBox.YMin, self.BdBox.ZMin)
         BBoxSolid = FreeCAD.ActiveDocument.addObject("Part::Box","BBoxSolid")
         BBoxSolid.Placement.Base = plr.Base
         BBoxSolid.Label = "BBoxSolid"
-        BBoxSolid.Length = boundBoxLX
-        BBoxSolid.Width  = boundBoxLY
-        BBoxSolid.Height = boundBoxLZ
+        BBoxSolid.Length = self.BdBox.XLength
+        BBoxSolid.Width  = self.BdBox.YLength
+        BBoxSolid.Height = self.BdBox.ZLength
         BBoxSolid.ViewObject.ShapeColor = (0.5, 0.5, 0.5)
         BBoxSolid.ViewObject.Transparency = 90
         FCSpring.addObject(BBoxSolid)
