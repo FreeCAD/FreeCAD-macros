@@ -170,7 +170,7 @@ def centerBoundBoxGlobal():
 
     doc = App.activeDocument()
     objs0  = doc.findObjects()
-    pointMilieu = []
+    midpoint = []
 
     if len(objs0) != 0:
         xMin = yMin = zMin = 0.0
@@ -203,17 +203,17 @@ def centerBoundBoxGlobal():
                         zMax = float(extractValue[5])
             except Exception:
                 None
-        #### diagonale et pointMilieu
+        #### diagonal at midpoint
         points=[App.Vector(xMin, yMin, zMin),App.Vector(xMax, yMax, zMax)]    #diagonal
         diagonal = Draft.makeWire(points,closed=False,face=False,support=None)        #create diagonal line
         try:
-            pointMilieu = diagonal.Shape.copy().discretize(3)                             #cut line for search center
+            midpoint = diagonal.Shape.copy().discretize(3)                         #cut line for search center
         except Exception:
             None
         doc.removeObject(diagonal.Name)
-        #Draft.makePoint(pointMilieu[1])
+        #Draft.makePoint(midpoint[1])
         try:
-            return pointMilieu[1]
+            return midpoint[1]
         except Exception:
             return App.Vector(0.0,0.0,0.0)
     else:
