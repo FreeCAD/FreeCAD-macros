@@ -1248,7 +1248,7 @@ class Ui_MainWindow(object):
             FreeCADGui.ActiveDocument.getObject(App.ActiveDocument.ActiveObject.Name).LineColor = (1.0,0.0,0.0)
             FcPlane.addObject(mire02)  # contener character
 
-            cercle = Draft.makeCircle(radius=radiusP,placement=pl,face=False,support=None)
+            circle = Draft.makeCircle(radius=radiusP,placement=pl,face=False,support=None)
             Rnameplane = App.ActiveDocument.ActiveObject.Name
 
             App.ActiveDocument.ActiveObject.Label   = "PlaneC"
@@ -1260,7 +1260,7 @@ class Ui_MainWindow(object):
     #        FreeCADGui.ActiveDocument.getObject(Rnameplane).GridSnap = True
             FreeCADGui.ActiveDocument.getObject(Rnameplane).ShowGrid = True
 
-            FcPlane.addObject(cercle)  # contener character
+            FcPlane.addObject(circle)  # contain character
             App.ActiveDocument.recompute()
 
             positionX = 0.0
