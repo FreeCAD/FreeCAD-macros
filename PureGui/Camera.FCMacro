@@ -204,8 +204,8 @@ def centerBoundBoxGlobal():
             except Exception:
                 None
         #### diagonal at midpoint
-        points=[App.Vector(xMin, yMin, zMin),App.Vector(xMax, yMax, zMax)]    #diagonal
-        diagonal = Draft.makeWire(points,closed=False,face=False,support=None)        #create diagonal line
+        points = [App.Vector(xMin, yMin, zMin), App.Vector(xMax, yMax, zMax)]      #diagonal
+        diagonal = Draft.makeWire(points, closed=False, face=False, support=None)  #create diagonal line
         try:
             midpoint = diagonal.Shape.copy().discretize(3)                         #cut line for search center
         except Exception:
@@ -219,7 +219,8 @@ def centerBoundBoxGlobal():
     else:
         return App.Vector(0.0,0.0,0.0)
 
-def To_Face_Or_To_Axis(ToFace):         # 1=NormalAt 0=Axis   #Align Face selected to Face or to Axis
+# Align Face selected to Face or to Axis
+def To_Face_Or_To_Axis(ToFace):         # 1=NormalAt 0=Axis
     global vueView
     global Nameelement2
     global vertexeS
@@ -232,14 +233,14 @@ def To_Face_Or_To_Axis(ToFace):         # 1=NormalAt 0=Axis   #Align Face select
         Nameelement2 = Nameelement
 
         if ToFace == 1:
-            v = Gui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0)         # NormalAt
+            v = Gui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0)    # NormalAt
             App.Console.PrintMessage("NormalAt     : ")
         else:
             try:
-                v=Gui.Selection.getSelectionEx()[0].SubObjects[0].Surface.Axis        # Axis
+                v=Gui.Selection.getSelectionEx()[0].SubObjects[0].Surface.Axis   # Axis
                 App.Console.PrintMessage("Surface Axis : ")
             except Exception:
-                v=vertexeS                                                            # Axis Edges
+                v=vertexeS                                                       # Axis Edges
                 App.Console.PrintMessage("Axis Edges   : ")
 
         if vueView == 0:
@@ -375,7 +376,9 @@ class Ui_MainWindow(object):
         self.PB_Accept_View.setGeometry(QtCore.QRect(10, 110, 171, 28))
         self.PB_Accept_View.setFont(self.fontGlobal_08)     # for Windows Linux compatibility
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap(icon_path('accept.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon1.addPixmap(QtGui.QPixmap(icon_path('accept.png')),
+                        QtGui.QIcon.Normal,
+                        QtGui.QIcon.Off)
         self.PB_Accept_View.setIcon(icon1)
         self.PB_Accept_View.setToolTip(u"Accept the view given")
         self.PB_Accept_View.setObjectName(_fromUtf8("PB_Accept_View"))
@@ -391,7 +394,9 @@ class Ui_MainWindow(object):
         self.PB_Detect_Camera.setGeometry(QtCore.QRect(10, 20, 171, 28))
         self.PB_Detect_Camera.setFont(self.fontGlobal_08)   # for Windows Linux compatibility
         icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap(icon_path('detect_orientation.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon2.addPixmap(QtGui.QPixmap(icon_path('detect_orientation.png')),
+                        QtGui.QIcon.Normal,
+                        QtGui.QIcon.Off)
         self.PB_Detect_Camera.setIcon(icon2)
         self.PB_Detect_Camera.setObjectName(_fromUtf8("PB_Detect_Camera"))
         self.PB_Detect_Camera.setToolTip(u"Detect the position of the camera\n"
@@ -402,11 +407,13 @@ class Ui_MainWindow(object):
         self.PB_To_Face.setGeometry(QtCore.QRect(10, 70, 81, 28))
         self.PB_To_Face.setFont(self.fontGlobal_08)         # for Windows Linux compatibility
         icon3 = QtGui.QIcon()
-        icon3.addPixmap(QtGui.QPixmap(icon_path('align_to_face.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon3.addPixmap(QtGui.QPixmap(icon_path('align_to_face.png')),
+                        QtGui.QIcon.Normal,
+                        QtGui.QIcon.Off)
         self.PB_To_Face.setIcon(icon3)
         self.PB_To_Face.setObjectName(_fromUtf8("PB_To_Face"))
         self.PB_To_Face.setToolTip("Align the view to the selected face \n"
-"Click and repeat the click for NormalAt : \n"
+"Click and repeat the click for NormalAt: \n"
 "(0,0,1) (0,0,-1) (0,1,0) (0,-1,0) (1,0,0) (-1,0,0)")
         self.PB_To_Face.clicked.connect(self.on_PB_To_Face_clicked) # align view to face Face
 
@@ -419,11 +426,13 @@ class Ui_MainWindow(object):
         self.PB_To_Axis.setGeometry(QtCore.QRect(100, 70, 81, 28))
         self.PB_To_Axis.setFont(self.fontGlobal_08)         # for Windows Linux compatibility
         icon4 = QtGui.QIcon()
-        icon4.addPixmap(QtGui.QPixmap(icon_path('align_to_axis.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon4.addPixmap(QtGui.QPixmap(icon_path('align_to_axis.png')),
+                        QtGui.QIcon.Normal,
+                        QtGui.QIcon.Off)
         self.PB_To_Axis.setIcon(icon4)
         self.PB_To_Axis.setObjectName(_fromUtf8("PB_To_Axis"))
         self.PB_To_Axis.setToolTip("Align the view to Axis face selected \n"
-"Click and repeat the click for Surface Axis : \n"
+"Click and repeat the click for Surface Axis:\n"
 "(0,0,1) (0,0,-1) (0,1,0) (0,-1,0) (1,0,0) (-1,0,0)")
         self.PB_To_Axis.clicked.connect(self.on_PB_To_Axis_clicked) # Align view to face Axis
 
@@ -431,7 +440,9 @@ class Ui_MainWindow(object):
         self.PB_Align_O_To_View.setGeometry(QtCore.QRect(10, 105, 171, 28))
         self.PB_Align_O_To_View.setFont(self.fontGlobal_08) # for Windows Linux compatibility
         icon5 = QtGui.QIcon()
-        icon5.addPixmap(QtGui.QPixmap(icon_path('align_object_to_view.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon5.addPixmap(QtGui.QPixmap(icon_path('align_object_to_view.png')),
+                        QtGui.QIcon.Normal,
+                        QtGui.QIcon.Off)
         self.PB_Align_O_To_View.setIcon(icon5)
         self.PB_Align_O_To_View.setObjectName(_fromUtf8("PB_Align_O_To_View"))
         self.PB_Align_O_To_View.setToolTip("Align the object selected to the actual view \n"
@@ -479,7 +490,8 @@ class Ui_MainWindow(object):
         self.comboBox_01.addItem(_fromUtf8("UXGA 1600 x 1200"))
         self.comboBox_01.addItem(_fromUtf8("QXGA 2048 x 1536"))
         self.comboBox_01.addItem(_fromUtf8("Free"))
-        QtCore.QObject.connect(self.comboBox_01, QtCore.SIGNAL("currentIndexChanged(QString)"), self.SIGNAL_comboBox_01_Changed)
+        QtCore.QObject.connect(self.comboBox_01, QtCore.SIGNAL("currentIndexChanged(QString)"),
+                               self.SIGNAL_comboBox_01_Changed)
 
         self.DS_01_X = QtGui.QSpinBox(self.groupBox_03)
         self.DS_01_X.setGeometry(QtCore.QRect(10, 50, 61, 22))
@@ -532,7 +544,9 @@ class Ui_MainWindow(object):
         self.comboBox_02.addItem(_fromUtf8("XBM *.xbm"))
         self.comboBox_02.addItem(_fromUtf8("XPM *.xpm"))
         #self.comboBox_02.addItem(_fromUtf8("GIF *.gif"))
-        QtCore.QObject.connect(self.comboBox_02, QtCore.SIGNAL("currentIndexChanged(QString)"), self.SIGNAL_comboBox_02_Changed)
+        QtCore.QObject.connect(self.comboBox_02,
+                               QtCore.SIGNAL("currentIndexChanged(QString)"),
+                               self.SIGNAL_comboBox_02_Changed)
 
         self.label_07 = QtGui.QLabel(self.groupBox_03)
         self.label_07.setGeometry(QtCore.QRect(10, 105, 136, 16))
@@ -616,6 +630,7 @@ class Ui_MainWindow(object):
         self.PB_Reset.setFont(self.fontGlobal_08)           # for Windows Linux compatibility
         icon7 = QtGui.QIcon()
         icon7.addPixmap(QtGui.QPixmap(icon_path('reset.png')),
+                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PB_Reset.setIcon(icon7)
         self.PB_Reset.setObjectName(_fromUtf8("PB_Reset"))
         self.PB_Reset.setToolTip("Refresh alls")
@@ -625,7 +640,8 @@ class Ui_MainWindow(object):
         self.PB_Photo.setGeometry(QtCore.QRect(76, 465, 60, 28))
         self.PB_Photo.setFont(self.fontGlobal_08)           # for Windows Linux compatibility
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap(icon_path('save_view.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon1.addPixmap(QtGui.QPixmap(icon_path('save_view.png')),
+                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PB_Photo.setIcon(icon1)
         self.PB_Photo.setToolTip(u"Create serial photo for create animation" + "\n"
                                  u"Give the angle rotation desired" + "\n"
@@ -639,7 +655,8 @@ class Ui_MainWindow(object):
         self.PB_Quit.setGeometry(QtCore.QRect(142, 465, 60, 28))
         self.PB_Quit.setFont(self.fontGlobal_08)            # for Windows Linux compatibility
         icon8 = QtGui.QIcon()
-        icon8.addPixmap(QtGui.QPixmap(icon_path('quit.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon8.addPixmap(QtGui.QPixmap(icon_path('quit.png')),
+                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PB_Quit.setIcon(icon8)
         self.PB_Quit.setObjectName(_fromUtf8("PB_Quit"))
         self.PB_Quit.setToolTip("Quit FCCamera")
@@ -837,11 +854,11 @@ class Ui_MainWindow(object):
             App.Console.PrintMessage("Degrees XYZ    : " + str(degrees(xP)) + " , " +str(degrees(yP)) + " , " + str(degrees(zP)) +"\n")
             App.Console.PrintMessage("Degrees Q      : " + str(degrees(qP)) +"\n"+"\n")
 
-            App.Console.PrintMessage("Radians Axis.xyz A : " + str(plan.Axis) + " , " + str(plan.Angle) +"\n")
-            App.Console.PrintMessage("Degrees Axis.x : " + str(degrees(plan.Axis.x)) +"\n")
-            App.Console.PrintMessage("Degrees Axis.y : " + str(degrees(plan.Axis.y)) +"\n")
-            App.Console.PrintMessage("Degrees Axis.z : " + str(degrees(plan.Axis.z)) +"\n")
-            App.Console.PrintMessage("Degrees Angle  : " + str(degrees(plan.Angle)) +"\n")
+            App.Console.PrintMessage("Radians Axis.xyz A : " + str(plan.Axis) + " , " + str(plan.Angle) + "\n")
+            App.Console.PrintMessage("Degrees Axis.x : " + str(degrees(plan.Axis.x)) + "\n")
+            App.Console.PrintMessage("Degrees Axis.y : " + str(degrees(plan.Axis.y)) + "\n")
+            App.Console.PrintMessage("Degrees Axis.z : " + str(degrees(plan.Axis.z)) + "\n")
+            App.Console.PrintMessage("Degrees Angle  : " + str(degrees(plan.Angle))  + "\n")
 
             #http://forum.freecadweb.org/viewtopic.php?f=13&t=14213
             App.Console.PrintMessage("Direction      : " + str(cam.orientation.getValue().multVec(coin.SbVec3f(0,0,-1)).getValue()) + "\n")
@@ -868,10 +885,10 @@ class Ui_MainWindow(object):
                 rot = coin.SbRotation()
 
                 if self.RB_Direction.isChecked():
-                    cam.position.setValue(App.Vector(bounBoxCenter))     # boundBox edge selected
+                    cam.position.setValue(App.Vector(bounBoxCenter))  # boundBox edge selected
                 else:
-    #                activeView.fitAll()                                     # boundBox all center
-                    cam.position.setValue(centerBoundBoxGlobal())            # boundBox all center calculated
+                    #activeView.fitAll()                              # boundBox all center
+                    cam.position.setValue(centerBoundBoxGlobal())     # boundBox all center calculated
 
                 #####
                 if self.RB_Angle_X.isChecked():
@@ -1131,7 +1148,7 @@ class Ui_MainWindow(object):
         self.PB_Photo_Adjust.setVisible(False)
         self.label_08.setVisible(False)
         self.label_08.setText("")
-#        self.label_08.setStyleSheet("color : Base")
+        # self.label_08.setStyleSheet("color : Base")
 
     def on_PB_Photo_Quit_clicked(self):
         global ori_Horizont
@@ -1204,7 +1221,7 @@ class Ui_MainWindow(object):
         rayon = 20                            # Radius of plane
         selEx = FreeCADGui.Selection.getSelectionEx()
         objs = [selobj.Object for selobj in selEx]
-        if len(objs) != 0.0:                    # radius = > BounBox length
+        if len(objs) != 0.0:                  # radius = > BounBox length
             s = objs[0].Shape
             boundBox_ = s.BoundBox
             boundBoxLX = boundBox_.XLength
@@ -1237,14 +1254,14 @@ class Ui_MainWindow(object):
 
             pl.Base = App.Vector(positionX,positionY,positionZ) # here coordinates XYZ of plan
 
-    #        Draft.makeRectangle(length=radiusP,height=radiusP,placement=pl,face=False,support=None)
-            points=[App.Vector(-(radiusP*1.5),0,0),App.Vector((radiusP*1.5),0,0)]
+            # Draft.makeRectangle(length=radiusP, height=radiusP, placement=pl, face=False, support=None)
+            points = [App.Vector(-(radiusP*1.5),0,0), App.Vector((radiusP*1.5),0,0)]
             mire01 = Draft.makeWire(points,closed=False,placement=pl,face=False,support=None)
             FreeCADGui.ActiveDocument.getObject(App.ActiveDocument.ActiveObject.Name).LineColor = (1.0,0.0,0.0)
             FcPlane.addObject(mire01)  # contener character
 
-            points=[App.Vector(0,-(radiusP*1.5),0),App.Vector(0,(radiusP*1.5),0)]
-            mire02 = Draft.makeWire(points,closed=False,placement=pl,face=False,support=None)
+            points = [App.Vector(0,-(radiusP*1.5),0), App.Vector(0,(radiusP*1.5),0)]
+            mire02 = Draft.makeWire(points, closed=False, placement=pl, face=False, support=None)
             FreeCADGui.ActiveDocument.getObject(App.ActiveDocument.ActiveObject.Name).LineColor = (1.0,0.0,0.0)
             FcPlane.addObject(mire02)  # contener character
 
@@ -1308,13 +1325,14 @@ class Ui_MainWindow(object):
             mainWindow = FreeCADGui.getMainWindow()
             mdi = mainWindow.findChild(QtGui.QMdiArea)
             mwActive = mdi.activeSubWindow()
-            mwActive.setGeometry(0, 0, ori_Horizont, ori_Vertical)     #
+            mwActive.setGeometry(0, 0, ori_Horizont, ori_Vertical)
             self.comboBox_01.setCurrentIndex(0)
             self.DS_01_X.setValue(ori_Horizont)
             self.DS_02_Y.setValue(ori_Vertical)
             centerBoundBoxGlobal()
             self.RB_01_Actual.setChecked(True)
-            App.Console.PrintMessage("Refresh (3Dview = X " + str(ori_Horizont) + ", Y " + str(ori_Vertical) + ") " + "\n")
+            App.Console.PrintMessage("Refresh (3Dview = X " + str(ori_Horizont) + ",
+                                                        Y " + str(ori_Vertical) + ") " + "\n")
             numberPhoto = 0
             self.label_07.setText("Number image : " + str(numberPhoto))
         except Exception:
