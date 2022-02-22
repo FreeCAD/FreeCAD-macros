@@ -285,10 +285,10 @@ class Ui_MainWindow(object):
 
         #################################################################################
         self.FontImpost    = "Arial"
-        self.fontGlobal_08 = QtGui.QFont()            # pour compatibilite Windows Linux
-        self.fontGlobal_08.setFamily(self.FontImpost) # pour compatibilite Windows Linux
-        self.fontGlobal_08.setPointSize(8)            # pour compatibilite Windows Linux
-        #self.xxxx.setFont(self.fontGlobal_08)        # pour W L
+        self.fontGlobal_08 = QtGui.QFont()            # for Windows Linux compatibility
+        self.fontGlobal_08.setFamily(self.FontImpost) # for Windows Linux compatibility
+        self.fontGlobal_08.setPointSize(8)            # for Windows Linux compatibility
+        #self.xxxx.setFont(self.fontGlobal_08)        # for Windows Linux compatibility
         #self.xxxx.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))  # Bold
         #################################################################################
 
@@ -305,17 +305,17 @@ class Ui_MainWindow(object):
 
         self.groupBox_01 = QtGui.QGroupBox(self.centralWidget)
         self.groupBox_01.setGeometry(QtCore.QRect(10, 120, 191, 151))
-        self.groupBox_01.setFont(self.fontGlobal_08)        # pour compatibilite W L
+        self.groupBox_01.setFont(self.fontGlobal_08)        # for Windows Linux compatibility
         self.groupBox_01.setObjectName(_fromUtf8("groupBox_01"))
 
         self.label_02 = QtGui.QLabel(self.groupBox_01)
         self.label_02.setGeometry(QtCore.QRect(10, 20, 181, 16))
-        self.label_02.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.label_02.setFont(self.fontGlobal_08)           # for Windows Linux compatibility
         self.label_02.setObjectName(_fromUtf8("label_02"))
 
         self.RB_Angle_X = QtGui.QRadioButton(self.groupBox_01)
         self.RB_Angle_X.setGeometry(QtCore.QRect(10, 90, 31, 20))
-        self.RB_Angle_X.setFont(self.fontGlobal_08)         # pour compatibilite W L
+        self.RB_Angle_X.setFont(self.fontGlobal_08)         # for Windows Linux compatibility
         self.RB_Angle_X.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))   # Bold
         self.RB_Angle_X.setStyleSheet("color : #ff0000")                                # Color text
         self.RB_Angle_X.setMouseTracking(True)
@@ -326,12 +326,12 @@ class Ui_MainWindow(object):
 
         self.label_03 = QtGui.QLabel(self.groupBox_01)
         self.label_03.setGeometry(QtCore.QRect(10, 70, 161, 16))
-        self.label_03.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.label_03.setFont(self.fontGlobal_08)           # for Windows Linux compatibility
         self.label_03.setObjectName(_fromUtf8("label_03"))
 
         self.RB_Angle_Y = QtGui.QRadioButton(self.groupBox_01)
         self.RB_Angle_Y.setGeometry(QtCore.QRect(65, 90, 31, 20))
-        self.RB_Angle_Y.setFont(self.fontGlobal_08)         # pour compatibilite W L
+        self.RB_Angle_Y.setFont(self.fontGlobal_08)         # for Windows Linux compatibility
         self.RB_Angle_Y.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))  # Bold
         self.RB_Angle_Y.setStyleSheet("color : #008700")                         # Color text
         self.RB_Angle_Y.setObjectName(_fromUtf8("RB_Angle_Y"))
@@ -340,7 +340,7 @@ class Ui_MainWindow(object):
 
         self.RB_Angle_Z = QtGui.QRadioButton(self.groupBox_01)
         self.RB_Angle_Z.setGeometry(QtCore.QRect(115, 90, 31, 20))
-        self.RB_Angle_Z.setFont(self.fontGlobal_08)         # pour compatibilite W L
+        self.RB_Angle_Z.setFont(self.fontGlobal_08)         # for Windows Linux compatibility
         self.RB_Angle_Z.setStyleSheet("color : #0000ff")                         # Color text
         self.RB_Angle_Z.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))  # Bold
         self.RB_Angle_Z.setObjectName(_fromUtf8("RB_Angle_Z"))
@@ -349,7 +349,7 @@ class Ui_MainWindow(object):
 
         self.RB_Direction = QtGui.QRadioButton(self.groupBox_01)
         self.RB_Direction.setGeometry(QtCore.QRect(160, 90, 31, 20))
-        self.RB_Direction.setFont(self.fontGlobal_08)       # pour compatibilite W L
+        self.RB_Direction.setFont(self.fontGlobal_08)       # for Windows Linux compatibility
         self.RB_Direction.setStyleSheet("color : #000066")                         # Color text
         self.RB_Direction.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))  # Bold
         self.RB_Direction.setObjectName(_fromUtf8("RB_Direction"))
@@ -360,7 +360,7 @@ class Ui_MainWindow(object):
 
         self.DS_Angle = QtGui.QDoubleSpinBox(self.groupBox_01)
         self.DS_Angle.setGeometry(QtCore.QRect(8, 40, 171, 22))
-        self.DS_Angle.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.DS_Angle.setFont(self.fontGlobal_08)           # for Windows Linux compatibility
         self.DS_Angle.setAlignment(QtCore.Qt.AlignCenter)
         self.DS_Angle.setDecimals(10)
         self.DS_Angle.setMinimum(-359.0)
@@ -373,7 +373,7 @@ class Ui_MainWindow(object):
 
         self.PB_Accept_View = QtGui.QPushButton(self.groupBox_01)
         self.PB_Accept_View.setGeometry(QtCore.QRect(10, 110, 171, 28))
-        self.PB_Accept_View.setFont(self.fontGlobal_08)     # pour compatibilite W L
+        self.PB_Accept_View.setFont(self.fontGlobal_08)     # for Windows Linux compatibility
         icon1 = QtGui.QIcon()
         icon1.addPixmap(QtGui.QPixmap(icon_path('accept.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PB_Accept_View.setIcon(icon1)
@@ -384,12 +384,12 @@ class Ui_MainWindow(object):
         self.groupBox_02 = QtGui.QGroupBox(self.centralWidget)
         self.groupBox_02.setGeometry(QtCore.QRect(10, 280, 191, 181))
         #self.groupBox_02.setVisible(False)
-        self.groupBox_02.setFont(self.fontGlobal_08)        # pour compatibilite W L
+        self.groupBox_02.setFont(self.fontGlobal_08)        # for Windows Linux compatibility
         self.groupBox_02.setObjectName(_fromUtf8("groupBox_02"))
 
         self.PB_Detect_Camera = QtGui.QPushButton(self.groupBox_02)
         self.PB_Detect_Camera.setGeometry(QtCore.QRect(10, 20, 171, 28))
-        self.PB_Detect_Camera.setFont(self.fontGlobal_08)   # pour compatibilite W L
+        self.PB_Detect_Camera.setFont(self.fontGlobal_08)   # for Windows Linux compatibility
         icon2 = QtGui.QIcon()
         icon2.addPixmap(QtGui.QPixmap(icon_path('detect_orientation.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PB_Detect_Camera.setIcon(icon2)
@@ -400,7 +400,7 @@ class Ui_MainWindow(object):
 
         self.PB_To_Face = QtGui.QPushButton(self.groupBox_02)
         self.PB_To_Face.setGeometry(QtCore.QRect(10, 70, 81, 28))
-        self.PB_To_Face.setFont(self.fontGlobal_08)         # pour compatibilite W L
+        self.PB_To_Face.setFont(self.fontGlobal_08)         # for Windows Linux compatibility
         icon3 = QtGui.QIcon()
         icon3.addPixmap(QtGui.QPixmap(icon_path('align_to_face.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PB_To_Face.setIcon(icon3)
@@ -412,12 +412,12 @@ class Ui_MainWindow(object):
 
         self.label_04 = QtGui.QLabel(self.groupBox_02)
         self.label_04.setGeometry(QtCore.QRect(10, 50, 161, 20))
-        self.label_04.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.label_04.setFont(self.fontGlobal_08)           # for Windows Linux compatibility
         self.label_04.setObjectName(_fromUtf8("label_04"))
 
         self.PB_To_Axis = QtGui.QPushButton(self.groupBox_02)
         self.PB_To_Axis.setGeometry(QtCore.QRect(100, 70, 81, 28))
-        self.PB_To_Axis.setFont(self.fontGlobal_08)         # pour compatibilite W L
+        self.PB_To_Axis.setFont(self.fontGlobal_08)         # for Windows Linux compatibility
         icon4 = QtGui.QIcon()
         icon4.addPixmap(QtGui.QPixmap(icon_path('align_to_axis.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PB_To_Axis.setIcon(icon4)
@@ -429,7 +429,7 @@ class Ui_MainWindow(object):
 
         self.PB_Align_O_To_View = QtGui.QPushButton(self.groupBox_02)
         self.PB_Align_O_To_View.setGeometry(QtCore.QRect(10, 105, 171, 28))
-        self.PB_Align_O_To_View.setFont(self.fontGlobal_08) # pour compatibilite W L
+        self.PB_Align_O_To_View.setFont(self.fontGlobal_08) # for Windows Linux compatibility
         icon5 = QtGui.QIcon()
         icon5.addPixmap(QtGui.QPixmap(icon_path('align_object_to_view.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PB_Align_O_To_View.setIcon(icon5)
@@ -441,7 +441,7 @@ class Ui_MainWindow(object):
 
         self.PB_Create_Plane = QtGui.QPushButton(self.groupBox_02)
         self.PB_Create_Plane.setGeometry(QtCore.QRect(10, 140, 171, 28))
-        self.PB_Create_Plane.setFont(self.fontGlobal_08)    # pour compatibilite W L
+        self.PB_Create_Plane.setFont(self.fontGlobal_08)    # for Windows Linux compatibility
         icon6 = QtGui.QIcon()
         icon6.addPixmap(QtGui.QPixmap(icon_path('create_plane_of_view.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PB_Create_Plane.setIcon(icon6)
@@ -455,12 +455,12 @@ class Ui_MainWindow(object):
         self.groupBox_03 = QtGui.QGroupBox(self.centralWidget)
         self.groupBox_03.setGeometry(QtCore.QRect(10, 280, 191, 212))
         self.groupBox_03.setVisible(False)
-        self.groupBox_03.setFont(self.fontGlobal_08)        # pour compatibilite W L
+        self.groupBox_03.setFont(self.fontGlobal_08)        # for Windows Linux compatibility
         self.groupBox_03.setObjectName(_fromUtf8("groupBox_02"))
 
         self.comboBox_01 = QtGui.QComboBox(self.groupBox_03)
         self.comboBox_01.setGeometry(QtCore.QRect(10, 20, 171, 22))
-        self.comboBox_01.setFont(self.fontGlobal_08)        # pour  W L
+        self.comboBox_01.setFont(self.fontGlobal_08)        # for Windows Linux compatibility
 #        self.comboBox_01.setCurrentIndex(0)
         self.comboBox_01.setObjectName(_fromUtf8("comboBox_01"))
         self.comboBox_01.addItem(_fromUtf8("Actual"))
@@ -483,7 +483,7 @@ class Ui_MainWindow(object):
 
         self.DS_01_X = QtGui.QSpinBox(self.groupBox_03)
         self.DS_01_X.setGeometry(QtCore.QRect(10, 50, 61, 22))
-        self.DS_01_X.setFont(self.fontGlobal_08)            # pour  W L
+        self.DS_01_X.setFont(self.fontGlobal_08)            # for Windows Linux compatibility
         self.DS_01_X.setMinimum(1)
         self.DS_01_X.setMaximum(ori_Horizont)
         self.DS_01_X.setSingleStep(1)
@@ -494,14 +494,14 @@ class Ui_MainWindow(object):
 
         self.label_05 = QtGui.QLabel(self.groupBox_03)
         self.label_05.setGeometry(QtCore.QRect(80, 55, 11, 16))
-        self.label_05.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.label_05.setFont(self.fontGlobal_08)           # for Windows Linux compatibility
         self.label_05.setObjectName(_fromUtf8("label_05"))
         self.label_05.setStyleSheet("color : #ff0000")                         # Color text
         self.label_05.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))  # Bold
 
         self.DS_02_Y = QtGui.QSpinBox(self.groupBox_03)
         self.DS_02_Y.setGeometry(QtCore.QRect(105, 50, 61, 22))
-        self.DS_02_Y.setFont(self.fontGlobal_08)            # pour  W L
+        self.DS_02_Y.setFont(self.fontGlobal_08)            # for Windows Linux compatibility
         self.DS_02_Y.setMinimum(1)
         self.DS_02_Y.setMaximum(ori_Vertical)
         self.DS_02_Y.setSingleStep(1)
@@ -512,14 +512,14 @@ class Ui_MainWindow(object):
 
         self.label_06 = QtGui.QLabel(self.groupBox_03)
         self.label_06.setGeometry(QtCore.QRect(175, 55, 11, 16))
-        self.label_06.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.label_06.setFont(self.fontGlobal_08)           # for Windows Linux compatibility
         self.label_06.setObjectName(_fromUtf8("label_06"))
         self.label_06.setStyleSheet("color : #008700")                         # Color text
         self.label_06.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))  # Bold
 
         self.comboBox_02 = QtGui.QComboBox(self.groupBox_03)
         self.comboBox_02.setGeometry(QtCore.QRect(10, 80, 171, 22))
-        self.comboBox_02.setFont(self.fontGlobal_08)        # pour  W L
+        self.comboBox_02.setFont(self.fontGlobal_08)        # for Windows Linux compatibility
         self.comboBox_02.setObjectName(_fromUtf8("comboBox_02"))
         self.comboBox_02.addItem(_fromUtf8("BMP *.bmp"))
         self.comboBox_02.addItem(_fromUtf8("ICO *.ico"))
@@ -536,12 +536,12 @@ class Ui_MainWindow(object):
 
         self.label_07 = QtGui.QLabel(self.groupBox_03)
         self.label_07.setGeometry(QtCore.QRect(10, 105, 136, 16))
-        self.label_07.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.label_07.setFont(self.fontGlobal_08)           # for Windows Linux compatibility
         self.label_07.setObjectName(_fromUtf8("label_07"))
 
         self.PB_Photo_Adjust = QtGui.QPushButton(self.groupBox_03)
         self.PB_Photo_Adjust.setGeometry(QtCore.QRect(150, 105, 31, 16))
-        self.PB_Photo_Adjust.setFont(self.fontGlobal_08)    # pour compatibilite W L
+        self.PB_Photo_Adjust.setFont(self.fontGlobal_08)    # for Windows Linux compatibility
         self.PB_Photo_Adjust.setVisible(False)
         self.PB_Photo_Adjust.setToolTip(u"Adjust the number image to 360 degrees")
         self.PB_Photo_Adjust.setObjectName(_fromUtf8("PB_Photo_Adjust"))
@@ -549,12 +549,12 @@ class Ui_MainWindow(object):
 
         self.label_08 = QtGui.QLabel(self.groupBox_03)
         self.label_08.setGeometry(QtCore.QRect(10, 120, 171, 16))
-        self.label_08.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.label_08.setFont(self.fontGlobal_08)           # for Windows Linux compatibility
         self.label_08.setObjectName(_fromUtf8("label_08"))
 
         self.groupBox_03_B = QtGui.QGroupBox(self.groupBox_03)
         self.groupBox_03_B.setGeometry(QtCore.QRect(5, 139, 180, 36))
-        self.groupBox_03_B.setFont(self.fontGlobal_08)      # pour compatibilite W L
+        self.groupBox_03_B.setFont(self.fontGlobal_08)      # for Windows Linux compatibility
         self.groupBox_03_B.setObjectName(_fromUtf8("groupBox_03_B"))
         self.groupBox_03_B.setToolTip(u"Choice of property backGround image" + "\n"
                                       u"It is possible that the backGround does not appear in the desired color" + "\n"
@@ -563,32 +563,32 @@ class Ui_MainWindow(object):
 
         self.RB_01_Actual = QtGui.QRadioButton(self.groupBox_03_B)
         self.RB_01_Actual.setGeometry(QtCore.QRect(10, 15, 36, 17))
-        self.RB_01_Actual.setFont(self.fontGlobal_08)       # pour compatibilite W L
+        self.RB_01_Actual.setFont(self.fontGlobal_08)       # for Windows Linux compatibility
         self.RB_01_Actual.setChecked(True)
         self.RB_01_Actual.setObjectName(_fromUtf8("RB_01_Actual"))
         self.RB_01_Actual.setToolTip(u"BackGround image in Actual color")
 
         self.RB_02_White = QtGui.QRadioButton(self.groupBox_03_B)
         self.RB_02_White.setGeometry(QtCore.QRect(55, 15, 36, 17))
-        self.RB_02_White.setFont(self.fontGlobal_08)        # pour compatibilite W L
+        self.RB_02_White.setFont(self.fontGlobal_08)        # for Windows Linux compatibility
         self.RB_02_White.setObjectName(_fromUtf8("RB_02_White"))
         self.RB_02_White.setToolTip(u"BackGround image in White")
 
         self.RB_03_Black = QtGui.QRadioButton(self.groupBox_03_B)
         self.RB_03_Black.setGeometry(QtCore.QRect(100, 15, 36, 17))
-        self.RB_03_Black.setFont(self.fontGlobal_08)        # pour compatibilite W L
+        self.RB_03_Black.setFont(self.fontGlobal_08)        # for Windows Linux compatibility
         self.RB_03_Black.setObjectName(_fromUtf8("RB_03_Black"))
         self.RB_03_Black.setToolTip(u"BackGround image in Black")
 
         self.RB_04_Transparent = QtGui.QRadioButton(self.groupBox_03_B)
         self.RB_04_Transparent.setGeometry(QtCore.QRect(145, 15, 36, 17))
-        self.RB_04_Transparent.setFont(self.fontGlobal_08)  # pour compatibilite W L
+        self.RB_04_Transparent.setFont(self.fontGlobal_08)  # for Windows Linux compatibility
         self.RB_04_Transparent.setObjectName(_fromUtf8("RB_04_Transparent"))
         self.RB_04_Transparent.setToolTip(u"BackGround image in Transparent")
 
         self.PB_Photo_Launch = QtGui.QPushButton(self.groupBox_03)
         self.PB_Photo_Launch.setGeometry(QtCore.QRect(10, 180, 52, 23))
-        self.PB_Photo_Launch.setFont(self.fontGlobal_08)    # pour compatibilite W L
+        self.PB_Photo_Launch.setFont(self.fontGlobal_08)    # for Windows Linux compatibility
         self.PB_Photo_Launch.setIcon(QtGui.QIcon(icon_path('save_view.png')))
         self.PB_Photo_Launch.setToolTip(u"Launch the creation files")
         self.PB_Photo_Launch.setObjectName(_fromUtf8("PB_Photo_Launch"))
@@ -596,7 +596,7 @@ class Ui_MainWindow(object):
 
         self.PB_Photo_Reset = QtGui.QPushButton(self.groupBox_03)
         self.PB_Photo_Reset.setGeometry(QtCore.QRect(71, 180, 52, 23))
-        self.PB_Photo_Reset.setFont(self.fontGlobal_08)     # pour compatibilite W L
+        self.PB_Photo_Reset.setFont(self.fontGlobal_08)     # for Windows Linux compatibility
         self.PB_Photo_Reset.setIcon(QtGui.QIcon(icon_path('reset.png')))
         self.PB_Photo_Reset.setToolTip(u"Refresh alls")
         self.PB_Photo_Reset.setObjectName(_fromUtf8("PB_Photo_Reset"))
@@ -604,7 +604,7 @@ class Ui_MainWindow(object):
 
         self.PB_Photo_Quit = QtGui.QPushButton(self.groupBox_03)
         self.PB_Photo_Quit.setGeometry(QtCore.QRect(130, 180, 52, 23))
-        self.PB_Photo_Quit.setFont(self.fontGlobal_08)      # pour compatibilite W L
+        self.PB_Photo_Quit.setFont(self.fontGlobal_08)      # for Windows Linux compatibility
         self.PB_Photo_Quit.setIcon(QtGui.QIcon(icon_path('save_view.png')))
         self.PB_Photo_Quit.setToolTip(u"Quit the photo panel")
         self.PB_Photo_Quit.setObjectName(_fromUtf8("PB_Photo_Launch"))
@@ -613,9 +613,9 @@ class Ui_MainWindow(object):
 
         self.PB_Reset = QtGui.QPushButton(self.centralWidget)
         self.PB_Reset.setGeometry(QtCore.QRect(10, 465, 60, 28))
-        self.PB_Reset.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.PB_Reset.setFont(self.fontGlobal_08)           # for Windows Linux compatibility
         icon7 = QtGui.QIcon()
-        icon7.addPixmap(QtGui.QPixmap(icon_path('reset.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon7.addPixmap(QtGui.QPixmap(icon_path('reset.png')),
         self.PB_Reset.setIcon(icon7)
         self.PB_Reset.setObjectName(_fromUtf8("PB_Reset"))
         self.PB_Reset.setToolTip("Refresh alls")
@@ -623,7 +623,7 @@ class Ui_MainWindow(object):
 
         self.PB_Photo = QtGui.QPushButton(self.centralWidget)
         self.PB_Photo.setGeometry(QtCore.QRect(76, 465, 60, 28))
-        self.PB_Photo.setFont(self.fontGlobal_08)           # pour compatibilite W L
+        self.PB_Photo.setFont(self.fontGlobal_08)           # for Windows Linux compatibility
         icon1 = QtGui.QIcon()
         icon1.addPixmap(QtGui.QPixmap(icon_path('save_view.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PB_Photo.setIcon(icon1)
@@ -637,7 +637,7 @@ class Ui_MainWindow(object):
 
         self.PB_Quit = QtGui.QPushButton(self.centralWidget)
         self.PB_Quit.setGeometry(QtCore.QRect(142, 465, 60, 28))
-        self.PB_Quit.setFont(self.fontGlobal_08)            # pour compatibilite W L
+        self.PB_Quit.setFont(self.fontGlobal_08)            # for Windows Linux compatibility
         icon8 = QtGui.QIcon()
         icon8.addPixmap(QtGui.QPixmap(icon_path('quit.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PB_Quit.setIcon(icon8)
