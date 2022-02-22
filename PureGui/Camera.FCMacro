@@ -356,7 +356,7 @@ class Ui_MainWindow(object):
         self.RB_Direction.setObjectName(_fromUtf8("RB_Direction"))
         self.RB_Direction.setToolTip(u"Rotation of the camera on the Direction axis" + "\n"
                                      u"to edge selected or point selected" + "\n"
-                                     u"If the point are selected the mouse coordinates are used")
+                                     u"If the point are selected the mouse coordinates are used.")
         self.RB_Direction.clicked.connect(self.on_RB_Direction_clicked)
 
         self.DS_Angle = QtGui.QDoubleSpinBox(self.groupBox_01)
@@ -446,8 +446,9 @@ class Ui_MainWindow(object):
         self.PB_Align_O_To_View.setIcon(icon5)
         self.PB_Align_O_To_View.setObjectName(_fromUtf8("PB_Align_O_To_View"))
         self.PB_Align_O_To_View.setToolTip("Align the object selected to the actual view \n"
-"The changed values are : Rotation Axis((X, Y, Z), Angle) \n"
-"Same Euler angles : Yaw, Pitch, Roll \n The Translation is not modify")
+"The changed values are: Rotation Axis((X, Y, Z), Angle) \n"
+"Same Euler angles: Yaw, Pitch, Roll \n"
+"The Translation isn't modified")
         self.PB_Align_O_To_View.clicked.connect(self.on_PB_Align_O_To_View_clicked) # Align object to view
 
         self.PB_Create_Plane = QtGui.QPushButton(self.groupBox_02)
@@ -508,7 +509,7 @@ class Ui_MainWindow(object):
         self.label_05.setGeometry(QtCore.QRect(80, 55, 11, 16))
         self.label_05.setFont(self.fontGlobal_08)           # for Windows Linux compatibility
         self.label_05.setObjectName(_fromUtf8("label_05"))
-        self.label_05.setStyleSheet("color : #ff0000")                         # Color text
+        self.label_05.setStyleSheet("color : #ff0000")                         # text color
         self.label_05.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))  # Bold
 
         self.DS_02_Y = QtGui.QSpinBox(self.groupBox_03)
@@ -526,7 +527,7 @@ class Ui_MainWindow(object):
         self.label_06.setGeometry(QtCore.QRect(175, 55, 11, 16))
         self.label_06.setFont(self.fontGlobal_08)           # for Windows Linux compatibility
         self.label_06.setObjectName(_fromUtf8("label_06"))
-        self.label_06.setStyleSheet("color : #008700")                         # Color text
+        self.label_06.setStyleSheet("color : #008700")                         # text color
         self.label_06.setFont(QtGui.QFont(self.FontImpost,weight=QtGui.QFont.Bold))  # Bold
 
         self.comboBox_02 = QtGui.QComboBox(self.groupBox_03)
@@ -570,9 +571,9 @@ class Ui_MainWindow(object):
         self.groupBox_03_B.setGeometry(QtCore.QRect(5, 139, 180, 36))
         self.groupBox_03_B.setFont(self.fontGlobal_08)      # for Windows Linux compatibility
         self.groupBox_03_B.setObjectName(_fromUtf8("groupBox_03_B"))
-        self.groupBox_03_B.setToolTip(u"Choice of property backGround image" + "\n"
-                                      u"It is possible that the backGround does not appear in the desired color" + "\n"
-                                      u"in this case do a test in FreeCAD :" + "\n"
+        self.groupBox_03_B.setToolTip(u"Choose property background image" + "\n"
+                                      u"It's possible that the background doesn't appear in the desired color." + "\n"
+                                      u"In this case do a test in FreeCAD :" + "\n"
                                       u"Menu > Tools > Save picture > Extended > Image properties")
 
         self.RB_01_Actual = QtGui.QRadioButton(self.groupBox_03_B)
@@ -612,7 +613,7 @@ class Ui_MainWindow(object):
         self.PB_Photo_Reset.setGeometry(QtCore.QRect(71, 180, 52, 23))
         self.PB_Photo_Reset.setFont(self.fontGlobal_08)     # for Windows Linux compatibility
         self.PB_Photo_Reset.setIcon(QtGui.QIcon(icon_path('reset.png')))
-        self.PB_Photo_Reset.setToolTip(u"Refresh alls")
+        self.PB_Photo_Reset.setToolTip(u"Refresh all")
         self.PB_Photo_Reset.setObjectName(_fromUtf8("PB_Photo_Reset"))
         self.PB_Photo_Reset.clicked.connect(self.on_PB_Photo_Reset_clicked)
 
@@ -633,7 +634,7 @@ class Ui_MainWindow(object):
                         QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PB_Reset.setIcon(icon7)
         self.PB_Reset.setObjectName(_fromUtf8("PB_Reset"))
-        self.PB_Reset.setToolTip("Refresh alls")
+        self.PB_Reset.setToolTip("Refresh all")
         self.PB_Reset.clicked.connect(self.on_PB_Reset_clicked) # refresh
 
         self.PB_Photo = QtGui.QPushButton(self.centralWidget)
@@ -643,11 +644,11 @@ class Ui_MainWindow(object):
         icon1.addPixmap(QtGui.QPixmap(icon_path('save_view.png')),
                         QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PB_Photo.setIcon(icon1)
-        self.PB_Photo.setToolTip(u"Create serial photo for create animation" + "\n"
-                                 u"Give the angle rotation desired" + "\n"
+        self.PB_Photo.setToolTip(u"Create serial photo to create animation" + "\n"
+                                 u"Specify the angle rotation desired" + "\n"
                                  u"Number image = 360 / Angle degrees rotation" + "\n" + "\n"
-                                 u"Modify your window 3DView to the desirate dimension" + "\n"
-                                 u"Click the Accept the rotation for verify if the object rotation is good")
+                                 u"Modify your 3DView windows to the desired dimension" + "\n"
+                                 u"Click to accept the rotation for verifying if the object rotation is good")
         self.PB_Photo.setObjectName(_fromUtf8("PB_Photo"))
         self.PB_Photo.clicked.connect(self.on_PB_Photo_clicked)
 
@@ -768,13 +769,13 @@ class Ui_MainWindow(object):
         self.scene.addPixmap(QtGui.QPixmap(pic))
         self.graphicsView.setScene(ui.scene)
 
-    def on_DS_Angle_valueChanged(self,value): # connection DS_Angle value donnee en degres
+    def on_DS_Angle_valueChanged(self,value): # connection DS_Angle value given in degrees
         global valeur
         global numberPhoto
         global valueTest
 
         valeur = 0.0
-        valeur = math.radians(value)         # valeur en degres convertie en radian
+        valeur = math.radians(value)         # valeur in degrees converted to radians 
         self.DS_Angle.setStyleSheet("color : Base")
         self.label_07.setStyleSheet("color : Base")
 
@@ -816,12 +817,12 @@ class Ui_MainWindow(object):
         except Exception:
             numberPhoto = 0
 
-        self.PB_Photo.setToolTip(u"Create serial photo for create animation" + "\n"
-                                 u"Give the angle rotation desired" + "\n"
-                                 u"Number image = 360 / " + str(math.degrees(valeur)) + " = " + str(numberPhoto))
+        self.PB_Photo.setToolTip(u"Create serial photo to create animation" + "\n"
+                                 u"Specify the angle rotation desired" + "\n"
+                                 u"Number of image = 360 / " + str(math.degrees(valeur)) + " = " + str(numberPhoto))
         self.label_07.setText("Number image : " + str(numberPhoto))
 
-    def on_PB_Detect_Camera_clicked(self):         # detection Orientation camera
+    def on_PB_Detect_Camera_clicked(self):         # detect camera orientation
         global vertexeS
 
         try:
@@ -852,7 +853,7 @@ class Ui_MainWindow(object):
             qP = float(extractValue[3])
 
             App.Console.PrintMessage("Degrees XYZ    : " + str(degrees(xP)) + " , " +str(degrees(yP)) + " , " + str(degrees(zP)) +"\n")
-            App.Console.PrintMessage("Degrees Q      : " + str(degrees(qP)) +"\n"+"\n")
+            App.Console.PrintMessage("Degrees Q      : " + str(degrees(qP)) + "\n\n")
 
             App.Console.PrintMessage("Radians Axis.xyz A : " + str(plan.Axis) + " , " + str(plan.Angle) + "\n")
             App.Console.PrintMessage("Degrees Axis.x : " + str(degrees(plan.Axis.x)) + "\n")
@@ -860,14 +861,14 @@ class Ui_MainWindow(object):
             App.Console.PrintMessage("Degrees Axis.z : " + str(degrees(plan.Axis.z)) + "\n")
             App.Console.PrintMessage("Degrees Angle  : " + str(degrees(plan.Angle))  + "\n")
 
-            #http://forum.freecadweb.org/viewtopic.php?f=13&t=14213
+            # http://forum.freecadweb.org/viewtopic.php?f=13&t=14213
             App.Console.PrintMessage("Direction      : " + str(cam.orientation.getValue().multVec(coin.SbVec3f(0,0,-1)).getValue()) + "\n")
             if (vertexeS[0] + vertexeS[1] + vertexeS[2]) != 0.0:
                 App.Console.PrintMessage("Direction edge : " + str(vertexeS) + "\n")
             App.Console.PrintMessage("___FCCamera______________________________"+"\n\n")
             App.ActiveDocument.recompute()
         except Exception:
-            App.Console.PrintError("Not Document open" + "\n")
+            App.Console.PrintError("No Document open" + "\n")
 
     def on_PB_Accept_View_clicked(self):        # Accept Rotation Camera to Axis
         global valeur
@@ -919,8 +920,8 @@ class Ui_MainWindow(object):
                         Zv = bounBoxCenter[2]
                         if (Xv + Yv + Zv) == 0.0:
                             App.Console.PrintMessage("!)" + "\n")
-                            App.Console.PrintError("Not axis selected (edge) for rotation" + "\n"
-                                                   "or Direction is nul" + "\n")
+                            App.Console.PrintError("No axis selected (edge) for rotation" + "\n"
+                                                   "or Direction is null" + "\n")
                     Gui.updateGui()
                 else:
                     App.Console.PrintMessage("-) " + "\n")
@@ -933,9 +934,9 @@ class Ui_MainWindow(object):
                 App.Console.PrintMessage(str(valeur)+" rad. , "+str(math.degrees(valeur))+" deg."+"\n")
                 App.Console.PrintMessage("FCCamera_________________________________"+"\n\n")
             except Exception:
-                App.Console.PrintError("Not Document open"+"\n")
+                App.Console.PrintError("No Document open"+"\n")
         else:
-            App.Console.PrintError("Value angle egal zero select one Value"+"\n")
+            App.Console.PrintError("Value angle equals zero. Select one Value"+"\n")
             self.DS_Angle.setStyleSheet("color : #ff0000")
 
     #### photo ################################################
@@ -1088,8 +1089,8 @@ class Ui_MainWindow(object):
                             Yv = vertexeS[1]
                             Zv = vertexeS[2]
                         else:
-                            App.Console.PrintError("Not axis selected (edge) for rotation" + "\n"
-                                                   "or Direction is nul" + "\n")
+                            App.Console.PrintError("No axis selected (edge) for rotation" + "\n"
+                                                   "or Direction is null" + "\n")
                     #####
                     if (Xv + Yv + Zv) != 0.0:
                         try:
@@ -1252,18 +1253,18 @@ class Ui_MainWindow(object):
             pl = App.Placement()
             pl.Rotation.Q = (xP,yP,zP,qP)         # rotation of object
 
-            pl.Base = App.Vector(positionX,positionY,positionZ) # here coordinates XYZ of plan
+            pl.Base = App.Vector(positionX, positionY, positionZ) # 'plan' XYZ coordinates 
 
             # Draft.makeRectangle(length=radiusP, height=radiusP, placement=pl, face=False, support=None)
             points = [App.Vector(-(radiusP*1.5),0,0), App.Vector((radiusP*1.5),0,0)]
             mire01 = Draft.makeWire(points,closed=False,placement=pl,face=False,support=None)
             FreeCADGui.ActiveDocument.getObject(App.ActiveDocument.ActiveObject.Name).LineColor = (1.0,0.0,0.0)
-            FcPlane.addObject(mire01)  # contener character
+            FcPlane.addObject(mire01)  # contain character
 
             points = [App.Vector(0,-(radiusP*1.5),0), App.Vector(0,(radiusP*1.5),0)]
             mire02 = Draft.makeWire(points, closed=False, placement=pl, face=False, support=None)
             FreeCADGui.ActiveDocument.getObject(App.ActiveDocument.ActiveObject.Name).LineColor = (1.0,0.0,0.0)
-            FcPlane.addObject(mire02)  # contener character
+            FcPlane.addObject(mire02)  # contain character
 
             circle = Draft.makeCircle(radius=radiusP,placement=pl,face=False,support=None)
             Rnameplane = App.ActiveDocument.ActiveObject.Name
@@ -1334,9 +1335,9 @@ class Ui_MainWindow(object):
             App.Console.PrintMessage("Refresh (3Dview = X " + str(ori_Horizont) + ",
                                                         Y " + str(ori_Vertical) + ") " + "\n")
             numberPhoto = 0
-            self.label_07.setText("Number image : " + str(numberPhoto))
+            self.label_07.setText("Image number: " + str(numberPhoto))
         except Exception:
-            App.Console.PrintError("Not Document open" + "\n")
+            App.Console.PrintError("No Document open" + "\n")
 
     def on_PB_Quit_clicked(self): # quit
         global s
@@ -1353,15 +1354,15 @@ class Ui_MainWindow(object):
             None
 
         App.Console.PrintMessage("Fin FCCamera" + "\n")
-        FreeCADGui.Selection.removeObserver(s)    # desinstalle la fonction residente
+        FreeCADGui.Selection.removeObserver(s)    # uninstall the resident function
         self.window.close()
 
 ##Start#####
 
 #Gui.ActiveDocument.ActiveView.setAxisCross(True) # GuiAxis true
 
-s=SelObserver()                                   # installe the function in resident mode SelObserver
-FreeCADGui.Selection.addObserver(s)               # installe the function in resident mode SelObserver
+s=SelObserver()                                   # install the function in resident mode SelObserver
+FreeCADGui.Selection.addObserver(s)               # install the function in resident mode SelObserver
 
 MainWindow = QtGui.QMainWindow()
 ui = Ui_MainWindow()
