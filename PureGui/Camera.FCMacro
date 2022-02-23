@@ -62,32 +62,32 @@ from FreeCAD import Vector
 import pivy
 from pivy import coin
 
-global pathFile ; pathFile  = ""
-global valeur   ; valeur    = 0.0
-global valeurV  ; valeurV   = 0.0
-global Rname    ; Rname     = ["","",""]
-global RnameCube; RnameCube = ""
-global RnameCompound; RnameCompound = ""
-global datExtract; datExtract = ""
+pathFile  = ""
+valeur    = 0.0
+valeurV   = 0.0
+Rname     = ["","",""]
+RnameCube = ""
+RnameCompound = ""
+datExtract = ""
 
-global positionX ; positionX = 0.0
-global positionY ; positionY = 0.0
-global positionZ ; positionZ = 0.0
-global vertexeS  ; vertexeS  = Vector(0.0,0.0,0.0)
-global bounBoxCenter; bounBoxCenter = Vector(0.0,0.0,0.0)
+positionX = 0.0
+positionY = 0.0
+positionZ = 0.0
+vertexeS  = Vector(0.0,0.0,0.0)
+bounBoxCenter = Vector(0.0,0.0,0.0)
 
-global dim_Horizont ; dim_Horizont = 0
-global dim_Vertical ; dim_Vertical = 0
-global ori_Vertical ; ori_Vertical = 0
-global ori_Horizont ; ori_Horizont = 0
-global numberPhoto  ; numberPhoto  = 0.0
-global valueTest    ; valueTest    = 0.0
+dim_Horizont = 0
+dim_Vertical = 0
+ori_Vertical = 0
+ori_Horizont = 0
+numberPhoto  = 0.0
+valueTest    = 0.0
 
-global formatFichier; formatFichier= ".png"
-global s            ; s = ""
+formatFichier= ".png"
+s = ""
 
-global Nameelement2; Nameelement2 = ""  # new selection
-global vueView     ; vueView      = 0   # passe vue
+Nameelement2 = ""  # new selection
+vueView      = 0   # passe vue
 
 
 def icon_path(filename):
