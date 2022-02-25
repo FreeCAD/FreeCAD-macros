@@ -4,8 +4,8 @@
 __Name__ = 'Get Global Placement'
 __Comment__ = 'Get the global placement, respecting links'
 __Author__ = 'galou_breizh'
-__Version__ = '1.0.0'
-__Date__ = '2021-05-25'
+__Version__ = '1.0.1'
+__Date__ = '2022-02-04'
 __License__ = 'LGPL-2.0-or-later'
 __Web__ = 'http://forum.freecadweb.org/viewtopic.php?f=?&t=????'
 __Wiki__ = 'http://www.freecadweb.org/wiki/Macro_Title_Of_macro'
@@ -152,14 +152,13 @@ def get_and_print_selected_placements():
     shown_paths: List[str] = []
     for selection_object in selection:
         object_ = selection_object.Object
-        sub_objects = selection_object.SubObjects
         sub_fullpaths = selection_object.SubElementNames
         if not sub_fullpaths:
             # An object is selected, not a face, edge, vertex.
             placement = get_global_placement(object_, '')
             print_placement(object_.Name, '', placement)
             continue
-        for sub_object, sub_fullpath in zip(sub_objects, sub_fullpaths):
+        for sub_fullpath in sub_fullpaths:
             # One or more subelements are selected.
             wo_subelement = strip_subelement(sub_fullpath)
             path = object_.Name + wo_subelement
