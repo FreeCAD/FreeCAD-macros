@@ -3,8 +3,8 @@
 __Name__ = 'LasercutterSVGExport'
 __Comment__ = 'Creates contour lines for all selected objects and arranges them on a TechDraw page'
 __Author__ = 'christi'
-__Version__ = '0.6'
-__Date__ = '2021-12-13'
+__Version__ = '0.7'
+__Date__ = '2022-02-25'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://github.com/FreeCAD/FreeCAD-macros/tree/master/TechDraw'
 __Wiki__ = 'https://github.com/FreeCAD/FreeCAD-macros/tree/master/TechDraw/LasercutterSVGExport'
@@ -15,11 +15,7 @@ __Requires__ = 'FreeCAD >= v0.18'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=15&t=31796'
 __Files__ = 'LasercutterSVGExport/Readme.md,LasercutterSVGExport/LasercutterSVGExport_screenshot.png,LasercutterSVGExport/lasercuttersvg.ui'
 
-# Form implementation generated from reading ui file 'lasercuttersvg.ui'
-#
-# Created: Sat Oct 27 19:23:30 2018
-#      by: pyside-uic 0.2.15 running on PySide 1.2.2
-#
+# compatible to Python 3
 
 import os
 import FreeCAD as app
@@ -42,10 +38,10 @@ class LasercutterTechdrawExportItem:
                  Normal = Vector(0, 0, 0),
                  method = 'auto'):
         self.updating = False
-        fp.addProperty("App::PropertyLink", "Part",  "LasercutterTechdrawExport",  "Selected part").Part = Part
-        fp.addProperty("App::PropertyVector", "Normal", "LasercutterTechdrawExport",  "vertical vector. (0, 0, 0) = rotate the part that it fits best").Normal = Normal
-        fp.addProperty("App::PropertyFloat", "BeamWidth", "LasercutterTechdrawExport",  "Laser beam width in mm").BeamWidth = BeamWidth
-        fp.addProperty("App::PropertyEnumeration", "Method", "LasercutterTechdrawExport",  "How to create the outline").Method = ['auto', '2D', '3D', 'face', 'normal']
+        fp.addProperty('App::PropertyLink', 'Part',  'LasercutterTechdrawExport',  'Selected part').Part = Part
+        fp.addProperty('App::PropertyVector', 'Normal', 'LasercutterTechdrawExport',  'vertical vector. (0, 0, 0) = rotate the part that it fits best').Normal = Normal
+        fp.addProperty('App::PropertyFloat', 'BeamWidth', 'LasercutterTechdrawExport',  'Laser beam width in mm').BeamWidth = BeamWidth
+        fp.addProperty('App::PropertyEnumeration', 'Method', 'LasercutterTechdrawExport',  'How to create the outline').Method = ['auto', '2D', '3D', 'face', 'normal']
         fp.Method = method
         fp.Proxy = self
     
@@ -56,7 +52,7 @@ class LasercutterTechdrawExportItem:
         
     def onChanged(self, fp, prop):
         '''Do something when a property has changed'''
-        props = ["Part", "BeamWidth", "Normal", "Method"]
+        props = ['Part', 'BeamWidth', 'Normal', 'Method']
         if prop in props:
             self.execute(fp)         
             
@@ -85,7 +81,7 @@ class LasercutterTechdrawExportItem:
                 fp.Normal = self.getNormal(fp.Part)   
             
         fp.Shape = Part.Compound(outline.Wires);
-        fp.Label = fp.Part.Label + " offset"
+        fp.Label = fp.Part.Label + ' offset'
         fp.Placement = outline.Placement
         
         if fp.Placement.Rotation.Axis.z < 0:
@@ -144,7 +140,8 @@ class LasercutterTechdrawExportItem:
             elif bbox.YLength < epsilon: return Vector(0.0,1.0,0.0)
             elif bbox.ZLength < epsilon: return Vector(0.0,0.0,1.0)
             return obj.Placement.Rotation.multVec(Vector(0, 0, 1))
-        
+
+
 class LasercutterTechdrawExportItemViewProvider:
     def __init__(self, vobj):
         '''Set this object to the proxy object of the actual view provider'''
@@ -153,12 +150,12 @@ class LasercutterTechdrawExportItemViewProvider:
             
     def getIcon(self):
         '''Return the icon which will FreeCADear in the tree view. This method is optional and if not defined a default icon is shown.'''
-        return (os.path.join(iconPath, "LasercutterTechdrawExport.svg"))
+        return (os.path.join(iconPath, 'LasercutterTechdrawExport.svg'))
 
     def attach(self, vobj):
         '''Setup the scene sub-graph of the view provider, this method is mandatory'''
         self.Object = vobj.Object
-        self.onChanged(vobj, "Base")
+        self.onChanged(vobj, 'Base')
  
     def updateData(self, fp, prop):
         '''If a property of the handled feature has changed we have the chance to handle this here'''
@@ -197,13 +194,13 @@ class LasercutterTechdrawExport():
     def Activated(self):
         '''Will be called when the feature is executed.'''
         self.ui_file = os.path.join(iconPath, 'lasercuttersvg.ui')
-        self.form = FreeCADGui.PySideUic.loadUi(self.ui_file)
+        self.form = gui.PySideUic.loadUi(self.ui_file)
         self.form.pushButton.pressed.connect(self.makeExport)
         self.form.show()        
 
     def IsActive(self):
-        """Here you can define if the command must be active or not (greyed) if certain conditions
-        are met or not. This function is optional."""
+        '''Here you can define if the command must be active or not (greyed) if certain conditions
+        are met or not. This function is optional.'''
         if app.activeDocument():
             return(True)
         else:
@@ -211,25 +208,25 @@ class LasercutterTechdrawExport():
         
     def GetResources(self):
         '''Return the icon which will FreeCADear in the tree view. This method is optional and if not defined a default icon is shown.'''
-        return {'Pixmap'  : os.path.join(iconPath, "LasercutterTechdrawExport.svg"),
-                'Accel' : "", # a default shortcut (optional)
-                'MenuText': "Lasercutter Techdraw Export",
+        return {'Pixmap'  : os.path.join(iconPath, 'LasercutterTechdrawExport.svg'),
+                'Accel' : '', # a default shortcut (optional)
+                'MenuText': 'Lasercutter Techdraw Export',
                 'ToolTip' : __doc__ }
                 
     def makeExport(self):          
         # Generate commands in the FreeCAD python console to create LasercutterTechdrawExport
-        FreeCADGui.doCommand("from LasercutterTechdrawExport import LasercutterTechdrawExport")
+        gui.doCommand("from LasercutterTechdrawExport import LasercutterTechdrawExport")
         
-        FreeCADGui.doCommand("parts = []")
-        selection = FreeCADGui.Selection.getSelectionEx()
+        gui.doCommand("lcparts = []")
+        selection = gui.Selection.getSelectionEx()
         for sel in selection:
-            FreeCADGui.doCommand("parts.append(FreeCAD.ActiveDocument.getObject('%s'))"%(sel.ObjectName))
+            gui.doCommand("lcparts.append(FreeCAD.ActiveDocument.getObject('%s'))"%(sel.ObjectName))
             
-        FreeCADGui.doCommand("LasercutterTechdrawExport.makeLasercutterTechdrawExport(parts, BeamWidth = %f, doc = App.activeDocument())"%self.form.doubleSpinBox.value())
+        gui.doCommand("LasercutterTechdrawExport.makeLasercutterTechdrawExport(lcparts, BeamWidth = %f, doc = App.activeDocument())"%self.form.doubleSpinBox.value())
         self.form.close()
         
 
-FreeCADGui.addCommand('LasercutterTechdrawExport', LasercutterTechdrawExport())
+gui.addCommand('LasercutterTechdrawExport', LasercutterTechdrawExport())
 
 
 def selected_to_techdraw(doc, offsets, techdraw, BeamWidth):
@@ -237,7 +234,7 @@ def selected_to_techdraw(doc, offsets, techdraw, BeamWidth):
     y = 0
     
     for offset in offsets:
-        viewname = offset.Label.replace("offset", "contour")
+        viewname = offset.Label.replace('offset', 'contour')
         views = doc.getObjectsByLabel(viewname)
         if len(views) > 0:
             view = views[0]
@@ -250,10 +247,10 @@ def selected_to_techdraw(doc, offsets, techdraw, BeamWidth):
             view.ViewObject.LineWidth = BeamWidth
             view.Source = offset
             view.Direction = Vector(0, 0, 1)
-            view.ScaleType = u"Custom"
+            view.ScaleType = u'Custom'
             view.Scale = 1.00
         except Exception as ex:
-            app.Console.PrintError("\nview for " + viewname + " cannot be created ! ")
+            app.Console.PrintError('\nview for ' + viewname + ' cannot be created ! ')
             app.Console.PrintError(ex)
     
     for view in techdraw.Views:
@@ -300,7 +297,7 @@ def makeLasercutterTechdrawExport(parts, BeamWidth = 0.2, doc = app.activeDocume
     
     
 def addLasercutterTechdrawItem(techdraw, part, BeamWidth = 0.2, doc = app.activeDocument(), method = 'auto', normal = Vector(0, 0, 0)):       
-    ifp = doc.addObject("Part::FeaturePython", "LasercutterTechdrawExport")
+    ifp = doc.addObject('Part::FeaturePython', 'LasercutterTechdrawExport')
     LasercutterTechdrawExportItem(ifp, part, BeamWidth, method=method, Normal=normal)
     LasercutterTechdrawExportItemViewProvider(ifp.ViewObject)
     doc.recompute()
