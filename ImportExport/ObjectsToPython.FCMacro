@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__Version__ = '0.6'
-__Date__ = '2021-11-14'
+__Version__ = '0.7'
+__Date__ = '2021-07-17'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = 'README.md'
@@ -290,86 +290,109 @@ def addSketch(obj, objname):
             exposed.append(n)
             exposing = exposing - 1
         else:
-            addScript("%s.addGeometry(%s)"%(objname, objstr))           
+            addScript("geo%d = %s.addGeometry(%s)"%(n, objname, objstr))           
             if gflist[n].Construction:
-                addScript("%s.toggleConstruction(%d)"%(objname, n))
-            
-        if isinstance(geo, Part.ArcOfParabola):
-            addScript("%s.exposeInternalGeometry(%d)"%(objname, n))
-            exposing = 2
+                addScript("%s.toggleConstruction(geo%d)"%(objname, n))
+                        
+            if isinstance(geo, Part.BSplineCurve):
+                poles = len(geo.getPoles())
+                exposing = poles - 2
+                if exposing < 2: exposing = 2
                 
-        if isinstance(geo, Part.ArcOfEllipse):
-            addScript("%s.exposeInternalGeometry(%d)"%(objname, n))
-            exposing = 4
-            
-        if isinstance(geo, Part.ArcOfHyperbola):
-            addScript("%s.exposeInternalGeometry(%d)"%(objname, n))
-            exposing = 3
-            
+            if isinstance(geo, Part.ArcOfParabola):
+                exposing = 2
+                
+            if isinstance(geo, Part.ArcOfHyperbola):
+                exposing = 3
+                
+            if isinstance(geo, Part.ArcOfEllipse):
+                exposing = 4
+                
+            if exposing > 0:
+                addScript("%s.exposeInternalGeometry(geo%d)"%(objname, n))                
+                
         n = n + 1
     
     splinecount = 0
+    concount = 0
     prop = obj.getPropertyByName('Constraints')
     for con in obj.Constraints:
-        if con.Type != 'Coincident' or not con.First in exposed:
-            conargs = ''
-            contype = con.Type
-            if con.Type == 'Coincident':
-                conargs = "%d, %d, %d, %d"%(con.First, con.FirstPos, con.Second, con.SecondPos)
-            elif con.Type == 'PointOnObject':
-                conargs = "%d, %d, %d"%(con.First, con.FirstPos, con.Second)
-            elif con.Type == 'Vertical':
-                conargs = str(con.First)
-            elif con.Type == 'Horizontal':
-                conargs = str(con.First)
-            elif con.Type == 'Parallel':
-                conargs = "%d, %d"%(con.First, con.Second)
-            elif con.Type == 'Perpendicular':
-                conargs = "%d, %d"%(con.First, con.Second)
-            elif con.Type == 'Tangent':
-                if con.Second == -2000:
-                    conargs = "%d, %d"%(con.First, con.FirstPos)
-                elif con.Third == -2000:
-                    conargs = "%d, %d, %d, %d"%(con.First, con.FirstPos, con.Second, con.SecondPos)
-                else:
-                    contype = 'TangentViaPoint'
-                    conargs = "%d, %d, %d, %d"%(con.First, con.Second, con.Third, con.ThirdPos)
-            elif con.Type == 'Equal':
-                conargs = "%d, %d"%(con.First, con.Second)
-            elif con.Type == 'Symmetric':
-                conargs = "%d, %d, %d, %d, %d, %d"%(con.First, con.FirstPos, con.Second, con.SecondPos, con.Third, con.ThirdPos)
-            elif con.Type == 'Block':
-                conargs = str(con.First)
-            elif con.Type == 'Distance':
-                if con.Second == -2000:
-                    conargs = "%d, %s"%(con.First, floatstr(con.Value))
-                else:
-                    conargs = "%d, %d, %d, %d, %s"%(con.First, con.FirstPos, con.Second, con.SecondPos, floatstr(con.Value))
-            elif con.Type == 'DistanceX' or con.Type == 'DistanceY':
-                if con.Second == -2000:
-                    conargs = "%d, %d, %s"%(con.First, con.FirstPos, floatstr(con.Value))
-                else:
-                    conargs = "%d, %d, %d, %d, %s"%(con.First, con.FirstPos, con.Second, con.SecondPos, floatstr(con.Value))
-            elif con.Type == 'Radius':
-                conargs = "%d, %s"%(con.First, floatstr(con.Value))
-                splinecount = 0
-            elif con.Type == 'Angle':
-                conargs = "%d, %d, %d, %d, %s"%(con.First, con.FirstPos, con.Second, con.SecondPos, floatstr(con.Value))
-            elif con.Type == 'InternalAlignment':
-                if con.Second > con.First:
-                    contype = 'InternalAlignment:Sketcher::BSplineControlPoint'
-                    conargs = "%d, %d, %d, %d"%(con.First, con.FirstPos, con.Second, splinecount)
-                    splineindex = con.Second
-                    splinecount = splinecount + 1
-                else:
-                    conargs = None
+        conargs = con.Value
+        contype = con.Type
+        if con.First < 0:
+            first = str(con.First)
+        else:
+            first = "geo%d"%(con.First)
+        
+        if con.Second < 0:
+            sec = str(con.Second)
+        else:
+            sec = "geo%d"%(con.Second)
+            
+        if con.Third < 0:
+            third = str(con.Third)
+        else:
+            third = "geo%d"%(con.Third)
+
+        if con.Type == 'Coincident':
+            conargs = "%s, %d, %s, %d"%(first, con.FirstPos, sec, con.SecondPos)
+        elif con.Type == 'PointOnObject':
+            conargs = "%s, %d, %s"%(first, con.FirstPos, sec)
+        elif con.Type == 'Vertical':
+            conargs = str(first)
+        elif con.Type == 'Horizontal':
+            conargs = str(first)
+        elif con.Type == 'Parallel':
+            conargs = "%s, %s"%(first, sec)
+        elif con.Type == 'Perpendicular':
+            conargs = "%s, %s"%(first, sec)
+        elif con.Type == 'Tangent':
+            if sec == -2000:
+                conargs = "%s, %d"%(first, con.FirstPos)
+            elif con.Third == -2000:
+                conargs = "%s, %d, %s, %d"%(first, con.FirstPos, sec, con.SecondPos)
+            else:
+                contype = 'TangentViaPoint'
+                conargs = "%s, %s, %s, %d"%(first, sec, third, con.ThirdPos)
+        elif con.Type == 'Equal':
+            conargs = "%s, %s"%(first, sec)
+        elif con.Type == 'Symmetric':
+            conargs = "%s, %d, %s, %d, %s, %d"%(first, con.FirstPos, sec, con.SecondPos, third, con.ThirdPos)
+        elif con.Type == 'Block':
+            conargs = str(first)
+        elif con.Type == 'Distance':
+            if con.Second == -2000:
+                conargs = "%s, %s"%(first, floatstr(con.Value))
+            else:
+                conargs = "%s, %d, %s, %d, %s"%(first, con.FirstPos, sec, con.SecondPos, floatstr(con.Value))
+        elif con.Type == 'DistanceX' or con.Type == 'DistanceY':
+            if con.Second == -2000:
+                conargs = "%s, %d, %s"%(first, con.FirstPos, floatstr(con.Value))
+            else:
+                conargs = "%s, %d, %s, %d, %s"%(first, con.FirstPos, sec, con.SecondPos, floatstr(con.Value))
+        elif con.Type == 'Weight' or con.Type == 'Radius':
+            conargs = "%s, %s"%(first, floatstr(con.Value))
+            splinecount = 0
+        elif con.Type == 'Angle':
+            conargs = "%s, %d, %s, %d, %s"%(first, con.FirstPos, sec, con.SecondPos, floatstr(con.Value))
+        elif con.Type == 'InternalAlignment':
+            if con.Second > con.First:
+                contype = 'InternalAlignment:Sketcher::BSplineControlPoint'
+                conargs = "%s, %d, %s, %d"%(first, con.FirstPos, sec, splinecount)
+                splineindex = con.Second
+                splinecount = splinecount + 1
+            else:
+                conargs = None
+        elif con.Type == 'Weight':
+            conargs = "%s, %s"%(first, floatstr(con.Value))
+
+        if conargs is not None:
+            addScript("%s.addConstraint(Sketcher.Constraint('%s', %s))"%(objname, contype, conargs))
+            
+        if con.Name != "":
+            addScript("%s.renameConstraint(%d, u'%s')"%(objname, concount, con.Name))
     
-            if conargs is not None:
-                addScript("%s.addConstraint(Sketcher.Constraint('%s', %s))"%(objname, contype, conargs))
-                
-            if con.Name != "":
-                addScript("%s.renameConstraint(%d, u'%s')"%(objname, concount, con.Name))
-    
+        concount = concount + 1
                                  
 def addSpreadsheet(obj, objname): 
     for propname in obj.PropertiesList:    
