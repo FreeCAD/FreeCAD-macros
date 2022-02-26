@@ -8,12 +8,12 @@ __Date__ = '2022-02-25'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://github.com/FreeCAD/FreeCAD-macros/tree/master/TechDraw'
 __Wiki__ = 'https://github.com/FreeCAD/FreeCAD-macros/tree/master/TechDraw/LasercutterSVGExport'
-__Icon__ = ''
-__Help__ = 'LasercutterSVGExport/Readme.md'
+__Icon__ = 'LasercutterSVGExport/LasercutterTechdrawExport.svg'
+__Help__ = 'LasercutterSVGExport/README.md'
 __Status__ = 'Alpha'
 __Requires__ = 'FreeCAD >= v0.18'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=15&t=31796'
-__Files__ = 'LasercutterSVGExport/LasercutterTechdrawExport.py,LasercutterSVGExport/Readme.md,LasercutterSVGExport/LasercutterSVGExport_screenshot.png,LasercutterSVGExport/lasercuttersvg.ui'
+__Files__ = 'LasercutterSVGExport/LasercutterTechdrawExport.py,LasercutterSVGExport/README.md,LasercutterSVGExport/LasercutterSVGExport_screenshot.png,LasercutterSVGExport/lasercuttersvg.ui,LasercutterSVGExport/LasercutterTechdrawExport.svg'
 
 # compatible to Python 3
 
