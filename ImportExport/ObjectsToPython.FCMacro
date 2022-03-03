@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
 __Version__ = '0.7'
-__Date__ = '2021-07-17'
+__Date__ = '2022-03-03'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = 'README.md'
 __Name__ = 'Objects To Python'
 __Comment__ = 'Exports objects from a FreeCAD project to a python script'
 __Author__ = 'Christi'
-__Icon__ = 'ObjectsToPython/toconsole.svg'
+__Icon__ = 'ObjectsToPython.svg'
 __Help__ = 'ObjectsToPython/README.md'
 __Status__ = 'Alpha'
 __Requires__ = 'FreeCAD >= 0.19'
