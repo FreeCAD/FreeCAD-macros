@@ -4,16 +4,16 @@ __Name__ = 'LasercutterSVGExport'
 __Comment__ = 'Creates contour lines for all selected objects and arranges them on a TechDraw page'
 __Author__ = 'christi'
 __Version__ = '0.7'
-__Date__ = '2022-02-25'
+__Date__ = '2022-03-03'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://github.com/FreeCAD/FreeCAD-macros/tree/master/TechDraw'
 __Wiki__ = 'https://github.com/FreeCAD/FreeCAD-macros/tree/master/TechDraw/LasercutterSVGExport'
-__Icon__ = 'LasercutterSVGExport/LasercutterTechdrawExport.svg'
+__Icon__ = 'LasercutterSVGExport.svg'
 __Help__ = 'LasercutterSVGExport/README.md'
 __Status__ = 'Alpha'
 __Requires__ = 'FreeCAD >= v0.18'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=15&t=31796'
-__Files__ = 'LasercutterSVGExport/LasercutterTechdrawExport.py,LasercutterSVGExport/README.md,LasercutterSVGExport/LasercutterSVGExport_screenshot.png,LasercutterSVGExport/lasercuttersvg.ui,LasercutterSVGExport/LasercutterTechdrawExport.svg'
+__Files__ = 'LasercutterSVGExport/LasercutterTechdrawExport.py,LasercutterSVGExport/README.md,LasercutterSVGExport/LasercutterSVGExport_screenshot.png,LasercutterSVGExport/lasercuttersvg.ui,LasercutterSVGExport.svg'
 
 # compatible to Python 3
 
@@ -42,14 +42,14 @@ class LasercutterSVGExport():
                 
     def makeExport(self):          
         # Generate commands in the FreeCAD python console to create LasercutterTechdrawExport
-        gui.doCommand("from LasercutterSVGExport import LasercutterTechdrawExport")
+        gui.doCommand('from LasercutterSVGExport import LasercutterTechdrawExport')
 
-        gui.doCommand("lcparts = []")
+        gui.doCommand('lcparts = []')
         selection = gui.Selection.getSelectionEx()
         for sel in selection:
             gui.doCommand("lcparts.append(FreeCAD.ActiveDocument.getObject('%s'))"%(sel.ObjectName))
             
-        gui.doCommand("LasercutterTechdrawExport.makeLasercutterTechdrawExport(lcparts, BeamWidth = %f, doc = App.activeDocument())"%self.form.doubleSpinBox.value())
+        gui.doCommand(f'LasercutterTechdrawExport.makeLasercutterTechdrawExport(lcparts, BeamWidth={self.form.doubleSpinBox.value()}, doc=FreeCAD.activeDocument())')
         self.form.close()
 
 

@@ -1,20 +1,5 @@
 # -*- coding: utf-8 -*-
 
-__Name__ = 'LasercutterSVGExport'
-__Comment__ = 'Creates contour lines for all selected objects and arranges them on a TechDraw page'
-__Author__ = 'christi'
-__Version__ = '0.7'
-__Date__ = '2022-02-25'
-__License__ = 'LGPL-3.0-or-later'
-__Web__ = 'https://github.com/FreeCAD/FreeCAD-macros/tree/master/TechDraw'
-__Wiki__ = 'https://github.com/FreeCAD/FreeCAD-macros/tree/master/TechDraw/LasercutterSVGExport'
-__Icon__ = ''
-__Help__ = 'LasercutterSVGExport/Readme.md'
-__Status__ = 'Alpha'
-__Requires__ = 'FreeCAD >= v0.18'
-__Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=15&t=31796'
-__Files__ = 'LasercutterSVGExport/Readme.md,LasercutterSVGExport/LasercutterSVGExport_screenshot.png,LasercutterSVGExport/lasercuttersvg.ui'
-
 # compatible to Python 3
 
 import os
