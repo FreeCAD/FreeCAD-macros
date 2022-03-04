@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__Version__ = '0.7'
+__Version__ = '0.7.0'
 __Date__ = '2022-03-03'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
@@ -13,7 +13,7 @@ __Help__ = 'ObjectsToPython/README.md'
 __Status__ = 'Alpha'
 __Requires__ = 'FreeCAD >= 0.19'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=34612'
-__Files__ = 'ObjectsToPython/README.md,ObjectsToPython/ObjectsToPython.ui,ObjectsToPython/toconsole.svg'
+__Files__ = 'ObjectsToPython/README.md,ObjectsToPython/ObjectsToPython.ui,ObjectsToPython.svg'
 
 VERSION_STRING = __Name__ + ' Macro v' + __Version__
 
