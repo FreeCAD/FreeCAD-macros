@@ -24,20 +24,29 @@
 # ***************************************************************************
 """Migrates drawings made in FreeCAD v0.18 to v0.19."""
 
-__title__ = "fixRotation"
-__author__ = "WandeererFan"
-__url__ = "http://www.freecadweb.org/index.html"
-__version__ = "00.01"
-__date__ = "2022/02/26"
+__Name__ = 'TechDrawMigrateFromv018'
+__Comment__ = 'Convert v018 Rotation property to v019'
+__Author__ = 'WandererFan'
+__Version__ = '0.1.0'
+__License__ = 'CC-BY-3.0'
+__Web__ = 'http://www.freecadweb.org/'
+__Wiki__ = 'http://www.freecadweb.org/wiki/Macro_TechDrawViewSet'
+__Icon__ = ''
+__Help__ = 'Open a v018 file in v019, execute'
+__Status__ = 'Alpha'
+__Requires__ = ''
+__Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
+__Files__ = ''
+
 
 # convert v0.18 Rotation values to v0.19 
 
+import FreeCAD as App
 import TechDraw
 
-def fixRotation():
-    increment = App.Units.Degree
-    increment.Value = 270
-    for obj in FreeCAD.ActiveDocument.Objects:
+def TechDrawMigrateFromv018():
+    increment = App.Units.Quantity(270, App.Units.Unit("deg"))
+    for obj in App.ActiveDocument.Objects:
         if obj.isDerivedFrom("TechDraw::DrawViewSection"):
             if obj.Rotation != 0.0:
                 obj.Rotation = obj.Rotation + increment
@@ -52,6 +61,6 @@ def fixRotation():
 
 
 if __name__ == '__main__':
-    fixRotation()
-    FreeCAD.ActiveDocument.recompute()
+    TechDrawMigrateFromv018()
+    App.ActiveDocument.recompute()
 
