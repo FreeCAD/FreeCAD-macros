@@ -71,7 +71,7 @@ cslD("Getting selected objects to define targets")
 selError = False #true if incorrect selection made
 cancelOp = False #true if operation canceled by user
 
-if len(FreeCADGui.Selection.getSelection()) > 1: #if several objet selected
+if len(FreeCADGui.Selection.getSelection()) > 1:  # if several objects selected
     cslD("Multiple objects selected, asking user what to do")
     msgb = QtGui.QMessageBox() ##create a message box to ask for user choice & populate it
     msgb.setWindowTitle("Multiple objects selected")
@@ -172,7 +172,7 @@ else:
     FreeCAD.ActiveDocument.openTransaction("Straighten objects") #open new transaction for undo management
     cslD("Starting Transformation")
     obj = FreeCADGui.Selection.getSelection()[0] # take as reference the first object selected for transformation
-    shiftVec = _0Vec_ #no shift move by defaut
+    shiftVec = _0Vec_  # no shift move by default
     faceRot = FreeCAD.Rotation(_ZVec_, _ZVec_) #no reference rotation by default
     lineRot = FreeCAD.Rotation(_ZVec_, _ZVec_) #no reference line by default
     normVec = _ZVec_ #normal is the Z axis by default
