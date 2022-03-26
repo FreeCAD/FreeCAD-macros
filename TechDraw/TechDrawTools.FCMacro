@@ -30,7 +30,7 @@ Workflow:
 
 __Name__ = 'TechDrawTools'
 __Author__ = 'edi and domad'
-__Version__ = '0.4.4'
+__Version__ = '0.4.5'
 __Comment__ = 'A container, including 38 helper tools to improve the appearance of drawings'
 __License__ = 'LGPL v2'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=35&t=59334'
@@ -39,7 +39,7 @@ __Files__ = 'TechDrawTools.svg'
 __Help__ = 'Start the macro. Select one of the 38 helper tools.'
 __Status__ = 'stable'
 __Requires__ = 'e.g. FreeCAD >= v0.19'
-__Date__ = '2021-07-16'
+__Date__ = '2022-03-26'
 
 
 from functools import partial
@@ -3145,12 +3145,10 @@ class createVertDimChain:
             Vertexes.sort(key=sortVertex)
             if len(Vertexes) > 1:
                 XPos = (Vertexes[0].X) * scale
-                print("scale: {0} XPos: {1}".format(scale, XPos))
                 for i  in range(len(Vertexes)-1):
                     DistanceDim=TechDraw.makeDistanceDim(View,'DistanceY',Vertexes[i].Point, Vertexes[i+1].Point)
                     DistanceDim.X = XPos
                     DistanceDim.Y = Y = ((Vertexes[i].Point.y+Vertexes[i+1].Point.y)/2) * scale
-                    print("DD.Y: {0}".format(Y))
             gui.Selection.clearSelection()
 
 class createHorizDimChain:
@@ -3266,12 +3264,10 @@ class createHorizDimChain:
             Vertexes.sort(key=sortVertex)
             if len(Vertexes) > 1:
                 YPos = Vertexes[0].Y * scale
-                print("scale: {0} YPos: {1}".format(scale, YPos))
                 for i  in range(len(Vertexes)-1):
                     DistanceDim=TechDraw.makeDistanceDim(View,'DistanceX',Vertexes[i].Point,Vertexes[i+1].Point)
                     DistanceDim.X = X = ((Vertexes[i].Point.x+Vertexes[i+1].Point.x)/2) * scale
                     DistanceDim.Y = YPos
-                    print("DD.X: {0}".format(X))
             gui.Selection.clearSelection()
 
 class positionVertDimChain:
