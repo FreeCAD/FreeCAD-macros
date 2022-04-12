@@ -62,6 +62,7 @@ DEFAULT_DENSITY = '2500 kg/m^3'
 MAXIMUM_DENSITY = '25000 kg/m^3'    # maximum physically meaningful value
 DOCKED_WINDOW = True    # False: floating window
 SORT_SELECTION = False
+COLORMAP_BINS = int(256)
 
 # FreeCAD Preferences (Tools -> Edit Parameters), 2nd parameter of .GetX
 # is the default value
@@ -69,6 +70,7 @@ MACRO_SETTINGS  = 'User parameter:BaseApp/Preferences/Macros/' + __Name__
 DEFAULT_DENSITY = app.ParamGet(MACRO_SETTINGS).GetString('Default density', '2500 kg/m^3')
 DOCKED_WINDOW   = app.ParamGet(MACRO_SETTINGS).GetBool('Docked window', True)    # False: floating
 SORT_SELECTION  = app.ParamGet(MACRO_SETTINGS).GetBool('Sort selection', False)
+COLORMAP_BINS  = app.ParamGet(MACRO_SETTINGS).GetInt('Colormap bins', 256)
 GUI_FONT_SIZE   = app.ParamGet('User parameter:BaseApp/Preferences/Editor').GetInt('FontSize', 10)
 GUI_ICON_SIZE   = app.ParamGet('User parameter:BaseApp/Preferences/General').GetInt('ToolbarIconSize', 24)
 
@@ -79,6 +81,7 @@ WINDOW_HEIGHT = int(0.5 * QtGui.QGuiApplication.screens()[0].geometry().height()
 app.ParamGet(MACRO_SETTINGS).SetString('Default density', DEFAULT_DENSITY)
 app.ParamGet(MACRO_SETTINGS).SetBool('Docked window', DOCKED_WINDOW)
 app.ParamGet(MACRO_SETTINGS).SetBool('Sort selection', SORT_SELECTION)
+app.ParamGet(MACRO_SETTINGS).SetInt('Colormap bins', COLORMAP_BINS)
 g_main_window = gui.getMainWindow()
 g_font = gui.getMainWindow().font()
 g_font.setPointSize(GUI_FONT_SIZE)
@@ -106,11 +109,8 @@ class CenterofmassWindow(QtGui.QMainWindow):
         super().__init__(parent)    # parent: Window stays on top
         self.child = CenterofmassWidget(self)
         self.setCentralWidget(self.child)
-        if self.child.startup_failed:
-            self.destroy()
-        else:
-            self.set_position()
-            self.show()
+        self.set_position()
+        self.show()
 
     def set_position(self):
         """Set a sensible default position for the window.
@@ -878,6 +878,8 @@ class CenterofmassWidget(QtGui.QWidget):
                     self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = self.solids[sol].orgColorFC
 
     def colorify(self):
+         #make a color gradient from pastel green to pastel red with a pastel yellow for the middle density
+        colormap = self.make_gradient_from_three_colors([130,255,130], [255,255,1], [255,123,125])
         pq = Units.parseQuantity
         densityConverted = []
         for sol in range(self.solid_count):
@@ -887,18 +889,31 @@ class CenterofmassWidget(QtGui.QWidget):
         minD = min(densityConverted)
         for sol in range(self.solid_count):
             if maxD == minD:
-                # default to green hsv color
-                h = 120/360
+                index = N
             else:
-                # density value to hsv color range green to red
+                # density value to colormap color range
                 drel = (densityConverted[sol]-minD) / (maxD-minD)
-                drel = math.acos(1-2*drel) / math.pi    # non-linear relation to stretch yellow
-                h = 120 * (1-drel) / 360
-            color = QtGui.QColor.fromHsvF(h, 1, 1)
+                drel = math.acos(1-2*drel) / math.pi    # non-linear relation to stretch the middle color
+                index = int((COLORMAP_BINS-1)*drel) # position of the density on the colormap
+            color = QtGui.QColor.fromRgbF(colormap[index][0], colormap[index][1], colormap[index][2])
             self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
             self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: %s}' %color.name())
             if self.doc.getObject('CenterOfMass'):
                 self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
+
+    def make_gradient_from_three_colors(self, color_begin, color_middle, color_end) :
+        import numpy as np
+        N = int(COLORMAP_BINS/2)
+        ramp0 = np.ones((N, 3))
+        ramp0[:, 0] = np.linspace(color_begin[0], color_middle[0], N)*1/256
+        ramp0[:, 1] = np.linspace(color_begin[1], color_middle[1], N)*1/256
+        ramp0[:, 2] = np.linspace(color_begin[2], color_middle[2], N)*1/256
+        ramp1 = np.ones((N, 3))
+        ramp1[:, 0] = np.linspace(color_middle[0], color_end[0], N)*1/256
+        ramp1[:, 1] = np.linspace(color_middle[1], color_end[1], N)*1/256
+        ramp1[:, 2] = np.linspace(color_middle[2], color_end[2], N)*1/256
+        colormap = np.vstack((ramp0, ramp1))
+        return colormap
 
     def on_pushButton_toPreferences(self):
         gui.runCommand('Std_DlgParameter',0)
