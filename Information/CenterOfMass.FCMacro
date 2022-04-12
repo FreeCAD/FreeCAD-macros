@@ -725,6 +725,19 @@ class CenterofmassWidget(QtGui.QWidget):
         except:
             CoMObjs = self.doc.addObject('App::DocumentObjectGroup', 'CenterOfMass')
 
+        # Bounding box of valid selection
+        BBoxSolid = self.doc.addObject('Part::Box','CoMSelBouBox')
+        BBoxSolid.Placement.Base = self.boundBox.Center.sub(app.Vector(boundBoxL).multiply(0.5))
+        BBoxSolid.Length = boundBoxL[0]
+        BBoxSolid.Width  = boundBoxL[1]
+        BBoxSolid.Height = boundBoxL[2]
+        BBoxSolid.ViewObject.BoundingBox = True
+        #BBoxSolid.ViewObject.DisplayMode = 'Wireframe'
+        #BBoxSolid.ViewObject.ShapeColor = (0.5, 0.5, 0.5)
+        BBoxSolid.ViewObject.Transparency = 90
+        BBoxSolid.ViewObject.Visibility = False
+        CoMObjs.addObject(BBoxSolid)
+
         # Local coordinate system at center of masses
         lcs = self.doc.addObject('PartDesign::CoordinateSystem', 'CoMLCS')
         lcs.Placement = app.Placement(app.Vector(*self.TotalCoM),app.Rotation(0,0,0))
