@@ -406,25 +406,33 @@ class CenterofmassWidget(QtGui.QWidget):
         cdgGroupBox.setMaximumHeight(5*GUI_ICON_SIZE)
         layout.addWidget(cdgGroupBox)
 
-        # massGroupBox
-        label_Mass = QtGui.QLabel('Total mass')
+        # totalGroupBox
+        label_Mass = QtGui.QLabel('Mass')
 
         self.resultMass = QtGui.QLineEdit(self)
         self.resultMass.setObjectName('total weight')
         self.resultMass.setReadOnly(True)
+
+        label_Density = QtGui.QLabel('Density')
+
+        self.resultDensity = QtGui.QLineEdit(self)
+        self.resultDensity.setReadOnly(True)
 
         self.checkColorify = QtGui.QCheckBox(toolTip='Color shapes depending on density')
         self.checkColorify.setIcon(QtGui.QIcon(':/icons/Std_RandomColor.svg'))
         self.checkColorify.setIconSize(g_icon_size)
         self.checkColorify.stateChanged.connect(self.on_stateChanged_Colorify)
 
-        massLayout = QtGui.QHBoxLayout()
-        massLayout.addWidget(label_Mass)
-        massLayout.addWidget(self.resultMass)
-        massLayout.addWidget(self.checkColorify)
-        massGroupBox = QtGui.QGroupBox()
-        massGroupBox.setLayout(massLayout)
-        layout.addWidget(massGroupBox)
+        totalLayout = QtGui.QHBoxLayout()
+        totalLayout.addWidget(label_Mass)
+        totalLayout.addWidget(self.resultMass)
+        totalLayout.addSpacing(GUI_FONT_SIZE)
+        totalLayout.addWidget(label_Density)
+        totalLayout.addWidget(self.resultDensity)
+        totalLayout.addWidget(self.checkColorify)
+        totalGroupBox = QtGui.QGroupBox('Total')
+        totalGroupBox.setLayout(totalLayout)
+        layout.addWidget(totalGroupBox)
 
     def init_solids(self, objs):
         """Construct new items and compute"""
@@ -723,6 +731,8 @@ class CenterofmassWidget(QtGui.QWidget):
         self.resultCdG[2].setToolTip('center of mass Z (in %s)' % self.unitForL)
         self.resultMass.setText('{:.6}'.format(self.massTot))
         self.resultMass.setToolTip('total weight (in %s)' % self.unitForM)
+        self.resultDensity.setText('{:.6}'.format(self.massTot/self.volTot))
+        self.resultDensity.setToolTip('total density (in %s)' % self.unitForD_text)
         if self.doc.getObject('CenterOfMass'):
             self.draw_centerOfMass()
         if self.checkColorify.isChecked():
