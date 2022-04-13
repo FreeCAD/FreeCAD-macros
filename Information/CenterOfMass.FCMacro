@@ -897,7 +897,7 @@ class CenterofmassWidget(QtGui.QWidget):
                 self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: transparent}')
 
     def colorify(self):
-        import matplotlib 
+        import matplotlib.cm 
         cm = matplotlib.cm.get_cmap(self.comboColormap.currentText())
 
         pq = Units.parseQuantity
