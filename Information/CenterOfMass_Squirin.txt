@@ -25,12 +25,12 @@
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
-__Version__ = '0.5.8'
+__Version__ = '0.5.5'
 __Date__ = '2022-04-13'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
-__Icon__ = 'https://www.freecadweb.org/wiki/images/d/d7/Centomass.png'
+__Icon__ = 'https://wiki.freecadweb.org/images/4/41/Macro_CenterOfMass.png'
 __Help__ = 'Select one or more bodies and launch'
 __Status__ = 'Alpha'
 __Requires__ = 'FreeCAD >= 0.19'
@@ -57,38 +57,42 @@ import FreeCADGui as gui
 from FreeCAD import Units
 
 # Preferences
-DEFAULT_DENSITY = '2500 kg/m^3'
 MAXIMUM_DENSITY = '25000 kg/m^3'    # maximum physically meaningful value
-DOCKED_WINDOW = True    # False: floating window
-SORT_SELECTION = False
-DEFAULT_COLORMAP = 'coolwarm'
-
-# FreeCAD Preferences (Tools -> Edit Parameters), 2nd parameter of .GetX
-# is the default value
 MACRO_SETTINGS  = 'User parameter:BaseApp/Preferences/Macros/' + __Name__
+
+# FreeCAD: Tools -> Edit Parameters, 2nd parameter of .GetX sets the default
 DEFAULT_DENSITY = app.ParamGet(MACRO_SETTINGS).GetString('Default density', '2500 kg/m^3')
 DOCKED_WINDOW   = app.ParamGet(MACRO_SETTINGS).GetBool('Docked window', True)    # False: floating
 SORT_SELECTION  = app.ParamGet(MACRO_SETTINGS).GetBool('Sort selection', False)
-DEFAULT_COLORMAP  = app.ParamGet(MACRO_SETTINGS).GetString('Default colormap', 'coolwarm')
-GUI_FONT_SIZE   = app.ParamGet('User parameter:BaseApp/Preferences/Editor').GetInt('FontSize', 10)
-GUI_ICON_SIZE   = app.ParamGet('User parameter:BaseApp/Preferences/General').GetInt('ToolbarIconSize', 24)
+COLOR_SPHERES = app.ParamGet(MACRO_SETTINGS).GetBool('Color spheres', False)
+COLOR_RANGE_0 = app.ParamGet(MACRO_SETTINGS).GetUnsigned('Color range from HSV', 120075100)    # green
+COLOR_RANGE_1 = app.ParamGet(MACRO_SETTINGS).GetUnsigned('Color range to HSV', 75100)    # red
+COLOR_STRETCH = app.ParamGet(MACRO_SETTINGS).GetBool('Color stretch center', True)    # e.g. yellow
+GUI_FONT_SIZE = app.ParamGet('User parameter:BaseApp/Preferences/Editor').GetInt('FontSize', 10)
+GUI_ICON_SIZE = app.ParamGet('User parameter:BaseApp/Preferences/General').GetInt('ToolbarIconSize', 24)
 
 # Floating window size preferences: fraction of primary screen's size
-WINDOW_WIDTH = int(0.2 * QtGui.QGuiApplication.screens()[0].geometry().width())
+WINDOW_WIDTH  = int(0.2 * QtGui.QGuiApplication.screens()[0].geometry().width())
 WINDOW_HEIGHT = int(0.5 * QtGui.QGuiApplication.screens()[0].geometry().height())
 
 app.ParamGet(MACRO_SETTINGS).SetString('Default density', DEFAULT_DENSITY)
 app.ParamGet(MACRO_SETTINGS).SetBool('Docked window', DOCKED_WINDOW)
 app.ParamGet(MACRO_SETTINGS).SetBool('Sort selection', SORT_SELECTION)
-app.ParamGet(MACRO_SETTINGS).SetString('Sort selection', DEFAULT_COLORMAP)
+app.ParamGet(MACRO_SETTINGS).SetBool('Color spheres', COLOR_SPHERES)
+app.ParamGet(MACRO_SETTINGS).SetUnsigned('Color range from HSV', COLOR_RANGE_0)
+app.ParamGet(MACRO_SETTINGS).SetUnsigned('Color range to HSV', COLOR_RANGE_1)
+app.ParamGet(MACRO_SETTINGS).SetBool('Color stretch center', COLOR_STRETCH)
+g_color_0 = str(COLOR_RANGE_0).zfill(9)
+g_color_1 = str(COLOR_RANGE_1).zfill(9)
+g_color_0 = [int(g_color_0[:3])/360, int(g_color_0[3:6])/100, int(g_color_0[6:])/100]
+g_color_1 = [int(g_color_1[:3])/360, int(g_color_1[3:6])/100, int(g_color_1[6:])/100]
 g_main_window = gui.getMainWindow()
-g_font = gui.getMainWindow().font()
+g_font = g_main_window.font()
 g_font.setPointSize(GUI_FONT_SIZE)
 g_font_metrics = QtGui.QFontMetrics(g_font)
 g_str_width1 = g_font_metrics.horizontalAdvance('0_000e+00')
 g_str_width2 = g_font_metrics.horizontalAdvance('_0_000e+00_')
 g_icon_size = QtCore.QSize(GUI_ICON_SIZE, GUI_ICON_SIZE)
-g_relative_radius = 'mass'
 g_sel = []    # the list of selected objects
 
 
@@ -217,7 +221,8 @@ class SolidsWidget():
 class CenterofmassWidget(QtGui.QWidget):
     """This is the widget which does almost all of the work.
     Widgets don't have close boxes, so closing is dealt with in
-    CenterofmassWindow."""
+    CenterofmassWindow.
+    """
     def __init__(self, parent):
         super().__init__(parent)
         self.setObjectName(__Name__)
@@ -269,11 +274,11 @@ class CenterofmassWidget(QtGui.QWidget):
         label_comboUnit.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
         comboUnitDensity = QtGui.QComboBox(toolTip='Unit of density')
-        comboUnitDensity.addItems(['kg/m^3',
-                                   'g/dm^3', 'g/cm^3',
-                                   'mg/mm^3',
-                                   'oz/in^3',
-                                   'lb/in^3', 'lb/ft^3', 'lb/yd^3'])
+        comboUnitDensity.addItems(['kg/m³',
+                                   'g/dm³', 'g/cm³',
+                                   'mg/mm³',
+                                   'oz/in³',
+                                   'lb/in³', 'lb/ft³', 'lb/yd³'])
         comboUnitDensity.currentTextChanged.connect(self.on_comboUnitDensity_changed)
         # Get units set as preference
         self.store_prefered_units(comboUnitDensity.currentText())
@@ -376,15 +381,6 @@ class CenterofmassWidget(QtGui.QWidget):
             self.resultCdG[axis].setObjectName('center of mass')
             self.resultCdG[axis].setReadOnly(True)
 
-        cdgLayout = QtGui.QHBoxLayout()
-        cdgLayout.addWidget(label_CdG)
-        for axis in range(3):
-            cdgLayout.addWidget(self.resultCdG[axis])
-        cdgGroupBox = QtGui.QGroupBox()
-        cdgGroupBox.setLayout(cdgLayout)
-        layout.addWidget(cdgGroupBox)
-
-	# viewGroupBox
         showCoM = QtGui.QCheckBox(toolTip='Show center of mass')
         if self.doc.getObject('CenterOfMass'):
             showCoM.setChecked(True)
@@ -392,57 +388,51 @@ class CenterofmassWidget(QtGui.QWidget):
         showCoM.setIconSize(g_icon_size)
         showCoM.stateChanged.connect(self.on_stateChanged_showCoM)
 
-        self.toggleVolumMass = QtGui.QPushButton('mass')
-        self.toggleVolumMass.setToolTip('Toggle radius of spheres to represent relative masses or volumes\nmass : Spheres Radius = object mass / total mass\nvolume : Sphere Radius = object volume / total volume')
-        self.toggleVolumMass.setIcon(QtGui.QIcon(':/icons/PartDesign_Boolean.svg'))
-        self.toggleVolumMass.setIconSize(g_icon_size)
-        self.toggleVolumMass.setCheckable(True)
-        self.toggleVolumMass.setChecked(True)
-        self.toggleVolumMass.setEnabled(False)
-        self.toggleVolumMass.clicked.connect(self.on_pushButton_toggleVolumMass)
-
-        self.changeRadius = QtGui.QSlider(QtGui.Qt.Horizontal)
+        self.changeRadius = QtGui.QSlider(QtGui.Qt.Vertical)
         self.changeRadius.setToolTip('Change radius of spheres')
         self.changeRadius.setEnabled(False)
         self.changeRadius.setMaximum(49)
         self.changeRadius.valueChanged.connect(self.on_slideButton_changeRadius)
+
+        cdgLayout = QtGui.QHBoxLayout()
+        cdgLayout.addWidget(label_CdG)
+        for axis in range(3):
+            cdgLayout.addWidget(self.resultCdG[axis])
+        cdgLayout.addWidget(showCoM)
+        cdgLayout.addWidget(self.changeRadius)
+        cdgGroupBox = QtGui.QGroupBox()
+        cdgGroupBox.setLayout(cdgLayout)
+        cdgGroupBox.setMinimumHeight(3*GUI_ICON_SIZE)
+        cdgGroupBox.setMaximumHeight(5*GUI_ICON_SIZE)
+        layout.addWidget(cdgGroupBox)
+
+        # totalGroupBox
+        label_Mass = QtGui.QLabel('Mass')
+
+        self.resultMass = QtGui.QLineEdit(self)
+        self.resultMass.setObjectName('total weight')
+        self.resultMass.setReadOnly(True)
+
+        label_Density = QtGui.QLabel('Density')
+
+        self.resultDensity = QtGui.QLineEdit(self)
+        self.resultDensity.setReadOnly(True)
 
         self.checkColorify = QtGui.QCheckBox(toolTip='Color shapes depending on density')
         self.checkColorify.setIcon(QtGui.QIcon(':/icons/Std_RandomColor.svg'))
         self.checkColorify.setIconSize(g_icon_size)
         self.checkColorify.stateChanged.connect(self.on_stateChanged_Colorify)
 
-        self.comboColormap = QtGui.QComboBox(toolTip='Colormap used for color shapes depending on density')
-        #https://matplotlib.org/3.3.1/tutorials/colors/colormaps.html
-        self.comboColormap.addItems(['autumn_r', 'cividis_r', 'coolwarm', 'RdYlBu_r', 'RdYlGn_r', 'summer_r', 'terrain', 'turbo', 'viridis_r', 'Wistia', 'YlGn'])
-        self.comboColormap.setCurrentText(DEFAULT_COLORMAP)
-        self.comboColormap.currentTextChanged.connect(self.on_comboColormap_changed)
-        self.comboColormap.setEnabled(False)
-
-        viewLayout = QtGui.QHBoxLayout()
-        viewLayout.addWidget(showCoM)
-        viewLayout.addWidget(self.toggleVolumMass)
-        viewLayout.addWidget(self.changeRadius)
-        viewLayout.addWidget(self.checkColorify)
-        viewLayout.addWidget(self.comboColormap)
-        viewGroupBox = QtGui.QGroupBox('View')
-        viewGroupBox.setToolTip('View selected objects and center of mass has spheres')
-        viewGroupBox.setLayout(viewLayout)
-        layout.addWidget(viewGroupBox)
-
-        # massGroupBox
-        label_Mass = QtGui.QLabel('Total mass')
-
-        self.resultMass = QtGui.QLineEdit(self)
-        self.resultMass.setObjectName('total weight')
-        self.resultMass.setReadOnly(True)
-
-        massLayout = QtGui.QHBoxLayout()
-        massLayout.addWidget(label_Mass)
-        massLayout.addWidget(self.resultMass)
-        massGroupBox = QtGui.QGroupBox()
-        massGroupBox.setLayout(massLayout)
-        layout.addWidget(massGroupBox)
+        totalLayout = QtGui.QHBoxLayout()
+        totalLayout.addWidget(label_Mass)
+        totalLayout.addWidget(self.resultMass)
+        totalLayout.addSpacing(GUI_FONT_SIZE)
+        totalLayout.addWidget(label_Density)
+        totalLayout.addWidget(self.resultDensity)
+        totalLayout.addWidget(self.checkColorify)
+        totalGroupBox = QtGui.QGroupBox('Total')
+        totalGroupBox.setLayout(totalLayout)
+        layout.addWidget(totalGroupBox)
 
     def init_solids(self, objs):
         """Construct new items and compute"""
@@ -569,7 +559,6 @@ class CenterofmassWidget(QtGui.QWidget):
             if child.widget():
                 child.widget().deleteLater()
         self.init_solids(objs)
-
         if self.changeRadius.isEnabled():
             self.draw_centerOfMass()
 
@@ -629,8 +618,8 @@ class CenterofmassWidget(QtGui.QWidget):
     def store_prefered_units(self, txt):
         """Get units set as preference"""
         self.unitForD_text = txt
-        self.unitForD = self.unitForD_text.replace('Â³', '^3')         # density
-        self.unitForL = self.unitForD_text.split('/')[1].rstrip('Â³')  # length
+        self.unitForD = self.unitForD_text.replace('³', '^3')         # density
+        self.unitForL = self.unitForD_text.split('/')[1].rstrip('³')  # length
         self.unitForM = self.unitForD_text.split('/')[0]              # mass
         self.unitForV = self.unitForD.split('/')[1]                   # volume
 
@@ -712,8 +701,9 @@ class CenterofmassWidget(QtGui.QWidget):
                         _CoM[ax] += ((f.Points[0][ax] + f.Points[1][ax] + f.Points[2][ax]) / 4.
                                 ) * currentVolume
                 for ax in range(3):
-                    _CoM[ax] /= self.volumes[sol]
-                self.CoMs[sol] = app.Vector(*_CoM)            # Calculate BoundBox of all objects
+                   _CoM[ax] /= self.volumes[sol]
+                self.CoMs[sol] = app.Vector(*_CoM)
+            # Calculate BoundBox of all objects
             if sol == 0:
                 self.boundBox = objs[sol].BoundBox
             else:
@@ -741,6 +731,8 @@ class CenterofmassWidget(QtGui.QWidget):
         self.resultCdG[2].setToolTip('center of mass Z (in %s)' % self.unitForL)
         self.resultMass.setText('{:.6}'.format(self.massTot))
         self.resultMass.setToolTip('total weight (in %s)' % self.unitForM)
+        self.resultDensity.setText('{:.6}'.format(self.massTot/self.volTot))
+        self.resultDensity.setToolTip('total density (in %s)' % self.unitForD_text)
         if self.doc.getObject('CenterOfMass'):
             self.draw_centerOfMass()
         if self.checkColorify.isChecked():
@@ -754,6 +746,17 @@ class CenterofmassWidget(QtGui.QWidget):
             CoMObjs.removeObjectsFromDocument()    # remove childs
         except:
             CoMObjs = self.doc.addObject('App::DocumentObjectGroup', 'CenterOfMass')
+
+        # Bounding box of valid selection
+        BBoxSolid = self.doc.addObject('Part::Box','CoMBBoxOfSel')
+        BBoxSolid.Placement.Base = self.boundBox.Center.sub(app.Vector(boundBoxL).multiply(0.5))
+        BBoxSolid.Length = boundBoxL[0]
+        BBoxSolid.Width  = boundBoxL[1]
+        BBoxSolid.Height = boundBoxL[2]
+        BBoxSolid.ViewObject.BoundingBox = True
+        BBoxSolid.ViewObject.Transparency = 90
+        BBoxSolid.ViewObject.Visibility = False
+        CoMObjs.addObject(BBoxSolid)
 
         # Local coordinate system at center of masses
         lcs = self.doc.addObject('PartDesign::CoordinateSystem', 'CoMLCS')
@@ -773,8 +776,10 @@ class CenterofmassWidget(QtGui.QWidget):
                 sphere = self.doc.addObject('Part::Sphere', 'CoM_' + g_sel[sol].Name)
                 sphere.Label = 'CoM_' + g_sel[sol].Label
                 sphere.Placement.Base = app.Vector(*self.CoMs[sol])
-#                sphere.ViewObject.ShapeColor = (1.0, 1.0, 1.0)
-                sphere.ViewObject.ShapeColor = self.solids[sol].orgColorFC
+                if COLOR_SPHERES:
+                    sphere.ViewObject.ShapeColor = self.solids[sol].orgColorFC
+                else:
+                    sphere.ViewObject.ShapeColor = (1.0, 1.0, 1.0)
                 sphere.ViewObject.LineWidth = 1.0
                 CoMObjs.addObject(sphere)
 
@@ -803,21 +808,10 @@ class CenterofmassWidget(QtGui.QWidget):
             plane.ViewObject.Transparency = 100
             CoMObjs.addObject(plane)
 
-        ### BoundingBox
-        BBoxSolid = self.doc.addObject('Part::Box', 'CoMBBox')
-        BBoxSolid.Placement.Base = self.boundBox.Center.sub(app.Vector(boundBoxL).multiply(0.5))
-        BBoxSolid.Length = boundBoxL[0]
-        BBoxSolid.Width  = boundBoxL[1]
-        BBoxSolid.Height = boundBoxL[2]
-        BBoxSolid.ViewObject.Transparency = 90
-        BBoxSolid.ViewObject.ShapeColor = (0.5, 0.5, 0.5)
-        CoMObjs.addObject(BBoxSolid)
-
         self.draw_update_sphere_radius()
         self.set_objects_transparent(True)
         self.doc.recompute()
         self.changeRadius.setEnabled(True)
-        self.toggleVolumMass.setEnabled(True)
 
     def draw_update_sphere_radius(self):
         boundBoxL = [self.boundBox.XLength, self.boundBox.YLength, self.boundBox.ZLength]
@@ -829,14 +823,11 @@ class CenterofmassWidget(QtGui.QWidget):
             sphere.Radius = radiusCOM * max(boundBoxL)
 
         # Spheres for all center of mass
+        # Radius of the sphere is linked to the mass of the solid: R = (m_sol/m_tot)^1/3
         for sol in range(self.solid_count):
             sphere = self.doc.getObject('CoM_' + g_sel[sol].Name)
             if hasattr(sphere, 'Radius'):
-                if g_relative_radius == 'mass':
-                    sphere.Radius = radiusCOM * max(boundBoxL) * math.pow(self.masses[sol]/self.massTot, 1./3.)
-                else:
-                    sphere.Radius = radiusCOM * max(boundBoxL) * math.pow(self.convert_volume(self.volumes[sol])/self.volTot, 1./3.)
-
+                sphere.Radius = radiusCOM * max(boundBoxL) * math.pow(self.masses[sol]/self.massTot, 1./3.)
         self.doc.recompute()
 
     def set_objects_transparent(self, transparent):
@@ -852,7 +843,6 @@ class CenterofmassWidget(QtGui.QWidget):
             self.draw_centerOfMass()
         else:
             self.changeRadius.setEnabled(False)
-            self.toggleVolumMass.setEnabled(False)
             try:
                 self.set_objects_transparent(False)
                 self.doc.getObject('CenterOfMass').removeObjectsFromDocument()
@@ -860,35 +850,21 @@ class CenterofmassWidget(QtGui.QWidget):
             except:
                 pass
 
-    def on_pushButton_toggleVolumMass(self,state):
-        global g_relative_radius
-        if state == True:
-            g_relative_radius = 'mass'
-        else:
-            g_relative_radius = 'volume'
-
-        self.toggleVolumMass.setText(g_relative_radius)
-        self.draw_update_sphere_radius()
-
     def on_slideButton_changeRadius(self):
         self.draw_update_sphere_radius()
 
     def on_stateChanged_Colorify(self, state):
         if state == QtCore.Qt.Checked:
             self.colorify()
-            self.comboColormap.setEnabled(True)
         else:
-            self.comboColormap.setEnabled(False)
             for sol in range(self.solid_count):
-                self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = self.solids[sol].orgColorFC
+                orgColorFC = self.solids[sol].orgColorFC
+                self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = orgColorFC
+                if COLOR_SPHERES and self.changeRadius.isEnabled():
+                    self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = orgColorFC
                 self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: transparent}')
-                if self.doc.getObject('CenterOfMass') and self.solid_count > 1:
-                    self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = self.solids[sol].orgColorFC
 
     def colorify(self):
-        import matplotlib 
-        cm = matplotlib.cm.get_cmap(self.comboColormap.currentText())
-
         pq = Units.parseQuantity
         densityConverted = []
         for sol in range(self.solid_count):
@@ -897,20 +873,19 @@ class CenterofmassWidget(QtGui.QWidget):
         maxD = max(densityConverted)
         minD = min(densityConverted)
         for sol in range(self.solid_count):
-            if maxD == minD:
-                drel = 0.5
-            else:
-                # density value to colormap color range
+            hsv = [120/360, 1, 1]    # default to green hsv color
+            if maxD != minD:
+                # density value to prefered hsv color range
                 drel = (densityConverted[sol]-minD) / (maxD-minD)
-                drel = math.acos(1-2*drel) / math.pi    # non-linear relation to stretch the middle color
-            color = QtGui.QColor.fromRgbF(cm(drel)[0], cm(drel)[1], cm(drel)[2])
+                if COLOR_STRETCH:
+                    drel = math.acos(1-2*drel) / math.pi    # stretch center color (sigmoid-like)
+                for i_ in range(3):
+                    hsv[i_] = (g_color_1[i_]-g_color_0[i_]) * drel + g_color_0[i_]
+            color = QtGui.QColor.fromHsvF(*hsv)
             self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
-            self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: %s}' %color.name())
-            if self.doc.getObject('CenterOfMass') and self.solid_count > 1:
+            if COLOR_SPHERES and self.changeRadius.isEnabled():
                 self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
-
-    def on_comboColormap_changed(self, newText):
-        self.colorify()
+            self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: %s}' %color.name())
 
     def on_pushButton_toPreferences(self):
         gui.runCommand('Std_DlgParameter',0)
@@ -1020,7 +995,7 @@ def valid_density_string(string):
         pass
     return valid
 
-def error_message(msg, choice):
+def error_message(msg):
     app.Console.PrintError(msg + '\n')
     QtGui.QMessageBox.critical(g_main_window, 'Error', msg)
 
@@ -1028,7 +1003,7 @@ def error_message(msg, choice):
 if __name__ == '__main__':
     if not valid_density_string(DEFAULT_DENSITY):
         app.ParamGet(MACRO_SETTINGS).RemString('Default density')
-        error_message('Default density user parameter was set wrong. Try again.', 0)
+        error_message('Default density user parameter was set wrong. Try again.')
     else:
         print('Loading ' + __Name__ + ' ' + __Version__ + ' ...')
         gui.updateGui()
