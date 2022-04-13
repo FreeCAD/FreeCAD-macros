@@ -30,7 +30,7 @@ __Date__ = '2022-04-13'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
-__Icon__ = 'https://www.freecadweb.org/wiki/images/d/d7/Centomass.png'
+__Icon__ = 'https://wiki.freecadweb.org/images/4/41/Macro_CenterOfMass.png'
 __Help__ = 'Select one or more bodies and launch'
 __Status__ = 'Alpha'
 __Requires__ = 'FreeCAD >= 0.19'
@@ -57,11 +57,7 @@ import FreeCADGui as gui
 from FreeCAD import Units
 
 # Preferences
-DEFAULT_DENSITY = '2500 kg/m^3'
 MAXIMUM_DENSITY = '25000 kg/m^3'    # maximum physically meaningful value
-DOCKED_WINDOW = True    # False: floating window
-SORT_SELECTION = False
-DEFAULT_COLORMAP = 'coolwarm'
 
 # FreeCAD Preferences (Tools -> Edit Parameters), 2nd parameter of .GetX
 # is the default value
@@ -69,7 +65,9 @@ MACRO_SETTINGS  = 'User parameter:BaseApp/Preferences/Macros/' + __Name__
 DEFAULT_DENSITY = app.ParamGet(MACRO_SETTINGS).GetString('Default density', '2500 kg/m^3')
 DOCKED_WINDOW   = app.ParamGet(MACRO_SETTINGS).GetBool('Docked window', True)    # False: floating
 SORT_SELECTION  = app.ParamGet(MACRO_SETTINGS).GetBool('Sort selection', False)
+COLOR_SPHERES = app.ParamGet(MACRO_SETTINGS).GetBool('Color spheres', False)
 DEFAULT_COLORMAP  = app.ParamGet(MACRO_SETTINGS).GetString('Default colormap', 'coolwarm')
+COLOR_STRETCH = app.ParamGet(MACRO_SETTINGS).GetBool('Color stretch center', True)
 GUI_FONT_SIZE   = app.ParamGet('User parameter:BaseApp/Preferences/Editor').GetInt('FontSize', 10)
 GUI_ICON_SIZE   = app.ParamGet('User parameter:BaseApp/Preferences/General').GetInt('ToolbarIconSize', 24)
 
@@ -80,9 +78,11 @@ WINDOW_HEIGHT = int(0.5 * QtGui.QGuiApplication.screens()[0].geometry().height()
 app.ParamGet(MACRO_SETTINGS).SetString('Default density', DEFAULT_DENSITY)
 app.ParamGet(MACRO_SETTINGS).SetBool('Docked window', DOCKED_WINDOW)
 app.ParamGet(MACRO_SETTINGS).SetBool('Sort selection', SORT_SELECTION)
+app.ParamGet(MACRO_SETTINGS).SetBool('Color spheres', COLOR_SPHERES)
 app.ParamGet(MACRO_SETTINGS).SetString('Sort selection', DEFAULT_COLORMAP)
+app.ParamGet(MACRO_SETTINGS).SetBool('Color stretch center', COLOR_STRETCH)
 g_main_window = gui.getMainWindow()
-g_font = gui.getMainWindow().font()
+g_font = g_main_window.font()
 g_font.setPointSize(GUI_FONT_SIZE)
 g_font_metrics = QtGui.QFontMetrics(g_font)
 g_str_width1 = g_font_metrics.horizontalAdvance('0_000e+00')
@@ -430,19 +430,25 @@ class CenterofmassWidget(QtGui.QWidget):
         viewGroupBox.setLayout(viewLayout)
         layout.addWidget(viewGroupBox)
 
-        # massGroupBox
-        label_Mass = QtGui.QLabel('Total mass')
+        # totalGroupBox
+        label_Mass = QtGui.QLabel('Mass')
 
         self.resultMass = QtGui.QLineEdit(self)
         self.resultMass.setObjectName('total weight')
         self.resultMass.setReadOnly(True)
+        
+        label_Density = QtGui.QLabel('Density')
+        self.resultDensity = QtGui.QLineEdit(self)
+        self.resultDensity.setReadOnly(True)
 
-        massLayout = QtGui.QHBoxLayout()
-        massLayout.addWidget(label_Mass)
-        massLayout.addWidget(self.resultMass)
-        massGroupBox = QtGui.QGroupBox()
-        massGroupBox.setLayout(massLayout)
-        layout.addWidget(massGroupBox)
+        totalLayout = QtGui.QHBoxLayout()
+        totalLayout.addWidget(label_Mass)
+        totalLayout.addWidget(self.resultMass)
+        totalLayout.addWidget(label_Density)
+        totalLayout.addWidget(self.resultDensity)
+        totalGroupBox = QtGui.QGroupBox('Total')
+        totalGroupBox.setLayout(totalLayout)
+        layout.addWidget(totalGroupBox)
 
     def init_solids(self, objs):
         """Construct new items and compute"""
@@ -741,6 +747,8 @@ class CenterofmassWidget(QtGui.QWidget):
         self.resultCdG[2].setToolTip('center of mass Z (in %s)' % self.unitForL)
         self.resultMass.setText('{:.6}'.format(self.massTot))
         self.resultMass.setToolTip('total weight (in %s)' % self.unitForM)
+        self.resultDensity.setText('{:.6}'.format(self.massTot/self.volTot))
+        self.resultDensity.setToolTip('total density (in %s)' % self.unitForD_text)
         if self.doc.getObject('CenterOfMass'):
             self.draw_centerOfMass()
         if self.checkColorify.isChecked():
@@ -773,8 +781,10 @@ class CenterofmassWidget(QtGui.QWidget):
                 sphere = self.doc.addObject('Part::Sphere', 'CoM_' + g_sel[sol].Name)
                 sphere.Label = 'CoM_' + g_sel[sol].Label
                 sphere.Placement.Base = app.Vector(*self.CoMs[sol])
-#                sphere.ViewObject.ShapeColor = (1.0, 1.0, 1.0)
-                sphere.ViewObject.ShapeColor = self.solids[sol].orgColorFC
+                if COLOR_SPHERES:
+                    sphere.ViewObject.ShapeColor = self.solids[sol].orgColorFC
+                else:
+                    sphere.ViewObject.ShapeColor = (1.0, 1.0, 1.0)
                 sphere.ViewObject.LineWidth = 1.0
                 CoMObjs.addObject(sphere)
 
@@ -880,10 +890,11 @@ class CenterofmassWidget(QtGui.QWidget):
         else:
             self.comboColormap.setEnabled(False)
             for sol in range(self.solid_count):
-                self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = self.solids[sol].orgColorFC
+                orgColorFC = self.solids[sol].orgColorFC
+                self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = orgColorFC
+                if COLOR_SPHERES and self.changeRadius.isEnabled():
+                    self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = orgColorFC
                 self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: transparent}')
-                if self.doc.getObject('CenterOfMass') and self.solid_count > 1:
-                    self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = self.solids[sol].orgColorFC
 
     def colorify(self):
         import matplotlib 
@@ -902,11 +913,12 @@ class CenterofmassWidget(QtGui.QWidget):
             else:
                 # density value to colormap color range
                 drel = (densityConverted[sol]-minD) / (maxD-minD)
-                drel = math.acos(1-2*drel) / math.pi    # non-linear relation to stretch the middle color
+                if COLOR_STRETCH:
+                    drel = math.acos(1-2*drel) / math.pi    # stretch center color (sigmoid-like)
             color = QtGui.QColor.fromRgbF(cm(drel)[0], cm(drel)[1], cm(drel)[2])
             self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
             self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: %s}' %color.name())
-            if self.doc.getObject('CenterOfMass') and self.solid_count > 1:
+            if COLOR_SPHERES and self.changeRadius.isEnabled():
                 self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
 
     def on_comboColormap_changed(self, newText):
@@ -1020,7 +1032,7 @@ def valid_density_string(string):
         pass
     return valid
 
-def error_message(msg, choice):
+def error_message(msg):
     app.Console.PrintError(msg + '\n')
     QtGui.QMessageBox.critical(g_main_window, 'Error', msg)
 
@@ -1028,7 +1040,7 @@ def error_message(msg, choice):
 if __name__ == '__main__':
     if not valid_density_string(DEFAULT_DENSITY):
         app.ParamGet(MACRO_SETTINGS).RemString('Default density')
-        error_message('Default density user parameter was set wrong. Try again.', 0)
+        error_message('Default density user parameter was set wrong. Try again.')
     else:
         print('Loading ' + __Name__ + ' ' + __Version__ + ' ...')
         gui.updateGui()
