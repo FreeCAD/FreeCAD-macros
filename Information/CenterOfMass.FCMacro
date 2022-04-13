@@ -64,9 +64,12 @@ MACRO_SETTINGS  = 'User parameter:BaseApp/Preferences/Macros/' + __Name__
 DEFAULT_DENSITY = app.ParamGet(MACRO_SETTINGS).GetString('Default density', '2500 kg/m^3')
 DOCKED_WINDOW   = app.ParamGet(MACRO_SETTINGS).GetBool('Docked window', True)    # False: floating
 SORT_SELECTION  = app.ParamGet(MACRO_SETTINGS).GetBool('Sort selection', False)
-COLOR_SPHERES   = app.ParamGet(MACRO_SETTINGS).GetBool('Color spheres', False)
-GUI_FONT_SIZE   = app.ParamGet('User parameter:BaseApp/Preferences/Editor').GetInt('FontSize', 10)
-GUI_ICON_SIZE   = app.ParamGet('User parameter:BaseApp/Preferences/General').GetInt('ToolbarIconSize', 24)
+COLOR_SPHERES = app.ParamGet(MACRO_SETTINGS).GetBool('Color spheres', False)
+COLOR_RANGE_0 = app.ParamGet(MACRO_SETTINGS).GetUnsigned('Color range from HSV', 120075100)    # green
+COLOR_RANGE_1 = app.ParamGet(MACRO_SETTINGS).GetUnsigned('Color range to HSV', 75100)    # red
+COLOR_STRETCH = app.ParamGet(MACRO_SETTINGS).GetBool('Color stretch center', True)    # e.g. yellow
+GUI_FONT_SIZE = app.ParamGet('User parameter:BaseApp/Preferences/Editor').GetInt('FontSize', 10)
+GUI_ICON_SIZE = app.ParamGet('User parameter:BaseApp/Preferences/General').GetInt('ToolbarIconSize', 24)
 
 # Floating window size preferences: fraction of primary screen's size
 WINDOW_WIDTH  = int(0.2 * QtGui.QGuiApplication.screens()[0].geometry().width())
@@ -76,6 +79,13 @@ app.ParamGet(MACRO_SETTINGS).SetString('Default density', DEFAULT_DENSITY)
 app.ParamGet(MACRO_SETTINGS).SetBool('Docked window', DOCKED_WINDOW)
 app.ParamGet(MACRO_SETTINGS).SetBool('Sort selection', SORT_SELECTION)
 app.ParamGet(MACRO_SETTINGS).SetBool('Color spheres', COLOR_SPHERES)
+app.ParamGet(MACRO_SETTINGS).SetUnsigned('Color range from HSV', COLOR_RANGE_0)
+app.ParamGet(MACRO_SETTINGS).SetUnsigned('Color range to HSV', COLOR_RANGE_1)
+app.ParamGet(MACRO_SETTINGS).SetBool('Color stretch center', COLOR_STRETCH)
+g_color_0 = str(COLOR_RANGE_0).zfill(9)
+g_color_1 = str(COLOR_RANGE_1).zfill(9)
+g_color_0 = [int(g_color_0[:3])/360, int(g_color_0[3:6])/100, int(g_color_0[6:])/100]
+g_color_1 = [int(g_color_1[:3])/360, int(g_color_1[3:6])/100, int(g_color_1[6:])/100]
 g_main_window = gui.getMainWindow()
 g_font = g_main_window.font()
 g_font.setPointSize(GUI_FONT_SIZE)
@@ -853,15 +863,15 @@ class CenterofmassWidget(QtGui.QWidget):
         maxD = max(densityConverted)
         minD = min(densityConverted)
         for sol in range(self.solid_count):
-            if maxD == minD:
-                # default to green hsv color
-                h = 120/360
-            else:
-                # density value to hsv color range green to red
+            hsv = [120/360, 1, 1]    # default to green hsv color
+            if maxD != minD:
+                # density value to prefered hsv color range
                 drel = (densityConverted[sol]-minD) / (maxD-minD)
-                drel = math.acos(1-2*drel) / math.pi    # non-linear relation to stretch yellow
-                h = 120 * (1-drel) / 360
-            color = QtGui.QColor.fromHsvF(h, 1, 1)
+                if COLOR_STRETCH:
+                    drel = math.acos(1-2*drel) / math.pi    # stretch center color (sigmoid-like)
+                for i_ in range(3):
+                    hsv[i_] = (g_color_1[i_]-g_color_0[i_]) * drel + g_color_0[i_]
+            color = QtGui.QColor.fromHsvF(*hsv)
             self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
             if COLOR_SPHERES and self.changeRadius.isEnabled():
                 self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
