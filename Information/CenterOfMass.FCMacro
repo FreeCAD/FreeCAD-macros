@@ -883,7 +883,7 @@ class CenterofmassWidget(QtGui.QWidget):
             for sol in range(self.solid_count):
                 self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = self.solids[sol].orgColorFC
                 self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: transparent}')
-                if self.doc.getObject('CenterOfMass'):
+                if self.doc.getObject('CenterOfMass') and self.solid_count > 1:
                     self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = self.solids[sol].orgColorFC
 
     def colorify(self):
@@ -907,7 +907,7 @@ class CenterofmassWidget(QtGui.QWidget):
             color = QtGui.QColor.fromRgbF(cm(drel)[0], cm(drel)[1], cm(drel)[2])
             self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
             self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: %s}' %color.name())
-            if self.doc.getObject('CenterOfMass'):
+            if self.doc.getObject('CenterOfMass') and self.solid_count > 1:
                 self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
 
     def on_comboColormap_changed(self, newText):
