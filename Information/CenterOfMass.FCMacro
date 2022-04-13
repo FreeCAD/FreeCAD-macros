@@ -26,7 +26,7 @@ __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
 __Version__ = '0.5.5'
-__Date__ = '2022-04-12'
+__Date__ = '2022-04-13'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -64,6 +64,7 @@ MACRO_SETTINGS  = 'User parameter:BaseApp/Preferences/Macros/' + __Name__
 DEFAULT_DENSITY = app.ParamGet(MACRO_SETTINGS).GetString('Default density', '2500 kg/m^3')
 DOCKED_WINDOW   = app.ParamGet(MACRO_SETTINGS).GetBool('Docked window', True)    # False: floating
 SORT_SELECTION  = app.ParamGet(MACRO_SETTINGS).GetBool('Sort selection', False)
+COLOR_SPHERES   = app.ParamGet(MACRO_SETTINGS).GetBool('Color spheres', False)
 GUI_FONT_SIZE   = app.ParamGet('User parameter:BaseApp/Preferences/Editor').GetInt('FontSize', 10)
 GUI_ICON_SIZE   = app.ParamGet('User parameter:BaseApp/Preferences/General').GetInt('ToolbarIconSize', 24)
 
@@ -74,6 +75,7 @@ WINDOW_HEIGHT = int(0.5 * QtGui.QGuiApplication.screens()[0].geometry().height()
 app.ParamGet(MACRO_SETTINGS).SetString('Default density', DEFAULT_DENSITY)
 app.ParamGet(MACRO_SETTINGS).SetBool('Docked window', DOCKED_WINDOW)
 app.ParamGet(MACRO_SETTINGS).SetBool('Sort selection', SORT_SELECTION)
+app.ParamGet(MACRO_SETTINGS).SetBool('Color spheres', COLOR_SPHERES)
 g_main_window = gui.getMainWindow()
 g_font = g_main_window.font()
 g_font.setPointSize(GUI_FONT_SIZE)
@@ -311,7 +313,7 @@ class CenterofmassWidget(QtGui.QWidget):
         scroll.setWidgetResizable(True)
 
         # buttonGroupBox
-        newSelection = QtGui.QPushButton('New')
+        newSelection = QtGui.QPushButton('Update')
         newSelection.setToolTip('Get solids from selection')
         newSelection.setIcon(QtGui.QIcon(':/icons/LinkSelect.svg'))
         newSelection.setIconSize(g_icon_size)
@@ -726,14 +728,12 @@ class CenterofmassWidget(QtGui.QWidget):
             CoMObjs = self.doc.addObject('App::DocumentObjectGroup', 'CenterOfMass')
 
         # Bounding box of valid selection
-        BBoxSolid = self.doc.addObject('Part::Box','CoMSelBouBox')
+        BBoxSolid = self.doc.addObject('Part::Box','CoMBBoxOfSel')
         BBoxSolid.Placement.Base = self.boundBox.Center.sub(app.Vector(boundBoxL).multiply(0.5))
         BBoxSolid.Length = boundBoxL[0]
         BBoxSolid.Width  = boundBoxL[1]
         BBoxSolid.Height = boundBoxL[2]
         BBoxSolid.ViewObject.BoundingBox = True
-        #BBoxSolid.ViewObject.DisplayMode = 'Wireframe'
-        #BBoxSolid.ViewObject.ShapeColor = (0.5, 0.5, 0.5)
         BBoxSolid.ViewObject.Transparency = 90
         BBoxSolid.ViewObject.Visibility = False
         CoMObjs.addObject(BBoxSolid)
@@ -756,7 +756,10 @@ class CenterofmassWidget(QtGui.QWidget):
                 sphere = self.doc.addObject('Part::Sphere', 'CoM_' + g_sel[sol].Name)
                 sphere.Label = 'CoM_' + g_sel[sol].Label
                 sphere.Placement.Base = app.Vector(*self.CoMs[sol])
-                sphere.ViewObject.ShapeColor = (1.0, 1.0, 1.0)
+                if COLOR_SPHERES:
+                    sphere.ViewObject.ShapeColor = self.solids[sol].orgColorFC
+                else:
+                    sphere.ViewObject.ShapeColor = (1.0, 1.0, 1.0)
                 sphere.ViewObject.LineWidth = 1.0
                 CoMObjs.addObject(sphere)
 
@@ -835,7 +838,10 @@ class CenterofmassWidget(QtGui.QWidget):
             self.colorify()
         else:
             for sol in range(self.solid_count):
-                self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = self.solids[sol].orgColorFC
+                orgColorFC = self.solids[sol].orgColorFC
+                self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = orgColorFC
+                if COLOR_SPHERES and self.changeRadius.isEnabled():
+                    self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = orgColorFC
                 self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: transparent}')
 
     def colorify(self):
@@ -857,6 +863,8 @@ class CenterofmassWidget(QtGui.QWidget):
                 h = 120 * (1-drel) / 360
             color = QtGui.QColor.fromHsvF(h, 1, 1)
             self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
+            if COLOR_SPHERES and self.changeRadius.isEnabled():
+                self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
             self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: %s}' %color.name())
 
     def on_pushButton_toPreferences(self):
