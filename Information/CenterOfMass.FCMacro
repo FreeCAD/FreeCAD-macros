@@ -79,7 +79,7 @@ app.ParamGet(MACRO_SETTINGS).SetString('Default density', DEFAULT_DENSITY)
 app.ParamGet(MACRO_SETTINGS).SetBool('Docked window', DOCKED_WINDOW)
 app.ParamGet(MACRO_SETTINGS).SetBool('Sort selection', SORT_SELECTION)
 app.ParamGet(MACRO_SETTINGS).SetBool('Color spheres', COLOR_SPHERES)
-app.ParamGet(MACRO_SETTINGS).SetString('Sort selection', DEFAULT_COLORMAP)
+app.ParamGet(MACRO_SETTINGS).SetString('Default colormap', DEFAULT_COLORMAP)
 app.ParamGet(MACRO_SETTINGS).SetBool('Color stretch center', COLOR_STRETCH)
 g_main_window = gui.getMainWindow()
 g_font = g_main_window.font()
@@ -269,11 +269,11 @@ class CenterofmassWidget(QtGui.QWidget):
         label_comboUnit.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
         comboUnitDensity = QtGui.QComboBox(toolTip='Unit of density')
-        comboUnitDensity.addItems(['kg/m^3',
-                                   'g/dm^3', 'g/cm^3',
-                                   'mg/mm^3',
-                                   'oz/in^3',
-                                   'lb/in^3', 'lb/ft^3', 'lb/yd^3'])
+        comboUnitDensity.addItems(['kg/m³',
+                                   'g/dm³', 'g/cm³',
+                                   'mg/mm³',
+                                   'oz/in³',
+                                   'lb/in³', 'lb/ft³', 'lb/yd³'])
         comboUnitDensity.currentTextChanged.connect(self.on_comboUnitDensity_changed)
         # Get units set as preference
         self.store_prefered_units(comboUnitDensity.currentText())
@@ -635,8 +635,8 @@ class CenterofmassWidget(QtGui.QWidget):
     def store_prefered_units(self, txt):
         """Get units set as preference"""
         self.unitForD_text = txt
-        self.unitForD = self.unitForD_text.replace('Â³', '^3')         # density
-        self.unitForL = self.unitForD_text.split('/')[1].rstrip('Â³')  # length
+        self.unitForD = self.unitForD_text.replace('³', '^3')         # density
+        self.unitForL = self.unitForD_text.split('/')[1].rstrip('³')  # length
         self.unitForM = self.unitForD_text.split('/')[0]              # mass
         self.unitForV = self.unitForD.split('/')[1]                   # volume
 
@@ -897,7 +897,7 @@ class CenterofmassWidget(QtGui.QWidget):
                 self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: transparent}')
 
     def colorify(self):
-        import matplotlib.cm 
+        import matplotlib.cm
         cm = matplotlib.cm.get_cmap(self.comboColormap.currentText())
 
         pq = Units.parseQuantity
