@@ -25,8 +25,8 @@
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
-__Version__ = '0.5.5'
-__Date__ = '2022-04-13'
+__Version__ = '0.5.8'
+__Date__ = '2022-04-19'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -58,34 +58,28 @@ from FreeCAD import Units
 
 # Preferences
 MAXIMUM_DENSITY = '25000 kg/m^3'    # maximum physically meaningful value
-MACRO_SETTINGS  = 'User parameter:BaseApp/Preferences/Macros/' + __Name__
 
 # FreeCAD: Tools -> Edit Parameters, 2nd parameter of .GetX sets the default
+MACRO_SETTINGS  = 'User parameter:BaseApp/Preferences/Macros/' + __Name__
 DEFAULT_DENSITY = app.ParamGet(MACRO_SETTINGS).GetString('Default density', '2500 kg/m^3')
 DOCKED_WINDOW   = app.ParamGet(MACRO_SETTINGS).GetBool('Docked window', True)    # False: floating
 SORT_SELECTION  = app.ParamGet(MACRO_SETTINGS).GetBool('Sort selection', False)
 COLOR_SPHERES = app.ParamGet(MACRO_SETTINGS).GetBool('Color spheres', False)
-COLOR_RANGE_0 = app.ParamGet(MACRO_SETTINGS).GetUnsigned('Color range from HSV', 120075100)    # green
-COLOR_RANGE_1 = app.ParamGet(MACRO_SETTINGS).GetUnsigned('Color range to HSV', 75100)    # red
-COLOR_STRETCH = app.ParamGet(MACRO_SETTINGS).GetBool('Color stretch center', True)    # e.g. yellow
+COLOR_SATURAT = app.ParamGet(MACRO_SETTINGS).GetUnsigned('Color saturation', 80)
+COLORMAP_USER = app.ParamGet(MACRO_SETTINGS).GetString('Matplotlib colormap', 'Spectral_r')
 GUI_FONT_SIZE = app.ParamGet('User parameter:BaseApp/Preferences/Editor').GetInt('FontSize', 10)
 GUI_ICON_SIZE = app.ParamGet('User parameter:BaseApp/Preferences/General').GetInt('ToolbarIconSize', 24)
 
 # Floating window size preferences: fraction of primary screen's size
-WINDOW_WIDTH  = int(0.2 * QtGui.QGuiApplication.screens()[0].geometry().width())
+WINDOW_WIDTH = int(0.2 * QtGui.QGuiApplication.screens()[0].geometry().width())
 WINDOW_HEIGHT = int(0.5 * QtGui.QGuiApplication.screens()[0].geometry().height())
 
 app.ParamGet(MACRO_SETTINGS).SetString('Default density', DEFAULT_DENSITY)
 app.ParamGet(MACRO_SETTINGS).SetBool('Docked window', DOCKED_WINDOW)
 app.ParamGet(MACRO_SETTINGS).SetBool('Sort selection', SORT_SELECTION)
 app.ParamGet(MACRO_SETTINGS).SetBool('Color spheres', COLOR_SPHERES)
-app.ParamGet(MACRO_SETTINGS).SetUnsigned('Color range from HSV', COLOR_RANGE_0)
-app.ParamGet(MACRO_SETTINGS).SetUnsigned('Color range to HSV', COLOR_RANGE_1)
-app.ParamGet(MACRO_SETTINGS).SetBool('Color stretch center', COLOR_STRETCH)
-g_color_0 = str(COLOR_RANGE_0).zfill(9)
-g_color_1 = str(COLOR_RANGE_1).zfill(9)
-g_color_0 = [int(g_color_0[:3])/360, int(g_color_0[3:6])/100, int(g_color_0[6:])/100]
-g_color_1 = [int(g_color_1[:3])/360, int(g_color_1[3:6])/100, int(g_color_1[6:])/100]
+app.ParamGet(MACRO_SETTINGS).SetUnsigned('Color saturation', COLOR_SATURAT)
+app.ParamGet(MACRO_SETTINGS).SetString('Matplotlib colormap', COLORMAP_USER)
 g_main_window = gui.getMainWindow()
 g_font = g_main_window.font()
 g_font.setPointSize(GUI_FONT_SIZE)
@@ -372,6 +366,43 @@ class CenterofmassWidget(QtGui.QWidget):
         self.mainGroupBox.setLayout(mainGroupLayout)
         layout.addWidget(self.mainGroupBox)
 
+        # viewGroupBox
+        showCoM = QtGui.QCheckBox(toolTip='Show center of mass')
+        if self.doc.getObject('CenterOfMass'):
+            showCoM.setChecked(True)
+        showCoM.setIcon(QtGui.QIcon(':/icons/Std_ToggleVisibility.svg'))
+        showCoM.setIconSize(g_icon_size)
+        showCoM.stateChanged.connect(self.on_stateChanged_showCoM)
+
+        self.changeRadius = QtGui.QSlider(QtGui.Qt.Horizontal)
+        self.changeRadius.setToolTip('Change radius of spheres')
+        self.changeRadius.setEnabled(False)
+        self.changeRadius.setMaximum(49)
+        self.changeRadius.valueChanged.connect(self.on_slideButton_changeRadius)
+
+        self.checkColorify = QtGui.QCheckBox(toolTip='Color shapes depending on density')
+        self.checkColorify.setIcon(QtGui.QIcon(':/icons/Std_RandomColor.svg'))
+        self.checkColorify.setIconSize(g_icon_size)
+        self.checkColorify.stateChanged.connect(self.on_stateChanged_Colorify)
+
+        self.comboColormap = QtGui.QComboBox(toolTip='Colormap to color shapes depending on density')
+        self.comboColormap.addItem('Traffic')    # built-in default
+        # See https://matplotlib.org/3.3.3/tutorials/colors/colormaps.html
+        self.comboColormap.addItems(['RdYlGn_r','autumn_r','cividis','coolwarm',
+                                     'Greys', 'Greys_r','summer','Wistia'])
+        self.comboColormap.addItem(COLORMAP_USER)
+        self.comboColormap.currentTextChanged.connect(self.on_comboColormap_changed)
+
+        viewLayout = QtGui.QHBoxLayout()
+        viewLayout.addWidget(showCoM)
+        viewLayout.addWidget(self.changeRadius)
+        viewLayout.addSpacing(GUI_FONT_SIZE)
+        viewLayout.addWidget(self.checkColorify)
+        viewLayout.addWidget(self.comboColormap)
+        viewGroupBox = QtGui.QGroupBox('View')
+        viewGroupBox.setLayout(viewLayout)
+        layout.addWidget(viewGroupBox)
+
         # cdgGroupBox
         label_CdG = QtGui.QLabel('Center of mass')
 
@@ -381,29 +412,12 @@ class CenterofmassWidget(QtGui.QWidget):
             self.resultCdG[axis].setObjectName('center of mass')
             self.resultCdG[axis].setReadOnly(True)
 
-        showCoM = QtGui.QCheckBox(toolTip='Show center of mass')
-        if self.doc.getObject('CenterOfMass'):
-            showCoM.setChecked(True)
-        showCoM.setIcon(QtGui.QIcon(':/icons/Std_ToggleVisibility.svg'))
-        showCoM.setIconSize(g_icon_size)
-        showCoM.stateChanged.connect(self.on_stateChanged_showCoM)
-
-        self.changeRadius = QtGui.QSlider(QtGui.Qt.Vertical)
-        self.changeRadius.setToolTip('Change radius of spheres')
-        self.changeRadius.setEnabled(False)
-        self.changeRadius.setMaximum(49)
-        self.changeRadius.valueChanged.connect(self.on_slideButton_changeRadius)
-
         cdgLayout = QtGui.QHBoxLayout()
         cdgLayout.addWidget(label_CdG)
         for axis in range(3):
             cdgLayout.addWidget(self.resultCdG[axis])
-        cdgLayout.addWidget(showCoM)
-        cdgLayout.addWidget(self.changeRadius)
         cdgGroupBox = QtGui.QGroupBox()
         cdgGroupBox.setLayout(cdgLayout)
-        cdgGroupBox.setMinimumHeight(3*GUI_ICON_SIZE)
-        cdgGroupBox.setMaximumHeight(5*GUI_ICON_SIZE)
         layout.addWidget(cdgGroupBox)
 
         # totalGroupBox
@@ -418,18 +432,12 @@ class CenterofmassWidget(QtGui.QWidget):
         self.resultDensity = QtGui.QLineEdit(self)
         self.resultDensity.setReadOnly(True)
 
-        self.checkColorify = QtGui.QCheckBox(toolTip='Color shapes depending on density')
-        self.checkColorify.setIcon(QtGui.QIcon(':/icons/Std_RandomColor.svg'))
-        self.checkColorify.setIconSize(g_icon_size)
-        self.checkColorify.stateChanged.connect(self.on_stateChanged_Colorify)
-
         totalLayout = QtGui.QHBoxLayout()
         totalLayout.addWidget(label_Mass)
         totalLayout.addWidget(self.resultMass)
         totalLayout.addSpacing(GUI_FONT_SIZE)
         totalLayout.addWidget(label_Density)
         totalLayout.addWidget(self.resultDensity)
-        totalLayout.addWidget(self.checkColorify)
         totalGroupBox = QtGui.QGroupBox('Total')
         totalGroupBox.setLayout(totalLayout)
         layout.addWidget(totalGroupBox)
@@ -755,6 +763,7 @@ class CenterofmassWidget(QtGui.QWidget):
         BBoxSolid.Height = boundBoxL[2]
         BBoxSolid.ViewObject.BoundingBox = True
         BBoxSolid.ViewObject.Transparency = 90
+        BBoxSolid.ViewObject.ShapeColor = (0.5, 0.5, 0.5)
         BBoxSolid.ViewObject.Visibility = False
         CoMObjs.addObject(BBoxSolid)
 
@@ -864,7 +873,15 @@ class CenterofmassWidget(QtGui.QWidget):
                     self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = orgColorFC
                 self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: transparent}')
 
+    def on_comboColormap_changed(self, newText):
+        if self.checkColorify.isChecked():
+            self.colorify()
+
     def colorify(self):
+        cmName = self.comboColormap.currentText()
+        if cmName != 'Traffic':
+            import matplotlib.cm
+            cm = matplotlib.cm.get_cmap(cmName)
         pq = Units.parseQuantity
         densityConverted = []
         for sol in range(self.solid_count):
@@ -873,15 +890,18 @@ class CenterofmassWidget(QtGui.QWidget):
         maxD = max(densityConverted)
         minD = min(densityConverted)
         for sol in range(self.solid_count):
-            hsv = [120/360, 1, 1]    # default to green hsv color
-            if maxD != minD:
-                # density value to prefered hsv color range
+            if maxD == minD:
+                drel = 0    # default to low color
+            else:
                 drel = (densityConverted[sol]-minD) / (maxD-minD)
-                if COLOR_STRETCH:
-                    drel = math.acos(1-2*drel) / math.pi    # stretch center color (sigmoid-like)
-                for i_ in range(3):
-                    hsv[i_] = (g_color_1[i_]-g_color_0[i_]) * drel + g_color_0[i_]
-            color = QtGui.QColor.fromHsvF(*hsv)
+            if cmName == 'Traffic':
+                # density value to hsv color range green to red
+                drel = math.acos(1-2*drel) / math.pi    # stretch yellow (sigmoid-like)
+                h = 120 * (1-drel) / 360
+                color = QtGui.QColor.fromHsvF(h, 1, 1)
+            else:
+                color = QtGui.QColor.fromRgbF(*cm(drel))
+            color.setHsvF(color.hueF(), COLOR_SATURAT/100, color.valueF())    # skips if s > 1
             self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
             if COLOR_SPHERES and self.changeRadius.isEnabled():
                 self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
