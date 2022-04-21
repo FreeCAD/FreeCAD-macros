@@ -26,7 +26,7 @@ __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
 __Version__ = '0.5.8'
-__Date__ = '2022-04-19'
+__Date__ = '2022-04-21'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -87,7 +87,8 @@ g_font_metrics = QtGui.QFontMetrics(g_font)
 g_str_width1 = g_font_metrics.horizontalAdvance('0_000e+00')
 g_str_width2 = g_font_metrics.horizontalAdvance('_0_000e+00_')
 g_icon_size = QtCore.QSize(GUI_ICON_SIZE, GUI_ICON_SIZE)
-g_sel = []    # the list of selected objects
+g_sel_user = []    # the user list of selected objects
+g_sel = []    # the valid list of selected objects
 
 
 class CenterofmassDock(QtGui.QDockWidget):
@@ -225,7 +226,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.doc = app.activeDocument()
         self.material_base = {}
         self.solid_count = 0
-        objs = self.valid_selection()
+        objs = self.valid_selection(gui.Selection.getSelection())
         self.init_UI()
         if self.solid_count <= 0:
             self.setDisabled(True)
@@ -245,7 +246,7 @@ class CenterofmassWidget(QtGui.QWidget):
 
     def on_startup_dialog_finished(self, result):
         if result == QtGui.QMessageBox.Ok:
-            objs = self.valid_selection()
+            objs = self.valid_selection(gui.Selection.getSelection())
             if self.solid_count <= 0:
                 self.startup_dialog()
             else:
@@ -264,6 +265,10 @@ class CenterofmassWidget(QtGui.QWidget):
         toPreferences.setToolTip('Preferences -> Macros')
         toPreferences.clicked.connect(self.on_pushButton_toPreferences)
 
+        editMaterial = QtGui.QPushButton(QtGui.QIcon(':/icons/Arch_Material_Group.svg'),'')
+        editMaterial.setToolTip('Edit Material list')
+        editMaterial.clicked.connect(self.on_pushButton_editMaterial)
+
         label_comboUnit = QtGui.QLabel('Density:')
         label_comboUnit.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
@@ -277,7 +282,7 @@ class CenterofmassWidget(QtGui.QWidget):
         # Get units set as preference
         self.store_prefered_units(comboUnitDensity.currentText())
 
-        label_defaultDensity = QtGui.QLabel('Default Density:')
+        label_defaultDensity = QtGui.QLabel('Default value:')
         label_defaultDensity.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
         self.defaultDensitySpin = QtGui.QDoubleSpinBox(self)
@@ -297,6 +302,7 @@ class CenterofmassWidget(QtGui.QWidget):
         titleLayoutBox = QtGui.QGroupBox('Preferences')
         titleLayout = QtGui.QHBoxLayout()
         titleLayout.addWidget(toPreferences)
+        titleLayout.addWidget(editMaterial)
         titleLayout.addWidget(label_comboUnit)
         titleLayout.addWidget(comboUnitDensity)
         titleLayout.addSpacing(GUI_FONT_SIZE)
@@ -317,11 +323,17 @@ class CenterofmassWidget(QtGui.QWidget):
         scroll.setWidgetResizable(True)
 
         # buttonGroupBox
-        newSelection = QtGui.QPushButton('Update')
+        newSelection = QtGui.QPushButton('New')
         newSelection.setToolTip('Get solids from selection')
         newSelection.setIcon(QtGui.QIcon(':/icons/LinkSelect.svg'))
         newSelection.setIconSize(g_icon_size)
         newSelection.clicked.connect(self.on_pushButton_newSelection)
+
+        update = QtGui.QPushButton('Update')
+        update.setToolTip('Update calculation of solids')
+        update.setIcon(QtGui.QIcon(':/icons/view-refresh.svg'))
+        update.setIconSize(g_icon_size)
+        update.clicked.connect(self.on_pushButton_update)
 
         save = QtGui.QPushButton('Save')
         save.setToolTip('Save material property in document objects')
@@ -341,20 +353,14 @@ class CenterofmassWidget(QtGui.QWidget):
         readDensities.setIconSize(g_icon_size)
         readDensities.clicked.connect(self.on_pushButton_Import)
 
-        editMaterial = QtGui.QPushButton('Materials')
-        editMaterial.setToolTip('Edit Material list')
-        editMaterial.setIcon(QtGui.QIcon(':/icons/Arch_Material_Group.svg'))
-        editMaterial.setIconSize(g_icon_size)
-        editMaterial.clicked.connect(self.on_pushButton_editMaterial)
-
         buttonGroupBox = QtGui.QGroupBox()
         buttonGroupBox.setFlat(True)
         buttonLayout = QtGui.QHBoxLayout()
         buttonLayout.addWidget(newSelection)
+        buttonLayout.addWidget(update)
         buttonLayout.addWidget(save)
         buttonLayout.addWidget(export)
         buttonLayout.addWidget(readDensities)
-        buttonLayout.addWidget(editMaterial)
         buttonGroupBox.setLayout(buttonLayout)
         margin = buttonLayout.contentsMargins()
         buttonLayout.setContentsMargins(0, margin.top(), 0, 0)
@@ -454,7 +460,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.mainGroupBox.setTitle('Selected solids: ' + str(self.solid_count))
         self.compute_centerOfMass()
 
-    def valid_selection(self):
+    def valid_selection(self, _sel):
         """Get valid objects (Shape, Mesh) from selection"""
         def sort_selection_by_label(s_):
             return s_.Label
@@ -462,7 +468,8 @@ class CenterofmassWidget(QtGui.QWidget):
         def sort_selection_by_tree(s_):
             return self.tree_list.index(s_.Label)
 
-        _sel = gui.Selection.getSelection()
+        global g_sel_user
+        g_sel_user = _sel
 
         # Add contents of group objects 'groupObjs' (breadth-first search).
         # For PartDesign objects a Group contains recursive features.
@@ -553,11 +560,17 @@ class CenterofmassWidget(QtGui.QWidget):
         return objs
 
     def on_pushButton_newSelection(self):
+        self.update_selection(gui.Selection.getSelection())
+
+    def on_pushButton_update(self):
+        self.update_selection(g_sel_user)
+
+    def update_selection(self, _sel):
         try:
             self.set_objects_transparent(False)
         except:
             pass
-        objs = self.valid_selection()
+        objs = self.valid_selection(_sel)
         if not objs:
             return
         self.doc = app.activeDocument()
