@@ -129,7 +129,8 @@ class SolidsWidget():
         self.label = QtGui.QLabel(solid.Label, parent)
         self.combo = QtGui.QComboBox(parent)
         self.spinDens = QtGui.QDoubleSpinBox(parent)
-        self.spinMass = QtGui.QLineEdit(parent)
+        self.explicitMass = QtGui.QCheckBox(parent)
+        self.spinMass = QtGui.QDoubleSpinBox(parent)
 
         # init properties
         self.labelC.setStyleSheet(
@@ -151,11 +152,22 @@ class SolidsWidget():
         self.spinDens.setToolTip(
             'density of ' + solid.Label + ' (in ' + parent.unitForD_text + ')')
         self.spinDens.valueChanged.connect(self.on_spinDensity_changed)
-        self.spinMass.setReadOnly(True)
+
+        self.explicitMass.stateChanged.connect(self.on_explicitMass_changed)
+        self.explicitMass.setToolTip('Set mass explicitly. This removes material and density.')
+        if hasattr(g_sel[sol], 'Mass'):
+            self.combo.setEnabled(False)
+            self.spinDens.setEnabled(False)
+            self.explicitMass.setCheckState(QtCore.Qt.Checked)
+        else:
+            self.spinMass.setReadOnly(True)
+
         self.spinMass.setAlignment(QtCore.Qt.AlignCenter)
         self.spinMass.setMinimumWidth(g_str_width1)
         self.spinMass.setMaximumWidth(g_str_width2)
+        self.spinMass.valueChanged.connect(self.on_spinMass_changed)
         self.update_spinMass_only()
+        self.init_spinMass(self.spinMass, Units.Quantity(g_sel[sol].Mass), parent.unitForM)
 
         # layout grid
         if sol == 0:
@@ -164,12 +176,13 @@ class SolidsWidget():
             label04 = QtGui.QLabel('Mass', parent)
             parent.solidLayout.addWidget(label02, sol, 2)
             parent.solidLayout.addWidget(label03, sol, 3)
-            parent.solidLayout.addWidget(label04, sol, 4)
+            parent.solidLayout.addWidget(label04, sol, 5)
         parent.solidLayout.addWidget(self.labelC, sol+1, 0)
         parent.solidLayout.addWidget(self.label, sol+1, 1)
         parent.solidLayout.addWidget(self.combo, sol+1, 2)
         parent.solidLayout.addWidget(self.spinDens, sol+1, 3)
-        parent.solidLayout.addWidget(self.spinMass, sol+1, 4)
+        parent.solidLayout.addWidget(self.explicitMass, sol+1, 4)
+        parent.solidLayout.addWidget(self.spinMass, sol+1, 5)
 
     def init_spinDensity(self, spin, qty, unitForD):
         spinBoxDigits = 6
@@ -183,18 +196,30 @@ class SolidsWidget():
         spin.setValue(qty.getValueAs(unitForD))
         spin.blockSignals(False)
 
+    def init_spinMass(self, spin, qty, unitForM):
+        spinBoxDigits = 6
+        # don't trigger on_spinMass_changed (e.g. when on_comboUnitDensity_changed)
+        spin.blockSignals(True)
+        spin.setStepType(QtGui.QAbstractSpinBox.StepType.AdaptiveDecimalStepType)
+        spin.setValue(qty.getValueAs(unitForM))
+        spin.blockSignals(False)
+
     def on_spinDensity_changed(self):
         self.combo.setCurrentIndex(0)    # set to custom
         self.parent.compute_centerOfMass()
         self.update_spinMass_only()
 
+    def on_spinMass_changed(self):
+        self.parent.compute_centerOfMass()
+
     def update_spinMass_only(self):
-        parent = self.parent
-        volumeInUnit = parent.convert_volume(parent.volumes[self.sol])
-        value = volumeInUnit * self.spinDens.value()
-        self.spinMass.setText(format(value, '.3e'))
+        if self.explicitMass.checkState() != QtCore.Qt.Checked:
+            parent = self.parent
+            volumeInUnit = parent.convert_volume(parent.volumes[self.sol])
+            value = volumeInUnit * self.spinDens.value()
+            self.spinMass.setValue(Units.Quantity(value).getValueAs(unitForM))
         self.spinMass.setToolTip(
-            'mass of ' + self.label.text() + ' (in ' + parent.unitForM + ')')
+            'mass of ' + self.label.text() + ' (in ' + self.parent.unitForM + ')')
 
     def on_comboMaterial_changed(self, newIndex):
         materialName = self.combo.currentText()
@@ -208,6 +233,18 @@ class SolidsWidget():
             self.parent.compute_centerOfMass()
             self.update_spinMass_only()
 
+    def on_explicitMass_changed(self):
+      parent = self.parent
+      if self.explicitMass.checkState() == QtCore.Qt.Checked:
+          self.combo.setEnabled(False)
+          self.spinDens.setEnabled(False)
+          self.spinMass.setReadOnly(False)
+          self.spinMass.blockSignals(False)
+      else:
+          self.combo.setEnabled(True)
+          self.spinDens.setEnabled(True)
+          self.spinMass.setReadOnly(True)
+          self.spinMass.blockSignals(True)
 
 class CenterofmassWidget(QtGui.QWidget):
     """This is the widget which does almost all of the work.
@@ -311,8 +348,8 @@ class CenterofmassWidget(QtGui.QWidget):
         newSelection.setIconSize(g_icon_size)
         newSelection.clicked.connect(self.on_pushButton_newSelection)
 
-        save = QtGui.QPushButton('Save')
-        save.setToolTip('Save material property in document objects')
+        save = QtGui.QPushButton('Transfer')
+        save.setToolTip('Transfer material property to document objects')
         save.setIcon(QtGui.QIcon(':/icons/document-save.svg'))
         save.setIconSize(g_icon_size)
         save.clicked.connect(self.on_pushButton_Save)
@@ -687,7 +724,10 @@ class CenterofmassWidget(QtGui.QWidget):
         self.TotalCoM = app.Vector(0,0,0)
         for sol in range(self.solid_count):
             volumeInUnit = self.convert_volume(self.volumes[sol])
-            self.masses[sol] = volumeInUnit * self.solids[sol].spinDens.value()
+            if self.solids[sol].explicitMass.checkState() == QtCore.Qt.Checked:
+              self.masses[sol] = self.solids[sol].spinMass.value()
+            else:
+              self.masses[sol] = volumeInUnit * self.solids[sol].spinDens.value()
             self.massTot += self.masses[sol]
             self.volTot += volumeInUnit
         for sol in range(self.solid_count):
@@ -839,23 +879,30 @@ class CenterofmassWidget(QtGui.QWidget):
         gui.runCommand('Std_DlgParameter',0)
 
     def on_pushButton_Save(self):
+        tip = ['Custom', 'set by CenterOfMass Macro']
         for sol in range(self.solid_count):
             mat_selected = self.solids[sol].combo.currentText()
-            if mat_selected == 'default':
-                # remove properties set by this macro
+            if self.solids[sol].explicitMass.checkState() == QtCore.Qt.Checked:
                 g_sel[sol].removeProperty('Mat_Name')
                 g_sel[sol].removeProperty('Mat_Density')
+                if not hasattr(g_sel[sol], 'Mass'):
+                    g_sel[sol].addProperty('App::PropertyString', 'Mass', *tip)
+                print(self.solids[sol].spinMass.value())
+                g_sel[sol].Mass = str(self.solids[sol].spinMass.value()) + ' ' + self.unitForM
             else:
-                # Material Name
-                tip = ['Custom', 'set by CenterOfMass Macro']
-                if not hasattr(g_sel[sol], 'Mat_Name'):
-                    g_sel[sol].addProperty('App::PropertyString', 'Mat_Name', *tip)
-                g_sel[sol].Mat_Name = mat_selected
-                # Density
-                if not hasattr(g_sel[sol], 'Mat_Density'):
-                    g_sel[sol].addProperty('App::PropertyString', 'Mat_Density', *tip)
-                g_sel[sol].Mat_Density = str(self.solids[sol].spinDens.value()) + ' ' + self.unitForD
-        Gui.SendMsgToActiveView("SaveAs")    # do not overwrite user's model directly
+              if mat_selected == 'default':
+                  # remove properties set by this macro
+                  g_sel[sol].removeProperty('Mat_Name')
+                  g_sel[sol].removeProperty('Mat_Density')
+              else:
+                  # Material Name
+                  if not hasattr(g_sel[sol], 'Mat_Name'):
+                      g_sel[sol].addProperty('App::PropertyString', 'Mat_Name', *tip)
+                  g_sel[sol].Mat_Name = mat_selected
+                  # Density
+                  if not hasattr(g_sel[sol], 'Mat_Density'):
+                      g_sel[sol].addProperty('App::PropertyString', 'Mat_Density', *tip)
+                  g_sel[sol].Mat_Density = str(self.solids[sol].spinDens.value()) + ' ' + self.unitForD
 
     def on_pushButton_Export(self):
         densTot = 0.
