@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# ***************************************************************************
+# *                                                                         *
+# *   Copyright (c) 2022 - Wanderer Fan <wandererfan@gmail.com>             *
+# *                                                                         *
+# *   This program is free software; you can redistribute it and/or modify  *
+# *   it under the terms of the GNU Lesser General Public License (LGPL)    *
+# *   as published by the Free Software Foundation; either version 2 of     *
+# *   the License, or (at your option) any later version.                   *
+# *   for detail see the LICENCE text file.                                 *
+# *                                                                         *
+# *   This program is distributed in the hope that it will be useful,       *
+# *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+# *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+# *   GNU Library General Public License for more details.                  *
+# *                                                                         *
+# *   You should have received a copy of the GNU Library General Public     *
+# *   License along with this program; if not, write to the Free Software   *
+# *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
+# *   USA                                                                   *
+# *                                                                         *
+# ***************************************************************************
+"""Migrates Annotation Text made in FreeCAD v0.18 to v0.19."""
+
+__Name__ = 'TechDrawAnnoTextFromv018'
+__Comment__ = 'Convert v018 Annotation Text size to v019'
+__Author__ = 'WandererFan'
+__Version__ = '0.1.0'
+__License__ = 'CC-BY-3.0'
+__Web__ = 'http://www.freecadweb.org/'
+__Wiki__ = 'http://www.freecadweb.org/wiki/Macro_TechDrawAnnoTextFromv018'
+__Icon__ = ''
+__Help__ = 'Open a v018 file in v019, execute'
+__Status__ = 'Alpha'
+__Requires__ = ''
+__Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
+__Files__ = ''
+
+# font sizes were once set using QFont.setPointSize but are now set using QFont.setPixelSize.
+# text set the old way will be bigger than text set the new way since points are bigger than
+# pixels.  This macro adjusts the text size in old files to give approximately the same size
+# result.
+
+import FreeCAD as App
+import TechDraw
+
+def TechDrawAnnoTextFromv018():
+    factor = 96.0/72.0    # pixels/inch vs points/inch
+    for obj in App.ActiveDocument.Objects:
+        if obj.isDerivedFrom("TechDraw::DrawViewAnnotation"):
+            oldSize = obj.TextSize
+            obj.TextSize = oldSize * factor
+        if obj.isDerivedFrom("TechDraw::DrawViewDimension"):
+            oldSize = obj.ViewObject.Fontsize
+            obj.ViewObject.Fontsize = oldSize * factor
+        if obj.isDerivedFrom("TechDraw::DrawViewBalloon"):
+            oldSize = obj.ViewObject.Fontsize
+            obj.ViewObject.Fontsize = oldSize * factor
+
+
+if __name__ == '__main__':
+    TechDrawAnnoTextFromv018()
+    App.ActiveDocument.recompute()
+
