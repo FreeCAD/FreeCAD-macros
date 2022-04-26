@@ -162,7 +162,6 @@ class SolidsWidget():
         else:
             self.spinMass.setReadOnly(True)
 
-        self.spinMass.setAlignment(QtCore.Qt.AlignCenter)
         self.spinMass.setMinimumWidth(g_str_width1)
         self.spinMass.setMaximumWidth(g_str_width2)
         self.spinMass.valueChanged.connect(self.on_spinMass_changed)
@@ -217,7 +216,7 @@ class SolidsWidget():
             parent = self.parent
             volumeInUnit = parent.convert_volume(parent.volumes[self.sol])
             value = volumeInUnit * self.spinDens.value()
-            self.spinMass.setValue(Units.Quantity(value).getValueAs(unitForM))
+            self.spinMass.setValue(Units.Quantity(value))
         self.spinMass.setToolTip(
             'mass of ' + self.label.text() + ' (in ' + self.parent.unitForM + ')')
 
@@ -890,6 +889,7 @@ class CenterofmassWidget(QtGui.QWidget):
                 print(self.solids[sol].spinMass.value())
                 g_sel[sol].Mass = str(self.solids[sol].spinMass.value()) + ' ' + self.unitForM
             else:
+              g_sel[sol].removeProperty('Mass')
               if mat_selected == 'default':
                   # remove properties set by this macro
                   g_sel[sol].removeProperty('Mat_Name')
