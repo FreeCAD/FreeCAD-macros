@@ -26,7 +26,7 @@ __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
 __Version__ = '0.5.8'
-__Date__ = '2022-04-21'
+__Date__ = '2022-04-29'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -46,6 +46,7 @@ __Files__ = ''
 # Ideas:
 # - moments of inertia with arrows that allow the user to see the relative magnitudes
 
+import copy
 import csv
 import os
 import math
@@ -469,7 +470,7 @@ class CenterofmassWidget(QtGui.QWidget):
             return self.tree_list.index(s_.Label)
 
         global g_sel_user
-        g_sel_user = _sel
+        g_sel_user = copy.copy(_sel)
 
         # Add contents of group objects 'groupObjs' (breadth-first search).
         # For PartDesign objects a Group contains recursive features.
@@ -560,6 +561,7 @@ class CenterofmassWidget(QtGui.QWidget):
         return objs
 
     def on_pushButton_newSelection(self):
+        self.doc = app.activeDocument()
         self.update_selection(gui.Selection.getSelection())
 
     def on_pushButton_update(self):
@@ -573,7 +575,6 @@ class CenterofmassWidget(QtGui.QWidget):
         objs = self.valid_selection(_sel)
         if not objs:
             return
-        self.doc = app.activeDocument()
         # safe way to remove all items from layout
         while self.solidLayout.count():
             child = self.solidLayout.takeAt(0)
