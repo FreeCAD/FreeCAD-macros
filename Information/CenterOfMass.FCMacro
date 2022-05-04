@@ -26,7 +26,7 @@ __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
 __Version__ = '0.5.8'
-__Date__ = '2022-04-29'
+__Date__ = '2022-05-04'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -331,14 +331,14 @@ class CenterofmassWidget(QtGui.QWidget):
         newSelection.clicked.connect(self.on_pushButton_newSelection)
 
         update = QtGui.QPushButton('Update')
-        update.setToolTip('Update calculation of solids')
+        update.setToolTip('Update solids from document')
         update.setIcon(QtGui.QIcon(':/icons/view-refresh.svg'))
         update.setIconSize(g_icon_size)
         update.clicked.connect(self.on_pushButton_update)
 
         save = QtGui.QPushButton('Save')
-        save.setToolTip('Save material property in document objects')
-        save.setIcon(QtGui.QIcon(':/icons/document-save.svg'))
+        save.setToolTip('Copy material property to your document model data')
+        save.setIcon(QtGui.QIcon(':/icons/Std_MergeProjects.svg'))
         save.setIconSize(g_icon_size)
         save.clicked.connect(self.on_pushButton_Save)
 
@@ -565,7 +565,10 @@ class CenterofmassWidget(QtGui.QWidget):
         self.update_selection(gui.Selection.getSelection())
 
     def on_pushButton_update(self):
+        initial = self.checkColorify.checkState()
+        self.checkColorify.setCheckState(QtCore.Qt.Unchecked)    # preserve SolidsWidget.orgColor
         self.update_selection(g_sel_user)
+        self.checkColorify.setCheckState(initial)
 
     def update_selection(self, _sel):
         try:
@@ -941,7 +944,6 @@ class CenterofmassWidget(QtGui.QWidget):
                 if not hasattr(g_sel[sol], 'Mat_Density'):
                     g_sel[sol].addProperty('App::PropertyString', 'Mat_Density', *tip)
                 g_sel[sol].Mat_Density = str(self.solids[sol].spinDens.value()) + ' ' + self.unitForD
-        Gui.SendMsgToActiveView("SaveAs")    # do not overwrite user's model directly
 
     def on_pushButton_Export(self):
         densTot = 0.
