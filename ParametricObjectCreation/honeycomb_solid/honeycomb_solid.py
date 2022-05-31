@@ -16,8 +16,8 @@ class HoneycombSolid:
 		obj.addProperty("App::PropertyLength","Width","Honeycomb","Width of the Honeycomb").Width=100.0
 		obj.addProperty("App::PropertyLength","Height","Honeycomb", "Height of the Honeycomb").Height=2.0
 		obj.addProperty("App::PropertyLength","Circumradius","Polygon","Radius of the inner circle").Circumradius=5.0
-        #obj.addProperty("App::PropertyLength","Edges","Polygon","Poligon number of edges").Edges=6.0
-		obj.addProperty("App::PropertyLength","Tickness","Walls","Tickness of the honeycomb walls").Tickness=1.0
+        #obj.addProperty("App::PropertyLength","Edges","Polygon","Polygon number of edges").Edges=6.0
+		obj.addProperty("App::PropertyLength","Thickness","Walls","Thickness of the honeycomb walls").Thickness=1.0
 		obj.Proxy = self
 	
 		self.Type = 'HoneycombSolid'
@@ -34,7 +34,7 @@ class HoneycombSolid:
 		width = fp.Width
 		height = fp.Height
 		radius = fp.Circumradius
-		tickness = fp.Tickness
+		thickness = fp.Thickness
         
 		#edges = fp.Edges
 		edges = 6
@@ -67,9 +67,9 @@ class HoneycombSolid:
 		#######################################################################
 		# create copies of poligon using radial pattern
 
-		# calculate how many circunferencias needs to cover the maximun length of the container box
-		n_cols = math.ceil( (length / (radius + tickness) / 2) )
-		n_rows = math.ceil( (width / (radius + tickness) / 2) + 3)
+		# calculate how many circunferences needs to cover the maximum length of the container box
+		n_cols = math.ceil( (length / (radius + thickness) / 2) )
+		n_rows = math.ceil( (width / (radius + thickness) / 2) + 3)
 		# FreeCAD.Console.PrintMessage("n_cols: " + str(n_cols) + " n_rows: " + str(n_rows) + "\n")
 	
 		# To store all the poligons face
@@ -86,7 +86,7 @@ class HoneycombSolid:
 					# odd
 						if row % 2 != 0:
 						# odd
-							centers_distance = tickness + 2 * radius * math.sin(edges_angle)
+							centers_distance = thickness + 2 * radius * math.sin(edges_angle)
 							x_delta = centers_distance *  math.sin(edges_angle)
 							y_delta = centers_distance * math.cos(edges_angle)
 
@@ -103,7 +103,7 @@ class HoneycombSolid:
 					else:
 					# even
 						if row <= (n_rows/2) and row >= (-n_rows/2):
-							centers_distance = tickness + 2 * radius * math.sin(edges_angle)
+							centers_distance = thickness + 2 * radius * math.sin(edges_angle)
 							x_delta = centers_distance  * math.sin(edges_angle)
 							y_delta = centers_distance
 							
