@@ -34,20 +34,21 @@ Please follow the `CamelCase.FCMacro` convention for the macro name (other assoc
 Also, if possible, start the macro name with the type of object it's working on, e.g. use `ViewRotation` instead of `RotateView`, so that all macros related to `View` will be together when sorting alphabetically.
 
 ### Macro metadata
-Please add the following metadata in your macro after the Macro description (mentioned above)
+Please add the following metadata in your macro after the Macro description (mentioned above). 
 
-**Macro metadata:**
+#### Macro metadata
 
 ```python
     __Name__ = ''
     __Comment__ = ''
     __Author__ = ''
-    __Version__ = ''
     __Date__ = ''
+    __Version__ = ''
     __License__ = ''
     __Web__ = ''
     __Wiki__ = ''
     __Icon__ = ''
+    __Xpm__ = ''
     __Help__ = ''
     __Status__ = ''
     __Requires__ = ''
@@ -55,21 +56,54 @@ Please add the following metadata in your macro after the Macro description (men
     __Files__ = ''
 ```
 
-**Explanation of metadata:**
+#### Explanation of metadata
 
-```python
-    __Name__ = 'Name of the macro (generally, file name without extension with spaces)'
-    __Comment__ = 'Short one-line comment'
-    __Author__ = 'comma-separated list of authors'
-    __Version__ = 'major.minor.patch'
-    __Date__ = 'YYYY-MM-DD'
-    __License__ = 'License identifier from https://spdx.org/licenses/, e.g. LGPL-2.0-or-later as FreeCAD, MIT, CC0-1.0'
-    __Web__ = 'Associated web page'
-    __Wiki__ = 'Associated wiki page'
-    __Icon__ = 'MyMacro.svg, please put an svg file along side the macro, respecting the macro filename'
-    __Help__ = 'A short explanation how to use the macro, e.g. what to select before launching'
-    __Status__ = 'Stable|Alpha|Beta'
-    __Requires__ = 'e.g. FreeCAD >= v0.17, there is no programmatic use of this for now'
-    __Communication__ = 'e.g. https://github.com/FreeCAD/FreeCAD-macros/issues/ if on the github'
-    __Files__ = 'comma-separated list of files that should be installed together with this file, use paths relative to this file, do not include this file'
+NOTE: All metadata elements are simple strings, and *may not contain code to evaluate*. The FreeCAD Addon Manager parses these strings by searching for an equals sign followed by something inside quotes (single or double), all on a single line. Lines may not wrap. For example:
 ```
+# Good, valid
+__Comment__ = "When run, this macro reads your mind and creates the thing your are imagining."
+
+# Bad, contains code:
+__Author__ = ",".join(author_list)
+
+# Bad, not a single string:
+__Comment__ = "Some descriptive text" + " and more text"
+
+# Bad, multiple lines:
+__Files__ = "MyFirstFile.FCMacro \
+MySecondFile.FCMacro"
+
+# EXCEPTION: __Version__ may be set to __Date__ as long as __Date is defined first
+__Date__ = 2022.05.19
+__Version__ = __Date__
+
+# EXCEPTION: XPM data must be a triple-quoted multi-line string
+__Xpm__ = """
+/* XPM */
+static char * XFACE[] = {
+"48 4 2 1",
+"a c #ffffff",
+"b c #000000",
+"abaabaababaaabaabababaabaabaababaabaaababaabaaab",
+"abaabaababaaabaabababaabaabaababaabaaababaabaaab",
+"abaabaababaaabaabababaabaabaababaabaaababaabaaab",
+"abaabaababaaabaabababaabaabaababaabaaababaabaaab"
+};
+"""
+```
+
+* `__Name__` - The name of the macro, for display by the Addon Manager. Generally the filename of the macro without extension, and with spaces between words. For example, the macro file "DxfToSketchLayers.FCMacro" becomes "DXF to Sketch Layers"
+* `__Comment__` - A description of what the macro does. Displayed and searched by the Addon Manager.
+* `__Author__` -  Comma-separated list of authors (as a single string, e.g. "Jane Doe, John Smith, Bobbi Jones")
+* `__Version__` - Use semantic versioning (1.2.3-beta), or CalVer (2022.05.19)
+* `__Date__` - The date of the last update, YYYY-MM-DD
+* `__License__` - 'License identifier from https://spdx.org/licenses/, e.g. LGPL-2.0-or-later as FreeCAD, MIT, CC0-1.0'
+* `__Web__` - A URL to fetch the macro from
+* `__Wiki__` - The wiki page (generally at https://wiki.freecad.org) describing the macro, and displayed as the "Details" page in the Addon Manager.
+* `__Icon__` - Either a relative path to an icon file included in the FreeCAD macros repository, or a URL where the icon may be downloaded from. Must be a direct download of an image file.
+* `__Xpm__` - (OPTIONAL) Instead of specifying an `__Icon__`, icon data may be set directly as a triple-quoted string containing XPM data.
+* `__Help__` - A short explanation how to use the macro, e.g. what to select before launching
+* `__Status__` - Stable|Alpha|Beta
+* `__Requires__` - e.g. FreeCAD >= v0.17, there is no programmatic use of this for now
+* `__Communication__` - e.g. https://github.com/FreeCAD/FreeCAD-macros/issues/ if on the github
+* `__Files__` - comma-separated list of files that should be installed together with this file, use paths relative to this file, do not include this file, and do not wrap the line, all files must be listed in the same single-line quoted string.
