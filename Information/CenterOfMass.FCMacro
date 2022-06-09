@@ -478,8 +478,7 @@ class CenterofmassWidget(QtGui.QWidget):
         g_sel_user = copy.copy(_sel)
 
         # Add contents of group objects 'groupObjs' (breadth-first search).
-        # For PartDesign objects a Group contains recursive features.
-        # Only nested App:Part are considered at this place.
+        # For PartDesign objects a Group contains recursive features treated separately.
         groupObjs = ['App::DocumentObjectGroup', 'App::GeometryPython']
         i_ = 0
         while i_ < len(_sel):
@@ -488,7 +487,11 @@ class CenterofmassWidget(QtGui.QWidget):
                 del _sel[i_]
             elif hasattr(_sel[i_], 'Group') and _sel[i_].TypeId == 'App::Part':
                 for gp in _sel[i_].Group:
+                    # Nested App:Part are considered at this place:
                     if gp.TypeId == 'App::Part':
+                        _sel.append(gp)
+                    # App:Part can be shapeless container of meshes (e.g. .stl's):
+                    elif gp.TypeId == 'Mesh::Feature':
                         _sel.append(gp)
                 i_ += 1    # where to look at the next run
             else:
@@ -523,6 +526,9 @@ class CenterofmassWidget(QtGui.QWidget):
                     vsel.append(s_)
             elif hasattr(s_, 'Mesh') and s_.Mesh.Volume:
                 vsel.append(s_)
+
+        # remove double items (when groupObjs and containing item selected)
+        vsel = list(dict.fromkeys(vsel))
 
         # sort valid selection list or match up with tree view
         if SORT_SELECTION:
