@@ -25,8 +25,8 @@
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
-__Version__ = '0.5.8'
-__Date__ = '2022-05-04'
+__Version__ = '0.6'
+__Date__ = '2022-06-09'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -74,6 +74,10 @@ GUI_ICON_SIZE = app.ParamGet('User parameter:BaseApp/Preferences/General').GetIn
 # Floating window size preferences: fraction of primary screen's size
 WINDOW_WIDTH = int(0.2 * QtGui.QGuiApplication.screens()[0].geometry().width())
 WINDOW_HEIGHT = int(0.5 * QtGui.QGuiApplication.screens()[0].geometry().height())
+
+# FreeCAD 0.20 is able to run with Qt 5.9.5 but Qt 5.12 was adopted here
+if QtCore.QLibraryInfo.version() < QtCore.QVersionNumber(5,12):
+    app.Console.PrintWarning('Qt 5.12 or higher is needed to run\n')
 
 app.ParamGet(MACRO_SETTINGS).SetString('Default density', DEFAULT_DENSITY)
 app.ParamGet(MACRO_SETTINGS).SetBool('Docked window', DOCKED_WINDOW)
@@ -156,11 +160,10 @@ class SolidsWidget():
         self.spinDens.setToolTip(
             'density of ' + solid.Label + ' (in ' + parent.unitForD_text + ')')
         self.spinDens.valueChanged.connect(self.on_spinDensity_changed)
-        self.spinMass.setReadOnly(True)
         self.spinMass.setAlignment(QtCore.Qt.AlignCenter)
         self.spinMass.setMinimumWidth(g_str_width1)
         self.spinMass.setMaximumWidth(g_str_width2)
-        self.update_spinMass_only()
+        self.spinMass.editingFinished.connect(self.on_spinMass_edited)
 
         # layout grid
         if sol == 0:
@@ -191,15 +194,18 @@ class SolidsWidget():
     def on_spinDensity_changed(self):
         self.combo.setCurrentIndex(0)    # set to custom
         self.parent.compute_centerOfMass()
-        self.update_spinMass_only()
 
-    def update_spinMass_only(self):
+    def on_spinMass_edited(self):
+        v_ = QtGui.QDoubleValidator(0., 9.999e99, 3)    # input in scientific notation
+        if v_.validate(self.spinMass.text(),0)[0] == QtGui.QValidator.State.Invalid:
+            self.spinMass.undo()
+            if v_.validate(self.spinMass.text(),0)[0] == QtGui.QValidator.State.Invalid:
+                self.spinMass.setText('0.000e00')
+            return
         parent = self.parent
         volumeInUnit = parent.convert_volume(parent.volumes[self.sol])
-        value = volumeInUnit * self.spinDens.value()
-        self.spinMass.setText(format(value, '.3e'))
-        self.spinMass.setToolTip(
-            'mass of ' + self.label.text() + ' (in ' + parent.unitForM + ')')
+        dens = float(self.spinMass.text()) / volumeInUnit
+        self.spinDens.setValue(dens)    # trigger on_spinDensity_changed
 
     def on_comboMaterial_changed(self, newIndex):
         materialName = self.combo.currentText()
@@ -211,7 +217,6 @@ class SolidsWidget():
             self.spinDens.setValue(materialDensity)
             self.spinDens.blockSignals(False)
             self.parent.compute_centerOfMass()
-            self.update_spinMass_only()
 
 
 class CenterofmassWidget(QtGui.QWidget):
@@ -668,7 +673,6 @@ class CenterofmassWidget(QtGui.QWidget):
                                               self.unitForD)
             self.solids[sol].spinDens.setToolTip(
                 'density of ' + g_sel[sol].Label + ' (in ' + self.unitForD_text + ')')
-            self.solids[sol].update_spinMass_only()
         qty = self.material_base.get('default', 0)
         SolidsWidget.init_spinDensity(self, self.defaultDensitySpin,
                                       Units.Quantity(qty),
@@ -749,6 +753,10 @@ class CenterofmassWidget(QtGui.QWidget):
         for sol in range(self.solid_count):
             self.TotalCoM += 1 / self.massTot * self.masses[sol] * self.CoMs[sol]
         # output
+        for sol in range(self.solid_count):
+            self.solids[sol].spinMass.setText(format(self.masses[sol], '.3e'))
+            self.solids[sol].spinMass.setToolTip(
+                'mass of ' + self.solids[sol].label.text() + ' (in ' + self.unitForM + ')')
         for axis in range(3):
             self.resultCdG[axis].setText('{:.4}'.format(self.convert_length(self.TotalCoM[axis])))
         self.resultCdG[0].setToolTip('center of mass X (in %s)' % self.unitForL)
