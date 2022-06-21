@@ -26,7 +26,7 @@ __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
 __Version__ = '0.6'
-__Date__ = '2022-06-09'
+__Date__ = '2022-06-20'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -70,6 +70,12 @@ COLOR_SATURAT = app.ParamGet(MACRO_SETTINGS).GetUnsigned('Color saturation', 80)
 COLORMAP_USER = app.ParamGet(MACRO_SETTINGS).GetString('Matplotlib colormap', 'Spectral_r')
 GUI_FONT_SIZE = app.ParamGet('User parameter:BaseApp/Preferences/Editor').GetInt('FontSize', 10)
 GUI_ICON_SIZE = app.ParamGet('User parameter:BaseApp/Preferences/General').GetInt('ToolbarIconSize', 24)
+
+MATERIAL_SETTINGS = app.ParamGet('User parameter:BaseApp/Preferences/Mod/Material/Resources')
+USE_BUILT_IN_MATERIALS  = MATERIAL_SETTINGS.GetBool('UseBuiltInMaterials', True)
+USE_MAT_FROM_CONFIG_DIR = MATERIAL_SETTINGS.GetBool('UseMaterialsFromConfigDir', True)
+USE_MAT_FROM_CUSTOM_DIR = MATERIAL_SETTINGS.GetBool('UseMaterialsFromCustomDir', True)
+CUSTOM_MAT_DIR = MATERIAL_SETTINGS.GetString('CustomMaterialsDir', '')
 
 # Floating window size preferences: fraction of primary screen's size
 WINDOW_WIDTH = int(0.2 * QtGui.QGuiApplication.screens()[0].geometry().width())
@@ -145,8 +151,18 @@ class SolidsWidget():
             'QLabel {background-color: %s}' % self.orgColorQT.name())
         self.labelC.setMaximumWidth(GUI_ICON_SIZE)
         self.combo.addItem('custom')
-        for m in parent.material_base:
-            self.combo.addItem(m)
+        d_min, d_max = parent.material_base_range
+        if d_min == d_max:
+            for m in parent.material_base:
+                self.combo.addItem(m)
+        else:
+            # icons filled according to density relation
+            qs = len(parent.pieIcon) - 1
+            for m in parent.material_base:
+                q = math.ceil((parent.material_base[m] - d_min) / (d_max - d_min) * qs)
+                self.combo.addItem(QtGui.QIcon(parent.pieIcon[q]), m)
+            self.combo.setItemIcon(1, QtGui.QIcon())    # no icon for 'default'
+        self.combo.insertSeparator(2)    # after custom+default
         mat_name = getattr(g_sel[sol], 'Mat_Name', 'default')
         mat_density = getattr(g_sel[sol], 'Mat_Density', parent.material_base['default'])
         if hasattr(g_sel[sol], 'Material'):
@@ -327,6 +343,24 @@ class CenterofmassWidget(QtGui.QWidget):
         scroll = QtGui.QScrollArea()
         scroll.setWidget(solidGroupBox)
         scroll.setWidgetResizable(True)
+
+        # custom icon set of pies for SolidsWidget().combo
+        self.pieIcon = []
+        drawSize = g_font_metrics.height() * 2
+        drawArea = QtCore.QRect(0, 0, drawSize-8, drawSize)
+        drawArea.adjust(2, 6, -2, -6)    # padding
+        for q in range(5):
+            pixmap = QtGui.QPixmap(drawSize-8, drawSize)
+            pixmap.fill(QtCore.Qt.transparent)
+            painter = QtGui.QPainter(pixmap)
+            #painter.setRenderHint(QtGui.QPainter.Antialiasing)
+            painter.drawEllipse(drawArea)
+            if q in range(1,5):
+                painter.setBrush(QtGui.QBrush(QtCore.Qt.black))
+                painter.drawPie(drawArea, (1-q)*90*16, q*90*16)
+                # 1/16th of a degree counterclockwise, zero degrees at the 3 o'clock position
+            painter.end()    # needed in Python
+            self.pieIcon.append(pixmap)
 
         # buttonGroupBox
         newSelection = QtGui.QPushButton('New')
@@ -599,28 +633,21 @@ class CenterofmassWidget(QtGui.QWidget):
             self.draw_centerOfMass()
 
     def load_materials(self):
-        """Load density from material cards"""
-        # Get resource paths
-        fem_prefs = app.ParamGet("User parameter:BaseApp/Preferences/Mod/Material/Resources")
-        use_built_in_materials = fem_prefs.GetBool("UseBuiltInMaterials", True)
-        use_mat_from_config_dir = fem_prefs.GetBool("UseMaterialsFromConfigDir", True)
-        use_mat_from_custom_dir = fem_prefs.GetBool("UseMaterialsFromCustomDir", True)
-        custom_dir = fem_prefs.GetString("CustomMaterialsDir", "")
-        # later found cards with same name will override cards
+        """Load density from material cards, get resource paths from FEM preferences"""
         resources = []
-        if use_built_in_materials:
+        if USE_BUILT_IN_MATERIALS:
             # FreeCAD.getResourceDir() returns inconsistent path
             # (https://forum.freecadweb.org/viewtopic.php?t=32036)
             resources.append(os.path.join(
                 os.path.normpath(app.getResourceDir()), "Mod", "Material", "StandardMaterial")
             )
-        if use_mat_from_config_dir:
+        if USE_MAT_FROM_CONFIG_DIR:
             resources.append(os.path.join(app.ConfigGet("UserAppData"), "Material"))
-        if use_mat_from_custom_dir and custom_dir:
-            resources.append(custom_dir)
-        print('locations to look for material cards:')
+        if USE_MAT_FROM_CUSTOM_DIR and CUSTOM_MAT_DIR:
+            resources.append(CUSTOM_MAT_DIR)
+        print('Looking for material cards according to User parameter:BaseApp/Preferences/Mod/Material/Resources')
         for path in resources:
-            print('  ' + path)
+            print('  ' + path)    # cards found later with same name will override previous ones
 
         # Read material cards
         import importFCMat
@@ -640,16 +667,18 @@ class CenterofmassWidget(QtGui.QWidget):
                     self.material_cards[mat_name] = mat_cards[mat_name]
             except:
                 pass
+        qtys = self.material_base.values()
+        self.material_base_range = [min(qtys), max(qtys)]
 
     def on_pushButton_editMaterial(self):
         import MaterialEditor
+        material_base_old = copy.copy(self.material_base)
         MaterialEditor.openEditor()
         self.load_materials()
+        # add combo items for newly created materials
+        new_materials = [m for m in self.material_base if m not in material_base_old]
         for sol in range(self.solid_count):
-            for m in sorted(self.material_base):
-                # add new materials
-                if self.solids[sol].combo.findText(m) == -1:
-                    self.solids[sol].combo.addItem(m)
+            self.solids[sol].combo.addItems(new_materials)
 
     def store_prefered_units(self, txt):
         """Get units set as preference"""
