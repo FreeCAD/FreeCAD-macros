@@ -26,7 +26,7 @@ __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
 __Version__ = '0.6'
-__Date__ = '2022-06-20'
+__Date__ = '2022-06-22'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -38,7 +38,6 @@ __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Files__ = ''
 
 # Todo:
-# - resetting stylesheet of QDoubleSpinBox
 # - error with draft array of meshes (relevant?)
 # - App:Link lacks the .getGlobalPlacement() method and childShapes() do not equal,
 # so .InListRecursive and .OutList is used as a workaround.
@@ -95,8 +94,7 @@ g_main_window = gui.getMainWindow()
 g_font = g_main_window.font()
 g_font.setPointSize(GUI_FONT_SIZE)
 g_font_metrics = QtGui.QFontMetrics(g_font)
-g_str_width1 = g_font_metrics.horizontalAdvance('0_000e+00')
-g_str_width2 = g_font_metrics.horizontalAdvance('_0_000e+00_')
+g_str_width = g_font_metrics.horizontalAdvance('_0_000e+00_')
 g_icon_size = QtCore.QSize(GUI_ICON_SIZE, GUI_ICON_SIZE)
 g_sel_user = []    # the user list of selected objects
 g_sel = []    # the valid list of selected objects
@@ -107,6 +105,7 @@ class CenterofmassDock(QtGui.QDockWidget):
     def __init__(self):
         super().__init__()
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)    # free memory
+        self.setLocale(QtCore.QLocale.English)
         self.child = CenterofmassWidget(self)
         self.setWidget(self.child)
         g_main_window.addDockWidget(QtCore.Qt.RightDockWidgetArea, self)
@@ -116,6 +115,7 @@ class CenterofmassWindow(QtGui.QMainWindow):
     """if DOCKED_WINDOW = False"""
     def __init__(self, parent=g_main_window):
         super().__init__(parent)    # parent: Window stays on top
+        self.setLocale(QtCore.QLocale.English)
         self.child = CenterofmassWidget(self)
         self.setCentralWidget(self.child)
         self.set_position()
@@ -151,6 +151,7 @@ class SolidsWidget():
             'QLabel {background-color: %s}' % self.orgColorQT.name())
         self.labelC.setMaximumWidth(GUI_ICON_SIZE)
         self.combo.addItem('custom')
+        self.combo.setMinimumContentsLength(14)    # auto size adjustment and truncation
         d_min, d_max = parent.material_base_range
         if d_min == d_max:
             for m in parent.material_base:
@@ -177,8 +178,8 @@ class SolidsWidget():
             'density of ' + solid.Label + ' (in ' + parent.unitForD_text + ')')
         self.spinDens.valueChanged.connect(self.on_spinDensity_changed)
         self.spinMass.setAlignment(QtCore.Qt.AlignCenter)
-        self.spinMass.setMinimumWidth(g_str_width1)
-        self.spinMass.setMaximumWidth(g_str_width2)
+        self.spinMass.setMinimumWidth(g_str_width)
+        self.spinMass.setMaximumWidth(g_str_width + GUI_FONT_SIZE)
         self.spinMass.editingFinished.connect(self.on_spinMass_edited)
 
         # layout grid
@@ -353,7 +354,6 @@ class CenterofmassWidget(QtGui.QWidget):
             pixmap = QtGui.QPixmap(drawSize-8, drawSize)
             pixmap.fill(QtCore.Qt.transparent)
             painter = QtGui.QPainter(pixmap)
-            #painter.setRenderHint(QtGui.QPainter.Antialiasing)
             painter.drawEllipse(drawArea)
             if q in range(1,5):
                 painter.setBrush(QtGui.QBrush(QtCore.Qt.black))
@@ -931,7 +931,7 @@ class CenterofmassWidget(QtGui.QWidget):
                 self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = orgColorFC
                 if COLOR_SPHERES and self.changeRadius.isEnabled():
                     self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = orgColorFC
-                self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: transparent}')
+                self.solids[sol].spinDens.setPalette(QtGui.QPalette())    # reset to normal
 
     def on_comboColormap_changed(self, newText):
         if self.checkColorify.isChecked():
@@ -965,7 +965,15 @@ class CenterofmassWidget(QtGui.QWidget):
             self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
             if COLOR_SPHERES and self.changeRadius.isEnabled():
                 self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
-            self.solids[sol].spinDens.setStyleSheet('QDoubleSpinBox {background-color: %s}' %color.name())
+            pal = QtGui.QPalette()
+            pal.setColor(QtGui.QPalette.Base, color)
+            lum = color.getRgbF()
+            # https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum#dfn-relative-luminance
+            for c in lum:
+                c = c/12.92 if c <= 0.04045 else math.pow((c+0.055)/1.055, 2.4)
+            if 0.2126*lum[0] + 0.7152*lum[1] + 0.0722*lum[2] < 0.5:
+                pal.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
+            self.solids[sol].spinDens.setPalette(pal)
 
     def on_pushButton_toPreferences(self):
         gui.runCommand('Std_DlgParameter',0)
@@ -1083,6 +1091,8 @@ if __name__ == '__main__':
     if not valid_density_string(DEFAULT_DENSITY):
         app.ParamGet(MACRO_SETTINGS).RemString('Default density')
         error_message('Default density user parameter was set wrong. Try again.')
+    elif not app.activeDocument():
+        error_message('Open a document first.')
     else:
         print('Loading ' + __Name__ + ' ' + __Version__ + ' ...')
         gui.updateGui()
