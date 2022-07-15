@@ -26,7 +26,7 @@ __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
 __Version__ = '0.6'
-__Date__ = '2022-06-30'
+__Date__ = '2022-07-13'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -489,6 +489,9 @@ class CenterofmassWidget(QtGui.QWidget):
         totalGroupBox.setLayout(totalLayout)
         layout.addWidget(totalGroupBox)
 
+        qApp = QtGui.QApplication.instance()
+        qApp.focusChanged.connect(self.on_focusChanged)    # emits on each focus change in FreeCAD
+
     def init_solids(self, objs):
         """Construct new items and compute"""
         self.find_all_centerOfMass(objs)
@@ -500,6 +503,22 @@ class CenterofmassWidget(QtGui.QWidget):
             )
         self.mainGroupBox.setTitle('Selected solids: ' + str(self.solid_count))
         self.compute_centerOfMass()
+
+    def on_focusChanged(self, oldWidget, nowWidget):
+        """Toggle appearance of solid being edited"""
+        if 'QListView' in (type(oldWidget).__name__, type(nowWidget).__name__):
+            # skip if focus changes between combo box and its dropdown list
+            return
+        for w in (oldWidget, nowWidget):
+            # deleted (None) objects can be passed
+            if w is not None and w.parent() == self.solidLayout.parentWidget():
+                idx = self.solidLayout.indexOf(w)
+                if idx > 0:
+                    row = self.solidLayout.getItemPosition(idx)[0] - 1    # minus header
+                    if gui.Selection.isSelected(g_sel[row]):
+                        gui.Selection.removeSelection(g_sel[row])
+                    else:
+                        gui.Selection.addSelection(g_sel[row])
 
     def valid_selection(self, _sel):
         """Get valid objects (Shape, Mesh) from selection"""
