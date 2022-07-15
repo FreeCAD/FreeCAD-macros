@@ -26,7 +26,7 @@ __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
 __Version__ = '0.6'
-__Date__ = '2022-06-24'
+__Date__ = '2022-06-30'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -154,8 +154,7 @@ class SolidsWidget():
         self.combo.setMinimumContentsLength(14)    # auto size adjustment and truncation
         d_min, d_max = parent.material_base_range
         if d_min == d_max:
-            for m in parent.material_base:
-                self.combo.addItem(m)
+            self.combo.addItems(parent.material_base)
         else:
             # icons filled according to density relation
             qs = len(parent.pieIcon) - 1
@@ -515,7 +514,7 @@ class CenterofmassWidget(QtGui.QWidget):
 
         # Add contents of group objects 'groupObjs' (breadth-first search).
         # For PartDesign objects a Group contains recursive features treated separately.
-        groupObjs = ['App::DocumentObjectGroup', 'App::GeometryPython']
+        groupObjs = ('App::DocumentObjectGroup', 'App::GeometryPython')
         i_ = 0
         while i_ < len(_sel):
             if hasattr(_sel[i_], 'Group') and _sel[i_].TypeId in groupObjs:
@@ -670,7 +669,7 @@ class CenterofmassWidget(QtGui.QWidget):
             except:
                 pass
         qtys = self.material_base.values()
-        self.material_base_range = [min(qtys), max(qtys)]
+        self.material_base_range = (min(qtys), max(qtys))
 
     def on_pushButton_editMaterial(self):
         import MaterialEditor
@@ -809,7 +808,7 @@ class CenterofmassWidget(QtGui.QWidget):
             self.colorify()
 
     def draw_centerOfMass(self):
-        boundBoxL = [self.boundBox.XLength, self.boundBox.YLength, self.boundBox.ZLength]
+        boundBoxL = (self.boundBox.XLength, self.boundBox.YLength, self.boundBox.ZLength)
         self.doc = app.activeDocument()    # it is possible to draw in a different document
         try:
             CoMObjs = self.doc.getObject('CenterOfMass')
@@ -831,12 +830,12 @@ class CenterofmassWidget(QtGui.QWidget):
 
         # Local coordinate system at center of masses
         lcs = self.doc.addObject('PartDesign::CoordinateSystem', 'CoMLCS')
-        lcs.Placement = app.Placement(app.Vector(*self.TotalCoM),app.Rotation(0,0,0))
+        lcs.Placement = app.Placement(self.TotalCoM, app.Rotation(0,0,0))
         CoMObjs.addObject(lcs)
 
         # Sphere to represent the center of masses
         sphere = self.doc.addObject('Part::Sphere', 'CoMTotal')
-        sphere.Placement.Base = app.Vector(*self.TotalCoM)
+        sphere.Placement.Base = self.TotalCoM
         sphere.ViewObject.ShapeColor = (0.6, 0.0, 0.0)
         sphere.ViewObject.LineWidth = 1.0
         CoMObjs.addObject(sphere)
@@ -846,7 +845,7 @@ class CenterofmassWidget(QtGui.QWidget):
             for sol in range(self.solid_count):
                 sphere = self.doc.addObject('Part::Sphere', 'CoM_' + g_sel[sol].Name)
                 sphere.Label = 'CoM_' + g_sel[sol].Label
-                sphere.Placement.Base = app.Vector(*self.CoMs[sol])
+                sphere.Placement.Base = self.CoMs[sol]
                 if COLOR_SPHERES:
                     sphere.ViewObject.ShapeColor = self.solids[sol].orgColorFC
                 else:
@@ -855,21 +854,21 @@ class CenterofmassWidget(QtGui.QWidget):
                 CoMObjs.addObject(sphere)
 
         # Planes with center of mass and size of boundBox
-        cplane_name = ['CoMPlaneYZ', 'CoMPlaneXZ', 'CoMPlaneXY']
-        cplane_norm = [app.Vector(1.,0.,0.),
+        cplane_name = ('CoMPlaneYZ', 'CoMPlaneXZ', 'CoMPlaneXY')
+        cplane_norm = (app.Vector(1.,0.,0.),
                        app.Vector(0.,1.,0.),
-                       app.Vector(0.,0.,1.)]
-        cplane_rot  = [app.Rotation(0,-90,  0),
+                       app.Vector(0.,0.,1.))
+        cplane_rot  = (app.Rotation(0,-90,  0),
                        app.Rotation(0,  0, 90),
-                       app.Rotation(0,  0,  0)]
-        cplane_lewi =[[boundBoxL[2],boundBoxL[1]],
-                      [boundBoxL[0],boundBoxL[2]],
-                      [boundBoxL[0],boundBoxL[1]]]
+                       app.Rotation(0,  0,  0))
+        cplane_lewi =((boundBoxL[2],boundBoxL[1]),
+                      (boundBoxL[0],boundBoxL[2]),
+                      (boundBoxL[0],boundBoxL[1]))
         for axis in range(3):
             plane = self.doc.addObject('Part::Plane', cplane_name[axis])
             plane.Length = cplane_lewi[axis][0]
             plane.Width  = cplane_lewi[axis][1]
-            plane.Placement = app.Placement(app.Vector(*self.TotalCoM),cplane_rot[axis])
+            plane.Placement = app.Placement(self.TotalCoM, cplane_rot[axis])
             for axi2 in range(3):
                  plane.Placement.move(cplane_norm[axi2] * boundBoxL[axi2] /-2.)
             plane.Placement.move(     cplane_norm[axis] * boundBoxL[axis] /2.)
@@ -885,7 +884,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.changeRadius.setEnabled(True)
 
     def draw_update_sphere_radius(self):
-        boundBoxL = [self.boundBox.XLength, self.boundBox.YLength, self.boundBox.ZLength]
+        boundBoxL = (self.boundBox.XLength, self.boundBox.YLength, self.boundBox.ZLength)
         radiusCOM = (1+self.changeRadius.value())/100.
 
         # Sphere to represent the center of masses
@@ -989,7 +988,7 @@ class CenterofmassWidget(QtGui.QWidget):
                 g_sel[sol].removeProperty('Mat_Density')
             else:
                 # Material Name
-                tip = ['Custom', 'set by CenterOfMass Macro']
+                tip = ('Custom', 'set by CenterOfMass Macro')
                 if not hasattr(g_sel[sol], 'Mat_Name'):
                     g_sel[sol].addProperty('App::PropertyString', 'Mat_Name', *tip)
                 g_sel[sol].Mat_Name = mat_selected
