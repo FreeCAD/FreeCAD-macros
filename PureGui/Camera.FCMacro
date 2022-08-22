@@ -1332,8 +1332,8 @@ class Ui_MainWindow(object):
             self.DS_02_Y.setValue(ori_Vertical)
             centerBoundBoxGlobal()
             self.RB_01_Actual.setChecked(True)
-            App.Console.PrintMessage("Refresh (3Dview = X " + str(ori_Horizont) + ",
-                                                        Y " + str(ori_Vertical) + ") " + "\n")
+            App.Console.PrintMessage("Refresh (3Dview = X " + str(ori_Horizont) +
+                                                        ", Y " + str(ori_Vertical) + ") " + "\n")
             numberPhoto = 0
             self.label_07.setText("Image number: " + str(numberPhoto))
         except Exception:
