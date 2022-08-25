@@ -142,7 +142,7 @@ class Generador3D:
                 if abs(maximoPY) > abs(minimoPY):
                     f.LengthFwd = (abs(maximoPY) + self.form.tolerancia.value()) *2
                 else:
-                    fl.LengthFwd = (abs(minimoPY) + self.form.tolerancia.value()) *2
+                    f.LengthFwd = (abs(minimoPY) + self.form.tolerancia.value()) *2
 
        elif vista == "lateral":
             f.Dir = App.Vector(1.000000000000000,0.000000000000000,0.000000000000000)
