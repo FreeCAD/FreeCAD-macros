@@ -1,1 +1,521 @@
-
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <author>18Turbo</author>
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>495</width>
+    <height>874</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>870</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Generador 3D</string>
+  </property>
+  <widget class="QLabel" name="etDoc">
+   <property name="geometry">
+    <rect>
+     <x>9</x>
+     <y>797</y>
+     <width>113</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Documentación:</string>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="tolerancia">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>460</y>
+     <width>67</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="value">
+    <double>0.010000000000000</double>
+   </property>
+  </widget>
+  <widget class="Line" name="line_6">
+   <property name="geometry">
+    <rect>
+     <x>9</x>
+     <y>568</y>
+     <width>461</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="radioInterseccion">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>587</y>
+     <width>191</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Fusión (interesección)</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="meterVistasCarpeta">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>510</y>
+     <width>411</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Crear un Grupo (Carpeta) para las vistas (sketches)</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="etInfo">
+   <property name="geometry">
+    <rect>
+     <x>9</x>
+     <y>9</y>
+     <width>461</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="lineWidth">
+    <number>5</number>
+   </property>
+   <property name="text">
+    <string>Seleccione un sketch (boceto) en 2 o 3 vistas:</string>
+   </property>
+   <property name="textFormat">
+    <enum>Qt::PlainText</enum>
+   </property>
+   <property name="scaledContents">
+    <bool>false</bool>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_7">
+   <property name="geometry">
+    <rect>
+     <x>9</x>
+     <y>774</y>
+     <width>357</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>https://github.com/18turbo/Generador3DFreeCAD/</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="etInfoUso">
+   <property name="geometry">
+    <rect>
+     <x>9</x>
+     <y>667</y>
+     <width>271</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>(SPANISH) - Información de Uso:</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="etTolerancia">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>455</y>
+     <width>113</width>
+     <height>37</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Tol. 3D (mm.):</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+   <property name="margin">
+    <number>10</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="etNumVersion">
+   <property name="geometry">
+    <rect>
+     <x>350</x>
+     <y>636</y>
+     <width>131</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>0.1.0 BETA</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="Line" name="line_5">
+   <property name="geometry">
+    <rect>
+     <x>9</x>
+     <y>618</y>
+     <width>461</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_12">
+   <property name="geometry">
+    <rect>
+     <x>9</x>
+     <y>820</y>
+     <width>384</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>https://github.com/18turbo/Generador3DFreeCAD/wiki</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="descInfoUso">
+   <property name="geometry">
+    <rect>
+     <x>9</x>
+     <y>690</y>
+     <width>471</width>
+     <height>78</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Cree un boceto (sketch) para cada vista con la que desee generar un sólido 3D. Necesitará al menos 2 bocetos. Luego pinche en el icono del script y seleccione un boceto para cada vista. Luego pulse OK para generar el sólido.</string>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
+   </property>
+   <property name="margin">
+    <number>5</number>
+   </property>
+   <property name="indent">
+    <number>-1</number>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="etFrontal">
+   <property name="geometry">
+    <rect>
+     <x>2</x>
+     <y>40</y>
+     <width>241</width>
+     <height>220</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Frontal -Alzado- (Front/Rear):</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <widget class="QDoubleSpinBox" name="longF">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>180</y>
+      <width>70</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="maximum">
+     <double>100000000.000000000000000</double>
+    </property>
+   </widget>
+   <widget class="QListWidget" name="listWidgetFrontal">
+    <property name="geometry">
+     <rect>
+      <x>12</x>
+      <y>32</y>
+      <width>221</width>
+      <height>121</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="offsetF">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>180</y>
+      <width>70</width>
+      <height>25</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="etOffsetF">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>160</y>
+      <width>71</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Es la distincia que desde la cual empezará la extrusión en el eje Y</string>
+    </property>
+    <property name="text">
+     <string>Offset</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="etLongitudF">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>160</y>
+      <width>81</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Longitud</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="etLateral">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>40</y>
+     <width>231</width>
+     <height>220</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Lateral -Perfil- (Right/Left):</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <widget class="QListWidget" name="listWidgetLateral">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>211</width>
+      <height>121</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="offsetL">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>180</y>
+      <width>70</width>
+      <height>25</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="longL">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>180</y>
+      <width>70</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="maximum">
+     <double>100000000.000000000000000</double>
+    </property>
+   </widget>
+   <widget class="QLabel" name="etLongitudL">
+    <property name="geometry">
+     <rect>
+      <x>99</x>
+      <y>160</y>
+      <width>81</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Longitud</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="etOffsetL">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>160</y>
+      <width>71</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Es la distincia que desde la cual empezará la extrusión en el eje X</string>
+    </property>
+    <property name="text">
+     <string>Offset</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="etPlanta">
+   <property name="geometry">
+    <rect>
+     <x>2</x>
+     <y>270</y>
+     <width>241</width>
+     <height>220</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Planta -Sup.- (Top/Bott.):</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <widget class="QDoubleSpinBox" name="longP">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>180</y>
+      <width>70</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="maximum">
+     <double>100000000.000000000000000</double>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="offsetP">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>180</y>
+      <width>70</width>
+      <height>25</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QListWidget" name="listWidgetPlanta">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>221</width>
+      <height>121</height>
+     </rect>
+    </property>
+    <property name="acceptDrops">
+     <bool>false</bool>
+    </property>
+    <property name="showDropIndicator" stdset="0">
+     <bool>true</bool>
+    </property>
+    <property name="dragEnabled">
+     <bool>false</bool>
+    </property>
+    <property name="selectionMode">
+     <enum>QAbstractItemView::SingleSelection</enum>
+    </property>
+   </widget>
+   <widget class="QLabel" name="etLongitudP">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>160</y>
+      <width>81</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Longitud</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="etOffsetP">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>160</y>
+      <width>71</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Es la distincia que desde la cual empezará la extrusión en el eje Z</string>
+    </property>
+    <property name="text">
+     <string>Offset</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QLabel" name="etVersion">
+   <property name="geometry">
+    <rect>
+     <x>210</x>
+     <y>638</y>
+     <width>121</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Versión:</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="ocultarVistas">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>530</y>
+     <width>441</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Ocultar las vistas al generar el sólido</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
