@@ -72,7 +72,7 @@ __Help__ = 'Requires CADBase account to correct use the macro.'
 __Status__ = 'Stable'
 __Requires__ = 'FreeCAD >= 0.19'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=69389'
-__Files__ = 'CadbaseLibrary.svg,Macro_CadbaseLibrary.md,cadbase_library.ui,cadbase_library_config.ui'
+__Files__ = 'CadbaseLibrary/Macro_CadbaseLibrary.md,CadbaseLibrary/cadbase_library.ui,CadbaseLibrary/cadbase_library_config.ui,CadbaseLibrary.svg'
 
 import os
 import sys
@@ -103,7 +103,7 @@ g_user_agent = b'Mozilla/5.0 (Macintosh; Intel Mac OS 10 12.3; rv:42.0) \
 g_content_type = b"application/json"
 g_response_file = 'response'
 
-macro_dir = app.getUserMacroDir(True)
+macro_dir = app.getUserMacroDir(True) + "/CadbaseLibrary"
 g_ui_file = macro_dir + "/cadbase_library.ui"
 g_ui_file_config = macro_dir + "/cadbase_library_config.ui"
 
