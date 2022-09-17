@@ -113,13 +113,13 @@ except:
     pass # Will fallback to Latin-1
 
 if destination:
-    cdbs_library_path = destination
+    g_library_path = destination
 else:
     folderDialog = QtGui.QFileDialog.getExistingDirectory(None,
         QtGui.QApplication.translate('CADBaseLibrary',
         'Location of your existing CADBase library'))
     param.SetString('destination', folderDialog.replace('\\', '/'))  # forward slashes apparently work on windows too
-    cdbs_library_path = param.GetString('destination')
+    g_library_path = param.GetString('destination')
 
 
 if not api:
@@ -159,7 +159,7 @@ class ExpCdbsWidget(QtGui.QDockWidget):
         self.form = gui.PySideUic.loadUi(g_ui_file)
 
         self.dirmodel = ExpFileSystemModel()
-        self.dirmodel.setRootPath(cdbs_library_path)
+        self.dirmodel.setRootPath(g_library_path)
         self.dirmodel.setNameFilters([
             '*.fcstd',
             '*.FcStd',
@@ -178,7 +178,7 @@ class ExpCdbsWidget(QtGui.QDockWidget):
         self.form.folder.hideColumn(1)
         self.form.folder.hideColumn(2)
         self.form.folder.hideColumn(3)
-        self.form.folder.setRootIndex(self.dirmodel.index(cdbs_library_path))
+        self.form.folder.setRootIndex(self.dirmodel.index(g_library_path))
 
         self.previewframe = self.form.toolBox.widget(0)
         self.previewframe.preview = \
@@ -232,14 +232,14 @@ class ExpCdbsWidget(QtGui.QDockWidget):
                 if component_file.exists():
                     component_data = readObjectInfo(component_file, 'component')
                     CDBSApi(QueriesAPI.componentModifications(component_data.uuid),
-                            cdbs_library_path)
-                    updateComponent(cdbs_library_path, clck_path)
+                            g_library_path)
+                    updateComponent(g_library_path, clck_path)
                 modification_file = clck_path / 'modification'
                 if modification_file.exists():
                     modification_data = readObjectInfo(modification_file, 'modification')
                     CDBSApi(QueriesAPI.targetFileset(modification_data.uuid),
-                            cdbs_library_path)
-                    updateComponentModificaion(cdbs_library_path, clck_path,
+                            g_library_path)
+                    updateComponentModificaion(g_library_path, clck_path,
                             modification_data.uuid)
             else:
                 app.Console.PrintWarning('Token not found')
@@ -261,8 +261,8 @@ class ExpCdbsWidget(QtGui.QDockWidget):
 
 
     def updatelibrary(self):
-        CDBSApi(QueriesAPI.favComponents(), cdbs_library_path)
-        updateComponentsList(cdbs_library_path)
+        CDBSApi(QueriesAPI.favComponents(), g_library_path)
+        updateComponentsList(g_library_path)
 
     def setconfig(self):
         ConfigDialog(parent=self)
@@ -288,11 +288,11 @@ class ConfigDialog(QtGui.QDialog):
         self.form.lineEdit.setText(g_cdbs_api)
 
     def changepath(self):
-        cdbs_library_path = param.GetString('destination','')
+        g_library_path = param.GetString('destination','')
         np = QtGui.QFileDialog.getExistingDirectory(
             self,
             "Local location of your existing CADBase library",
-            cdbs_library_path
+            g_library_path
             )
         if np:
             self.form.lineEdit_3.setText(np)
@@ -314,7 +314,7 @@ class ConfigDialog(QtGui.QDialog):
         self.form.close()
 
 
-if QtCore.QDir(cdbs_library_path).exists():
+if QtCore.QDir(g_library_path).exists():
     m = gui.getMainWindow()
     w = m.findChild(QtGui.QDockWidget,"CADBaseLibrary")
     if w and hasattr(w, 'isVisible'):
@@ -325,26 +325,26 @@ if QtCore.QDir(cdbs_library_path).exists():
     else:
         m.addDockWidget(QtCore.Qt.RightDockWidgetArea, ExpCdbsWidget())
 else:
-    app.Console.PrintWarning("Library path ", cdbs_library_path, "not found.")
+    app.Console.PrintWarning("Library path ", g_library_path, "not found.")
 
 
-def updateComponentsList(cdbs_library_path):
-    data = parsingGpl(cdbs_library_path)
+def updateComponentsList(g_library_path):
+    data = parsingGpl(g_library_path)
     if isinstance(data, SimpleNamespace):
         if len(data.components) == 0:
             app.Console.PrintWarning("You don't have favorite components\n")
         else:
             for component in data.components:
                 app.Console.PrintWarning(component.uuid + '\n')
-                new_dir = pathlib.Path(cdbs_library_path) / (component.name
+                new_dir = pathlib.Path(g_library_path) / (component.name
                                + ' (from '
                                + component.ownerUser.username + ')')
                 createObjectPath(new_dir, component, 'component')
     app.Console.PrintWarning('Component list update finished\n')
 
 
-def updateComponent(cdbs_library_path, component_path):
-    data = parsingGpl(cdbs_library_path)
+def updateComponent(g_library_path, component_path):
+    data = parsingGpl(g_library_path)
     if isinstance(data, SimpleNamespace):
         if len(data.componentModifications) == 0:
             app.Console.PrintWarning('No modifications for the component\n')
@@ -357,17 +357,17 @@ def updateComponent(cdbs_library_path, component_path):
     app.Console.PrintWarning('Updated the list of component modifications\n')
 
 
-def updateComponentModificaion(cdbs_library_path, modification_path,
+def updateComponentModificaion(g_library_path, modification_path,
                                modification_uuid):
-    data = parsingGpl(cdbs_library_path)
+    data = parsingGpl(g_library_path)
     if isinstance(data, SimpleNamespace):
         if len(data.componentModificationFilesets) == 0:
             app.Console.PrintWarning('Fileset not found for FreeCAD\n')
         else:
             CDBSApi(QueriesAPI.filesetFiles(data.componentModificationFilesets[0].uuid),
-                    cdbs_library_path)
+                    g_library_path)
 
-            data = parsingGpl(cdbs_library_path)
+            data = parsingGpl(g_library_path)
             if isinstance(data, SimpleNamespace):
                 if len(data.componentModificationFilesetFiles) == 0:
                     app.Console.PrintWarning('No files in fileset\n')
@@ -431,11 +431,11 @@ def get_file(args):
 
 
 class CDBSApi:
-    def __init__(self, query, cdbs_library_path):
+    def __init__(self, query, g_library_path):
         app.Console.PrintWarning('Getting data...\n')
-        self.doRequest(query, cdbs_library_path)
+        self.doRequest(query, g_library_path)
 
-    def doRequest(self, query, cdbs_library_path):
+    def doRequest(self, query, g_library_path):
         api_url = param.GetString('api-url', '')
         req = QtNetwork.QNetworkRequest(QtCore.QUrl(api_url))
 
@@ -452,10 +452,10 @@ class CDBSApi:
         loop = QtCore.QEventLoop()
         reply.finished.connect(loop.quit)
         loop.exec_()
-        self.handleResponse(reply, cdbs_library_path)
+        self.handleResponse(reply, g_library_path)
 
-    def handleResponse(self, reply, cdbs_library_path):
-        new_info_file = pathlib.Path(cdbs_library_path) / g_response_file
+    def handleResponse(self, reply, g_library_path):
+        new_info_file = pathlib.Path(g_library_path) / g_response_file
         clearPath(new_info_file)
         er = reply.error()
 
@@ -478,9 +478,9 @@ class CDBSApi:
             app.Console.PrintWarning('\n')
 
 
-def parsingGpl(cdbs_library_path):
+def parsingGpl(g_library_path):
     app.Console.PrintWarning('Data processing, please wait.\n')
-    response_path = pathlib.Path(cdbs_library_path) / g_response_file
+    response_path = pathlib.Path(g_library_path) / g_response_file
 
     if response_path.exists():
         with response_path.open('rb', buffering=0) as f:
