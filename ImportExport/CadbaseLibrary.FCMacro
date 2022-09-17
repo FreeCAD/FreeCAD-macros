@@ -129,10 +129,6 @@ if not token:
     param.SetString('auth-token', '')
 
 
-def translate(context, text):
-    return QtGui.QApplication.translate(context, text)
-
-
 class ExpFileSystemModel(QtGui.QFileSystemModel):
 
     """ a custom QFileSystemModel that displays freecad file icons """
@@ -645,9 +641,3 @@ def readObjectInfo(object_file, object):
         app.Console.PrintWarning('\n')
         data_file.close()
         return object_data
-
-
-def setTranslate(text):
-    """ set translate """
-
-    return QtGui.QApplication.translate('CADBaseLibrary', text)
