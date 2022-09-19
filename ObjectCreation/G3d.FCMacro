@@ -61,7 +61,7 @@ from FreeCAD import Base
 
 
 
-cadenasIdiomas = [
+strLang = [
     [ # Español
         "Generador 3D",
         "Seleccione un sketch (boceto) en 2 o 3 vistas:",
@@ -194,7 +194,7 @@ class generator3d:
         self.planta = False
         self.vistasActivas = 0
 
-        for buscandoBocetos in objetos:
+        for buscandoBocetos in objs:
             if buscandoBocetos.TypeId.find('Sketcher::') > -1:
                 lista.append(buscandoBocetos.Label)
 
@@ -203,97 +203,97 @@ class generator3d:
             self.form.listWidgetLateral.addItem(i)
             self.form.listWidgetPlanta.addItem(i)
 
-        self.form.listWidgetFrontal.itemSelectionChanged.connect(self.cambiaSeleccionFrontal)
-        self.form.listWidgetLateral.itemSelectionChanged.connect(self.cambiaSeleccionLateral)
-        self.form.listWidgetPlanta.itemSelectionChanged.connect(self.cambiaSeleccionPlanta)
+        self.form.listWidgetFrontal.itemSelectionChanged.connect(self.changeSelectionFront)
+        self.form.listWidgetLateral.itemSelectionChanged.connect(self.changeSelectionLat)
+        self.form.listWidgetPlanta.itemSelectionChanged.connect(self.changeSelectionTop)
 
-        self.form.offsetF.valueChanged.connect(self.cambiaValorFrontal)
-        self.form.offsetL.valueChanged.connect(self.cambiaValorLateral)
-        self.form.offsetP.valueChanged.connect(self.cambiaValorPlanta)
+        self.form.offsetF.valueChanged.connect(self.changeValueFront)
+        self.form.offsetL.valueChanged.connect(self.changeValueLat)
+        self.form.offsetP.valueChanged.connect(self.changeValueTop)
 
-        self.form.etFrontal.clicked.connect(self.cambiaCheckedFrontal)
-        self.form.etLateral.clicked.connect(self.cambiaCheckedLateral)
-        self.form.etPlanta.clicked.connect(self.cambiaCheckedPlanta)
+        self.form.etFrontal.clicked.connect(self.changeCheckedFront)
+        self.form.etLateral.clicked.connect(self.changeCheckedLat)
+        self.form.etPlanta.clicked.connect(self.changeCheckedTop)
 
         
         self.initStrings()
 
     def initStrings(self):
-        traducir = self.traducir
-        self.form.setWindowTitle(__Name__ + " " + titulo)
-        self.form.etInfo.setText(traducir(idioma,"Seleccione un sketch (boceto) en 2 o 3 vistas:"))
-        self.form.etFrontal.setTitle(traducir(idioma,"Frontal -Alzado- (Front/Rear):"))
-        self.form.etFrontal.setToolTip(traducir(idioma,"Marque esta casilla si quiere activar la vista frontal y asígnele un sketch (boceto)"))
-        self.form.etLateral.setTitle(traducir(idioma,"Lateral -Perfil- (Right/Left):"))
-        self.form.etLateral.setToolTip(traducir(idioma,"Marque esta casilla si quiere activar la vista lateral y asígnele un sketch (boceto)"))
-        self.form.etPlanta.setTitle(traducir(idioma,"Planta -Sup/Inf- (Top/Bott):"))
-        self.form.etPlanta.setToolTip(traducir(idioma,"Marque esta casilla si quiere activar la vista en planta y asígnele un sketch (boceto)"))
-        self.form.etTolerancia.setText(traducir(idioma,"Tol. 3D (mm.):"))
-        self.form.etTolerancia.setToolTip(traducir(idioma,"Es la distancia en mm. que extruirá de más. No debe influir en el objeto final. Si no desea tolerancia, ponga este valor a 0"))
-        self.form.meterVistasCarpeta.setText(traducir(idioma,"Crear un Grupo (Carpeta) para las vistas (sketches)"))
-        self.form.ocultarVistas.setText(traducir(idioma,"Ocultar las vistas al generar el sólido"))
-        self.form.radioInterseccion.setText(traducir(idioma,"Fusión (interesección)"))
-        self.form.etVersion.setText(traducir(idioma,"Versión:"))
+        translate = self.translate
+        self.form.setWindowTitle(__Name__ + " " + title)
+        self.form.etInfo.setText(translate(numLang,"Seleccione un sketch (boceto) en 2 o 3 vistas:"))
+        self.form.etFrontal.setTitle(translate(numLang,"Frontal -Alzado- (Front/Rear):"))
+        self.form.etFrontal.setToolTip(translate(numLang,"Marque esta casilla si quiere activar la vista frontal y asígnele un sketch (boceto)"))
+        self.form.etLateral.setTitle(translate(numLang,"Lateral -Perfil- (Right/Left):"))
+        self.form.etLateral.setToolTip(translate(numLang,"Marque esta casilla si quiere activar la vista lateral y asígnele un sketch (boceto)"))
+        self.form.etPlanta.setTitle(translate(numLang,"Planta -Sup/Inf- (Top/Bott):"))
+        self.form.etPlanta.setToolTip(translate(numLang,"Marque esta casilla si quiere activar la vista en planta y asígnele un sketch (boceto)"))
+        self.form.etTolerancia.setText(translate(numLang,"Tol. 3D (mm.):"))
+        self.form.etTolerancia.setToolTip(translate(numLang,"Es la distancia en mm. que extruirá de más. No debe influir en el objeto final. Si no desea tolerancia, ponga este valor a 0"))
+        self.form.meterVistasCarpeta.setText(translate(numLang,"Crear un Grupo (Carpeta) para las vistas (sketches)"))
+        self.form.ocultarVistas.setText(translate(numLang,"Ocultar las vistas al generar el sólido"))
+        self.form.radioInterseccion.setText(translate(numLang,"Fusión (interesección)"))
+        self.form.etVersion.setText(translate(numLang,"Versión:"))
         self.form.etNumVersion.setText(__Version__ + " " + __Status__)
-        self.form.etInfoUso.setText(traducir(idioma,"Información Breve de Uso:"))
-        descripcionInfoUso = (traducir(idioma,"Cree un boceto (sketch) para cada vista con la que desee generar un sólido 3D. Necesitará al menos 2 bocetos.")
-                + " " + traducir(idioma,"Luego pinche en el icono del script y seleccione un boceto para cada vista.")
-                + " " + traducir(idioma,"Finalmente, pulse OK para generar el sólido."))
+        self.form.etInfoUso.setText(translate(numLang,"Información Breve de Uso:"))
+        descripcionInfoUso = (translate(numLang,"Cree un boceto (sketch) para cada vista con la que desee generar un sólido 3D. Necesitará al menos 2 bocetos.")
+                + " " + translate(numLang,"Luego pinche en el icono del script y seleccione un boceto para cada vista.")
+                + " " + translate(numLang,"Finalmente, pulse OK para generar el sólido."))
         self.form.descInfoUso.setText(descripcionInfoUso)
-        self.form.etDoc.setText(traducir(idioma,"Documentación:"))
-        self.form.etOffsetF.setText(traducir(idioma,"Offset"))
-        self.form.etOffsetF.setToolTip(traducir(idioma,"Es la distancia desde la cual empezará la extrusión en el eje Y (desplazamiento en Y)"))
-        self.form.offsetF.setToolTip(traducir(idioma,"Es la distancia desde la cual empezará la extrusión en el eje Y (desplazamiento en Y)"))
-        self.form.etOffsetL.setText(traducir(idioma,"Offset"))
-        self.form.etOffsetL.setToolTip(traducir(idioma,"Es la distancia desde la cual empezará la extrusión en el eje X (desplazamiento en X)"))
-        self.form.offsetL.setToolTip(traducir(idioma,"Es la distancia desde la cual empezará la extrusión en el eje X (desplazamiento en X)"))
-        self.form.etOffsetP.setText(traducir(idioma,"Offset"))
-        self.form.etOffsetP.setToolTip(traducir(idioma,"Es la distancia desde la cual empezará la extrusión en el eje Z (desplazamiento en Z)"))
-        self.form.offsetP.setToolTip(traducir(idioma,"Es la distancia desde la cual empezará la extrusión en el eje Z (desplazamiento en Z)"))
-        self.form.etLongitudF.setText(traducir(idioma,"Longitud"))
-        self.form.etLongitudF.setToolTip(traducir(idioma,"Es la distancia total de extrusión frontal (en el eje Y), que siempre será mayor que el Offset Frontal"))
-        self.form.longF.setToolTip(traducir(idioma,"Es la distancia total de extrusión frontal (en el eje Y), que siempre será mayor que el Offset Frontal"))
-        self.form.etLongitudL.setText(traducir(idioma,"Longitud"))
-        self.form.etLongitudL.setToolTip(traducir(idioma,"Es la distancia total de extrusión lateral (en el eje X), que siempre será mayor que el Offset Lateral"))
-        self.form.longL.setToolTip(traducir(idioma,"Es la distancia total de extrusión lateral (en el eje X), que siempre será mayor que el Offset Lateral"))
-        self.form.etLongitudP.setText(traducir(idioma,"Longitud"))
-        self.form.etLongitudP.setToolTip(traducir(idioma,"Es la distancia total de extrusión en planta (en el eje Z), que siempre será mayor que el Offset en Planta"))
-        self.form.longP.setToolTip(traducir(idioma,"Es la distancia total de extrusión en planta (en el eje Z), que siempre será mayor que el Offset en Planta"))
+        self.form.etDoc.setText(translate(numLang,"Documentación:"))
+        self.form.etOffsetF.setText(translate(numLang,"Offset"))
+        self.form.etOffsetF.setToolTip(translate(numLang,"Es la distancia desde la cual empezará la extrusión en el eje Y (desplazamiento en Y)"))
+        self.form.offsetF.setToolTip(translate(numLang,"Es la distancia desde la cual empezará la extrusión en el eje Y (desplazamiento en Y)"))
+        self.form.etOffsetL.setText(translate(numLang,"Offset"))
+        self.form.etOffsetL.setToolTip(translate(numLang,"Es la distancia desde la cual empezará la extrusión en el eje X (desplazamiento en X)"))
+        self.form.offsetL.setToolTip(translate(numLang,"Es la distancia desde la cual empezará la extrusión en el eje X (desplazamiento en X)"))
+        self.form.etOffsetP.setText(translate(numLang,"Offset"))
+        self.form.etOffsetP.setToolTip(translate(numLang,"Es la distancia desde la cual empezará la extrusión en el eje Z (desplazamiento en Z)"))
+        self.form.offsetP.setToolTip(translate(numLang,"Es la distancia desde la cual empezará la extrusión en el eje Z (desplazamiento en Z)"))
+        self.form.etLongitudF.setText(translate(numLang,"Longitud"))
+        self.form.etLongitudF.setToolTip(translate(numLang,"Es la distancia total de extrusión frontal (en el eje Y), que siempre será mayor que el Offset Frontal"))
+        self.form.longF.setToolTip(translate(numLang,"Es la distancia total de extrusión frontal (en el eje Y), que siempre será mayor que el Offset Frontal"))
+        self.form.etLongitudL.setText(translate(numLang,"Longitud"))
+        self.form.etLongitudL.setToolTip(translate(numLang,"Es la distancia total de extrusión lateral (en el eje X), que siempre será mayor que el Offset Lateral"))
+        self.form.longL.setToolTip(translate(numLang,"Es la distancia total de extrusión lateral (en el eje X), que siempre será mayor que el Offset Lateral"))
+        self.form.etLongitudP.setText(translate(numLang,"Longitud"))
+        self.form.etLongitudP.setToolTip(translate(numLang,"Es la distancia total de extrusión en planta (en el eje Z), que siempre será mayor que el Offset en Planta"))
+        self.form.longP.setToolTip(translate(numLang,"Es la distancia total de extrusión en planta (en el eje Z), que siempre será mayor que el Offset en Planta"))
 
 
-    def traducir(self,idi,cad):
+    def translate(self,idi,cad):
         if (idi == 0):
             return cad
         else:
-            primerIdioma = cadenasIdiomas [0]
+            primerIdioma = strLang [0]
             indice = primerIdioma.index(cad)
             if indice > -1:
-                return cadenasIdiomas [idi] [indice]
+                return strLang [idi] [indice]
             else:
                 return cad
 
-    def cambiaValorFrontal(self):
+    def changeValueFront(self):
         self.form.longF.setMinimum(self.form.offsetF.value() + minimoExtrusion)
-    def cambiaValorLateral(self):
+    def changeValueLat(self):
         self.form.longL.setMinimum(self.form.offsetL.value() + minimoExtrusion)
-    def cambiaValorPlanta(self):
+    def changeValueTop(self):
         self.form.longP.setMinimum(self.form.offsetP.value() + minimoExtrusion)
 
-    def cambiaCheckedFrontal(self):
+    def changeCheckedFront(self):
         if not self.form.etFrontal.isChecked():
             self.frontal = False
             self.vistasActivas = self.vistasActivas - 1
         else:
             self.frontal = True
             self.vistasActivas = self.vistasActivas + 1
-    def cambiaCheckedLateral(self):
+    def changeCheckedLat(self):
         if not self.form.etLateral.isChecked():
             self.lateral = False
             self.vistasActivas = self.vistasActivas - 1
         else:
             self.lateral = True
             self.vistasActivas = self.vistasActivas + 1
-    def cambiaCheckedPlanta(self):
+    def changeCheckedTop(self):
         if not self.form.etPlanta.isChecked():
             self.planta = False
             self.vistasActivas = self.vistasActivas - 1
@@ -301,11 +301,11 @@ class generator3d:
             self.planta = True
             self.vistasActivas = self.vistasActivas + 1
 
-    def cambiaSeleccionFrontal(self):
+    def changeSelectionFront(self):
         self.nombreFrontal = str(self.form.listWidgetFrontal.selectedItems()[0].text())
-    def cambiaSeleccionLateral(self):
+    def changeSelectionLat(self):
         self.nombreLateral = str(self.form.listWidgetLateral.selectedItems()[0].text())
-    def cambiaSeleccionPlanta(self):
+    def changeSelectionTop(self):
         self.nombrePlanta = str(self.form.listWidgetPlanta.selectedItems()[0].text())
 
     def extrusion(self,nombreExtrusion,nombreEnVista,vista):
@@ -398,8 +398,8 @@ class generator3d:
         numeroCoincidencias = 0
         encontradoCoincidencia = False
         cadenaAdicional = ""
-        #objetos = FreeCAD.ActiveDocument.Objects
-        for objeto in objetos:
+        #objs = FreeCAD.ActiveDocument.Objects
+        for objeto in objs:
             if ((objeto.Name.find('ExtrPlanta18Turbo') > -1) or 
                (objeto.Name.find('ExtrFrontal18Turbo') > -1) or
                (objeto.Name.find('ExtrLateral18Turbo') > -1)):
@@ -420,7 +420,7 @@ class generator3d:
                 lateral = self.extrusion("ExtrLateral18Turbo" + cadenaAdicional,self.nombreLateral,"lateral")
 
             # Intersección
-            nombreInterseccion = self.traducir(idioma,"Pieza3D") + cadenaAdicional
+            nombreInterseccion = self.translate(numLang,"Pieza3D") + cadenaAdicional
             if (self.vistasActivas == 3):
                 App.activeDocument().addObject("Part::MultiCommon",nombreInterseccion)
                 App.ActiveDocument.getObject(nombreInterseccion).Shapes = [planta,frontal,lateral,]
@@ -436,7 +436,7 @@ class generator3d:
 
             #Meter vistas en Grupo (Carpeta)
             if self.form.meterVistasCarpeta.checkState():
-                nombreGrupoVistas = self.traducir(idioma,"VistasPieza3D") + cadenaAdicional
+                nombreGrupoVistas = self.translate(numLang,"VistasPieza3D") + cadenaAdicional
                 App.activeDocument().Tip = App.activeDocument().addObject('App::DocumentObjectGroup',nombreGrupoVistas)
                 if (self.planta):
                     objetoPlanta = App.ActiveDocument.getObjectsByLabel(self.nombrePlanta)[0]
@@ -460,17 +460,17 @@ class generator3d:
  
 
 
-objetos = FreeCAD.ActiveDocument.Objects
-# Se define el idioma con variable global
-nombreIdioma = App.Gui.getLocale()
-if nombreIdioma.find("English") > -1: idioma = 1
-elif nombreIdioma.find("Spanish") > -1: idioma = 0
-elif nombreIdioma.find("Italian") > -1: idioma = 2
+objs = FreeCAD.ActiveDocument.Objects
+# Se define el numLang con variable global
+nameLanguage = App.Gui.getLocale()
+if nameLanguage.find("English") > -1: numLang = 1
+elif nameLanguage.find("Spanish") > -1: numLang = 0
+elif nameLanguage.find("Italian") > -1: numLang = 2
 else:
-    idioma = 0
-if idioma != 0:
-    titulo = "(" + cadenasIdiomas [idioma][0] + ")"
+    numLang = 0
+if numLang != 0:
+    title = "(" + strLang [numLang][0] + ")"
 else:
-    titulo = ""      
+    title = ""      
 panel = generator3d()
 FreeCADGui.Control.showDialog(panel)
