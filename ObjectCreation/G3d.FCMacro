@@ -15,7 +15,7 @@ __Status__ = 'beta'
 __Requires__ = 'FreeCAD >= v0.20'
 __Contact__ = 'https://github.com/18turbo'
 __Communication__ = 'https://github.com/18turbo/Generador3DFreeCAD/issues'
-__Files__ = 'g3d/icons/g3d.svg,g3d/ui/g3d15.ui'
+__Files__ = 'G3d.svg,g3d/ui/g3d15.ui'
 
 
 # (En español:)
