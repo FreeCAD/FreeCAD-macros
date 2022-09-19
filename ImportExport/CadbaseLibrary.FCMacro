@@ -1,0 +1,643 @@
+#***************************************************************************
+#*                                                                         *
+#*   Copyright (c) 2022 mnnxp <in@cadbase.rs>              *
+#*                                                                         *
+#*   This program is free software; you can redistribute it and/or modify  *
+#*   it under the terms of the GNU Lesser General Public License (LGPL)    *
+#*   as published by the Free Software Foundation; either version 2 of     *
+#*   the License, or (at your option) any later version.                   *
+#*   for detail see the LICENCE text file.                                 *
+#*                                                                         *
+#*   This program is distributed in the hope that it will be useful,       *
+#*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+#*   GNU Library General Public License for more details.                  *
+#*                                                                         *
+#*   You should have received a copy of the GNU Library General Public     *
+#*   License along with this program; if not, write to the Free Software   *
+#*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
+#*   USA                                                                   *
+#*                                                                         *
+#***************************************************************************
+
+'''
+Macro to integrate FreeCAD with CADBase
+
+The macro is designed to load and use components (parts) from CADBase in the FreeCAD interface.
+
+For a component modification, sets of files for various CAD systems are loaded. Thus, only FreeCAD set files are downloaded, without downloading documentation and other information on the component.
+
+INSTALLATION
+
+- in menu Tools select Addon Manager Select the Macros tab find CADBaseLibrary in the list and click Install
+After it is installed, it will be available in the macros menu.
+- create an account on the platform [CADBase](https://cadbase.rs/#/register) for yourself
+- open "Macro" in the ToolBar
+- select "Macros..." and choose the "CadbaseLibrary.FCMacro" macro and "execute"
+- then you will be prompted to select a folder for data (where the files from the CADBase storage will be loaded)
+A widget "CADBase Library" will be generated in a separate window.
+- choose tab "Options" in window of the macro
+- click "Settings" button
+- in window that opens, you need to set the username and password to gain access to CADBase
+- after press the "OK" button and wait for the token to be received
+
+USAGE
+
+- for update access token need in the "CADBase library" window, in the "Options" tab, click the "Settings" button, in the "CADBase library configuration" window that opens, you need to set the username/password to gain access to CADBase and wait for a new token to be received after pressing the "OK" button
+- add target components to bookmarks (favorites) on the CADBase site. In FreeCAD will only display components that the user has bookmarked on CADBase, as well as those that have been previously downloaded
+- clicking "Update from CADBase" only updates the list of components from bookmarks active user, without downloading component modifications and files
+- double-clicking on a component folder to get component's modifications
+- getting files of a fileset for FreeCAD occurs after double-clicking on the modification folder
+- double-clicking on file for use it
+
+COMMUNICATION
+
+If you want to share a tip, get involved, report a problem, or anything else, please create a issue or post in this FreeCAD forum thread:
+https://forum.freecadweb.org/viewtopic.php?f=22&t=69389
+'''
+
+from __future__ import print_function
+
+__Title__= 'CADBase Library'
+__Name__ = 'CadbaseLibrary'
+__Comment__ = 'This CadbaseLibrary macro to use components (parts) from CADBase in app.'
+__Author__ = 'mnnxp'
+__Date__ = '2022-06-13'
+__Version__ = '0.1.0'
+__License__ = 'LGPL-3.0-or-later'
+__Web__ = 'http://www.freecadweb.org/wiki/Macro_CadbaseLibrary'
+__Wiki__ = 'http://www.freecadweb.org/wiki/Macro_CadbaseLibrary'
+__Icon__ = 'CadbaseLibrary.svg'
+__Help__ = 'Requires CADBase account to correct use the macro.'
+__Status__ = 'Stable'
+__Requires__ = 'FreeCAD >= 0.19'
+__Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=69389'
+__Files__ = 'CadbaseLibrary/Macro_CadbaseLibrary.md,CadbaseLibrary/cadbase_library.ui,CadbaseLibrary/cadbase_library_config.ui,CadbaseLibrary.svg'
+
+import os
+import sys
+import time
+import zipfile
+import tempfile
+import subprocess
+import json
+import pathlib
+from multiprocessing import cpu_count
+from multiprocessing.pool import ThreadPool
+from types import SimpleNamespace
+from PySide import QtGui, QtCore
+from PySide2 import QtNetwork
+import Part
+import Mesh
+import FreeCAD as app
+import FreeCADGui as gui
+
+param = app.ParamGet('User parameter:Plugins/cadbase_library')
+destination = param.GetString('destination')
+api = param.GetString('api-url')
+token = param.GetString('auth-token')
+g_api_login = 'https://api.cadbase.rs/login'
+g_cdbs_api = "https://api.cadbase.rs/graphql"
+g_user_agent = b'Mozilla/5.0 (Macintosh; Intel Mac OS 10 12.3; rv:42.0) \
+                Gecko/20100101 Firefox/42.0'
+g_content_type = b"application/json"
+g_response_file = 'response'
+
+macro_dir = app.getUserMacroDir(True) + "/CadbaseLibrary"
+g_ui_file = macro_dir + "/cadbase_library.ui"
+g_ui_file_config = macro_dir + "/cadbase_library_config.ui"
+
+try:
+    QtCore.QTextCodec.setCodecForTr(QTextCodec.codecForName("UTF-8"))
+except:
+    pass # Will fallback to Latin-1
+
+if destination:
+    g_library_path = destination
+else:
+    folderDialog = QtGui.QFileDialog.getExistingDirectory(None,
+        QtGui.QApplication.translate('CADBaseLibrary',
+        'Location of your existing CADBase library'))
+    param.SetString('destination', folderDialog.replace('\\', '/'))  # forward slashes apparently work on windows too
+    g_library_path = param.GetString('destination')
+
+
+if not api:
+    param.SetString('api-url', g_cdbs_api)
+
+if not token:
+    param.SetString('auth-token', '')
+
+
+class ExpFileSystemModel(QtGui.QFileSystemModel):
+
+    """ a custom QFileSystemModel that displays freecad file icons """
+
+    def __init__(self):
+        QtGui.QFileSystemModel.__init__(self)
+
+    def data(self, index, role):
+        if index.column() == 0 and role == QtCore.Qt.DecorationRole:
+            if index.data().lower().endswith('.fcstd'):
+                return QtGui.QIcon(':icons/freecad-doc.png')
+            elif index.data().lower() == 'private':
+                return QtGui.QIcon.fromTheme('folder-lock')
+        return super(ExpFileSystemModel, self).data(index, role)
+
+
+class ExpCdbsWidget(QtGui.QDockWidget):
+
+    """ a library explorer CADBase widget """
+
+    def __init__(self, parent=None):
+        QtGui.QDockWidget.__init__(self)
+        self.setObjectName('CADBaseLibrary')
+        self.form = gui.PySideUic.loadUi(g_ui_file)
+
+        self.dirmodel = ExpFileSystemModel()
+        self.dirmodel.setRootPath(g_library_path)
+        self.dirmodel.setNameFilters([
+            '*.fcstd',
+            '*.FcStd',
+            '*.FCSTD',
+            '*.stp',
+            '*.STP',
+            '*.step',
+            '*.STEP',
+            '*.brp',
+            '*.BRP',
+            '*.brep',
+            '*.BREP',
+            ])
+        self.dirmodel.setNameFilterDisables(0)
+        self.form.folder.setModel(self.dirmodel)
+        self.form.folder.hideColumn(1)
+        self.form.folder.hideColumn(2)
+        self.form.folder.hideColumn(3)
+        self.form.folder.setRootIndex(self.dirmodel.index(g_library_path))
+
+        self.previewframe = self.form.toolBox.widget(0)
+        self.previewframe.preview = \
+            self.previewframe.findChild(QtGui.QLabel, 'preview')
+        self.optbuttons = self.form.toolBox.widget(1)
+        self.optbuttons.updatebutton = \
+            self.optbuttons.findChild(QtGui.QToolButton, 'updatebutton')
+        self.optbuttons.configbutton = \
+            self.optbuttons.findChild(QtGui.QToolButton, 'configbutton')
+        self._connect_widgets()
+        self.setWidget(self.form)
+
+
+    def _connect_widgets(self):
+        self.form.folder.clicked.connect(self.clicked)
+        self.form.folder.doubleClicked.connect(self.doubleclicked)
+        self.optbuttons.updatebutton.clicked.connect(self.updatelibrary)
+        self.optbuttons.configbutton.clicked.connect(self.setconfig)
+
+    def clicked(self, index):
+        path = self.dirmodel.filePath(index)
+        if path.lower().endswith('.fcstd'):
+            try:
+                zfile = zipfile.ZipFile(path)
+                files = zfile.namelist()
+                # check for meta-file if it's really a FreeCAD document
+                if files[0] == 'Document.xml':
+                    image = 'thumbnails/Thumbnail.png'
+                    if image in files:
+                        image = zfile.read(image)
+                        thumbfile = tempfile.mkstemp(suffix='.png')[1]
+                        thumb = open(thumbfile, 'wb')
+                        thumb.write(image)
+                        thumb.close()
+                        im = QtGui.QPixmap(thumbfile)
+                        self.previewframe.preview.setPixmap(im)
+                        return
+            except Exception as e:
+                app.Console.PrintWarning(e)
+                app.Console.PrintWarning(': ')
+                app.Console.PrintWarning(path)
+                app.Console.PrintWarning('\n')
+        self.previewframe.preview.clear()
+
+    def doubleclicked(self, index):
+        clck_path = pathlib.Path(self.dirmodel.filePath(index))
+
+        if clck_path.is_dir():
+            if param.GetString('auth-token'):
+                component_file = clck_path / 'component'
+                if component_file.exists():
+                    component_data = readObjectInfo(component_file, 'component')
+                    CDBSApi(QueriesAPI.componentModifications(component_data.uuid),
+                            g_library_path)
+                    updateComponent(g_library_path, clck_path)
+                modification_file = clck_path / 'modification'
+                if modification_file.exists():
+                    modification_data = readObjectInfo(modification_file, 'modification')
+                    CDBSApi(QueriesAPI.targetFileset(modification_data.uuid),
+                            g_library_path)
+                    updateComponentModificaion(g_library_path, clck_path,
+                            modification_data.uuid)
+            else:
+                app.Console.PrintWarning('Token not found')
+        else:
+            str_path = str(clck_path.resolve())
+            str_path_l = str_path.lower()
+            try:
+                if str_path_l.endswith('.stp') \
+                    or str_path_l.endswith('.step') \
+                    or str_path_l.endswith('.brp') \
+                    or str_path_l.endswith('.brep'):
+                    Part.show(Part.read(str_path))
+                elif str_path_l.endswith('.fcstd'):
+                    gui.activeDocument().mergeProject(str_path)
+            except Exception as e:
+                app.Console.PrintWarning(e)
+                app.Console.PrintWarning('\n')
+            gui.SendMsgToActiveView('ViewFit')
+
+
+    def updatelibrary(self):
+        CDBSApi(QueriesAPI.favComponents(), g_library_path)
+        updateComponentsList(g_library_path)
+
+    def setconfig(self):
+        ConfigDialog(parent=self)
+
+class ConfigDialog(QtGui.QDialog):
+
+    def __init__(self, parent=None):
+        QtGui.QDialog.__init__(self, parent)
+        self.setObjectName('CADBaseLibraryConfig')
+        self.form = gui.PySideUic.loadUi(g_ui_file_config)
+        self._connect_widgets()
+        self.form.show()
+
+        self.form.lineEdit_3.setText(param.GetString('destination',''))
+
+    def _connect_widgets(self):
+        self.form.buttonBox.accepted.connect(self.accept)
+        self.form.buttonBox.rejected.connect(self.reject)
+        self.form.pushButton.clicked.connect(self.setdefaulturl)
+        self.form.pushButton_3.clicked.connect(self.changepath)
+
+    def setdefaulturl(self):
+        self.form.lineEdit.setText(g_cdbs_api)
+
+    def changepath(self):
+        g_library_path = param.GetString('destination','')
+        np = QtGui.QFileDialog.getExistingDirectory(
+            self,
+            "Local location of your existing CADBase library",
+            g_library_path
+            )
+        if np:
+            self.form.lineEdit_3.setText(np)
+
+    def reject(self):
+        app.Console.PrintWarning("Changes not accepted\n")
+        self.form.close()
+
+    def accept(self):
+        if self.form.lineEdit.text():
+            param.SetString('api-url',self.form.lineEdit.text())
+        if self.form.lineEdit_3.text():
+            param.SetString('destination',self.form.lineEdit_3.text())
+        if self.form.lineEdit_2.text() and self.form.lineEdit_4.text():
+            (username, password) = (self.form.lineEdit_2.text(),
+                                self.form.lineEdit_4.text())
+            CDBSAuth(username, password)
+        app.Console.PrintWarning("Configuration updated\n")
+        self.form.close()
+
+
+if QtCore.QDir(g_library_path).exists():
+    m = gui.getMainWindow()
+    w = m.findChild(QtGui.QDockWidget,"CADBaseLibrary")
+    if w and hasattr(w, 'isVisible'):
+        if w.isVisible():
+            w.hide()
+        else:
+            w.show()
+    else:
+        m.addDockWidget(QtCore.Qt.RightDockWidgetArea, ExpCdbsWidget())
+else:
+    app.Console.PrintWarning("Library path ", g_library_path, "not found.")
+
+
+def updateComponentsList(g_library_path):
+    data = parsingGpl(g_library_path)
+    if isinstance(data, SimpleNamespace):
+        if len(data.components) == 0:
+            app.Console.PrintWarning("You don't have favorite components\n")
+        else:
+            for component in data.components:
+                app.Console.PrintWarning(component.uuid + '\n')
+                new_dir = pathlib.Path(g_library_path) / (component.name
+                               + ' (from '
+                               + component.ownerUser.username + ')')
+                createObjectPath(new_dir, component, 'component')
+    app.Console.PrintWarning('Component list update finished\n')
+
+
+def updateComponent(g_library_path, component_path):
+    data = parsingGpl(g_library_path)
+    if isinstance(data, SimpleNamespace):
+        if len(data.componentModifications) == 0:
+            app.Console.PrintWarning('No modifications for the component\n')
+        else:
+            for modification in data.componentModifications:
+                new_dir = pathlib.Path(component_path)
+                new_dir /= modification.modificationName
+                createObjectPath(new_dir, modification, 'modification')
+
+    app.Console.PrintWarning('Updated the list of component modifications\n')
+
+
+def updateComponentModificaion(g_library_path, modification_path,
+                               modification_uuid):
+    data = parsingGpl(g_library_path)
+    if isinstance(data, SimpleNamespace):
+        if len(data.componentModificationFilesets) == 0:
+            app.Console.PrintWarning('Fileset not found for FreeCAD\n')
+        else:
+            CDBSApi(QueriesAPI.filesetFiles(data.componentModificationFilesets[0].uuid),
+                    g_library_path)
+
+            data = parsingGpl(g_library_path)
+            if isinstance(data, SimpleNamespace):
+                if len(data.componentModificationFilesetFiles) == 0:
+                    app.Console.PrintWarning('No files in fileset\n')
+                else:
+                    urls = []
+                    fns = []
+
+                    for file_of_fileset in \
+                        data.componentModificationFilesetFiles:
+                        urls.append(file_of_fileset.downloadUrl)
+                        fns.append(pathlib.Path(modification_path)
+                                   / file_of_fileset.filename)
+
+                    inputs = zip(urls, fns)
+                    download_parallel(inputs)
+                    app.Console.PrintWarning('Download is completed (')
+                    app.Console.PrintWarning(len(urls))
+                    app.Console.PrintWarning(' file(s)\n')
+
+    app.Console.PrintWarning('Updated component modification files\n')
+
+
+def download_parallel(args):
+    t0 = time.time()
+    results = ThreadPool(cpu_count() - 1).imap_unordered(get_file, args)
+
+    for result in results:
+        app.Console.PrintWarning('\npath: ')
+        app.Console.PrintWarning(result[0])
+        app.Console.PrintWarning(' time (s): ')
+        app.Console.PrintWarning(result[1])
+
+    app.Console.PrintWarning('\nTotal time:')
+    app.Console.PrintWarning(time.time() - t0)
+    app.Console.PrintWarning('\n')
+
+
+def get_file(args):
+    t0 = time.time()
+    url, filepath = args[0], args[1]
+    manager = QtNetwork.QNetworkAccessManager()
+
+    try:
+        request = QtNetwork.QNetworkRequest(QtCore.QUrl(url))
+        request.setRawHeader(b'User-Agent', g_user_agent)
+        reply = manager.get(request)
+        loop = QtCore.QEventLoop()
+        reply.finished.connect(loop.quit)
+        loop.exec_()
+    except Exception as e:
+        app.Console.PrintWarning('Exception in download file: ')
+        app.Console.PrintWarning(e)
+    else:
+        if reply.error() == QtNetwork.QNetworkReply.NoError:
+            responseData = reply.readAll()
+            with filepath.open('wb') as f:
+                f.write(responseData)
+            return (filepath, time.time() - t0)
+        else:
+            app.Console.PrintWarning('Error')
+
+
+class CDBSApi:
+    def __init__(self, query, g_library_path):
+        app.Console.PrintWarning('Getting data...\n')
+        self.doRequest(query, g_library_path)
+
+    def doRequest(self, query, g_library_path):
+        api_url = param.GetString('api-url', '')
+        req = QtNetwork.QNetworkRequest(QtCore.QUrl(api_url))
+
+        auth_header = 'Bearer ' + param.GetString('auth-token', '')
+        header = {'Authorization': auth_header}
+
+        req.setRawHeader(b"Content-Type", g_content_type);
+        req.setRawHeader(b"Authorization", auth_header.encode());
+
+        body = json.dumps(query).encode('utf-8')
+
+        self.nam = QtNetwork.QNetworkAccessManager()
+        reply = self.nam.post(req, body)
+        loop = QtCore.QEventLoop()
+        reply.finished.connect(loop.quit)
+        loop.exec_()
+        self.handleResponse(reply, g_library_path)
+
+    def handleResponse(self, reply, g_library_path):
+        new_info_file = pathlib.Path(g_library_path) / g_response_file
+        clearPath(new_info_file)
+        er = reply.error()
+
+        if er == QtNetwork.QNetworkReply.NoError:
+            if reply.attribute(QtNetwork.QNetworkRequest.HttpStatusCodeAttribute) \
+                == 200:
+                bytes_string = reply.readAll()
+
+                with new_info_file.open('wb') as file:
+                    file.write(bytes_string)
+                app.Console.PrintWarning('Success\n')
+            else:
+                app.Console.PrintWarning('Failed, status code: ')
+                app.Console.PrintWarning(reply.attribute(QtNetwork.QNetworkRequest.HttpStatusCodeAttribute))
+        else:
+            app.Console.PrintWarning('Error occured: ')
+            app.Console.PrintWarning(er)
+            app.Console.PrintWarning('\n')
+            app.Console.PrintWarning(reply.errorString())
+            app.Console.PrintWarning('\n')
+
+
+def parsingGpl(g_library_path):
+    app.Console.PrintWarning('Data processing, please wait.\n')
+    response_path = pathlib.Path(g_library_path) / g_response_file
+
+    if response_path.exists():
+        with response_path.open('rb', buffering=0) as f:
+            x = json.loads(f.readall(), object_hook=lambda d: \
+                        SimpleNamespace(**d))
+
+        if x.data:
+            return x.data
+        else:
+            app.Console.PrintWarning('Error occured: ')
+
+            for error in x.errors:
+                app.Console.PrintWarning(error.message + '\n')
+    else:
+        app.Console.PrintWarning('No file with response\n')
+
+    app.Console.PrintWarning('Failed\n')
+
+
+class CDBSAuth:
+
+    def __init__(self, username, password):
+        app.Console.PrintWarning('Getting a new token, please wait.\n')
+
+        query = {'user': {'username': username, 'password': password}}
+
+        self.doRequest(query)
+
+    def doRequest(self, query):
+        req = QtNetwork.QNetworkRequest(QtCore.QUrl(g_api_login))
+
+        req.setRawHeader(b"Content-Type", g_content_type);
+
+        body = json.dumps(query).encode('utf-8')
+        self.nam = QtNetwork.QNetworkAccessManager()
+        reply = self.nam.post(req, body)
+        loop = QtCore.QEventLoop()
+        reply.finished.connect(loop.quit)
+        loop.exec_()
+        self.handleResponse(reply)
+
+    def handleResponse(self, reply):
+        er = reply.error()
+
+        if er == QtNetwork.QNetworkReply.NoError:
+            bytes_string = reply.readAll()
+            token = json.loads(str(bytes_string, 'utf-8'))
+            param.SetString('auth-token', token['bearer'])
+
+            app.Console.PrintWarning('Success\n')
+        else:
+
+            app.Console.PrintWarning('Error occured: ')
+            app.Console.PrintWarning(er)
+            app.Console.PrintWarning('\n')
+            app.Console.PrintWarning(reply.errorString())
+            app.Console.PrintWarning('\n')
+
+
+class QueriesAPI:
+
+    def favComponents():
+        return {'query': '''{
+          components (args: {
+            favorite: true
+          }) {
+            uuid
+            name
+            ownerUser {
+              uuid
+              username
+            }
+            imageFile {
+              uuid
+              filename
+              downloadUrl
+            }
+          }
+        }'''}
+
+    def componentModifications(object_uuid):
+        query = \
+            {'query': """{ \
+          componentModifications (args: { \
+            componentUuid: \"""" \
+             + object_uuid \
+             + """\"
+          }) { \
+            uuid \
+            modificationName \
+          } \
+        }"""}
+
+        return query
+
+    def targetFileset(object_uuid):
+        query = \
+            {'query': """{ \
+          componentModificationFilesets (args: { \
+            modificationUuid: \"""" \
+             + object_uuid \
+             + """\"
+            programIds: 42 \
+          }) { \
+            uuid \
+          } \
+        }"""}
+
+        return query
+
+    def filesetFiles(object_uuid):
+        query = \
+            {'query': """{ \
+          componentModificationFilesetFiles (args: { \
+            filesetUuid: \"""" \
+             + object_uuid \
+             + """\"
+          }) { \
+            uuid \
+            filename \
+            downloadUrl \
+          } \
+        }"""}
+
+        return query
+
+
+def clearPath(rm_path):
+    """ clear Path: remove a directory or file """
+
+    if rm_path.exists():
+        if rm_path.is_dir():
+            os.rmdir(rm_path)
+        else:
+            os.remove(rm_path)
+
+
+def createObjectPath(new_dir, object_data, object_des):
+    """ create a new object path """
+
+    if new_dir.exists() and not new_dir.is_dir():
+        # remove the file that prevents the directory from being created
+        os.remove(new_dir)
+    if not new_dir.is_dir():
+        os.mkdir(new_dir)
+    new_info_file = new_dir / object_des
+    with new_info_file.open('w') as f:
+        f.write(json.dumps(object_data, default=lambda o: o.__dict__, indent=4))
+        f.close()
+
+
+def readObjectInfo(object_file, object):
+    """ read information about an object from a file """
+
+    with object_file.open('r') as data_file:
+        object_data = json.loads(data_file.read(),
+                                object_hook=lambda d: SimpleNamespace(**d))
+        app.Console.PrintWarning('Select ')
+        app.Console.PrintWarning(object)
+        app.Console.PrintWarning(': ')
+        app.Console.PrintWarning(object_data.uuid)
+        app.Console.PrintWarning('\n')
+        data_file.close()
+        return object_data
