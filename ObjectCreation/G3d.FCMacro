@@ -176,7 +176,7 @@ pathMacro = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Macro")
 pathUI = pathMacro.GetString("MacroPath","") + "/g3d/ui/g3d15.ui"
 pathUI = pathUI.replace("\\","/")
 
-minimoExtrusion = 0.01
+minimoExtrusion = App.Units.Quantity('0.01 mm')
 
 
 class g3d:
