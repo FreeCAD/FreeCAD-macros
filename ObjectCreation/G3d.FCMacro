@@ -180,7 +180,7 @@ pathUI = pathMacro.GetString("MacroPath","") + "/g3d/ui/g3d15.ui"
 minimoExtrusion = App.Units.Quantity('0.01 mm')
 
 
-class g3d:
+class generator3d:
 
     def __init__(self):
         self.form = FreeCADGui.PySideUic.loadUi(pathUI)
@@ -472,5 +472,5 @@ if idioma != 0:
     titulo = "(" + cadenasIdiomas [idioma][0] + ")"
 else:
     titulo = ""      
-panel = g3d()
+panel = generator3d()
 FreeCADGui.Control.showDialog(panel)
