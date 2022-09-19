@@ -172,9 +172,9 @@ cadenasIdiomas = [
 
 
 
-rutaMacro = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Macro")     
-rutaUI = rutaMacro.GetString("MacroPath","") + "/g3d/ui/g3d15.ui"
-rutaUI = rutaUI.replace("\\","/")
+pathMacro = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Macro")     
+pathUI = pathMacro.GetString("MacroPath","") + "/g3d/ui/g3d15.ui"
+pathUI = pathUI.replace("\\","/")
 
 minimoExtrusion = 0.01
 
@@ -182,7 +182,7 @@ minimoExtrusion = 0.01
 class g3d:
 
     def __init__(self):
-        self.form = FreeCADGui.PySideUic.loadUi(rutaUI)
+        self.form = FreeCADGui.PySideUic.loadUi(pathUI)
         
         lista = []
         self.nombrePlanta = ""
@@ -215,9 +215,9 @@ class g3d:
         self.form.etPlanta.clicked.connect(self.cambiaCheckedPlanta)
 
         
-        self.inicializarCadenas()
+        self.initStrings()
 
-    def inicializarCadenas(self):
+    def initStrings(self):
         traducir = self.traducir
         self.form.setWindowTitle(__Name__ + " " + titulo)
         self.form.etInfo.setText(traducir(idioma,"Seleccione un sketch (boceto) en 2 o 3 vistas:"))
