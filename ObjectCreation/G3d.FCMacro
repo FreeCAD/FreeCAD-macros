@@ -52,7 +52,9 @@ __Files__ = 'g3d/icons/g3d.svg,g3d/ui/g3d15.ui'
 # Traducción inglés:    Rocco Vicedomini
  
 
-import FreeCAD,FreeCADGui,Part
+import FreeCAD as app
+import FreeCADGui as gui
+import Part
 
 from PySide import QtCore, QtGui
 from FreeCAD import Base
