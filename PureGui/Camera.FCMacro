@@ -55,8 +55,8 @@ from decimal import *
 import FreeCAD as App
 import Draft, Part, PartGui, FreeCADGui, DraftVecUtils
 
-import PySide                    #  PySide
-from PySide import QtCore, QtGui #  PySide
+import PySide                    #  FreeCAD's PySide!
+from PySide import QtCore, QtGui
 from FreeCAD import Base
 from FreeCAD import Vector
 import pivy
@@ -97,7 +97,7 @@ def icon_path(filename):
     $HOME/.FreeCAD/Macro/Camera/save_view.png where $HOME/.FreeCAD/Macro is the
     path where your macros are saved.
     """
-    macro_dir = App.getUserMacroDir(False)
+    macro_dir = App.getUserMacroDir(True)
     icon_dir = os.path.join(macro_dir, __Name__)
     return os.path.join(icon_dir, filename)
 
