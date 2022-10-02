@@ -303,13 +303,13 @@ class ConfigDialog(QtGui.QDialog):
             (username, password) = (self.form.lineEdit_2.text(),
                                 self.form.lineEdit_4.text())
             CDBSAuth(username, password)
-        app.Console.PrintMessage("Configuration updated\n")
+        app.Console.PrintMessage('Configuration updated\n')
         self.form.close()
 
 
 if QtCore.QDir(g_library_path).exists():
     m = gui.getMainWindow()
-    w = m.findChild(QtGui.QDockWidget,"CADBaseLibrary")
+    w = m.findChild(QtGui.QDockWidget,'CADBaseLibrary')
     if w and hasattr(w, 'isVisible'):
         if w.isVisible():
             w.hide()
@@ -427,8 +427,8 @@ class CDBSApi:
         auth_header = 'Bearer ' + param.GetString('auth-token', '')
         header = {'Authorization': auth_header}
 
-        req.setRawHeader(b"Content-Type", g_content_type);
-        req.setRawHeader(b"Authorization", auth_header.encode());
+        req.setRawHeader(b'Content-Type', g_content_type);
+        req.setRawHeader(b'Authorization', auth_header.encode());
 
         body = json.dumps(query).encode('utf-8')
 
@@ -492,7 +492,7 @@ class CDBSAuth:
     def doRequest(self, query):
         req = QtNetwork.QNetworkRequest(QtCore.QUrl(g_api_login))
 
-        req.setRawHeader(b"Content-Type", g_content_type);
+        req.setRawHeader(b'Content-Type', g_content_type);
 
         body = json.dumps(query).encode('utf-8')
         self.nam = QtNetwork.QNetworkAccessManager()
