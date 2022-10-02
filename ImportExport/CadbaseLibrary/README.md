@@ -48,6 +48,8 @@ In the **CADBase library** window, in the **Options** tab, click the **Settings*
 
 In FreeCAD, you can find which is your user **modules folder** by entering or pasting `App.getUserAppDataDir()+"Mod"` and your usr **macros folder** by entering `App.getUserMacroDir()` in the Python console (found under menu View->Panels)
 
+Please don't use `cadbase_response_file_2018` as the name of files or folders in the CADBase library folder.
+
 ## Link
 
 [Forum thread](https://forum.freecadweb.org/viewtopic.php?f=22&t=69389)

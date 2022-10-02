@@ -72,7 +72,7 @@ __Help__ = 'Requires CADBase account to correct use the macro.'
 __Status__ = 'Stable'
 __Requires__ = 'FreeCAD >= 0.19'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=69389'
-__Files__ = 'CadbaseLibrary/Macro_CadbaseLibrary.md,CadbaseLibrary/cadbase_library.ui,CadbaseLibrary/cadbase_library_config.ui,CadbaseLibrary.svg'
+__Files__ = 'CadbaseLibrary/README.md,CadbaseLibrary/cadbase_library.ui,CadbaseLibrary/cadbase_library_config.ui,CadbaseLibrary.svg'
 
 import os
 import sys
@@ -97,18 +97,20 @@ destination = param.GetString('destination')
 api = param.GetString('api-url')
 token = param.GetString('auth-token')
 g_api_login = 'https://api.cadbase.rs/login'
-g_cdbs_api = "https://api.cadbase.rs/graphql"
+g_cdbs_api = 'https://api.cadbase.rs/graphql'
+g_program_id = 42 # this is FreeCAD ID in CADBase
 g_user_agent = b'Mozilla/5.0 (Macintosh; Intel Mac OS 10 12.3; rv:42.0) \
                 Gecko/20100101 Firefox/42.0'
-g_content_type = b"application/json"
-g_response_file = 'response'
+g_content_type = b'application/json'
+# Please don't use this name as the name of files or folders in the CADBase Library folder.
+g_response_file = 'cadbase_response_file_2018'
 
-macro_dir = app.getUserMacroDir(True) + "/CadbaseLibrary"
-g_ui_file = macro_dir + "/cadbase_library.ui"
-g_ui_file_config = macro_dir + "/cadbase_library_config.ui"
+macro_dir = app.getUserMacroDir(True) + '/CadbaseLibrary'
+g_ui_file = macro_dir + '/cadbase_library.ui'
+g_ui_file_config = macro_dir + '/cadbase_library_config.ui'
 
 try:
-    QtCore.QTextCodec.setCodecForTr(QTextCodec.codecForName("UTF-8"))
+    QtCore.QTextCodec.setCodecForTr(QTextCodec.codecForName('UTF-8'))
 except:
     pass # Will fallback to Latin-1
 
@@ -130,7 +132,6 @@ if not token:
 
 
 class ExpFileSystemModel(QtGui.QFileSystemModel):
-
     """ a custom QFileSystemModel that displays freecad file icons """
 
     def __init__(self):
@@ -146,7 +147,6 @@ class ExpFileSystemModel(QtGui.QFileSystemModel):
 
 
 class ExpCdbsWidget(QtGui.QDockWidget):
-
     """ a library explorer CADBase widget """
 
     def __init__(self, parent=None):
@@ -213,10 +213,7 @@ class ExpCdbsWidget(QtGui.QDockWidget):
                         self.previewframe.preview.setPixmap(im)
                         return
             except Exception as e:
-                app.Console.PrintWarning(e)
-                app.Console.PrintWarning(': ')
-                app.Console.PrintWarning(path)
-                app.Console.PrintWarning('\n')
+                app.Console.PrintError(f'{e}: {path}\n')
         self.previewframe.preview.clear()
 
     def doubleclicked(self, index):
@@ -238,7 +235,7 @@ class ExpCdbsWidget(QtGui.QDockWidget):
                     updateComponentModificaion(g_library_path, clck_path,
                             modification_data.uuid)
             else:
-                app.Console.PrintWarning('Token not found')
+                app.Console.PrintError('Token not found\n')
         else:
             str_path = str(clck_path.resolve())
             str_path_l = str_path.lower()
@@ -251,8 +248,7 @@ class ExpCdbsWidget(QtGui.QDockWidget):
                 elif str_path_l.endswith('.fcstd'):
                     gui.activeDocument().mergeProject(str_path)
             except Exception as e:
-                app.Console.PrintWarning(e)
-                app.Console.PrintWarning('\n')
+                app.Console.PrintError(f'{e}\n')
             gui.SendMsgToActiveView('ViewFit')
 
 
@@ -264,6 +260,7 @@ class ExpCdbsWidget(QtGui.QDockWidget):
         ConfigDialog(parent=self)
 
 class ConfigDialog(QtGui.QDialog):
+    """ a dialog for macro settings and get access token """
 
     def __init__(self, parent=None):
         QtGui.QDialog.__init__(self, parent)
@@ -287,14 +284,14 @@ class ConfigDialog(QtGui.QDialog):
         g_library_path = param.GetString('destination','')
         np = QtGui.QFileDialog.getExistingDirectory(
             self,
-            "Local location of your existing CADBase library",
+            'Local location of your existing CADBase library',
             g_library_path
             )
         if np:
             self.form.lineEdit_3.setText(np)
 
     def reject(self):
-        app.Console.PrintWarning("Changes not accepted\n")
+        app.Console.PrintMessage('Changes not accepted\n')
         self.form.close()
 
     def accept(self):
@@ -306,7 +303,7 @@ class ConfigDialog(QtGui.QDialog):
             (username, password) = (self.form.lineEdit_2.text(),
                                 self.form.lineEdit_4.text())
             CDBSAuth(username, password)
-        app.Console.PrintWarning("Configuration updated\n")
+        app.Console.PrintMessage("Configuration updated\n")
         self.form.close()
 
 
@@ -321,53 +318,48 @@ if QtCore.QDir(g_library_path).exists():
     else:
         m.addDockWidget(QtCore.Qt.RightDockWidgetArea, ExpCdbsWidget())
 else:
-    app.Console.PrintWarning("Library path ", g_library_path, "not found.")
+    app.Console.PrintWarning(f'Library path "{g_library_path}" not found.\n')
 
 
 def updateComponentsList(g_library_path):
     data = parsingGpl(g_library_path)
     if isinstance(data, SimpleNamespace):
-        if len(data.components) == 0:
-            app.Console.PrintWarning("You don't have favorite components\n")
-        else:
+        if data.components:
             for component in data.components:
-                app.Console.PrintWarning(component.uuid + '\n')
+                app.Console.PrintLog(component.uuid + '\n')
                 new_dir = pathlib.Path(g_library_path) / (component.name
                                + ' (from '
                                + component.ownerUser.username + ')')
                 createObjectPath(new_dir, component, 'component')
-    app.Console.PrintWarning('Component list update finished\n')
+        else:
+            app.Console.PrintWarning("You don't have favorite components\n")
+    app.Console.PrintMessage('Component list update finished\n')
 
 
 def updateComponent(g_library_path, component_path):
     data = parsingGpl(g_library_path)
     if isinstance(data, SimpleNamespace):
-        if len(data.componentModifications) == 0:
-            app.Console.PrintWarning('No modifications for the component\n')
-        else:
+        if data.componentModifications:
             for modification in data.componentModifications:
                 new_dir = pathlib.Path(component_path)
                 new_dir /= modification.modificationName
                 createObjectPath(new_dir, modification, 'modification')
-
-    app.Console.PrintWarning('Updated the list of component modifications\n')
+        else:
+            app.Console.PrintWarning('No modifications for the component\n')
+    app.Console.PrintMessage('Updated the list of component modifications\n')
 
 
 def updateComponentModificaion(g_library_path, modification_path,
                                modification_uuid):
     data = parsingGpl(g_library_path)
     if isinstance(data, SimpleNamespace):
-        if len(data.componentModificationFilesets) == 0:
-            app.Console.PrintWarning('Fileset not found for FreeCAD\n')
-        else:
+        if data.componentModificationFilesets:
             CDBSApi(QueriesAPI.filesetFiles(data.componentModificationFilesets[0].uuid),
                     g_library_path)
 
             data = parsingGpl(g_library_path)
             if isinstance(data, SimpleNamespace):
-                if len(data.componentModificationFilesetFiles) == 0:
-                    app.Console.PrintWarning('No files in fileset\n')
-                else:
+                if data.componentModificationFilesetFiles:
                     urls = []
                     fns = []
 
@@ -379,11 +371,12 @@ def updateComponentModificaion(g_library_path, modification_path,
 
                     inputs = zip(urls, fns)
                     download_parallel(inputs)
-                    app.Console.PrintWarning('Download is completed (')
-                    app.Console.PrintWarning(len(urls))
-                    app.Console.PrintWarning(' file(s)\n')
-
-    app.Console.PrintWarning('Updated component modification files\n')
+                    app.Console.PrintMessage(f'Download is completed ({len(urls)} file(s))\n')
+                else:
+                    app.Console.PrintWarning('No files in fileset\n')
+        else:
+            app.Console.PrintWarning('Fileset not found for FreeCAD\n')
+    app.Console.PrintMessage('Updated component modification files\n')
 
 
 def download_parallel(args):
@@ -391,14 +384,9 @@ def download_parallel(args):
     results = ThreadPool(cpu_count() - 1).imap_unordered(get_file, args)
 
     for result in results:
-        app.Console.PrintWarning('\npath: ')
-        app.Console.PrintWarning(result[0])
-        app.Console.PrintWarning(' time (s): ')
-        app.Console.PrintWarning(result[1])
+        app.Console.PrintLog(f'path: "{result[0]}" time: {result[1]} s\n')
 
-    app.Console.PrintWarning('\nTotal time:')
-    app.Console.PrintWarning(time.time() - t0)
-    app.Console.PrintWarning('\n')
+    app.Console.PrintMessage(f'Total time: {time.time() - t0} s\n')
 
 
 def get_file(args):
@@ -414,8 +402,7 @@ def get_file(args):
         reply.finished.connect(loop.quit)
         loop.exec_()
     except Exception as e:
-        app.Console.PrintWarning('Exception in download file: ')
-        app.Console.PrintWarning(e)
+        app.Console.PrintError(f'Exception in download file: {e}\n')
     else:
         if reply.error() == QtNetwork.QNetworkReply.NoError:
             responseData = reply.readAll()
@@ -423,12 +410,14 @@ def get_file(args):
                 f.write(responseData)
             return (filepath, time.time() - t0)
         else:
-            app.Console.PrintWarning('Error')
+            app.Console.PrintError('Error\n')
 
 
 class CDBSApi:
+    """ class for sending requests and handling responses """
+
     def __init__(self, query, g_library_path):
-        app.Console.PrintWarning('Getting data...\n')
+        app.Console.PrintMessage('Getting data...\n')
         self.doRequest(query, g_library_path)
 
     def doRequest(self, query, g_library_path):
@@ -452,30 +441,24 @@ class CDBSApi:
 
     def handleResponse(self, reply, g_library_path):
         new_info_file = pathlib.Path(g_library_path) / g_response_file
-        clearPath(new_info_file)
+        removeObject(new_info_file) # deleting old a response if it exists
         er = reply.error()
 
         if er == QtNetwork.QNetworkReply.NoError:
-            if reply.attribute(QtNetwork.QNetworkRequest.HttpStatusCodeAttribute) \
-                == 200:
+            if reply.attribute(QtNetwork.QNetworkRequest.HttpStatusCodeAttribute) == 200:
                 bytes_string = reply.readAll()
-
                 with new_info_file.open('wb') as file:
                     file.write(bytes_string)
-                app.Console.PrintWarning('Success\n')
+                app.Console.PrintMessage('Success\n')
             else:
-                app.Console.PrintWarning('Failed, status code: ')
-                app.Console.PrintWarning(reply.attribute(QtNetwork.QNetworkRequest.HttpStatusCodeAttribute))
+                app.Console.PrintError(f'Failed, status code: {reply.attribute(QtNetwork.QNetworkRequest.HttpStatusCodeAttribute)}\n')
         else:
-            app.Console.PrintWarning('Error occured: ')
-            app.Console.PrintWarning(er)
-            app.Console.PrintWarning('\n')
-            app.Console.PrintWarning(reply.errorString())
-            app.Console.PrintWarning('\n')
+            app.Console.PrintError(f'Error occured: {er}\n')
+            app.Console.PrintError(reply.errorString() + '\n')
 
 
 def parsingGpl(g_library_path):
-    app.Console.PrintWarning('Data processing, please wait.\n')
+    app.Console.PrintMessage('Data processing, please wait.\n')
     response_path = pathlib.Path(g_library_path) / g_response_file
 
     if response_path.exists():
@@ -486,20 +469,21 @@ def parsingGpl(g_library_path):
         if x.data:
             return x.data
         else:
-            app.Console.PrintWarning('Error occured: ')
+            app.Console.PrintError('Error occured:\n')
 
             for error in x.errors:
-                app.Console.PrintWarning(error.message + '\n')
+                app.Console.PrintError(error.message + '\n')
     else:
-        app.Console.PrintWarning('No file with response\n')
+        app.Console.PrintError('No file with response\n')
 
-    app.Console.PrintWarning('Failed\n')
+    app.Console.PrintError('Failed\n')
 
 
 class CDBSAuth:
+    """ class for getting a token to access the CADBase platform """
 
     def __init__(self, username, password):
-        app.Console.PrintWarning('Getting a new token, please wait.\n')
+        app.Console.PrintMessage('Getting a new token, please wait.\n')
 
         query = {'user': {'username': username, 'password': password}}
 
@@ -526,20 +510,17 @@ class CDBSAuth:
             token = json.loads(str(bytes_string, 'utf-8'))
             param.SetString('auth-token', token['bearer'])
 
-            app.Console.PrintWarning('Success\n')
+            app.Console.PrintMessage('Success\n')
         else:
-
-            app.Console.PrintWarning('Error occured: ')
-            app.Console.PrintWarning(er)
-            app.Console.PrintWarning('\n')
-            app.Console.PrintWarning(reply.errorString())
-            app.Console.PrintWarning('\n')
+            app.Console.PrintError(f'Error occured: {er}\n')
+            app.Console.PrintError(reply.errorString() + '\n')
 
 
 class QueriesAPI:
+    """ class contains queries for the CADBase (using GraphQL API) """
 
     def favComponents():
-        return {'query': '''{
+        return {"query": """{
           components (args: {
             favorite: true
           }) {
@@ -555,89 +536,71 @@ class QueriesAPI:
               downloadUrl
             }
           }
-        }'''}
+        }"""}
 
     def componentModifications(object_uuid):
-        query = \
-            {'query': """{ \
-          componentModifications (args: { \
-            componentUuid: \"""" \
-             + object_uuid \
-             + """\"
-          }) { \
-            uuid \
-            modificationName \
-          } \
-        }"""}
-
-        return query
+        return {"query": f"""{{
+          componentModifications (args: {{
+            componentUuid: \"{object_uuid}\"
+          }}) {{
+            uuid
+            modificationName
+          }}
+        }}"""}
 
     def targetFileset(object_uuid):
-        query = \
-            {'query': """{ \
-          componentModificationFilesets (args: { \
-            modificationUuid: \"""" \
-             + object_uuid \
-             + """\"
-            programIds: 42 \
-          }) { \
-            uuid \
-          } \
-        }"""}
-
-        return query
+        return {"query": f"""{{
+          componentModificationFilesets (args: {{
+            modificationUuid: \"{object_uuid}\"
+            programIds: {g_program_id}
+          }}) {{
+            uuid
+          }}
+        }}"""}
 
     def filesetFiles(object_uuid):
-        query = \
-            {'query': """{ \
-          componentModificationFilesetFiles (args: { \
-            filesetUuid: \"""" \
-             + object_uuid \
-             + """\"
-          }) { \
-            uuid \
-            filename \
-            downloadUrl \
-          } \
-        }"""}
-
-        return query
+        return {"query": f"""{{
+          componentModificationFilesetFiles (args: {{
+            filesetUuid: \"{object_uuid}\"
+          }}) {{
+            uuid
+            filename
+            downloadUrl
+          }}
+        }}"""}
 
 
-def clearPath(rm_path):
-    """ clear Path: remove a directory or file """
-
-    if rm_path.exists():
-        if rm_path.is_dir():
-            os.rmdir(rm_path)
+def removeObject(rm_object):
+    """ delete directory or file from local storage """
+    if rm_object.exists():
+        if rm_object.is_dir():
+            os.rmdir(rm_object)
         else:
-            os.remove(rm_path)
+            os.remove(rm_object)
+        app.Console.PrintLog(f'"{rm_object}" removed\n')
 
 
-def createObjectPath(new_dir, object_data, object_des):
+def createObjectPath(new_dir, object_info, object_type):
     """ create a new object path """
-
     if new_dir.exists() and not new_dir.is_dir():
-        # remove the file that prevents the directory from being created
-        os.remove(new_dir)
-    if not new_dir.is_dir():
-        os.mkdir(new_dir)
-    new_info_file = new_dir / object_des
-    with new_info_file.open('w') as f:
-        f.write(json.dumps(object_data, default=lambda o: o.__dict__, indent=4))
-        f.close()
+        app.Console.PrintError(f'Please remove the "{new_dir}" file for correct operation\n')
+    else:
+        if not new_dir.is_dir():
+            os.mkdir(new_dir)
+        new_info_file = new_dir / object_type
+        try:
+            with new_info_file.open('w') as f:
+                f.write(json.dumps(object_info, default=lambda o: o.__dict__, indent=4))
+                f.close()
+        except Exception as e:
+            app.Console.PrintError(f'{e}\n')
 
 
-def readObjectInfo(object_file, object):
+def readObjectInfo(object_type, object):
     """ read information about an object from a file """
-
-    with object_file.open('r') as data_file:
-        object_data = json.loads(data_file.read(),
+    with object_type.open('r') as data_file:
+        object_info = json.loads(data_file.read(),
                                 object_hook=lambda d: SimpleNamespace(**d))
-        app.Console.PrintWarning('Select ')
-        app.Console.PrintWarning(object)
-        app.Console.PrintWarning(': ')
-        app.Console.PrintWarning(object_data.uuid)
-        app.Console.PrintWarning('\n')
+        app.Console.PrintLog(f'Select {object}: {object_info.uuid}\n')
         data_file.close()
-        return object_data
+        return object_info
