@@ -20,11 +20,11 @@ __Files__ = 'Infoplus.svg,InfoPlus/ui/InfoPlus.ui'
 
 # (En español:)
 
-# Autor:			18Turbo
+# Autor:            18Turbo
 # Fecha inicial:  22-08-2022
-# Versión:		0.1.0 BETA
-#	
-# Funcionalidad:	Muestra datos detallados del objeto seleccionado
+# Versión:      0.1.0 BETA
+#   
+# Funcionalidad:    Muestra datos detallados del objeto seleccionado
 #
 # Notas de versiones:
 # v.0.1.0:        Adaptación al Addon Manager
@@ -39,7 +39,7 @@ __Files__ = 'Infoplus.svg,InfoPlus/ui/InfoPlus.ui'
 # v.0.0.4:        Nuevos objetos para mostrar información, y más información
 # v.0.0.3:        Otra pestaña de información, mejora de los datos
 # v.0.0.2:        Mejora presentación de los datos
-# v.0.0.1:		Información del Bounding Box, área, volumen, ubicación, longitud.
+# v.0.0.1:      Información del Bounding Box, área, volumen, ubicación, longitud.
 #
 #
 # --------------------------------------------------------------------------------------------------------
@@ -58,13 +58,13 @@ pathUI = pathMacro.GetString("MacroPath","") + "/InfoPlus/ui/InfoPlus.ui"
 principio = " ("
 fin = ")"
 iniRichText = '<html><head/><body><p>'
-red = '<html><head/><body><p><span style=" color:#cc0000;"><strong>'
-blue = '<html><head/><body><p><span style=" color:#0000cc;"><strong>'
-green = '<html><head/><body><p><span style=" color:#4e9a06;"><strong>'
-bold = '<html><head/><body><p><strong>'
-negrita = '<strong>'
-fNegrita = '</strong>'
-finRichText = '</strong></span></p></body></html>'
+red = '<span style=" color:#cc0000;">'
+blue = '<span style=" color:#0000cc;">'
+green = '<span style=" color:#4e9a06;">'
+fColor = '</span>'
+bold = '<strong>'
+fBold = '</strong>'
+finRichText = '</p></body></html>'
 
 strLang = [
     [ # Español
@@ -142,13 +142,164 @@ strLang = [
         "Vértices de las Aristas:",
         "Longitudes de las Aristas:",
         "Masas de las Aristas:",
-        "¡Es un sólido!"
+        "¡Es un sólido!",
+        "Arista"
 
     ],
     [ # English
-        ## Strings for translation into any language (English Strings)
-        ""
-
+        ## Strings for translation into any language (English Strings)        
+        "InfoPlus",                 # DON'T CHANGE
+        "Version:",
+        "Basic:",
+        "AREA:",
+        "VOLUME:",
+        "MASS:",
+        "Base placement:",
+        "X:",
+        "Y:",
+        "Z:",
+        "Dist. to Origin:",            # Longitud al Origen
+        "Lenght:",
+        "Centre of mass:",
+        "X:",
+        "Y:",
+        "Z:",
+        "Centre of gravity:",
+        "X:",
+        "Y:",
+        "Z:",
+        "BBox",                    # DON'T CHANGE
+        "Bounding box",      #21
+        "Minimum X value:",
+        "Maximum X value:",
+        "Lenght X:",
+        "Minimum Y value:",
+        "Maximum Y value:",
+        "Lenght Y:",
+        "Mimimum Z value:",
+        "Maximum Z value:",
+        "Lenght Z:",
+        "Coordinates of centre:",
+        "X:",
+        "Y:",
+        "Z:",
+        "Lenght of the bounding box diagonal:",
+        "Comp",                                                # ABBREVIATION FOR: Composition
+        "OBJECT COMPOSITION",
+        "Vertices:",
+        "Edges:",
+        "Wires:",
+        "Faces:",
+        "Vertices",
+        "Vertex coordinates:",
+        "Axis/Edges",
+        "Vertices of edge:",
+        "Edge lenght:",
+        "Edge mass:",
+        "Subshapes:",
+        "Compounds:",
+        "Shells:",
+        "Solids:",
+        "Img",                                                  # ABBREVIATION FOR: Image
+        "IMAGE",
+        "X size:",
+        "Y size:",
+        "Image path: (it could display the path of FreeCAD cache)",
+        "Data",
+        "Object name",
+        "Object internal name",
+        "Object full name",
+        "Object name",
+        "Identifier",
+        "Visibility:",
+        "Vertex",
+        "Axis/Edges",
+        "Visible",
+        "Hidden",
+        "Select only one suitable object",
+        "Vertex coordinates:",
+        "Vertices of edge:",
+        "Edge lenght:",
+        "Edge mass:",
+        "¡It is a solid!",
+        "Edge"
+    ],
+    [    # Italian
+        "InfoPlus",                 # DON'T CHANGE
+        "Versione:",
+        "Principale",
+        "AREA:",
+        "VOLUME:",
+        "MASSA:",
+        "Posizione base:",
+        "X:",
+        "Y:",
+        "Z:",
+        "Dist. dall'Origine:",            # Longitud al Origen
+        "Distanza:",
+        "Centro di massa:",
+        "X:",
+        "Y:",
+        "Z:",
+        "Centro di gravità:",
+        "X:",
+        "Y:",
+        "Z:",
+        "BBox",                    # DON'T CHANGE
+        "Quadro contenitore",      #21
+        "Minimo in X:",
+        "Massimo in X:",
+        "Lunghezza in X:",
+        "Minimo in Y :",
+        "Massimo in Y:",
+        "Lunghezza in Y:",
+        "Mimimo in Z:",
+        "Massimo in Z:",
+        "Lunghezza in Z:",
+        "Coordinate del centro:",
+        "X:",
+        "Y:",
+        "Z:",
+        "Lunghezza della diagonale del quadro contenitore:",
+        "Comp",                                                # ABBREVIATION FOR: Composizione
+        "COMPOSIZIONE DELL'OGGETTO",
+        "Vertici (Vertices):",
+        "Contorni (Edges):",
+        "Fili (Wires):",
+        "Facce (Faces):",
+        "Vertici",
+        "Coordinates dei vertici:",
+        "Assi/Contorni",
+        "Vertici dei contorni:",
+        "Lunghezza dei contorni:",
+        "Massa dei contorni:",
+        "Forme inferiori (Subshapes):",
+        "Composti (Compounds):",
+        "Gusci (Shells):",
+        "Solidi (Solids):",
+        "Img",                                                  # ABBREVIATION FOR: Image
+        "IMMAGINE",
+        "Dimensione in X:",
+        "Dimensione in Y:",
+        "Percorso dell'immagine: (può visualizzare il percorso della cache di FreeCAD)",
+        "Dati",
+        "Nome dell'Oggetto",
+        "Nome INTERNO dell'oggetto",
+        "Nome completo dell'Oggetto",
+        "NNome delel'Oggetto",
+        "Identificatore",
+        "Visibilità:",
+        "Verticec",
+        "Assi/Contorni",
+        "Visibile",
+        "Nascosto",
+        "Seleziona un solo oggetto idoneo",
+        "Coordinates dei vertici:",
+        "Vertici dei contorni:",
+        "Lunghezza dei contorni:",
+        "Massa dei contorni:",
+        "¡E' un solido!",
+        "Contorni"
     ]
         ]
 
@@ -224,43 +375,43 @@ class InfoPlus:
         self.form.etMasa.setText(tr("MASA:"))
         self.form.etMasa.setEnabled(False)
         self.form.masa.setEnabled(False)
-        self.form.etUbicacion.setText(bold + tr("Ubicación Base:") + finRichText)
+        self.form.etUbicacion.setText(iniRichText + bold + tr("Ubicación Base:") + fBold + finRichText)
         self.form.etUbicacion.setEnabled(False)
-        self.form.etUbx.setText(red + tr("X:") + finRichText)
+        self.form.etUbx.setText(iniRichText + bold + red + tr("X:") + fColor + fBold + finRichText)
         self.form.etUbx.setEnabled(False)
         self.form.ubx.setEnabled(False)
-        self.form.etUby.setText(green + tr("Y:") + finRichText)
+        self.form.etUby.setText(iniRichText + bold + green + tr("Y:") + fColor + fBold + finRichText)
         self.form.etUby.setEnabled(False)
         self.form.uby.setEnabled(False)
-        self.form.etUbz.setText(blue + tr("Z:") + finRichText)
+        self.form.etUbz.setText(iniRichText + bold + blue + tr("Z:") + fColor + fBold + finRichText)
         self.form.etUbz.setEnabled(False)
         self.form.ubz.setEnabled(False)
         self.form.etUblon.setText(tr("Long. Origen:"))
         self.form.etUblon.setEnabled(False)
         self.form.lonBase.setEnabled(False)
-        self.form.etLon.setText(bold + tr("Longitud:") + finRichText)
+        self.form.etLon.setText(iniRichText + bold + tr("Longitud:") + fBold + finRichText)
         self.form.etLon.setEnabled(False)
         self.form.longitud.setEnabled(False)
-        self.form.etCMasas.setText(bold + tr("Centro de Masas:") + finRichText)
+        self.form.etCMasas.setText(iniRichText + bold + tr("Centro de Masas:") + fBold + finRichText)
         self.form.etCMasas.setEnabled(False)
-        self.form.etCmx.setText(red + tr("X:") + finRichText)
+        self.form.etCmx.setText(iniRichText + bold + red + tr("X:") + fColor + fBold + finRichText)
         self.form.etCmx.setEnabled(False)
         self.form.cmx.setEnabled(False)
-        self.form.etCmy.setText(green + tr("Y:") + finRichText)
+        self.form.etCmy.setText(iniRichText + bold + green + tr("Y:") + fColor + fBold + finRichText)
         self.form.etCmy.setEnabled(False)
         self.form.cmy.setEnabled(False)
-        self.form.etCmz.setText(blue + tr("Z:") + finRichText)
+        self.form.etCmz.setText(iniRichText + bold + blue + tr("Z:") + fColor + fBold + finRichText)
         self.form.etCmz.setEnabled(False)
         self.form.cmz.setEnabled(False)
-        self.form.etCg.setText(bold + tr("Centro de Gravedad:") + finRichText)
+        self.form.etCg.setText(iniRichText + bold + tr("Centro de Gravedad:") + fBold + finRichText)
         self.form.etCg.setEnabled(False)
-        self.form.etCgx.setText(red + tr("X:") + finRichText)
+        self.form.etCgx.setText(iniRichText + bold + red + tr("X:") + fColor + fBold + finRichText)
         self.form.etCgx.setEnabled(False)
         self.form.cgx.setEnabled(False)
-        self.form.etCgy.setText(green + tr("Y:") + finRichText)
+        self.form.etCgy.setText(iniRichText + bold + green + tr("Y:") + fColor + fBold + finRichText)
         self.form.etCgy.setEnabled(False)
         self.form.cgy.setEnabled(False)
-        self.form.etCgz.setText(blue + tr("Z:") + finRichText)
+        self.form.etCgz.setText(iniRichText + bold + blue + tr("Z:") + fColor + fBold + finRichText)
         self.form.etCgz.setEnabled(False)
         self.form.cgz.setEnabled(False)
 
@@ -269,60 +420,60 @@ class InfoPlus:
             titleBb = "(" + strLang[g_num_lang][21] + ")"
         else:
             titleBb = ""
-        self.form.etBb.setText(bold + "BOUNDING BOX" + titleBb + finRichText)
-        self.form.etMinx.setText(bold + tr("Mínimo en X:") + finRichText)
+        self.form.etBb.setText(iniRichText + bold + "BOUNDING BOX" + titleBb + fBold + finRichText)
+        self.form.etMinx.setText(iniRichText + bold + tr("Mínimo en X:") + fBold + finRichText)
         self.form.etMinx.setEnabled(False)
         self.form.minx.setEnabled(False)
-        self.form.etMaxx.setText(bold + tr("Máximo en X:") + finRichText)
+        self.form.etMaxx.setText(iniRichText + bold + tr("Máximo en X:") + fBold + finRichText)
         self.form.etMaxx.setEnabled(False)
         self.form.maxx.setEnabled(False)
-        self.form.etLonx.setText(bold + tr("Longitud en X:") + finRichText)
+        self.form.etLonx.setText(iniRichText + bold + tr("Longitud en X:") + fBold + finRichText)
         self.form.etLonx.setEnabled(False)
         self.form.lonx.setEnabled(False)
-        self.form.etMiny.setText(bold + tr("Mínimo en Y:") + finRichText)
+        self.form.etMiny.setText(iniRichText + bold + tr("Mínimo en Y:") + fBold + finRichText)
         self.form.etMiny.setEnabled(False)
         self.form.miny.setEnabled(False)
-        self.form.etMaxy.setText(bold + tr("Máximo en Y:") + finRichText)
+        self.form.etMaxy.setText(iniRichText + bold + tr("Máximo en Y:") + fBold + finRichText)
         self.form.etMaxy.setEnabled(False)
         self.form.maxy.setEnabled(False)
-        self.form.etLony.setText(bold + tr("Longitud en Y:") + finRichText)
+        self.form.etLony.setText(iniRichText + bold + tr("Longitud en Y:") + fBold + finRichText)
         self.form.etLony.setEnabled(False)
         self.form.lony.setEnabled(False)
-        self.form.etMinz.setText(bold + tr("Mínimo en Z:") + finRichText)
+        self.form.etMinz.setText(iniRichText + bold + tr("Mínimo en Z:") + fBold + finRichText)
         self.form.etMinz.setEnabled(False)
         self.form.minz.setEnabled(False)
-        self.form.etMaxz.setText(bold + tr("Máximo en Z:") + finRichText)
+        self.form.etMaxz.setText(iniRichText + bold + tr("Máximo en Z:") + fBold + finRichText)
         self.form.etMaxz.setEnabled(False)
         self.form.maxz.setEnabled(False)
-        self.form.etLonz.setText(bold + tr("Longitud en Z:") + finRichText)
+        self.form.etLonz.setText(iniRichText + bold + tr("Longitud en Z:") + fBold + finRichText)
         self.form.etLonz.setEnabled(False)
         self.form.lonz.setEnabled(False)
-        self.form.etCentro.setText(bold + tr("Coordenadas del Centro:") + finRichText)
-        self.form.etCentrox.setText(red + tr("X:") + finRichText)
+        self.form.etCentro.setText(iniRichText + bold + tr("Coordenadas del Centro:") + fBold + finRichText)
+        self.form.etCentrox.setText(iniRichText + bold + red + tr("X:") + fColor + fBold + finRichText)
         self.form.etCentrox.setEnabled(False)
         self.form.centrox.setEnabled(False)
-        self.form.etCentroy.setText(green + tr("Y:") + finRichText)
+        self.form.etCentroy.setText(iniRichText + bold + green + tr("Y:") + fColor + fBold + finRichText)
         self.form.etCentroy.setEnabled(False)
         self.form.centroy.setEnabled(False)
-        self.form.etCentroz.setText(blue + tr("Z:") + finRichText)
+        self.form.etCentroz.setText(iniRichText + bold + blue + tr("Z:") + fColor + fBold + finRichText)
         self.form.etCentroz.setEnabled(False)
         self.form.centroz.setEnabled(False)
-        self.form.etDiabb.setText(bold + tr("Longitud de la diagonal del cuadro delimitador:") + finRichText)
+        self.form.etDiabb.setText(iniRichText + bold + tr("Longitud de la diagonal del cuadro delimitador:") + fBold + finRichText)
         self.form.etDiabb.setEnabled(False)
         self.form.diabb.setEnabled(False)
         
         #Composición
-        self.form.etComposicion.setText(bold + tr("COMPOSICIÓN DEL OBJETO") + finRichText)
-        self.form.etVertices.setText(bold + tr("Vértices (Vertexes):") + finRichText)
+        self.form.etComposicion.setText(iniRichText + bold + tr("COMPOSICIÓN DEL OBJETO") + fBold + finRichText)
+        self.form.etVertices.setText(iniRichText + bold + tr("Vértices (Vertexes):") + fBold + finRichText)
         self.form.etVertices.setEnabled(False)
         self.form.vertices.setEnabled(False)
-        self.form.etEjes.setText(bold + tr("Ejes/Aristas (Edges):") + finRichText)
+        self.form.etEjes.setText(iniRichText + bold + tr("Ejes/Aristas (Edges):") + fBold + finRichText)
         self.form.etEjes.setEnabled(False)
         self.form.ejes.setEnabled(False)
-        self.form.etAlambres.setText(bold + tr("Alambres (Wires):") + finRichText)
+        self.form.etAlambres.setText(iniRichText + bold + tr("Alambres (Wires):") + fBold + finRichText)
         self.form.etAlambres.setEnabled(False)
         self.form.alambres.setEnabled(False)
-        self.form.etCaras.setText(bold + tr("Caras (Faces):") + finRichText)
+        self.form.etCaras.setText(iniRichText + bold + tr("Caras (Faces):") + fBold + finRichText)
         self.form.etCaras.setEnabled(False)
         self.form.caras.setEnabled(False)
 
@@ -341,45 +492,45 @@ class InfoPlus:
         self.form.etComboEjesMasas.setEnabled(False)
         self.form.comboEjesMasas.setEnabled(False)
 
-        self.form.etSubformas.setText(bold + tr("Subformas (Subshapes):") + finRichText)
+        self.form.etSubformas.setText(iniRichText + bold + tr("Subformas (Subshapes):") + fBold + finRichText)
         self.form.etSubformas.setEnabled(False)
         self.form.subformas.setEnabled(False)
-        self.form.etCompuestos.setText(bold + tr("Compuestos (Compounds):") + finRichText)
+        self.form.etCompuestos.setText(iniRichText + bold + tr("Compuestos (Compounds):") + fBold + finRichText)
         self.form.etCompuestos.setEnabled(False)
         self.form.compuestos.setEnabled(False)
-        self.form.etFundas.setText(bold + tr("Fundas (Shells):") + finRichText)
+        self.form.etFundas.setText(iniRichText + bold + tr("Fundas (Shells):") + fBold + finRichText)
         self.form.etFundas.setEnabled(False)
         self.form.fundas.setEnabled(False)
-        self.form.etSolidos.setText(bold + tr("Sólidos (Solids):") + finRichText)
+        self.form.etSolidos.setText(iniRichText + bold + tr("Sólidos (Solids):") + fBold + finRichText)
         self.form.etSolidos.setEnabled(False)
         self.form.solidos.setEnabled(False)
 
         # Imagen
-        self.form.etImagen.setText(bold + tr("IMAGEN") + finRichText)
-        self.form.etImgx.setText(bold + tr("Tamaño de X:") + finRichText)
+        self.form.etImagen.setText(iniRichText + bold + tr("IMAGEN") + fBold + finRichText)
+        self.form.etImgx.setText(iniRichText + bold + tr("Tamaño de X:") + fBold + finRichText)
         self.form.etImgx.setEnabled(False)
         self.form.imgx.setEnabled(False)
-        self.form.etImgy.setText(bold + tr("Tamaño de Y:") + finRichText)
+        self.form.etImgy.setText(iniRichText + bold + tr("Tamaño de Y:") + fBold + finRichText)
         self.form.etImgy.setEnabled(False)
         self.form.imgy.setEnabled(False)
-        self.form.etRutaImagen.setText(bold + tr("Ruta de la imagen (puede mostrar la ruta de caché de FreeCAD)") + finRichText)
+        self.form.etRutaImagen.setText(iniRichText + bold + tr("Ruta de la imagen (puede mostrar la ruta de caché de FreeCAD)") + fBold + finRichText)
         self.form.etRutaImagen.setEnabled(False)
         self.form.rutaImagen.setEnabled(False)
 
         # Datos
-        self.form.etDatoLabel.setText(iniRichText + tr("Nombre del Objeto") + negrita + " (Label):" + fNegrita + finRichText)
+        self.form.etDatoLabel.setText(iniRichText + tr("Nombre del Objeto") + bold + " (Label):" + fBold + finRichText)
         self.form.etDatoLabel.setEnabled(False)
         self.form.datoLabel.setEnabled(False)
-        self.form.etDatoName.setText(iniRichText + tr("Nombre INTERNO del Objeto") + negrita + " (Name):" + fNegrita + finRichText)
+        self.form.etDatoName.setText(iniRichText + tr("Nombre INTERNO del Objeto") + bold + " (Name):" + fBold + finRichText)
         self.form.etDatoName.setEnabled(False)
         self.form.datoName.setEnabled(False)
-        self.form.etDatoFullName.setText(iniRichText + tr("Nombre completo del Objeto") + negrita + " (FullName):" + fNegrita + finRichText)
+        self.form.etDatoFullName.setText(iniRichText + tr("Nombre completo del Objeto") + bold + " (FullName):" + fBold + finRichText)
         self.form.etDatoFullName.setEnabled(False)
         self.form.datoFullName.setEnabled(False)
-        self.form.etDatoLabel2.setText(iniRichText + tr("Nombre del Objeto") + negrita + " (Label2):" + fNegrita + finRichText)
+        self.form.etDatoLabel2.setText(iniRichText + tr("Nombre del Objeto") + bold + " (Label2):" + fBold + finRichText)
         self.form.etDatoLabel2.setEnabled(False)
         self.form.datoLabel2.setEnabled(False)
-        self.form.etDatoId.setText(iniRichText + tr("Identificador") + negrita + " (ID):" + fNegrita + finRichText)
+        self.form.etDatoId.setText(iniRichText + tr("Identificador") + bold + " (ID):" + fBold + finRichText)
         self.form.etDatoId.setEnabled(False)
         self.form.datoId.setEnabled(False)
         self.form.etDatoVisibilidad.setText(tr("Visibilidad:"))
@@ -429,12 +580,14 @@ class InfoPlus:
         self.form.etUblon.setEnabled(True)
 
     def longitud(self):
+        # Length
         self.form.basicos.setEnabled(True)
         self.form.longitud.setText(str(objetoSeleccion.Length, 2) + principio + str(objetoSeleccion.Length) + fin)
         self.form.longitud.setEnabled(True)
         self.form.etLon.setEnabled(True)
 
     def centroMasas(self):
+        # Center of Mass
         self.form.basicos.setEnabled(True)
         cmX = objetoSeleccion.Shape.CenterOfMass[0]
         cmY = objetoSeleccion.Shape.CenterOfMass[1]
@@ -448,6 +601,7 @@ class InfoPlus:
         self.form.etCMasas.setEnabled(True)
 
     def centroGravedad(self):
+        # Center of Gravity
         self.form.basicos.setEnabled(True)
         cgX = objetoSeleccion.Shape.CenterOfGravity[0]
         cgY = objetoSeleccion.Shape.CenterOfGravity[1]
@@ -461,6 +615,7 @@ class InfoPlus:
         self.form.etCg.setEnabled(True)
 
     def boundbox(self):
+        # Bounding Box
         self.form.boundingbox.setEnabled(True)
         xmin = objetoSeleccion.Shape.BoundBox.XMin
         xmax = objetoSeleccion.Shape.BoundBox.XMax
@@ -519,7 +674,8 @@ class InfoPlus:
         self.form.etDiabb.setEnabled(True)
         self.form.diabb.setEnabled(True)    
 
-    def composicion(self):        
+    def composicion(self):
+        # Shapes       
         self.form.composicion.setEnabled(True)
         self.form.etComposicion.setEnabled(True)
         listaVertices = objetoSeleccion.Shape.Vertexes
@@ -539,7 +695,7 @@ class InfoPlus:
         self.form.caras.setEnabled(True)
         self.form.etCaras.setEnabled(True)
 
-        #if (len(listaCaras)>0):            --> Version 0.1.1
+        #if (len(listaCaras)>0):            --> Next Version
         #    self.form.tabCaras.setEnabled(False)  
 
         if (len(listaVertices)>0):
@@ -600,9 +756,10 @@ class InfoPlus:
         self.form.solidos.setEnabled(True)
         self.form.etSolidos.setEnabled(True)
         if len(listaSolidos)>0:
-            self.form.textoSolido.setText(red + self.translate("¡Es un sólido!") + finRichText)
+            self.form.textoSolido.setText(iniRichText + bold + red + self.translate("¡Es un sólido!") + fColor + fBold + finRichText)
 
     def dimImagenes(self):
+        # Image
         self.form.imagen.setEnabled(True)
         self.form.imagen.setFocusPolicy(QtCore.Qt.TabFocus)
         self.form.imagen.setFocus()
@@ -619,8 +776,9 @@ class InfoPlus:
         self.form.etRutaImagen.setEnabled(True)
 
     def datos(self):
+        # Data
         self.form.tabDatos.setEnabled(True)        
-        self.form.datoLabel.setText(red + objetoSeleccion.Label + finRichText)
+        self.form.datoLabel.setText(iniRichText + bold + red + objetoSeleccion.Label + fColor + fBold + finRichText)
         self.form.etDatoLabel.setEnabled(True)
         self.form.datoLabel.setEnabled(True)
         self.form.datoName.setText(objetoSeleccion.Name)
@@ -634,7 +792,7 @@ class InfoPlus:
             self.form.datoLabel2.setText(label2)
             self.form.etDatoLabel2.setEnabled(True)
             self.form.datoLabel2.setEnabled(True)
-        self.form.datoId.setText(blue + str(objetoSeleccion.ID) + finRichText)
+        self.form.datoId.setText(iniRichText + bold + blue + str(objetoSeleccion.ID) + fColor + fBold + finRichText)
         self.form.etDatoId.setEnabled(True)
         self.form.datoId.setEnabled(True)
         visib = objetoSeleccion.Visibility
