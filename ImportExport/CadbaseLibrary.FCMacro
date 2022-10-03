@@ -520,7 +520,7 @@ class QueriesAPI:
     """ class contains queries for the CADBase (using GraphQL API) """
 
     def favComponents():
-        return {"query": """{
+        return {'query': '''{
           components (args: {
             favorite: true
           }) {
@@ -536,38 +536,38 @@ class QueriesAPI:
               downloadUrl
             }
           }
-        }"""}
+        }'''}
 
     def componentModifications(object_uuid):
-        return {"query": f"""{{
+        return {'query': f'''{{
           componentModifications (args: {{
-            componentUuid: \"{object_uuid}\"
+            componentUuid: "{object_uuid}"
           }}) {{
             uuid
             modificationName
           }}
-        }}"""}
+        }}'''}
 
     def targetFileset(object_uuid):
-        return {"query": f"""{{
+        return {'query': f'''{{
           componentModificationFilesets (args: {{
-            modificationUuid: \"{object_uuid}\"
+            modificationUuid: "{object_uuid}"
             programIds: {g_program_id}
           }}) {{
             uuid
           }}
-        }}"""}
+        }}'''}
 
     def filesetFiles(object_uuid):
-        return {"query": f"""{{
+        return {'query': f'''{{
           componentModificationFilesetFiles (args: {{
-            filesetUuid: \"{object_uuid}\"
+            filesetUuid: "{object_uuid}"
           }}) {{
             uuid
             filename
             downloadUrl
           }}
-        }}"""}
+        }}'''}
 
 
 def removeObject(rm_object):
