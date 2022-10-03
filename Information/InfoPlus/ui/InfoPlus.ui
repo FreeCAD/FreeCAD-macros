@@ -32,7 +32,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>4</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="basicos">
     <property name="enabled">
@@ -1673,9 +1673,9 @@
     <widget class="QLabel" name="etImgx">
      <property name="geometry">
       <rect>
-       <x>9</x>
+       <x>10</x>
        <y>40</y>
-       <width>101</width>
+       <width>121</width>
        <height>20</height>
       </rect>
      </property>
@@ -1692,9 +1692,9 @@
     <widget class="QLabel" name="etImgy">
      <property name="geometry">
       <rect>
-       <x>9</x>
+       <x>10</x>
        <y>60</y>
-       <width>101</width>
+       <width>121</width>
        <height>20</height>
       </rect>
      </property>
@@ -1711,7 +1711,7 @@
     <widget class="QLabel" name="imgx">
      <property name="geometry">
       <rect>
-       <x>125</x>
+       <x>140</x>
        <y>40</y>
        <width>211</width>
        <height>20</height>
@@ -1727,9 +1727,9 @@
     <widget class="QLabel" name="imgy">
      <property name="geometry">
       <rect>
-       <x>125</x>
+       <x>140</x>
        <y>60</y>
-       <width>201</width>
+       <width>211</width>
        <height>20</height>
       </rect>
      </property>
