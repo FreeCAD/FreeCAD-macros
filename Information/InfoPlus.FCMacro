@@ -5,7 +5,7 @@ __Name__ = 'InfoPlus'
 __Comment__ = 'Shows detailed information'
 __Author__ = '18Turbo'
 __Version__ = '0.1.0'
-__Date__ = '2022-10-02'
+__Date__ = '2022-10-03'
 __License__ = 'LGPL-2.0-or-later'
 __Web__ = 'https://github.com/18turbo/infoPlusFreeCAD'
 __Wiki__ = 'https://github.com/18turbo/infoPlusFreeCAD/wiki'
@@ -22,7 +22,7 @@ __Files__ = 'InfoPlus.svg,InfoPlus/ui/InfoPlus.ui'
 
 # Autor:            18Turbo
 # Fecha inicial:  22-08-2022
-# Versión:      0.1.0 BETA
+# Versión:          0.1.0 BETA
 #   
 # Funcionalidad:    Muestra datos detallados del objeto seleccionado
 #
