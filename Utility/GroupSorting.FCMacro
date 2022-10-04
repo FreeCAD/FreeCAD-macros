@@ -1,0 +1,130 @@
+# -*- coding: utf-8 -*-
+# (c) 18Turbo, 2022
+
+__Name__ = 'GroupSorting (Ordenación)'
+__Comment__ = 'The macro sorts the groups and pieces of a piece.\nSelect groups with <CTRL> key, and execute the macro.'
+__Author__ = '18Turbo'
+__Version__ = '0.1.0'
+__Date__ = '2022-10-04'
+__License__ = 'LGPL-2.0-or-later'
+__Web__ = 'https://github.com/18turbo/OrdenacionRapidaFreeCAD'
+__Wiki__ = 'https://github.com/18turbo/OrdenacionRapidaFreeCAD'
+__Icon__ = 'GroupSorting.svg'
+__Help__ = ''
+__Status__ = 'beta'
+__Requires__ = 'FreeCAD >= v0.20'
+__Contact__ = 'https://github.com/18turbo'
+__Communication__ = ''
+__Files__ = 'GroupSorting.svg'
+
+
+# (Spanish:)
+#
+# Autor:            18Turbo
+# Fecha Incial:     22-07-2022
+# Versión:          0.1.0 BETA
+#   
+# Funcionalidad:   Ordena grupos según sean seleccionados.
+#
+# Notas Importantes:     hay que saber que los grupos sin padre tienen un orden específico en FreeCAD y no se pueden ordenar con este script
+#                   porque aunque se hace el proceso correcto, FreeCAD no permite la ordenación de estos de una forma simple y escapa
+#                   a los propósitos de este script.
+#
+#
+# Notas de versiones:
+# v.0.1.0:        Adaptación al Addon Manager
+# v.0.0.5:      Depurado para que funcione con grupos sin padre, es decir, con el documento como padre, aunque FreeCAD no lo permita. Así,
+#               si en una versión superior se permite, el script no hay que modificarlo.
+# v.0.0.4:      Versión Alfa funcional.
+#
+#
+#
+
+import FreeCAD as app
+import FreeCADGui as gui
+
+cIntro = '\n'
+
+strLang = [
+    [ # Español
+        ## Strings for translation into any language
+        "Los grupos no tienen un padre y FreeCAD no permite la ordenación en este nivel",
+        "Debes seleccionar Grupos con el mismo padre",
+        "Debes elegir más de un objeto"
+
+    ],
+    [ # English
+        ## Strings for translation into any language (English Strings)
+        "Groups do not have a parent and FreeCAD does not allow sorting at this level",
+        "You must select Groups with the same parent",
+        "You must choose more than one object"
+
+    ]
+        ]
+
+def tr(text):
+    # Translate
+    if (text not in strLang[0]) or (g_num_lang < 0) or (g_num_lang >= len(strLang)):
+        return text
+    primerIdioma = strLang[0]
+    indice = primerIdioma.index(text)
+    if (indice == -1) or (indice >= len(strLang[g_num_lang])):
+        return text
+    return strLang[g_num_lang][indice]
+
+
+lang = gui.getLocale()
+# Default to English.
+g_num_lang = 1
+if 'Spanish' in lang:
+    g_num_lang = 0
+#elif 'Italian' in lang:
+#    g_num_lang = 2
+
+objetosSeleccionados = Gui.Selection.getSelection()
+
+if len(objetosSeleccionados) > 1:
+    # Comprobando que todos tienen el mismo padre, siempre que no partan de la raíz del documento
+    distintoPadre = False
+    padre = ""
+    if app.ActiveDocument.getObject(objetosSeleccionados[0].Name).InList: # Esto es que tiene padre
+        tienePadre = True
+        for objeto in objetosSeleccionados:
+            if (app.ActiveDocument.getObject(objeto.Name).InList[0].Name != padre):
+                if (padre == ""):
+                    padre = app.ActiveDocument.getObject(objeto.Name).InList[0].Name
+                else:
+                    distintoPadre = True
+                    break;
+    else:
+        tienePadre = False
+        for objeto in objetosSeleccionados:
+            if (app.ActiveDocument.getObject(objeto.Name).InList):
+                distintoPadre = True
+        app.Console.PrintWarning(tr("Los grupos no tienen un padre y FreeCAD no permite la ordenación en este nivel") + cIntro)
+
+    if not distintoPadre:
+        if tienePadre:
+            nombrePadre = app.ActiveDocument.getObject(objeto.Name).InList[0].Name
+         
+        listaNombres = []
+        app.activeDocument().Tip = app.activeDocument().addObject('App::DocumentObjectGroup','GrupoAuxiliarOrdenacion')
+
+        for objetoA in objetosSeleccionados:
+            # Siempre que el objeto sea un grupo
+            if (objetoA.Name.find('Group') > -1) or (objetoA.Name.find('Part') > -1):
+                app.ActiveDocument.getObject(objetoA.Name).removeObject(app.ActiveDocument.getObject(objetoA.Name))
+                app.ActiveDocument.getObject("GroupAuxSorting18T").addObject(app.ActiveDocument.getObject(objetoA.Name))
+                listaNombres.append(objetoA.Name) 
+
+        for nombreObjeto in listaNombres:
+            app.ActiveDocument.getObject("GroupAuxSorting18T").removeObject(app.ActiveDocument.getObject(nombreObjeto))
+            if tienePadre:
+                app.ActiveDocument.getObject(nombrePadre).addObject(app.ActiveDocument.getObject(nombreObjeto))
+
+        app.activeDocument().removeObject("GroupAuxSorting18T")
+        app.activeDocument().recompute()
+    else:
+        app.Console.PrintWarning(tr("Debes seleccionar Grupos con el mismo padre") + cIntro)
+else:
+    app.Console.PrintWarning(tr("Debes elegir más de un objeto") + cIntro)
