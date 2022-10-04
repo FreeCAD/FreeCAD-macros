@@ -327,9 +327,8 @@ def updateComponentsList(g_library_path):
         if data.components:
             for component in data.components:
                 app.Console.PrintLog(component.uuid + '\n')
-                new_dir = pathlib.Path(g_library_path) / (component.name
-                               + ' (from '
-                               + component.ownerUser.username + ')')
+                new_dir = pathlib.Path(g_library_path) \
+                    / f'{component.name} (from  {component.ownerUser.username})'
                 createObjectPath(new_dir, component, 'component')
         else:
             app.Console.PrintWarning("You don't have favorite components\n")
