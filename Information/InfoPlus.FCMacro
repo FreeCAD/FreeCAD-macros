@@ -15,7 +15,7 @@ __Status__ = 'beta'
 __Requires__ = 'FreeCAD >= v0.20'
 __Contact__ = 'https://github.com/18turbo'
 __Communication__ = 'https://github.com/18turbo/infoPlusFreeCAD/issues'
-__Files__ = 'Infoplus.svg,InfoPlus/ui/InfoPlus.ui'
+__Files__ = 'InfoPlus.svg,InfoPlus/ui/InfoPlus.ui'
 
 
 # (En español:)
