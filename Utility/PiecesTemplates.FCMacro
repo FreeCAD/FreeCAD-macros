@@ -4,8 +4,8 @@
 __Name__ = 'PiecesTemplates'
 __Comment__ = 'Create a structured pieces (PiecesTemplates)\nCreador de estructuras de piezas'
 __Author__ = '18Turbo'
-__Version__ = '1.4.0'
-__Date__ = '2022-10-01'
+__Version__ = '1.4.1'
+__Date__ = '2022-10-06'
 __License__ = 'LGPL-2.0-or-later'
 __Web__ = 'https://github.com/18turbo/PlantillaPiezaFreeCAD'
 __Wiki__ = 'https://github.com/18turbo/PlantillaPiezaFreeCAD'
@@ -28,7 +28,7 @@ import re
 #
 # Autor:            18Turbo
 # Fecha Inicial:    1-07-2022
-# Versión:      1.4.0
+# Versión:      1.4.1
 #   
 # Funcionalidad:    Crea una estructura de una pieza con una serie de subcarpetas dentro con varios nombres
 #
@@ -42,6 +42,7 @@ import re
 #               listaGrupos = ['AA',BB'], siempre crearía dos directorios dentro de la pieza, uno con el nombre AA y otro con el nombre BB.
 #
 # Notas de versiones:
+# v.1.4.1:        Corregido error en la posición al añadir un grupo
 # v.1.4.0:        Adaptación inicial al Addon Manager
 #                Cambio de la ventana a la pestaña de tareas
 #                Múltiples Piezas de una vez
@@ -291,13 +292,14 @@ class PiecesTemplates:
             self.form.comboPosicionGrupo.addItem(tr("el primero"))
             self.form.eliminarGrupo.setEnabled(False)
         else:
-            for cont in range(self.longitudListaGrupos):
+            max = self.longitudListaGrupos
+            for cont in range(max):
                 if cont == 0:
                     self.form.comboPosicionGrupo.addItem(tr("el primero"))
-                elif (cont == self.longitudListaGrupos-1):
-                    self.form.comboPosicionGrupo.addItem(tr("el último"))
-                else:
-                    self.form.comboPosicionGrupo.addItem(str(cont+1))    
+                if (cont !=0) and (cont != max):
+                    self.form.comboPosicionGrupo.addItem(str(cont+1))
+                if (cont == max-1):
+                    self.form.comboPosicionGrupo.addItem(tr("el último"))                    
 
     def nombrePiezaCambia(self):
         if (self.form.edicionNombrePieza.text() != ''):
