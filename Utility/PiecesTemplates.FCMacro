@@ -296,7 +296,7 @@ class PiecesTemplates:
             for cont in range(max):
                 if cont == 0:
                     self.form.comboPosicionGrupo.addItem(tr("el primero"))
-                if (cont !=0) and (cont != max):
+                if (cont !=0) and (cont < max):
                     self.form.comboPosicionGrupo.addItem(str(cont+1))
                 if (cont == max-1):
                     self.form.comboPosicionGrupo.addItem(tr("el último"))                    
@@ -322,13 +322,13 @@ class PiecesTemplates:
         if (nombrePos == "el primero"):
             posicion = 0
         elif (nombrePos == "el último"):
-            posicion = self.longitudListaGrupos
+            posicion = self.longitudListaGrupos+1
         else:
             posicion = int(self.form.comboPosicionGrupo.currentText())
         if self.longitudListaGrupos == 0:
             listGroups.append(self.form.leAnadirGrupo.text()) 
         else:
-            listGroups.insert(posicion,self.form.leAnadirGrupo.text())
+            listGroups.insert(posicion-1,self.form.leAnadirGrupo.text())
         self.longitudListaGrupos = len(listGroups)
         
         self.mostrarCheckbox()
