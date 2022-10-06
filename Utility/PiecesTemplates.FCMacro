@@ -320,7 +320,7 @@ class PiecesTemplates:
         # Add Group  
         nombrePos = self.form.comboPosicionGrupo.currentText()
         if (nombrePos == "el primero"):
-            posicion = 0
+            posicion = 1
         elif (nombrePos == "el último"):
             posicion = self.longitudListaGrupos+1
         else:
