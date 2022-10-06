@@ -89,7 +89,7 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color: rgb(244, 255, 241);</string>
+     <string notr="true">;</string>
     </property>
     <widget class="QPushButton" name="anadirGrupo">
      <property name="geometry">
@@ -99,6 +99,9 @@
        <width>141</width>
        <height>25</height>
       </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(222, 253, 214);</string>
      </property>
      <property name="text">
       <string>Añadir el Grupo</string>
@@ -140,7 +143,7 @@
     <widget class="QComboBox" name="comboEliminarGrupo">
      <property name="geometry">
       <rect>
-       <x>30</x>
+       <x>40</x>
        <y>50</y>
        <width>141</width>
        <height>25</height>
@@ -150,11 +153,14 @@
     <widget class="QPushButton" name="eliminarGrupo">
      <property name="geometry">
       <rect>
-       <x>30</x>
+       <x>40</x>
        <y>90</y>
        <width>141</width>
        <height>25</height>
       </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(255, 220, 220);</string>
      </property>
      <property name="text">
       <string>Eliminar el Grupo</string>
@@ -539,7 +545,8 @@
      <string/>
     </property>
     <property name="icon">
-     <iconset theme="help"/>
+     <iconset theme="help">
+      <normaloff>../../../../../.designer/backup</normaloff>../../../../../.designer/backup</iconset>
     </property>
    </widget>
   </widget>
