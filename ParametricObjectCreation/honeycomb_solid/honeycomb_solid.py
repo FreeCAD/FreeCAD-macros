@@ -5,7 +5,7 @@ HoneycombSolid --> Honeycomb solid creator.
 
 import math
 import time
-import FreeCAD
+import FreeCAD as app
 import Part
 
 
@@ -48,7 +48,7 @@ class HoneycombSolid:
 
     def onChanged(self, fp, prop):
         """Callback on changed property."""
-        # FreeCAD.Console.PrintMessage("Change property: " + str(prop) + "\n")
+        # app.Console.PrintMessage("Change property: " + str(prop) + "\n")
         pass
 
     def execute(self, fp):
@@ -62,7 +62,7 @@ class HoneycombSolid:
             self.execute_old(fp)
 
         log_time_end = time.time()
-        FreeCAD.Console.PrintMessage(
+        app.Console.PrintMessage(
             f"Honeycomb ({algorithm_version}) calculated in: "
             f"{log_time_end - log_time_start:0.3f} sec\n"
         )
@@ -82,10 +82,10 @@ class HoneycombSolid:
 
         ###############################################################
         # Create the first polygon.
-        m = FreeCAD.Matrix()
+        m = app.Matrix()
         edges_angle = math.radians(360.0 / edges)
         m.rotateZ(edges_angle)
-        v = FreeCAD.Vector(radius, 0.0, 0.0)
+        v = app.Vector(radius, 0.0, 0.0)
 
         figure = []
         for _ in range(edges):
@@ -95,7 +95,7 @@ class HoneycombSolid:
         polygon = Part.makePolygon(figure)
 
         # Move it to the center of the container box.
-        polygon.translate(FreeCAD.Vector(length / 2.0, width / 2.0, 0.0))
+        polygon.translate(app.Vector(length / 2.0, width / 2.0, 0.0))
 
         # Create a face for the first polygon.
         f1 = Part.Face([polygon])
@@ -107,7 +107,7 @@ class HoneycombSolid:
         # length of the container box.
         n_cols = math.ceil((length / (radius + thickness) / 2.0))
         n_rows = math.ceil((width / (radius + thickness) / 2.0) + 3.0)
-        # FreeCAD.Console.PrintMessage("n_cols: " + str(n_cols) + " n_rows: " + str(n_rows) + "\n")
+        # app.Console.PrintMessage("n_cols: " + str(n_cols) + " n_rows: " + str(n_rows) + "\n")
 
         # To store all the polygon faces.
         e_faces = []
@@ -120,7 +120,7 @@ class HoneycombSolid:
             x_origin = column * x_delta
             y_origin = row * y_delta
 
-            delta_x_y = FreeCAD.Vector(x_origin, y_origin, 0.0)
+            delta_x_y = app.Vector(x_origin, y_origin, 0.0)
 
             polygon_copy = polygon.copy()
             polygon_copy.translate(delta_x_y)
@@ -147,7 +147,7 @@ class HoneycombSolid:
 
         # Join all the faces.
         shell = Part.makeShell(e_faces)
-        extruded_polygon = shell.extrude(FreeCAD.Vector(0.0, 0.0, height))
+        extruded_polygon = shell.extrude(app.Vector(0.0, 0.0, height))
 
         # Cut the array of solids using the container box.
         # Comment it out to see the array of solids.
@@ -171,10 +171,10 @@ class HoneycombSolid:
         edges = 6
 
         # Create the first polygon.
-        m = FreeCAD.Matrix()
+        m = app.Matrix()
         edges_angle = math.radians(360.0 / edges)
         m.rotateZ(edges_angle)
-        v = FreeCAD.Vector(radius, 0.0, 0.0)
+        v = app.Vector(radius, 0.0, 0.0)
 
         figure = []
         for _ in range(edges):
@@ -187,7 +187,7 @@ class HoneycombSolid:
         half_length = length / 2.0
         half_width = width / 2.0
 
-        offset_vector = FreeCAD.Vector(half_length, half_width, 0.0)
+        offset_vector = app.Vector(half_length, half_width, 0.0)
         polygon.translate(offset_vector)
 
         # Calculate how many circumferences need to cover the maximum
@@ -211,11 +211,11 @@ class HoneycombSolid:
         )
         n_cols = math.ceil((length / 2 + circum_radius) / (x_delta)) * 2 - 1
 
-        # FreeCAD.Console.PrintMessage(f"n_rows: {n_rows}")
-        # FreeCAD.Console.PrintMessage(f"n_cols: {n_cols}")
-        # FreeCAD.Console.PrintMessage("circumradius (outer): {:0.3f}".format(circum_radius))
+        # app.Console.PrintMessage(f"n_rows: {n_rows}")
+        # app.Console.PrintMessage(f"n_cols: {n_cols}")
+        # app.Console.PrintMessage("circumradius (outer): {:0.3f}".format(circum_radius))
 
-        delta_x_y = FreeCAD.Vector(0, 0, 0)
+        delta_x_y = app.Vector(0, 0, 0)
 
         # To store all the polygon faces.
         min_col_range = int(math.ceil(-n_cols / 2))
@@ -237,7 +237,7 @@ class HoneycombSolid:
 
         # Join all the faces.
         shell = Part.makeShell(e_faces)
-        extruded_poly = shell.extrude(FreeCAD.Vector(0.0, 0.0, height))
+        extruded_poly = shell.extrude(app.Vector(0.0, 0.0, height))
 
         if use_container:
             # Cut the array of solids using the container box.
@@ -306,7 +306,7 @@ class ViewProviderHoneycombSolid:
 
     def onChanged(self, vp, prop):
         """Print the name of the property that has changed."""
-        # FreeCAD.Console.PrintMessage("Change property: " + str(prop) + "\n")
+        # app.Console.PrintMessage("Change property: " + str(prop) + "\n")
         pass
 
     def getIcon(self):
@@ -412,10 +412,10 @@ class ViewProviderHoneycombSolid:
 
 
 def makeHoneycombSolid(version):
-    doc = FreeCAD.activeDocument()
+    doc = app.activeDocument()
 
     if doc is None:
-        doc = FreeCAD.newDocument()
+        doc = app.newDocument()
 
     obj = doc.addObject("Part::FeaturePython", "HoneycombSolid")
     HoneycombSolid(obj, version)
