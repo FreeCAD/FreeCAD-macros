@@ -64,7 +64,7 @@ class HoneycombSolid:
         log_time_end = time.time()
         FreeCAD.Console.PrintMessage(
             f"Honeycomb ({algorithm_version}) calculated in: "
-            f"{log_time_end - log_time_start:0.3f} sec"
+            f"{log_time_end - log_time_start:0.3f} sec\n"
         )
 
     def execute_old(self, fp):
