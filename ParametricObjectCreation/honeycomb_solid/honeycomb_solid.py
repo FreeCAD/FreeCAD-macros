@@ -37,10 +37,6 @@ class HoneycombSolid:
             "App::PropertyBool", "UseContainer", "Walls", "Invert the shape"
         ).UseContainer = False
 
-        obj.addProperty(
-            "App::PropertyBool", "UseNewAlgorithm", "Walls", "Use the new algorithm"
-        ).UseNewAlgorithm = True
-
         obj.Proxy = self
 
         self.Type = "HoneycombSolid"
@@ -52,112 +48,7 @@ class HoneycombSolid:
         pass
 
     def execute(self, fp):
-        """Callback when doing a recomputation."""
-        log_time_start = time.time()
-        algorithm_version = "new"
-        if fp.UseNewAlgorithm:
-            self.execute_new(fp)
-        else:
-            algorithm_version = "old"
-            self.execute_old(fp)
-
-        log_time_end = time.time()
-        app.Console.PrintMessage(
-            f"Honeycomb ({algorithm_version}) calculated in: "
-            f"{log_time_end - log_time_start:0.3f} sec\n"
-        )
-
-    def execute_old(self, fp):
-        """Callback when doing a recomputation."""
-        length = fp.Length
-        width = fp.Width
-        height = fp.Height
-        radius = fp.Circumradius
-        thickness = fp.Thickness
-
-        edges = 6
-
-        # Container box, used to cut the polygon array.
-        container = Part.makeBox(length, width, height)
-
-        ###############################################################
-        # Create the first polygon.
-        m = app.Matrix()
-        edges_angle = math.radians(360.0 / edges)
-        m.rotateZ(edges_angle)
-        v = app.Vector(radius, 0.0, 0.0)
-
-        figure = []
-        for _ in range(edges):
-            figure.append(v)
-            v = m.multiply(v)
-        figure.append(v)
-        polygon = Part.makePolygon(figure)
-
-        # Move it to the center of the container box.
-        polygon.translate(app.Vector(length / 2.0, width / 2.0, 0.0))
-
-        # Create a face for the first polygon.
-        f1 = Part.Face([polygon])
-
-        #######################################################################
-        # Create copies of polygon using radial pattern.
-
-        # Calculate how many circunferences need to cover the maximum
-        # length of the container box.
-        n_cols = math.ceil((length / (radius + thickness) / 2.0))
-        n_rows = math.ceil((width / (radius + thickness) / 2.0) + 3.0)
-        # app.Console.PrintMessage("n_cols: " + str(n_cols) + " n_rows: " + str(n_rows) + "\n")
-
-        # To store all the polygon faces.
-        e_faces = []
-        # Add the first one created before.
-        e_faces.append(f1)
-
-        # Iterate over each imaginary circle which circunference contains the
-        # center of the polygon circle.
-        def append_face(x_delta, y_delta):
-            x_origin = column * x_delta
-            y_origin = row * y_delta
-
-            delta_x_y = app.Vector(x_origin, y_origin, 0.0)
-
-            polygon_copy = polygon.copy()
-            polygon_copy.translate(delta_x_y)
-            fn = Part.Face([polygon_copy])
-            e_faces.append(fn)
-
-        for column in range(-n_cols, n_cols):
-            for row in range(-n_rows, n_rows):
-                centers_distance = thickness + 2.0 * radius * math.sin(edges_angle)
-                x_delta = centers_distance * math.sin(edges_angle)
-                if (column == 0) and (row == 0):
-                    continue
-                if column % 2 != 0:
-                    # Odd column.
-                    if row % 2 != 0:
-                        # Odd row.
-                        y_delta = centers_distance * math.cos(edges_angle)
-                        append_face(x_delta, y_delta)
-                else:
-                    # Even column.
-                    if (row <= (n_rows / 2)) and (row >= (-n_rows / 2)):
-                        y_delta = centers_distance
-                        append_face(x_delta, y_delta)
-
-        # Join all the faces.
-        shell = Part.makeShell(e_faces)
-        extruded_polygon = shell.extrude(app.Vector(0.0, 0.0, height))
-
-        # Cut the array of solids using the container box.
-        # Comment it out to see the array of solids.
-        shape = container.cut(extruded_polygon)
-
-        fp.Shape = shape  # Comment out to see the array of solids.
-        # fp.Shape = extruded_polygon  # Uncomment it to see the array of solids.
-
-    def execute_new(self, fp):
-        """the new code"""
+        """The new code."""
         length = float(fp.Length)
         width = float(fp.Width)
         height = float(fp.Height)
@@ -166,7 +57,7 @@ class HoneycombSolid:
         try:
             use_container = fp.UseContainer
         except AttributeError:
-            use_container = True  # Backward compatibilty
+            use_container = True  # Backwards compatibilty
 
         edges = 6
 
