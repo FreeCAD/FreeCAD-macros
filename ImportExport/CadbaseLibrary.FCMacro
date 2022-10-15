@@ -62,8 +62,8 @@ __Title__= 'CADBase Library'
 __Name__ = 'CadbaseLibrary'
 __Comment__ = 'This CadbaseLibrary macro to use components (parts) from CADBase in app.'
 __Author__ = 'mnnxp'
-__Date__ = '2022-06-13'
-__Version__ = '0.1.0'
+__Date__ = '2022-10-15'
+__Version__ = '0.1.1'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'http://www.freecadweb.org/wiki/Macro_CadbaseLibrary'
 __Wiki__ = 'http://www.freecadweb.org/wiki/Macro_CadbaseLibrary'
@@ -114,7 +114,7 @@ try:
 except:
     pass # Will fallback to Latin-1
 
-if destination:
+if destination and pathlib.Path(destination).is_dir():
     g_library_path = destination
 else:
     folderDialog = QtGui.QFileDialog.getExistingDirectory(None,
@@ -122,7 +122,6 @@ else:
         'Location of your existing CADBase library'))
     param.SetString('destination', folderDialog.replace('\\', '/'))  # forward slashes apparently work on windows too
     g_library_path = param.GetString('destination')
-
 
 if not api:
     param.SetString('api-url', g_cdbs_api)

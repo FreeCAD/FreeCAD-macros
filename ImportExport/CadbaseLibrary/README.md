@@ -4,8 +4,8 @@
 |Icon=CadbaseLibrary.svg
 |Description=This CadbaseLibrary macro to use components (parts) from CADBase in FreeCAD.
 |Author=mnnxp
-|Version=0.1.0
-|Date=2022-06-13
+|Version=0.1.1
+|Date=2022-10-15
 |FCVersion=0.19
 }}
 
@@ -56,4 +56,5 @@ Please don't use `cadbase_response_file_2018` as the name of files or folders in
 
 ## Version
 
-v0.1 2022-06-13    * first release
+v0.1.0 2022-06-13    * first release
+v0.1.1 2022-10-15    * bugs fixed and code optimization
