@@ -817,4 +817,4 @@ if (len(seleccion) == 1):
     objetoSeleccion = App.ActiveDocument.getObject(seleccion[0].Name)
     InfoPlus().form.show()
 else:
-    App.Console.PrintWarning(translate("Debe seleccionar un solo objeto adecuado"))
+    App.Console.PrintWarning("You must select an only object.")
