@@ -82,7 +82,6 @@ def messageWindow (msg):
 
 def sketchAp (subobjs,tipo,datumPlane,actualizar):
     if len(subobjs) == 1:
-        ko = False        # Variable para salir
         face = subobjs[0]
         if (face.ShapeType == 'Face') and (face.findPlane() != None):
         # Se comprueba que efectivamente hay una cara seleccionada
@@ -103,7 +102,7 @@ def sketchAp (subobjs,tipo,datumPlane,actualizar):
             datumPlane.Length = longitud
             datumPlane.Width = longitud
             vertice = face.Vertexes[0]
-            App.Console.PrintMessage(vertice.Point)
+            
             # Esta combinación funciona siempre
             datumPlane.Placement.Base = vertice.Point
             datumPlane.Placement.Rotation = face.Surface.Rotation
