@@ -4,8 +4,8 @@
 |Icon=CadbaseLibrary.svg
 |Description=This CadbaseLibrary macro to use components (parts) from CADBase in FreeCAD.
 |Author=mnnxp
-|Version=0.1.2
-|Date=2022-11-11
+|Version=0.1.3
+|Date=2022-11-13
 |FCVersion=0.19
 }}
 
@@ -48,7 +48,7 @@ In the **CADBase library** window, in the **Options** tab, click the **Settings*
 
 In FreeCAD, you can find which is your user **modules folder** by entering or pasting `App.getUserAppDataDir()+"Mod"` and your usr **macros folder** by entering `App.getUserMacroDir()` in the Python console (found under menu View->Panels)
 
-Please don't use `cadbase_response_file_2018` as the name of files or folders in the CADBase library folder.
+Please don't use `cadbase_response_file_2018` as the name of files or folders in the CADBase library folder. Server responses are stored in this file, if you'll use this filename for your data, you may lose them.
 
 ## Link
 
@@ -57,5 +57,9 @@ Please don't use `cadbase_response_file_2018` as the name of files or folders in
 ## Version
 
 v0.1.0 2022-06-13    * first release
+
 v0.1.1 2022-10-15    * bugs fixed and code optimization
+
 v0.1.2 2022-11-11    * Changed URLs for `Wiki` and `Web`, code split into files, updated interface: added descriptions for settings
+
+v0.1.3 2022-11-13    * Bugs fixed. Added check to skip a file if it already exists in local storage.

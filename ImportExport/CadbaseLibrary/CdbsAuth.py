@@ -1,16 +1,17 @@
 ''' This file contains one class for authorization on the CADBase platform '''
 
 import json
-from PySide import QtCore
+from PySide import QtCore  # FreeCAD's PySide
 from PySide2 import QtNetwork
 import FreeCAD as app
 from CadbaseLibrary.CdbsEvn import g_param, g_api_login, g_content_type
+from CadbaseLibrary.DataHandler import logger
 
 class CdbsAuth:
     ''' class for getting a token to access the CADBase platform '''
 
     def __init__(self, username, password):
-        app.Console.PrintMessage('Getting a new token, please wait.\n')
+        logger(3, 'Getting a new token, please wait.')
 
         query = {'user': {'username': username, 'password': password}}
 
@@ -30,8 +31,6 @@ class CdbsAuth:
         self.handle_response(reply)
 
     def handle_response(self, reply):
-        global g_param
-
         er = reply.error()
 
         if er == QtNetwork.QNetworkReply.NoError:
@@ -39,7 +38,7 @@ class CdbsAuth:
             token = json.loads(str(response_bytes, 'utf-8'))
             g_param.SetString('auth-token', token['bearer'])
 
-            app.Console.PrintMessage('Success\n')
+            logger(3, 'Success')
         else:
-            app.Console.PrintError(f'Error occured: {er}\n')
-            app.Console.PrintError(reply.errorString() + '\n')
+            logger(1, f'Error occured: {er}')
+            logger(1, reply.errorString())
