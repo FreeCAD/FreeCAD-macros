@@ -4,24 +4,42 @@ HoneycombSolid --> Honeycomb solid creator.
 """
 
 import math
-
+import time
 import FreeCAD as app
-
 import Part
 
 
 class HoneycombSolid:
-
     def __init__(self, obj, version):
         # Custom properties of Honeycomb feature.
-        obj.addProperty('App::PropertyLength', 'Length', 'Honeycomb', 'Length of the Honeycomb').Length=100.0
-        obj.addProperty('App::PropertyLength', 'Width', 'Honeycomb', 'Width of the Honeycomb').Width=100.0
-        obj.addProperty('App::PropertyLength', 'Height', 'Honeycomb', 'Height of the Honeycomb').Height=2.0
-        obj.addProperty('App::PropertyLength', 'Circumradius', 'Polygon', 'Radius of the inner circle').Circumradius=5.0
-        obj.addProperty('App::PropertyLength', 'Thickness', 'Walls', 'Thickness of the honeycomb walls').Thickness=1.0
+        obj.addProperty(
+            "App::PropertyLength", "Length", "Honeycomb", "Length of the Honeycomb"
+        ).Length = 100.0
+        obj.addProperty(
+            "App::PropertyLength", "Width", "Honeycomb", "Width of the Honeycomb"
+        ).Width = 100.0
+        obj.addProperty(
+            "App::PropertyLength", "Height", "Honeycomb", "Height of the Honeycomb"
+        ).Height = 2.0
+        obj.addProperty(
+            "App::PropertyLength",
+            "Circumradius",
+            "Polygon",
+            "Radius of the outer circle",
+        ).Circumradius = 5.0
+        obj.addProperty(
+            "App::PropertyLength",
+            "Thickness",
+            "Walls",
+            "Thickness of the honeycomb walls",
+        ).Thickness = 1.0
+        obj.addProperty(
+            "App::PropertyBool", "UseContainer", "Walls", "Invert the shape"
+        ).UseContainer = False
+
         obj.Proxy = self
 
-        self.Type = 'HoneycombSolid'
+        self.Type = "HoneycombSolid"
         self.Version = version
 
     def onChanged(self, fp, prop):
@@ -30,19 +48,19 @@ class HoneycombSolid:
         pass
 
     def execute(self, fp):
-        """Callback when doing a recomputation."""
-        length = fp.Length
-        width = fp.Width
-        height = fp.Height
-        radius = fp.Circumradius
-        thickness = fp.Thickness
+        """The new code."""
+        length = float(fp.Length)
+        width = float(fp.Width)
+        height = float(fp.Height)
+        radius = float(fp.Circumradius)
+        thickness = float(fp.Thickness)
+        try:
+            use_container = fp.UseContainer
+        except AttributeError:
+            use_container = True  # Backwards compatibilty
 
         edges = 6
 
-        # Container box, used to cut the polygon array.
-        container = Part.makeBox(length, width, height)
-
-        ###############################################################
         # Create the first polygon.
         m = app.Matrix()
         edges_angle = math.radians(360.0 / edges)
@@ -57,83 +75,83 @@ class HoneycombSolid:
         polygon = Part.makePolygon(figure)
 
         # Move it to the center of the container box.
-        polygon.translate(app.Vector(length / 2.0, width / 2.0, 0.0))
+        half_length = length / 2.0
+        half_width = width / 2.0
 
-        # Create a face for the first polygon.
-        f1 = Part.Face([polygon])
+        offset_vector = app.Vector(half_length, half_width, 0.0)
+        polygon.translate(offset_vector)
 
-        #######################################################################
-        # Create copies of polygon using radial pattern.
-
-        # Calculate how many circunferences need to cover the maximum
+        # Calculate how many circumferences need to cover the maximum
         # length of the container box.
-        n_cols = math.ceil((length / (radius + thickness) / 2.0))
-        n_rows = math.ceil((width / (radius + thickness) / 2.0) + 3.0)
-        # app.Console.PrintMessage("n_cols: " + str(n_cols) + " n_rows: " + str(n_rows) + "\n")
+        sin_edges_angle = math.sin(edges_angle)
+
+        # the circum_radius of the hexagon that also considers the thickness
+        circum_radius = radius + thickness / 2 / sin_edges_angle
+
+        # Iterate over each imaginary circle which circumference contains the
+        # center of the polygon circle.
+        centers_distance = 2 * radius * sin_edges_angle + thickness
+        x_delta = centers_distance * sin_edges_angle
+        y_delta = centers_distance
+        half_y_delta = y_delta / 2
+
+        # Calculate row and column counts
+        # we always want to have an odd number of columns and rows
+        n_rows = (
+            math.ceil((width / 2 + circum_radius * sin_edges_angle) / (y_delta)) * 2 - 1
+        )
+        n_cols = math.ceil((length / 2 + circum_radius) / (x_delta)) * 2 - 1
+
+        # app.Console.PrintMessage(f"n_rows: {n_rows}")
+        # app.Console.PrintMessage(f"n_cols: {n_cols}")
+        # app.Console.PrintMessage("circumradius (outer): {:0.3f}".format(circum_radius))
+
+        delta_x_y = app.Vector(0, 0, 0)
 
         # To store all the polygon faces.
+        min_col_range = int(math.ceil(-n_cols / 2))
+        max_col_range = int(math.ceil(n_cols / 2))
+        min_row_range = int(math.ceil(-(n_rows / 2)))
+        max_row_range = int(math.ceil((n_rows / 2)))
         e_faces = []
-        # Add the first one created before.
-        e_faces.append(f1)
-
-        # Iterate over each imaginary circle which circunference contains the
-        # center of the polygon circle.
-        def append_face(x_delta, y_delta):
-            x_origin = column * x_delta
-            y_origin = row * y_delta
-
-            delta_x_y = app.Vector(x_origin, y_origin, 0.0)
-
-            polygon_copy = polygon.copy()
-            polygon_copy.translate(delta_x_y)
-            fn = Part.Face([polygon_copy])
-            e_faces.append(fn)
-
-        for column in range(-n_cols, n_cols):
-            for row in range(-n_rows, n_rows):
-                centers_distance = thickness + 2.0 * radius * math.sin(edges_angle)
-                x_delta = centers_distance * math.sin(edges_angle)
-                if (column == 0) and (row == 0):
-                    continue
-                if column % 2 != 0:
-                    # Odd column.
-                    if row % 2 != 0:
-                        # Odd row.
-                        y_delta = centers_distance * math.cos(edges_angle)
-                        append_face(x_delta, y_delta)
-                else:
-                    # Even column.
-                    if (row <= (n_rows/2)) and (row >= (-n_rows/2)):
-                        y_delta = centers_distance
-                        append_face(x_delta, y_delta)
+        for column in range(min_col_range, max_col_range):
+            # Stagger every other column
+            is_odd_column = column % 2
+            stagger = is_odd_column * half_y_delta
+            delta_x_y.x = column * x_delta
+            for row in range(min_row_range, max_row_range + is_odd_column):
+                delta_x_y.y = row * y_delta - stagger
+                polygon_copy = polygon.copy()
+                polygon_copy.translate(delta_x_y)
+                fn = Part.Face([polygon_copy])
+                e_faces.append(fn)
 
         # Join all the faces.
         shell = Part.makeShell(e_faces)
-        extruded_polygon = shell.extrude(app.Vector(0.0, 0.0, height))
+        extruded_poly = shell.extrude(app.Vector(0.0, 0.0, height))
 
-        # Cut the array of solids using the container box.
-        # Comment it out to see the array of solids.
-        shape = container.cut(extruded_polygon)
-
-        fp.Shape = shape  # Comment out to see the array of solids.
-        # fp.Shape = extruded_polygon  # Uncomment it to see the array of solids.
+        if use_container:
+            # Cut the array of solids using the container box.
+            fp.Shape = Part.makeBox(length, width, height).cut(extruded_poly)
+        else:
+            # Just display the hexagonal shapes
+            fp.Shape = extruded_poly
 
     def __getstate__(self):
         """Callback called when saving the document.
 
-        When saving the document this object gets stored using Python's cPickle module.
-        Since we have some un-pickable here -- the Coin stuff -- we must define this method
-        to return a tuple of all pickable objects or None.
-
+        When saving the document this object gets stored using Python's cPickle
+        module. Since we have some un-pickable here -- the Coin stuff -- we
+        must define this method to return a tuple of all pickable objects or
+        None.
         """
         return self.Type, self.Version
 
     def __setstate__(self, state):
         """Callback called when the document is restored.
 
-        When restoring the pickled object from document we have the chance to set some
-        internals here.
-
+        When restoring the pickled object from document we have the chance to
+        set some internals here.
         """
         self.Type = state[0]
         self.Version = state[1]
@@ -163,7 +181,7 @@ class ViewProviderHoneycombSolid:
         It must be defined in getDisplayModes.
 
         """
-        return 'Shaded'
+        return "Shaded"
 
     def setDisplayMode(self, mode):
         """Map the display mode with those defined in getDisplayModes.
@@ -267,18 +285,18 @@ class ViewProviderHoneycombSolid:
     def __getstate__(self):
         """Callback called when saving the document.
 
-        When saving the document this object gets stored using Python's cPickle module.
-        Since we have some un-pickable here -- the Coin stuff -- we must define this method
-        to return a tuple of all pickable objects or None.
-
+        When saving the document this object gets stored using
+        Python's cPickle module. Since we have some un-pickable here -- the
+        Coin stuff -- we must define this method to return a tuple of all
+        pickable objects or None.
         """
         return None
 
-    def __setstate__(self,state):
+    def __setstate__(self, state):
         """Callback called when the document is restored.
 
-        When restoring the pickled object from document we have the chance to set some
-        internals here.
+        When restoring the pickled object from document we have the chance to
+        set some internals here.
 
         """
         return None
@@ -290,7 +308,7 @@ def makeHoneycombSolid(version):
     if doc is None:
         doc = app.newDocument()
 
-    obj = doc.addObject('Part::FeaturePython', 'HoneycombSolid')
+    obj = doc.addObject("Part::FeaturePython", "HoneycombSolid")
     HoneycombSolid(obj, version)
     ViewProviderHoneycombSolid(obj.ViewObject)
     doc.recompute()
