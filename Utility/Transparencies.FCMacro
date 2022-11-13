@@ -1,0 +1,37 @@
+# -*- coding: utf-8 -*-
+# (c) 18Turbo, 2022
+
+__Name__ = 'Transparencies'
+__Comment__ = 'The selected object becomes 50% transparent (if they have no transparency), and is detransparency otherwise.'
+__Author__ = '18Turbo (Rafael M.) and Rafael García'
+__Version__ = '0.0.2'
+__Date__ = '2022-10-18'
+__License__ = 'LGPL-2.0-or-later'
+__Web__ = 'https://github.com/18turbo/TransparenciaObjetosFreeCAD'
+__Wiki__ = 'https://github.com/18turbo/TransparenciaObjetosFreeCAD'
+__Icon__ = 'Transparencies.svg'
+__Help__ = ''
+__Status__ = 'beta'
+__Requires__ = 'FreeCAD >= v0.19'
+__Contact__ = 'https://github.com/18turbo'
+__Communication__ = ''
+__Files__ = 'Transparencies.svg'
+
+# Agradecimientos: Rafael García
+
+#El objeto seleccionado se vuelve un 50% transparente si no tiene transparencia y se le quita la transparencia si la tiene.
+
+creadaTransparencia = False
+
+objetosSeleccionados = Gui.Selection.getSelection()
+
+for objeto in objetosSeleccionados:
+    transparenciaObjeto = objeto.ViewObject.Transparency
+    if (transparenciaObjeto >= 0 and transparenciaObjeto<10):	# Si no hay transparencia (o muy poca)
+        objeto.ViewObject.Transparency = 50
+        creadaTransparencia = True
+
+if creadaTransparencia == False:	
+    # Si no se ha creado ninguna transparencia, es que se debe poner todo opaco
+    for objeto in objetosSeleccionados:
+        objeto.ViewObject.Transparency = 0

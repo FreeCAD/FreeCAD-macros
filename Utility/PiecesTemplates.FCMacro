@@ -1,0 +1,421 @@
+# -*- coding: utf-8 -*-
+# (c) 18Turbo, 2022
+
+__Name__ = 'PiecesTemplates'
+__Comment__ = 'Create a structured pieces (PiecesTemplates)\nCreador de estructuras de piezas'
+__Author__ = '18Turbo'
+__Version__ = '1.4.1'
+__Date__ = '2022-10-06'
+__License__ = 'LGPL-2.0-or-later'
+__Web__ = 'https://github.com/18turbo/PlantillaPiezaFreeCAD'
+__Wiki__ = 'https://github.com/18turbo/PlantillaPiezaFreeCAD'
+__Icon__ = 'PiecesTemplates.svg'
+__Help__ = ''
+__Status__ = 'beta'
+__Requires__ = 'FreeCAD >= v0.20'
+__Contact__ = 'https://github.com/18turbo'
+__Communication__ = ''
+__Files__ = 'PiecesTemplates.svg,/PiecesTemplates/ui/PiecesTemplates.ui,/PiecesTemplates/Groups.txt'
+
+
+import FreeCAD as app
+import FreeCADGui as gui
+from PySide import QtCore, QtGui
+from PySide2.QtWidgets import *
+import re
+
+# (Spanish):
+#
+# Autor:            18Turbo
+# Fecha Inicial:    1-07-2022
+# Versión:      1.4.1
+#   
+# Funcionalidad:    Crea una estructura de una pieza con una serie de subcarpetas dentro con varios nombres
+#
+# Descripción:  Al pinchar la macro (o el botón en la barra de herramientas), su comportamiento siempre es la de crear una pieza
+#               con una serie de directorios (grupos) dentro (que lo define el array del principio de la macro). El nombre de la pieza se le da
+#                a través de una ventana.
+#
+# Modificaciones del Usuario:
+#               Al cambiar "listaGrupos" en la línea de código con las cadenas que uno desee, se crean el número de directorios
+#               (grupos) con el nombre de cada elemento de la lista. Es completamente MODIFICABLE. Si listaGrupos fuese
+#               listaGrupos = ['AA',BB'], siempre crearía dos directorios dentro de la pieza, uno con el nombre AA y otro con el nombre BB.
+#
+# Notas de versiones:
+# v.1.4.1:        Corregido error en la posición al añadir un grupo
+# v.1.4.0:        Adaptación inicial al Addon Manager
+#                Cambio de la ventana a la pestaña de tareas
+#                Múltiples Piezas de una vez
+#                Checkbox "ilimitados"
+#                Resumen de piezas creadas de una vez (número y nombre)
+#                Imposibilidad de crear nombre de Pieza de nombre vacío, ya que el nombre genérico puede generar algunas confusiones
+#                Scroll en los checkboxes
+# v.1.3.0:      Ahora al pulsar <Return> tras introducir el nombre, crea la pieza con la estructura que hay seleccionada
+#               Se aumenta la capacidad visual de los checkbox a 7
+#               Corrección de errores
+# v.1.2.0:      Se implementa una caja de información para indicar al usuario cómo cambiar los nombres de los grupos (idea
+#                   de Rafael García Rodríguez) 
+#               Se crean unos checkbox por defecto para marcar los directorios que se quieren crear
+# v.1.0.0       Creada ventana donde pide el nombre de la pieza
+# v.0.9.8:      Inicial candidata.
+#
+#
+# Agradecimientos: 
+#        - Hugo Sala Sala: por la traducción al inglés del script
+#        - Rocco Vicedomini: por la traducción al italiano del script
+#
+
+
+listGroups = []
+elementosBorrados = []
+maxElem = 12
+cIntro = '\n'
+
+strLang = [
+    [ # Español
+        ## Strings for translation into any language
+        "Creador de Estructuras de Piezas",
+        "El documento no está activo",
+        "Creación de Piezas",
+        "Nombre de la Pieza:",
+        "Información de Uso",
+        "Grupos/Directorios a crear:",
+        "Crear Estructura de Pieza",
+        "Versión:",
+        "Descripción:",
+        "Información",
+        "Este script (macro) genera una estructura de grupos (directorios) en una pieza, de manera que sea más fácil organizar las distintas operaciones,referencias y objetos de esa pieza.",
+        "Los grupos inicialmente están predefinidos, pero pueden ser cambiados fácilmente.",
+        "Operaciones sobre Grupos",
+        "Añadir Grupo",
+        "Eliminar Grupo",
+        "el primero",
+        "el último",
+        "Listado Piezas Creadas:",
+        "Nº de Piezas Creadas:"
+
+    ],
+    [ # English
+        ## Strings for translation into any language (English Strings)
+        "Part Template Creator",
+        "The document is not active",
+        "Creation of Parts",
+        "Part Name:",
+        "Usage Information:",
+        "Groups/Directories to create:",
+        "Create Part Structure",
+        "Version:",
+        "Description:",
+        "Information",
+        "This script (macro) generates a structure of groups (directories) in a part, so that it is easier to organize the different operations, references, and objects of that part.",
+        "The groups are initially predefined, but can be easily changed.",
+        "Operations on Groups",
+        "Add Group",
+        "Delete Group",
+        "first",
+        "the last",
+        "List Pieces Created:",
+        "Number of Pieces Created:"
+
+    ],
+    [ # Italiano
+        ## Strings for translation into any language (Italian strings)
+        "Creatore di strutture delle Parti",
+        "Il documento non è attivo",
+        "Creazione delle Parti",
+        "Nome della Parte:",
+        "Informazioni per l'uso:",
+        "Gruppi/Cartelle da creare:",
+        "Crea la struttura della Parte",
+        "Versione:",
+        "Descrizione:",
+        "Informazioni",
+        "Questo script (macro) genera una struttura di gruppi (cartelle) in una nuova parte, in modo che sia più semplice organizzare le varie operazioni, i riferimenti e gli elementi di questa parte.",
+        "I gruppi inizialmente risultano predefiniti, però si possono modificare facilmente.",
+        "Operazioni sui Gruppi",
+        "Aggiungi Gruppo",
+        "Elimina Gruppo",
+        "per primo",
+        "per ultimo",
+        "Lista delle parti create:",
+        "Nº di parti create:" 
+    ]
+        ]
+
+ui_path = app.getUserMacroDir(True) + "/PiecesTemplates/ui/PiecesTemplates.ui"
+gr_path = app.getUserMacroDir(True) + "/PiecesTemplates/Groups.txt"
+
+try:
+    _fromUtf8 = QtCore.QString.fromUtf8
+except AttributeError:
+    def _fromUtf8(s):
+        return s
+
+class PiecesTemplates:
+
+    def __init__(self):
+        self.doc = app.activeDocument()
+        if not self.doc:
+            app.Console.PrintWarning(tr('El documento no está activo') + cIntro)
+            return
+        
+        # Init var
+        self.form = gui.PySideUic.loadUi(ui_path)        
+        self.numeroPiezas = 0
+        self.pieza = ""
+        self.form.botonCrear.setEnabled(False)
+
+        # Open File "Groups.txt"
+        self.openF()
+        
+        # Init UI with content
+        self.mostrarCheckbox()
+        self.initStrings()
+
+        # Connect
+        self.form.botonCrear.clicked.connect(self.createPart)        
+        self.form.edicionNombrePieza.returnPressed.connect(self.createPart)
+        self.form.edicionNombrePieza.textChanged.connect(self.nombrePiezaCambia)
+        self.form.botonAyuda.clicked.connect(self.mostrarHelp)        
+        self.form.eliminarGrupo.clicked.connect(self.on_eliminarGrupo_clicked)
+        self.form.anadirGrupo.clicked.connect(self.on_anadirGrupo_clicked)
+
+    def openF(self):
+        with open(gr_path, "r") as groupsFile:
+            for linea in groupsFile.readlines():
+                linea = re.sub("\n","",linea)
+                if (linea != ""):
+                    listGroups.append(linea)
+                    self.form.comboEliminarGrupo.addItem(linea)
+        if (len(listGroups) > maxElem):
+            etError1 = __Name__ + "(Error)"
+            error1 = "En el archivo de texto hay más líneas de las permitidas." + " "
+            error1 += "El máximo es: " + str(maxElem) + cIntro + cIntro
+            error1 += "Se aconseja cancelar y corregir el archivo de texto:" + cIntro + cIntro
+            error1 += gr_path + cIntro + cIntro
+            reply = QtGui.QMessageBox.warning(None,etError1,error1)
+        self.longitudListaGrupos = len(listGroups)
+
+    def translate(self, text):
+        if (text not in strLang[0]) or (g_num_lang < 0) or (g_num_lang >= len(strLang)):
+            return text
+        primerIdioma = strLang[0]
+        indice = primerIdioma.index(text)
+        if (indice == -1) or (indice >= len(strLang[g_num_lang])):
+            return text
+        return strLang[g_num_lang][indice]
+
+    def activarUnCheckbox(self,cad,cont):
+        cad.setText(listGroups[cont])
+        cad.setEnabled(True)
+        cad.setChecked(True)
+
+    def mostrarCheckbox(self):
+        self.initCheckbox()
+        max = self.longitudListaGrupos
+        if max!=0:
+            if max>=1: self.activarUnCheckbox(self.form.cb1,0)                
+            if max>=2: self.activarUnCheckbox(self.form.cb2,1)
+            if max>=3: self.activarUnCheckbox(self.form.cb3,2)
+            if max>=4: self.activarUnCheckbox(self.form.cb4,3)
+            if max>=5: self.activarUnCheckbox(self.form.cb5,4)
+            if max>=6: self.activarUnCheckbox(self.form.cb6,5)
+            if max>=7: self.activarUnCheckbox(self.form.cb7,6)
+            if max>=8: self.activarUnCheckbox(self.form.cb8,7)
+            if max>=9: self.activarUnCheckbox(self.form.cb9,8)
+            if max>=10: self.activarUnCheckbox(self.form.cb10,9)
+            if max>=11: self.activarUnCheckbox(self.form.cb11,10)
+            if max>=12: self.activarUnCheckbox(self.form.cb12,11)
+
+    def unCheckbox(self,cad):
+        cad.setText(self.translate("(Vacío)"))
+        cad.setEnabled(False)
+        cad.setChecked(False)
+
+    def initCheckbox(self):
+        self.unCheckbox(self.form.cb1)
+        self.unCheckbox(self.form.cb2)
+        self.unCheckbox(self.form.cb3)
+        self.unCheckbox(self.form.cb4)
+        self.unCheckbox(self.form.cb5)
+        self.unCheckbox(self.form.cb6)
+        self.unCheckbox(self.form.cb7)
+        self.unCheckbox(self.form.cb8)
+        self.unCheckbox(self.form.cb9)
+        self.unCheckbox(self.form.cb10)
+        self.unCheckbox(self.form.cb11)
+        self.unCheckbox(self.form.cb12)        
+
+    def mostrarComboGroups(self):
+        self.form.comboEliminarGrupo.clear()
+        for cont in range(self.longitudListaGrupos):
+            self.form.comboEliminarGrupo.addItem(listGroups[cont])
+
+    def initStrings(self):
+        tr = self.translate
+        if g_num_lang != 1:
+            title = "(" + strLang[g_num_lang][0] + ")"
+        else:
+            title = ""
+        self.form.setWindowTitle(__Name__ + " " + title)
+        self.form.grupoPrincipal.setTitle(tr("Creación de Piezas"))
+        self.form.etNombrePieza.setText(tr("Nombre de la Pieza:"))
+        self.form.botonAyuda.setToolTip(tr("Información de Uso"))
+        self.form.edicionNombrePieza.setText(tr(""))
+        self.form.etGrupo.setText(tr("Grupos/Directorios a crear:"))            
+        self.form.botonCrear.setText(tr("Crear Estructura de Pieza"))
+        self.form.etVersion.setText(tr("Versión:"))
+        self.form.version.setText(__Version__)
+        self.form.tipoVersion.setText(__Status__)
+        self.form.infoPiezasCreadas.setText("")
+        self.form.etPiezasCreadas.setText(tr("Listado Piezas Creadas:"))
+        self.form.numPiezasCreadas.setText(tr("Nº de Piezas Creadas:"))
+        self.form.grupoOperaciones.setTitle(tr("Operaciones sobre Grupos"))
+        self.form.anadirGrupo.setText(tr("Añadir Grupo"))
+        self.posGroup()
+        self.form.eliminarGrupo.setText(tr("Eliminar Grupo"))
+        self.form.etPiezasCreadas.setEnabled(False)
+        self.form.numPiezas.setEnabled(False)
+
+    def mostrarHelp(self):
+        tr = self.translate
+        titleMH = tr("Información") + " (" + __Name__ + ")"
+        stringMH = tr("Este script (macro) genera una estructura de grupos (directorios) en una pieza, de manera que sea más fácil organizar las distintas operaciones,referencias y objetos de esa pieza.")
+        stringMH += cIntro + cIntro + tr("Los grupos inicialmente están predefinidos, pero pueden ser cambiados fácilmente.")
+        reply = QtGui.QMessageBox.information(None,titleMH,stringMH)
+
+    def posGroup(self):
+        tr = self.translate
+        self.form.comboPosicionGrupo.clear()
+
+        if (self.longitudListaGrupos == 0):
+            self.form.comboPosicionGrupo.addItem(tr("el primero"))
+            self.form.eliminarGrupo.setEnabled(False)
+        else:
+            max = self.longitudListaGrupos
+            for cont in range(max):
+                if cont == 0:
+                    self.form.comboPosicionGrupo.addItem(tr("el primero"))
+                if (cont !=0) and (cont < max):
+                    self.form.comboPosicionGrupo.addItem(str(cont+1))
+                if (cont == max-1):
+                    self.form.comboPosicionGrupo.addItem(tr("el último"))                    
+
+    def nombrePiezaCambia(self):
+        if (self.form.edicionNombrePieza.text() != ''):
+            self.form.botonCrear.setEnabled(True)
+        else:
+            self.form.botonCrear.setEnabled(False)
+
+    def on_eliminarGrupo_clicked(self):
+        # Delete Group
+        aBorrar = self.form.comboEliminarGrupo.currentText()
+        listGroups.remove(aBorrar)
+        elementosBorrados.append(aBorrar)       
+        self.longitudListaGrupos = len(listGroups)        
+        self.mostrarCheckbox()
+        self.refreshFichero()
+
+    def on_anadirGrupo_clicked(self):
+        # Add Group  
+        nombrePos = self.form.comboPosicionGrupo.currentText()
+        if (nombrePos == "el primero"):
+            posicion = 1
+        elif (nombrePos == "el último"):
+            posicion = self.longitudListaGrupos+1
+        else:
+            posicion = int(self.form.comboPosicionGrupo.currentText())
+        if self.longitudListaGrupos == 0:
+            listGroups.append(self.form.leAnadirGrupo.text()) 
+        else:
+            listGroups.insert(posicion-1,self.form.leAnadirGrupo.text())
+        self.longitudListaGrupos = len(listGroups)
+        
+        self.mostrarCheckbox()
+        self.refreshFichero()
+        self.form.eliminarGrupo.setEnabled(True)
+
+    def refreshFichero(self):
+        # Refresh File (destroy and create the same file)
+        groupsFile = open(gr_path, "w")
+        for cont in range(self.longitudListaGrupos):
+            groupsFile.write(listGroups[cont]+"\n")
+        groupsFile.close()
+
+        self.posGroup()
+        self.mostrarCheckbox()
+        self.mostrarComboGroups()
+        self.form.leAnadirGrupo.setText("")           
+
+    def createPart(self): 
+        # Create one piece with groups   
+        self.nombrePieza = self.form.edicionNombrePieza.text()
+        App.activeDocument().Tip = App.activeDocument().addObject('App::Part','Part')
+        App.ActiveDocument.recompute()
+
+        listaChecked = []
+        if self.longitudListaGrupos < maxElem:
+            longChecked = maxElem
+        else:
+            longChecked = self.longitudListaGrupos
+        for cont in range(longChecked):
+            listaChecked.append(True)
+
+        for nombrePart in FreeCAD.ActiveDocument.Objects:
+            if nombrePart.Name.find('Part') > -1:
+                nombrePartUltimo = nombrePart.Name
+        App.activeDocument().getObject(nombrePartUltimo).Label = self.nombrePieza   
+
+        listaChecked[0] = self.form.cb1.isChecked()
+        listaChecked[1] = self.form.cb2.isChecked()
+        listaChecked[2] = self.form.cb3.isChecked()
+        listaChecked[3] = self.form.cb4.isChecked()
+        listaChecked[4] = self.form.cb5.isChecked()
+        listaChecked[5] = self.form.cb6.isChecked()
+        listaChecked[6] = self.form.cb7.isChecked()
+        listaChecked[7] = self.form.cb8.isChecked()
+        listaChecked[8] = self.form.cb9.isChecked()
+        listaChecked[9] = self.form.cb10.isChecked()
+        listaChecked[10] = self.form.cb11.isChecked()
+        listaChecked[11] = self.form.cb12.isChecked()
+    
+        App.Console.PrintMessage(listaChecked)
+        contador = 0
+        for labelGrupo in listGroups:
+            if (listaChecked[contador] and contador<maxElem):
+                App.activeDocument().Tip = App.activeDocument().addObject('App::DocumentObjectGroup','Group')
+                nombreGrupo = App.activeDocument().ActiveObject.Name
+                App.activeDocument().getObject(nombreGrupo).Label = labelGrupo+' ('+self.nombrePieza+')'
+                App.activeDocument().getObject(nombrePartUltimo).addObject(App.activeDocument().getObject(nombreGrupo))
+            contador = contador +1
+
+        self.PiecesCreated()
+
+    def PiecesCreated(self):
+        self.form.etPiezasCreadas.setEnabled(True)
+        cad = "+ " + self.nombrePieza + cIntro
+        self.pieza = self.pieza + cad
+        self.form.infoPiezasCreadas.setText(self.pieza)
+        self.numeroPiezas += 1
+        self.form.numPiezas.setText(str(self.numeroPiezas))
+        self.form.botonCrear.setEnabled(False)
+        self.form.edicionNombrePieza.setText("")
+
+    def accept(self):
+        # Ending
+        if (self.form.botonCrear.isEnabled() == True):
+            self.createPart()
+
+        elementosBorrados = []
+        gui.Control.closeDialog()
+
+# Se define el g_num_lang con variable global
+lang = gui.getLocale()
+# Default to English.
+g_num_lang = 1
+if 'Spanish' in lang:
+    g_num_lang = 0
+elif 'Italian' in lang:
+    g_num_lang = 2
+panel = PiecesTemplates()
+gui.Control.showDialog(panel)

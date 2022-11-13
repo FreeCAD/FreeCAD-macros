@@ -1,0 +1,239 @@
+# -*- coding: utf-8 -*-
+# (c) 18Turbo, 2022
+
+__Name__ = 'SketchAp'
+__Comment__ = 'Create an INDEPENDENT sketch supported by a face. Update a sketch supported by a new face or DatumPlane.\n'
+__Comment__ += ' It works with Part Design and Part.'
+__Author__ = '18Turbo'
+__Version__ = '0.1.0'
+__Date__ = '2022-10-15'
+__License__ = 'LGPL-2.0-or-later'
+__Web__ = 'https://github.com/18turbo/sketchApoyadoFreeCAD'
+__Wiki__ = 'https://github.com/18turbo/sketchApoyadoFreeCAD'
+__Icon__ = 'SketchAp.svg'
+__Help__ = ''
+__Status__ = 'beta'
+__Requires__ = 'FreeCAD >= v0.20'
+__Contact__ = 'https://github.com/18turbo'
+__Communication__ = ''
+__Files__ = 'SketchAp.svg,SketchAp.FCMacro'
+
+
+# (En español:)
+# Funcionalidad:    Crea un sketch apoyado en una cara, sin dependencia
+#
+# Nota importante: Basado inicialmente en el script de *** Sebastián Ernesto García *** pero sin cuaterniones
+#
+# Agradecimientos: Sebastián Ernesto García
+
+
+import FreeCAD as app
+import FreeCADGui as gui
+from PySide import QtGui
+from numpy import *
+import math
+
+strLang = [
+    [ # Español
+        
+        "Debes seleccionar una sola cara (para crear un sketch apoyado en ella),",
+        "o una cara y un plano de referencia (para actualizar un sketch a un nuevo plano de referencia).",
+        "Debes seleccionar una sola cara y un DatumPlane.",
+        "o",
+        "Debes seleccionar una sola cara y un plano de referencia.",
+        "Debes seleccionar al menos una cara (y debe ser coplanar).",
+        "Recuerda: si estás actualizando la posición del objeto, ambos objetos deben pertenecer al mismo banco de trabajo.",
+        "Si seleccionas una cara en Part Design, un Body debe estar como cuerpo activo.",
+        "No necesitas el script para hacer un sketch sobre un Plano de Referencia.",
+        "Versión:"        
+
+    ],
+    [ # English
+        ## Strings for translation into any language (English Strings)        
+        "You must select a single face (to create a sketch supported by it),",
+        "or a face and a reference plane (to update a sketch to a new reference plane).",
+        "You must select a single face and a DatumPlane.",
+        "or",
+        "You must select a single face and a reference plane.",
+        "You must select at least one face (and it must be coplanar).",
+        "Note: if you are updating the object position, both objects must belong to the same workbench.",
+        "If you select a face in Part Design, a Body must be the active body.",
+        "You don't need the script to sketch on a Reference Plane.",
+        "Version:"
+    ]
+    ]
+
+cIntro = "\n"
+cSpace = " "
+
+def translate(text):
+    if (text not in strLang[0]) or (g_num_lang < 0) or (g_num_lang >= len(strLang)):
+        return text
+    primerIdioma = strLang[0]
+    indice = primerIdioma.index(text)
+    if (indice == -1) or (indice >= len(strLang[g_num_lang])):
+        return text
+    return strLang[g_num_lang][indice]
+
+def messageWindow (msg):
+    version = translate("Versión:")
+    title = __Name__ + " (" + version + __Version__ + ")"
+    reply = QtGui.QMessageBox.warning (None, title, msg)
+
+def sketchAp (subobjs,tipo,datumPlane,actualizar):
+    if len(subobjs) == 1:
+        face = subobjs[0]
+        if (face.ShapeType == 'Face') and (face.findPlane() != None):
+        # Se comprueba que efectivamente hay una cara seleccionada
+            if not actualizar:
+            # Si no estoy actualizando, creo el DatumPlane
+                if (tipo.find('PartDesign')>-1):
+                # Creo un datumPlane de Part Design
+                    body = Gui.ActiveDocument.ActiveView.getActiveObject('pdbody')
+                    datumPlane = App.ActiveDocument.addObject('PartDesign::Plane','DatumPlane')
+                    body.addObject(datumPlane)
+                    partDesign = True                    
+                else:
+                # Creo un datumPlane de Part (que es un Plano)
+                    datumPlane = FreeCAD.ActiveDocument.addObject("Part::Plane","RefAuxPlaneSketchAp")
+                    partDesign = False
+
+            longitud = round(face.BoundBox.DiagonalLength,2)
+            datumPlane.Length = longitud
+            datumPlane.Width = longitud
+            vertice = face.Vertexes[0]
+            
+            # Esta combinación funciona siempre
+            datumPlane.Placement.Base = vertice.Point
+            datumPlane.Placement.Rotation = face.Surface.Rotation
+            # Fin combinación
+
+            # obj.positionBySupport (Comprobar en la siguiente versión)
+            if not actualizar:
+                rotar = False
+                rotarZ = False
+                if partDesign:
+                    if face.Placement.Rotation.Axis.z == 1.0:
+                        rotacion = 180.0
+                        rotar = True
+                        if face.Surface.Rotation.Axis == face.Placement.Rotation.Axis:
+                            rotacionZ = 180
+                            rotarZ = True
+                else:
+                    if face.Placement.Rotation.Axis.z == 1.0:
+                        normalCara = face.normalAt(0,0)
+                        if normalCara.x == 0 and normalCara.y == 0: # 3er cubo, cara superior (debug)
+                            #rotacion = 0
+                            rotar = False
+                        else:
+                            rotacion = -90.0
+                            rotar = True
+           
+                # Esto funciona
+                if rotar:
+                    datumPlane.Placement.rotate (face.Surface.Position, face.Placement.Rotation.Axis, rotacion)
+                if rotarZ:
+                    datumPlane.Placement.rotate (face.Surface.Position, App.Vector (0,0,1), rotacionZ)
+
+            datumPlane.Support = ''   
+            gui.ActiveDocument.getObject(datumPlane.Name).Transparency = 60
+            gui.ActiveDocument.getObject(datumPlane.Name).ShapeColor = (1.000,0.667,0.000)    
+            datumPlane.recompute()
+
+            if not actualizar:
+                #Selecciono el Plano de Referencia
+                Gui.Selection.clearSelection()
+                Gui.Selection.addSelection(datumPlane)
+  
+                #Creo el Boceto    
+                if partDesign:
+                    sketch = body.newObject('Sketcher::SketchObject','Sketch')
+                else:    
+                    sketch = FreeCAD.ActiveDocument.addObject('Sketcher::SketchObject','Sketch')
+                sketch.Support = (datumPlane,'')
+                sketch.MapMode = 'FlatFace'
+                #sketch.MapReversed = reversed
+    
+                #Muestra los objetos activos dependientes
+                FreeCADGui.ActiveDocument.activeObject().HideDependent = False
+                FreeCADGui.ActiveDocument.activeObject().ShowSupport = True
+                App.ActiveDocument.recompute()
+
+                #Editar Boceto
+                Gui.Selection.addSelection(sketch)
+                Gui.ActiveDocument.setEdit(sketch,0)
+                App.ActiveDocument.recompute()
+
+            datumPlane.Visibility = False               
+
+        else:
+            messageWindow(translate("Debes seleccionar al menos una cara (y debe ser coplanar).") + cIntro + cIntro +
+                translate("Recuerda: si estás actualizando la posición del objeto, ambos objetos deben pertenecer al mismo banco de trabajo."))
+    else:
+        messageWindow(translate("Debes seleccionar una sola cara (para crear un sketch apoyado en ella),") + cSpace +
+            translate("o una cara y un plano de referencia (para actualizar un sketch a un nuevo plano de referencia)."))
+
+
+# **** BEGIN ****
+# Se define el g_num_lang con variable global
+lang = gui.getLocale()
+# Default to English.
+g_num_lang = 1
+if 'Spanish' in lang:
+    g_num_lang = 0
+#elif 'Italian' in lang:
+#    g_num_lang = 2
+
+seleccion = Gui.Selection.getSelectionEx()
+planoReferencia = 0
+actualizando = False
+
+if len(seleccion) == 1:
+# Create sketch
+    tipoObjeto = seleccion[0].Object.TypeId
+    if tipoObjeto == 'PartDesign::Plane':
+        messageWindow(translate("No necesitas el script para hacer un sketch sobre un Plano de Referencia."))
+    else:
+        subObjeto = seleccion[0].SubObjects
+        sketchAp (subObjeto, tipoObjeto, planoReferencia, actualizando)
+       
+elif len(seleccion) == 2:
+# Update sketch
+    actualizando = True
+    sel1 = seleccion[0]
+    sel2 = seleccion[1]
+    tipoObjeto = seleccion[0].Object.TypeId
+
+    # Asignando las selecciones de Part Design
+    flag = False
+    if sel1.Object.TypeId == 'PartDesign::Plane':
+        planoReferencia = sel1.Object
+        if sel2.Object.TypeId.find('PartDesign::') > -1:
+            subObjeto = sel2.SubObjects
+            flag = True
+    elif sel2.Object.TypeId == 'PartDesign::Plane':
+        planoReferencia = sel2.Object
+        if sel1.Object.TypeId.find('PartDesign::') > -1:
+            subObjeto = sel1.SubObjects
+            flag = True
+
+    # Asignando las selecciones de Part
+    elif sel1.Object.TypeId == 'Part::Plane':
+        planoReferencia = sel1.Object
+        if sel2.Object.TypeId.find('Part::') > -1:
+            subObjeto = sel2.SubObjects
+            flag = True
+    elif sel2.Object.TypeId == 'Part::Plane':
+        planoReferencia = sel2.Object
+        if sel1.Object.TypeId.find('Part::') > -1:
+            subObjeto = sel1.SubObjects
+            flag = True
+
+    if flag == True:
+        sketchAp (subObjeto, tipoObjeto, planoReferencia, actualizando)
+    else:
+        messageWindow(translate("Debes seleccionar una sola cara y un DatumPlane.") + cIntro + " o " + cIntro + 
+            translate("Debes seleccionar una sola cara y un plano de referencia."))
+else:
+    messageWindow(translate("Debes seleccionar una sola cara (para crear un sketch apoyado en ella),") + cSpace +
+            translate("o una cara y un plano de referencia (para actualizar un sketch a un nuevo plano de referencia)."))
