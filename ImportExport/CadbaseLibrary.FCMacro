@@ -62,8 +62,8 @@ __Title__= 'CADBase Library'
 __Name__ = 'CadbaseLibrary'
 __Comment__ = 'This CadbaseLibrary macro to use components (parts) from CADBase in app.'
 __Author__ = 'mnnxp'
-__Date__ = '2022-11-11'
-__Version__ = '0.1.2'
+__Date__ = '2022-11-13'
+__Version__ = '0.1.3'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://cadbase.rs'
 __Wiki__ = 'https://github.com/FreeCAD/FreeCAD-macros/blob/master/ImportExport/CadbaseLibrary/README.md'
@@ -72,7 +72,7 @@ __Help__ = 'Requires CADBase account to correct use the macro.'
 __Status__ = 'Stable'
 __Requires__ = 'FreeCAD >= 0.19'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=69389'
-__Files__ = 'CadbaseLibrary/README.md,CadbaseLibrary/cadbase_library.ui,CadbaseLibrary/cadbase_library_config.ui,CadbaseLibrary.svg'
+__Files__ = 'CadbaseLibrary/cadbase_library_config.ui, CadbaseLibrary/cadbase_library.ui, CadbaseLibrary/CdbsApi.py, CadbaseLibrary/CdbsAuth.py, CadbaseLibrary/CdbsEvn.py, CadbaseLibrary/DataHandler.py, CadbaseLibrary/QueriesApi.py, CadbaseLibrary/README.md, CadbaseLibrary.svg'
 
 import zipfile
 import tempfile
@@ -88,6 +88,7 @@ from CadbaseLibrary.CdbsAuth import CdbsAuth
 from CadbaseLibrary.CdbsApi import CdbsApi
 from CadbaseLibrary.QueriesApi import QueriesApi
 import CadbaseLibrary.DataHandler as DataHandler
+from CadbaseLibrary.DataHandler import logger
 
 try:
     QtCore.QTextCodec.setCodecForTr(QTextCodec.codecForName('UTF-8'))
@@ -176,7 +177,7 @@ class ExpCdbsWidget(QtGui.QDockWidget):
                         self.previewframe.preview.setPixmap(im)
                         return
             except Exception as e:
-                app.Console.PrintError(f'{e}: {path}\n')
+                logger(1, f'{e}: {path}')
         self.previewframe.preview.clear()
 
     def doubleclicked(self, index):
@@ -196,7 +197,7 @@ class ExpCdbsWidget(QtGui.QDockWidget):
                     update_component_modificaion(g_library_path, clck_path,
                             modification_data.uuid)
             else:
-                app.Console.PrintError('Token not found\n')
+                logger(1, 'Token not found')
         else:
             str_path = str(clck_path.resolve())
             str_path_l = str_path.lower()
@@ -209,7 +210,7 @@ class ExpCdbsWidget(QtGui.QDockWidget):
                 elif str_path_l.endswith('.fcstd'):
                     gui.activeDocument().mergeProject(str_path)
             except Exception as e:
-                app.Console.PrintError(f'{e}\n')
+                logger(1, e)
             gui.SendMsgToActiveView('ViewFit')
 
 
@@ -251,7 +252,7 @@ class ConfigDialog(QtGui.QDialog):
             self.form.lineEdit_3.setText(np)
 
     def reject(self):
-        app.Console.PrintMessage('Changes not accepted\n')
+        logger(3, 'Changes not accepted')
         self.form.close()
 
     def accept(self):
@@ -259,12 +260,12 @@ class ConfigDialog(QtGui.QDialog):
             g_param.SetString('api-url',self.form.lineEdit.text())
         if self.form.lineEdit_3.text() != g_param.GetString('destination'):
             g_param.SetString('destination',self.form.lineEdit_3.text())
-            app.Console.PrintWarning('Please restart FreeCAD\n')
+            logger(2, 'Please restart FreeCAD')
         if self.form.lineEdit_2.text() and self.form.lineEdit_4.text():
             username = self.form.lineEdit_2.text()
             password = self.form.lineEdit_4.text()
             CdbsAuth(username, password)
-        app.Console.PrintMessage('Configuration updated\n')
+        logger(3, 'Configuration updated')
         self.form.close()
 
 
@@ -279,7 +280,7 @@ if QtCore.QDir(g_library_path).exists():
     else:
         m.addDockWidget(QtCore.Qt.RightDockWidgetArea, ExpCdbsWidget())
 else:
-    app.Console.PrintWarning(f'Library path "{g_library_path}" not found.\n')
+    logger(2, f'Library path "{g_library_path}" not found.')
 
 
 def update_components_list(g_library_path):
@@ -287,13 +288,13 @@ def update_components_list(g_library_path):
     if isinstance(data, SimpleNamespace):
         if data.components:
             for component in data.components:
-                app.Console.PrintLog(component.uuid + '\n')
+                logger(4, component.uuid)
                 new_dir = pathlib.Path(g_library_path) \
                     / f'{component.name} (from  {component.ownerUser.username})'
                 DataHandler.create_object_path(new_dir, component, 'component')
         else:
-            app.Console.PrintWarning("You don't have favorite components\n")
-    app.Console.PrintMessage('Component list update finished\n')
+            logger(2, "You don't have favorite components")
+    logger(3, 'Component list update finished')
 
 
 def update_component(g_library_path, component_path):
@@ -305,8 +306,8 @@ def update_component(g_library_path, component_path):
                 new_dir /= modification.modificationName
                 DataHandler.create_object_path(new_dir, modification, 'modification')
         else:
-            app.Console.PrintWarning('No modifications for the component\n')
-    app.Console.PrintMessage('Updated the list of component modifications\n')
+            logger(2, 'No modifications for the component')
+    logger(3, 'Updated the list of component modifications')
 
 
 def update_component_modificaion(g_library_path, modification_path,
@@ -329,9 +330,9 @@ def update_component_modificaion(g_library_path, modification_path,
 
                     inputs = zip(urls, fns)
                     DataHandler.download_parallel(inputs)
-                    app.Console.PrintMessage(f'Download is completed ({len(urls)} file(s))\n')
+                    logger(3, f'Download is completed ({len(urls)} file(s))')
                 else:
-                    app.Console.PrintWarning('No files in fileset\n')
+                    logger(2, 'No files in fileset')
         else:
-            app.Console.PrintWarning('Fileset not found for FreeCAD\n')
-    app.Console.PrintMessage('Updated component modification files\n')
+            logger(2, 'Fileset not found for FreeCAD')
+    logger(3, 'Updated component modification files')

@@ -2,17 +2,18 @@
 
 import json
 import pathlib
-from PySide import QtCore
+from PySide import QtCore  # FreeCAD's PySide
 from PySide2 import QtNetwork
 import FreeCAD as app
 from CadbaseLibrary.CdbsEvn import g_param, g_content_type, g_response_path
 import CadbaseLibrary.DataHandler as DataHandler
+from CadbaseLibrary.DataHandler import logger
 
 class CdbsApi:
     ''' class for sending requests and handling responses '''
 
     def __init__(self, query):
-        app.Console.PrintMessage('Getting data...\n')
+        logger(3, 'Getting data...')
         self.do_request(query)
 
     def do_request(self, query):
@@ -43,9 +44,9 @@ class CdbsApi:
                 response_bytes = reply.readAll()
                 with g_response_path.open('wb') as file:
                     file.write(response_bytes)
-                app.Console.PrintMessage('Success\n')
+                logger(3, 'Success')
             else:
-                app.Console.PrintError(f'Failed, status code: {reply.attribute(QtNetwork.QNetworkRequest.HttpStatusCodeAttribute)}\n')
+                logger(1, f'Failed, status code: {reply.attribute(QtNetwork.QNetworkRequest.HttpStatusCodeAttribute)}')
         else:
-            app.Console.PrintError(f'Error occured: {er}\n')
-            app.Console.PrintError(f'{reply.errorString()}\n')
+            logger(1, f'Error occured: {er}')
+            logger(1, f'{reply.errorString()}')

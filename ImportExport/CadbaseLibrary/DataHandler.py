@@ -7,14 +7,23 @@ import pathlib
 from types import SimpleNamespace
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
-from PySide import QtCore
+from PySide import QtCore  # FreeCAD's PySide
 from PySide2 import QtNetwork
 import FreeCAD as app
 from CadbaseLibrary.CdbsEvn import g_user_agent, g_response_path
 
 def get_file(args):
+    '''
+    This function downloads and saves a file of args data to the user's local storage.
+    Argument (args) for this function have a url and filepath (path/filename).
+    '''
     t0 = time.time()
     url, filepath = args[0], args[1]
+
+    if filepath.exists():
+        logger(2, f'File "{filepath}" already exists and skipped.')
+        return (filepath, time.time() - t0)
+
     manager = QtNetwork.QNetworkAccessManager()
 
     try:
@@ -25,7 +34,7 @@ def get_file(args):
         reply.finished.connect(loop.quit)
         loop.exec_()
     except Exception as e:
-        app.Console.PrintError(f'Exception in download file: {e}\n')
+        logger(1, f'Exception in download file: {e}')
     else:
         if reply.error() == QtNetwork.QNetworkReply.NoError:
             response_bytes = reply.readAll()
@@ -33,36 +42,36 @@ def get_file(args):
                 f.write(response_bytes)
             return (filepath, time.time() - t0)
         else:
-            app.Console.PrintError('Error\n')
+            logger(1, 'Error')
 
 def download_parallel(args):
     t0 = time.time()
     results = ThreadPool(cpu_count() - 1).imap_unordered(get_file, args)
 
     for result in results:
-        app.Console.PrintLog(f'path: "{result[0]}" time: {result[1]} s\n')
+        logger(4, f'path: "{result[0]}" time: {result[1]} s')
 
-    app.Console.PrintMessage(f'Total time: {time.time() - t0} s\n')
+    logger(3, f'Total time: {time.time() - t0} s')
 
 def parsing_gpl():
-    app.Console.PrintMessage('Data processing, please wait.\n')
+    logger(3, 'Data processing, please wait.')
 
     if g_response_path.exists():
         with g_response_path.open('rb', buffering=0) as f:
-            x = json.loads(f.readall(), object_hook=lambda d: \
-                        SimpleNamespace(**d))
+            x = json.loads(f.readall(),
+                 object_hook=lambda d: SimpleNamespace(**d))
 
         if x.data:
             return x.data
         else:
-            app.Console.PrintError('Error occured:\n')
+            logger(1, 'Error occured:')
 
             for error in x.errors:
-                app.Console.PrintError(error.message + '\n')
+                logger(1, error.message)
     else:
-        app.Console.PrintError('No file with response\n')
+        logger(1, 'No file with response')
 
-    app.Console.PrintError('Failed\n')
+    logger(1, 'Failed')
 
 
 def remove_object(rm_object):
@@ -72,13 +81,13 @@ def remove_object(rm_object):
             os.rmdir(rm_object)
         else:
             os.remove(rm_object)
-        app.Console.PrintLog(f'"{rm_object}" removed\n')
+        logger(4, f'"{rm_object}" removed')
 
 
 def create_object_path(new_dir, object_info, object_type):
     ''' create a new object path '''
     if new_dir.exists() and not new_dir.is_dir():
-        app.Console.PrintError(f'Please remove the "{new_dir}" file for correct operation\n')
+        logger(1, f'Please remove the "{new_dir}" file for correct operation')
     else:
         if not new_dir.is_dir():
             os.mkdir(new_dir)
@@ -88,7 +97,7 @@ def create_object_path(new_dir, object_info, object_type):
                 f.write(json.dumps(object_info, default=lambda o: o.__dict__, indent=4))
                 f.close()
         except Exception as e:
-            app.Console.PrintError(f'{e}\n')
+            logger(1, e)
 
 
 def read_object_info(object_type, object):
@@ -96,6 +105,18 @@ def read_object_info(object_type, object):
     with object_type.open('r') as data_file:
         object_info = json.loads(data_file.read(),
                                 object_hook=lambda d: SimpleNamespace(**d))
-        app.Console.PrintLog(f'Select {object}: {object_info.uuid}\n')
+        logger(4, f'Select {object}: {object_info.uuid}')
         data_file.close()
         return object_info
+
+def logger(type, msg):
+    ''' this function is used to shorten the code for logging '''
+    match type:
+        case 1:
+            app.Console.PrintError(f'{msg}\n')
+        case 2:
+            app.Console.PrintWarning(f'{msg}\n')
+        case 3:
+            app.Console.PrintMessage(f'{msg}\n')
+        case _:
+            app.Console.PrintLog(f'{msg}\n')
