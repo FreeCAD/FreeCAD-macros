@@ -25,8 +25,8 @@
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
-__Version__ = '0.6.0'
-__Date__ = '2022-07-13'
+__Version__ = '0.6.1'
+__Date__ = '2022-11-11'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -502,7 +502,7 @@ class CenterofmassWidget(QtGui.QWidget):
                 sol=sol
             )
         self.mainGroupBox.setTitle('Selected solids: ' + str(self.solid_count))
-        self.compute_centerOfMass()
+        self.compute_centerOfMass(True)
 
     def on_focusChanged(self, oldWidget, nowWidget):
         """Toggle appearance of solid being edited"""
@@ -740,9 +740,11 @@ class CenterofmassWidget(QtGui.QWidget):
         self.material_base['default'] = Units.Quantity(qty)
 
     def on_pushButton_allToDefaultDensity(self):
+        self.compute_centerOfMass(False)
         for sol in range(self.solid_count):
             self.solids[sol].combo.setCurrentIndex(0)    # reset "default" to "custom"
             self.solids[sol].combo.setCurrentText('default')
+        self.compute_centerOfMass(True)
 
     def find_all_centerOfMass(self, objs):
         """Find all center of mass (CoMs) depending on the type of object."""
@@ -795,8 +797,12 @@ class CenterofmassWidget(QtGui.QWidget):
             progress_bar.next()
         progress_bar.stop()
 
-    def compute_centerOfMass(self):
+    def compute_centerOfMass(self, setAllow=None):
         """Compute joint center of mass from all objects."""
+        if setAllow is not None:
+            self.compute_allow = setAllow
+        if not self.compute_allow:
+            return
         self.massTot = 0.
         self.volTot = 0.
         self.TotalCoM = app.Vector(0,0,0)
