@@ -25,8 +25,8 @@
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
-__Version__ = '0.6.1'
-__Date__ = '2022-11-11'
+__Version__ = '0.6.4'
+__Date__ = '2022-12-02'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -199,9 +199,8 @@ class SolidsWidget():
         spinBoxDigits = 6
         # don't trigger on_spinDensity_changed (e.g. when on_comboUnitDensity_changed)
         spin.blockSignals(True)
-        spin.setMaximum(Units.Quantity(MAXIMUM_DENSITY).getValueAs(unitForD))
+        spin.setRange(0., Units.Quantity(MAXIMUM_DENSITY).getValueAs(unitForD))
         decimals = spinBoxDigits - math.floor(math.fabs(math.log10(spin.maximum())))
-        spin.setMinimum(math.pow(10, -decimals))
         spin.setDecimals(decimals)
         spin.setStepType(QtGui.QAbstractSpinBox.StepType.AdaptiveDecimalStepType)
         spin.setValue(qty.getValueAs(unitForD))
@@ -314,12 +313,14 @@ class CenterofmassWidget(QtGui.QWidget):
                                       self.defaultDensitySpin,
                                       Units.Quantity(DEFAULT_DENSITY),
                                       self.unitForD)
+        self.defaultDensitySpin.setMinimum(math.pow(10, -self.defaultDensitySpin.decimals()))
         self.defaultDensitySpin.setToolTip(
             'set default density (in ' + self.unitForD_text + ')')
         self.defaultDensitySpin.valueChanged.connect(self.on_spinDefaultDensity_changed)
         self.material_base['default'] = Units.Quantity(DEFAULT_DENSITY)
 
-        allToDefaultDensity = QtGui.QPushButton('Apply to all')
+        iconPath = ':/icons/measure/Part_Measure_Step_Active.svg'
+        allToDefaultDensity = QtGui.QPushButton(QtGui.QIcon(iconPath),' to all')
         allToDefaultDensity.setToolTip('Set all solids to default density')
         allToDefaultDensity.clicked.connect(self.on_pushButton_allToDefaultDensity)
 
@@ -626,8 +627,11 @@ class CenterofmassWidget(QtGui.QWidget):
         return objs
 
     def on_pushButton_newSelection(self):
+        initial = self.checkColorify.checkState()
+        self.checkColorify.setCheckState(QtCore.Qt.Unchecked)    # preserve SolidsWidget.orgColor
         self.doc = app.activeDocument()
         self.update_selection(gui.Selection.getSelection())
+        self.checkColorify.setCheckState(initial)
 
     def on_pushButton_update(self):
         initial = self.checkColorify.checkState()
@@ -738,12 +742,16 @@ class CenterofmassWidget(QtGui.QWidget):
     def on_spinDefaultDensity_changed(self, newValue):
         qty = str(newValue) + ' ' + self.unitForD
         self.material_base['default'] = Units.Quantity(qty)
+        self.compute_centerOfMass(False)
+        for selfsol in self.solids:
+            if selfsol.combo.currentText() == 'default':
+                selfsol.on_comboMaterial_changed(1)    # trigger update of "default"
+        self.compute_centerOfMass(True)
 
     def on_pushButton_allToDefaultDensity(self):
         self.compute_centerOfMass(False)
-        for sol in range(self.solid_count):
-            self.solids[sol].combo.setCurrentIndex(0)    # reset "default" to "custom"
-            self.solids[sol].combo.setCurrentText('default')
+        for selfsol in self.solids:
+            selfsol.combo.setCurrentText('default')
         self.compute_centerOfMass(True)
 
     def find_all_centerOfMass(self, objs):
@@ -811,6 +819,10 @@ class CenterofmassWidget(QtGui.QWidget):
             self.masses[sol] = volumeInUnit * self.solids[sol].spinDens.value()
             self.massTot += self.masses[sol]
             self.volTot += volumeInUnit
+        if self.massTot == 0:
+            error_message('All masses were set to zero. Last one reset to default.')
+            self.solids[-1].combo.setCurrentText('default')
+            return
         for sol in range(self.solid_count):
             self.TotalCoM += 1 / self.massTot * self.masses[sol] * self.CoMs[sol]
         # output
@@ -868,6 +880,8 @@ class CenterofmassWidget(QtGui.QWidget):
         # Spheres for all center of mass
         if self.solid_count > 1:
             for sol in range(self.solid_count):
+                if self.masses[sol] == 0:
+                    continue
                 sphere = self.doc.addObject('Part::Sphere', 'CoM_' + g_sel[sol].Name)
                 sphere.Label = 'CoM_' + g_sel[sol].Label
                 sphere.Placement.Base = self.CoMs[sol]
@@ -968,19 +982,17 @@ class CenterofmassWidget(QtGui.QWidget):
         if cmName != 'Traffic':
             import matplotlib.cm
             cm = matplotlib.cm.get_cmap(cmName)
-        pq = Units.parseQuantity
-        densityConverted = []
-        for sol in range(self.solid_count):
-            density = self.solids[sol].spinDens.value()
-            densityConverted.append(float(pq('%f %s' % (density, self.unitForD)) / pq('kg/m^3')))
-        maxD = max(densityConverted)
-        minD = min(densityConverted)
+        densities = [selfsol.spinDens.value() for selfsol in self.solids]
+        maxD = max(densities)
+        minD = min([i_ for i_ in densities if i_ != 0])    # min without zeros
         for sol in range(self.solid_count):
             if maxD == minD:
                 drel = 0    # default to low color
             else:
-                drel = (densityConverted[sol]-minD) / (maxD-minD)
-            if cmName == 'Traffic':
+                drel = (densities[sol]-minD) / (maxD-minD)
+            if self.masses[sol] == 0:
+                color = self.solids[sol].orgColorQT
+            elif cmName == 'Traffic':
                 # density value to hsv color range green to red
                 drel = math.acos(1-2*drel) / math.pi    # stretch yellow (sigmoid-like)
                 h = 120 * (1-drel) / 360
