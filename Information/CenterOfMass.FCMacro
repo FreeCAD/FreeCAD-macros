@@ -25,8 +25,8 @@
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
-__Version__ = '0.6.4'
-__Date__ = '2022-12-02'
+__Version__ = '0.6.5'
+__Date__ = '2022-12-05'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -558,11 +558,11 @@ class CenterofmassWidget(QtGui.QWidget):
             if hasattr(s_, 'Shape') and s_.Shape.Volume:
                 if s_.TypeId == 'App::Part':
                     # because contains bodies
-                    csList = s_.Shape.childShapes(False,False)    # ignore placement of parent
-                    for cs in range(len(csList)):
+                    for cs in s_.Shape.childShapes(False,False):
+                        # childShapes(False,False): ignore placement of parent
                         # get first match from OutList (contains different object types)
                         for ot in s_.OutList:
-                            if hasattr(ot, 'Shape') and ot.Shape.isEqual(csList[cs]):
+                            if hasattr(ot, 'Shape') and ot.Shape.isEqual(cs):
                                 # nested App:Part and App:Link in App:Part not match here
                                 vsel.append(ot)
                                 break
@@ -598,8 +598,7 @@ class CenterofmassWidget(QtGui.QWidget):
         # create valid objects list (e.g. shapes)
         import Part
         objs = []
-        for i_ in range(len(vsel)):
-            s_ = vsel[i_]
+        for i_, s_ in enumerate(vsel):
             if hasattr(s_, 'Shape'):
                 # local placement correction (transform to global coordinate system)
                 o_ = Part.getShape(s_)    # copy shape for transformation
@@ -701,8 +700,8 @@ class CenterofmassWidget(QtGui.QWidget):
         self.load_materials()
         # add combo items for newly created materials
         new_materials = [m for m in self.material_base if m not in material_base_old]
-        for sol in range(self.solid_count):
-            self.solids[sol].combo.addItems(new_materials)
+        for selfsol in self.solids:
+            selfsol.combo.addItems(new_materials)
 
     def store_prefered_units(self, txt):
         """Get units set as preference"""
@@ -725,13 +724,11 @@ class CenterofmassWidget(QtGui.QWidget):
     def on_comboUnitDensity_changed(self, newText):
         unitForD_prev = self.unitForD
         self.store_prefered_units(newText)
-        for sol in range(self.solid_count):
-            qty = str(self.solids[sol].spinDens.value()) + ' ' + unitForD_prev
-            self.solids[sol].init_spinDensity(self.solids[sol].spinDens,
-                                              Units.Quantity(qty),
-                                              self.unitForD)
-            self.solids[sol].spinDens.setToolTip(
-                'density of ' + g_sel[sol].Label + ' (in ' + self.unitForD_text + ')')
+        for selfsol in self.solids:
+            qty = str(selfsol.spinDens.value()) + ' ' + unitForD_prev
+            selfsol.init_spinDensity(selfsol.spinDens, Units.Quantity(qty), self.unitForD)
+            selfsol.spinDens.setToolTip(
+                'density of ' + selfsol.label.text() + ' (in ' + self.unitForD_text + ')')
         qty = self.material_base.get('default', 0)
         SolidsWidget.init_spinDensity(self, self.defaultDensitySpin,
                                       Units.Quantity(qty),
@@ -826,10 +823,10 @@ class CenterofmassWidget(QtGui.QWidget):
         for sol in range(self.solid_count):
             self.TotalCoM += 1 / self.massTot * self.masses[sol] * self.CoMs[sol]
         # output
-        for sol in range(self.solid_count):
-            self.solids[sol].spinMass.setText(format(self.masses[sol], '.3e'))
-            self.solids[sol].spinMass.setToolTip(
-                'mass of ' + self.solids[sol].label.text() + ' (in ' + self.unitForM + ')')
+        for sol, selfsol in enumerate(self.solids):
+            selfsol.spinMass.setText(format(self.masses[sol], '.3e'))
+            selfsol.spinMass.setToolTip(
+                'mass of ' + selfsol.label.text() + ' (in ' + self.unitForM + ')')
         for axis in range(3):
             self.resultCdG[axis].setText('{:.4}'.format(self.convert_length(self.TotalCoM[axis])))
         self.resultCdG[0].setToolTip('center of mass X (in %s)' % self.unitForL)
@@ -966,12 +963,12 @@ class CenterofmassWidget(QtGui.QWidget):
         if state == QtCore.Qt.Checked:
             self.colorify()
         else:
-            for sol in range(self.solid_count):
-                orgColorFC = self.solids[sol].orgColorFC
-                self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = orgColorFC
+            for sol, selfsol in enumerate(self.solids):
+                name = g_sel[sol].Name
+                self.doc.getObject(name).ViewObject.ShapeColor = selfsol.orgColorFC
                 if COLOR_SPHERES and self.changeRadius.isEnabled():
-                    self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = orgColorFC
-                self.solids[sol].spinDens.setPalette(QtGui.QPalette())    # reset to normal
+                    self.doc.getObject('CoM_' + name).ViewObject.ShapeColor = selfsol.orgColorFC
+                selfsol.spinDens.setPalette(QtGui.QPalette())    # reset to normal
 
     def on_comboColormap_changed(self, newText):
         if self.checkColorify.isChecked():
@@ -985,14 +982,17 @@ class CenterofmassWidget(QtGui.QWidget):
         densities = [selfsol.spinDens.value() for selfsol in self.solids]
         maxD = max(densities)
         minD = min([i_ for i_ in densities if i_ != 0])    # min without zeros
-        for sol in range(self.solid_count):
+        for sol, selfsol in enumerate(self.solids):
+            name = g_sel[sol].Name
+            if self.masses[sol] == 0:
+                self.doc.getObject(name).ViewObject.ShapeColor = selfsol.orgColorFC
+                selfsol.spinDens.setPalette(QtGui.QPalette())    # reset to normal
+                continue
             if maxD == minD:
                 drel = 0    # default to low color
             else:
                 drel = (densities[sol]-minD) / (maxD-minD)
-            if self.masses[sol] == 0:
-                color = self.solids[sol].orgColorQT
-            elif cmName == 'Traffic':
+            if cmName == 'Traffic':
                 # density value to hsv color range green to red
                 drel = math.acos(1-2*drel) / math.pi    # stretch yellow (sigmoid-like)
                 h = 120 * (1-drel) / 360
@@ -1000,9 +1000,9 @@ class CenterofmassWidget(QtGui.QWidget):
             else:
                 color = QtGui.QColor.fromRgbF(*cm(drel))
             color.setHsvF(color.hueF(), COLOR_SATURAT/100, color.valueF())    # skips if s > 1
-            self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
+            self.doc.getObject(name).ViewObject.ShapeColor = color.getRgbF()
             if COLOR_SPHERES and self.changeRadius.isEnabled():
-                self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
+                self.doc.getObject('CoM_' + name).ViewObject.ShapeColor = color.getRgbF()
             pal = QtGui.QPalette()
             pal.setColor(QtGui.QPalette.Base, color)
             lum = color.getRgbF()
@@ -1011,7 +1011,7 @@ class CenterofmassWidget(QtGui.QWidget):
                 c = c/12.92 if c <= 0.04045 else math.pow((c+0.055)/1.055, 2.4)
             if 0.2126*lum[0] + 0.7152*lum[1] + 0.0722*lum[2] < 0.5:
                 pal.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
-            self.solids[sol].spinDens.setPalette(pal)
+            selfsol.spinDens.setPalette(pal)
 
     def on_pushButton_toPreferences(self):
         gui.runCommand('Std_DlgParameter',0)
