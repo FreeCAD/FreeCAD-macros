@@ -3,10 +3,10 @@
 
 __Title__ = 'Export to Slicer'
 __Author__ = 'Damian Łoziński'
-__Version__ = '0.2'
-__Date__ = '2020-04-26'
+__Version__ = '0.3'
+__Date__ = '2022-12-16'
 __Comment__ = 'Export selected objects to amf/stl files and open it in Slicer'
-__Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=10&t=4686&sid=e69e70bc34c1987e215b5fc6fcb6b367&start=20'
+__Web__ = 'https://raw.githubusercontent.com/dlozinski/FreeCAD-macros/doc/ImportExport/ExportToSlicer.md'
 __Wiki__ = ''
 __Icon__ = 'Export2Slicer.png'
 __Help__ = 'You may need to change slicer path. To do so open Tools > Edit parameters > BaseApp/Preferences/Macros/Export2Slicer'
@@ -16,6 +16,7 @@ __Communication__ = 'lozinski dot d at gmail dot com'
 __Files__ = 'Export2Slicer.png'
 
 import os
+import re
 import subprocess
 import Mesh
 import MeshPart
@@ -46,11 +47,19 @@ if not angular_deflection:
     angular_deflection = DEFAULT_ANGULAR_DEFLECTION
 
 
-def get_mesh_filename(doc_filename):
+def escape(text):
+    return  re.sub(r'\W', '_', text)
+
+def get_mesh_filename(doc_filename, mesh_names):
     '''Returns valid filename for temporary mesh file'''
     if doc_filename:
         dirname = os.path.dirname(doc_filename)
-        filename = os.path.basename(doc_filename).partition('.')[0] + '.' + output_format
+        filename = (
+            os.path.basename(doc_filename).partition('.')[0]
+            + '.'
+            + escape('_'.join(mesh_names))
+            + '.'
+            + output_format)
         file_path = os.path.join(dirname, filename)
     else:
         file_path = 'meshes-export.' + output_format
@@ -63,21 +72,21 @@ def main():
         raise RuntimeError('No active document')
 
     objects_to_export = Gui.Selection.getSelection()
-    mesh_path = get_mesh_filename(doc.FileName)
-
     try:
         # Create temporary doc to store meshes so that we don't affect current doc history
         tmp_doc = app.newDocument('meshes')
         meshes = []
+        mesh_names = []
         for o in objects_to_export:
-            if o.TypeId == 'Mesh::Feature': 
+            if o.TypeId == 'Mesh::Feature':
                 meshes.append(o)
             else:
                 mesh = tmp_doc.addObject('Mesh::Feature', '{}_{}'.format(doc.Label, o.Label))
                 mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=angular_deflection, Relative=False)
                 meshes.append(mesh)
-
+                mesh_names.append(o.Label)
         if meshes:
+            mesh_path = get_mesh_filename(doc.FileName, mesh_names)
             Mesh.export(meshes, mesh_path)
         else:
             raise RuntimeError('No object selected')
