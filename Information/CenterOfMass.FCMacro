@@ -12,8 +12,8 @@
 # Options:
 # * Color the solids according to density.
 # * Display where is the center of mass.
-# * Export and import densities (even if it's not a .csv file from the macro,
-#  as soon as there is a column named "Density").
+# * Export and import masses, materials and densities (even if it's not a .csv
+#  file from the macro, as soon as there is a column named accordingly).
 # * Save densities in the document (remove them again when setting material
 #  to "default")
 #
@@ -25,7 +25,7 @@
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
-__Version__ = '0.6.6'
+__Version__ = '0.7'
 __Date__ = '2022-12-19'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
@@ -390,7 +390,7 @@ class CenterofmassWidget(QtGui.QWidget):
         export.clicked.connect(self.on_pushButton_Export)
 
         readDensities = QtGui.QPushButton('Import')
-        readDensities.setToolTip('Import densities from a .csv file')
+        readDensities.setToolTip('Import masses, materials or densities from a file')
         readDensities.setIcon(QtGui.QIcon(':/icons/Std_Import.svg'))
         readDensities.setIconSize(g_icon_size)
         readDensities.clicked.connect(self.on_pushButton_Import)
@@ -1037,80 +1037,121 @@ class CenterofmassWidget(QtGui.QWidget):
                 g_sel[sol].Mat_Density = str(self.solids[sol].spinDens.value()) + ' ' + self.unitForD
 
     def on_pushButton_Export(self):
-        densTot = 0.
-        if self.volTot:
-            densTot = self.massTot/self.volTot
-        fileName = ''
-        fileName, Filter = QtGui.QFileDialog.getSaveFileName(self,
-            'Export values',
-            os.path.expanduser('~'),
-            'CSV (Tab-separated) (*.csv);;Text (Tab-separated) (*.txt)')
+        """Export values in a Tab-separated table"""
+        encoding, delimiter = 'utf-8', '\t'    # default
+        fileFilter = ('CSV (Tab-separated) (*.csv)','Text (Tab-separated) (*.txt)')
+        fileName, selectedFilter = QtGui.QFileDialog.getSaveFileName(self,
+            'Export values', os.path.expanduser('~'), ';;'.join(fileFilter))
         if fileName == '':
-            app.Console.PrintWarning('no file saved \n')
-        else:
-            app.Console.PrintMessage('Saving ' + fileName + '\n')
-            delimiter = '\t'
-            head = ['Number', 'Label', 'Material',
-                    'Volume (%s)'%self.unitForV, 'Density (%s)'%self.unitForD, 'Weight (%s)'%self.unitForM,
-                    'Center of mass X (%s)'%self.unitForL, 'Center of mass Y (%s)'%self.unitForL ,'Center of mass Z (%s)'%self.unitForL]
-            foot = ['Total', '', '',
-                    '%.6e'%self.volTot, '%.6e'%densTot, '%.6e'%self.massTot,
-                  *('%.6e'%self.convert_length(self.TotalCoM[axis]) for axis in range(3))]
-            try:
-                f = open(fileName, 'w', encoding="utf-8")
-                f.write(delimiter.join(head) + '\n')
-                for sol in range(self.solid_count):
-                    row = ['%d'%(sol + 1), '%s'%g_sel[sol].Label, '%s'%self.solids[sol].combo.currentText(),
-                           '%.6e'%self.convert_volume(self.volumes[sol]), '%.6e'%self.solids[sol].spinDens.value(), '%.6e'%self.masses[sol],
-                         *('%.6e'%self.convert_length(self.CoMs[sol][axis]) for axis in range(3))]
-                    f.write(delimiter.join(row) + '\n')
-                f.write(delimiter.join(foot))
-                f.close()
-                app.Console.PrintMessage(fileName + ' saved \n')
-            except:
-                error_message('Error writing file ' + fileName)
+            app.Console.PrintWarning('No file saved \n')
+            return
+        app.Console.PrintMessage('Saving ' + fileName + '\n')
+        densTot = self.massTot/self.volTot if self.volTot != 0 else 0.
+        head = ['Number', 'Label', 'Material',
+                'Volume (%s)'%self.unitForV,
+                'Density (%s)'%self.unitForD,
+                'Mass (%s)'%self.unitForM,
+              *('Center of mass ' + axis + ' (' + self.unitForL + ')' for axis in ['X','Y','Z'])]
+        foot = ['Total', '', '',
+                '%.6e'%self.volTot,
+                '%.6e'%densTot,
+                '%.6e'%self.massTot,
+              *('%.6e'%self.convert_length(self.TotalCoM[axis]) for axis in range(3))]
+        try:
+            f = open(fileName, 'w', encoding=encoding)
+            f.write(delimiter.join(head) + '\n')
+            for selfsol in self.solids:
+                sol = selfsol.sol
+                row = ['%d'%(sol + 1), '%s'%g_sel[sol].Label, '%s'%selfsol.combo.currentText(),
+                       '%.6e'%self.convert_volume(self.volumes[sol]),
+                       '%.6e'%selfsol.spinDens.value(),
+                       '%.6e'%self.masses[sol],
+                     *('%.6e'%self.convert_length(self.CoMs[sol][axis]) for axis in range(3))]
+                f.write(delimiter.join(row) + '\n')
+            f.write(delimiter.join(foot))
+            f.close()
+            app.Console.PrintMessage(fileName + ' saved \n')
+        except:
+            error_message('Error writing file ' + fileName)
 
     def on_pushButton_Import(self):
-        fileName, Filter = QtGui.QFileDialog.getOpenFileName(self,
-            'Open file',
-            os.path.expanduser('~'),
-            'CSV (Tab-separated) (*.csv);;Text (Tab-separated) (*.txt)')
-        if fileName:
-            selList = [0] * self.solid_count
-            # name list of selected solids
-            for sol in range(self.solid_count):
-                selList[sol] = g_sel[sol].Label
-            with open(fileName, 'r', encoding='utf-8') as csvfile:
-                app.Console.PrintMessage('Reading from %s\n' % fileName)
-                reader = csv.DictReader(csvfile, delimiter='\t')
-                matLoaded = 0
-                # Syntax: [ EXP for x in seq if COND ]
-                nameOfDensityCol = next((s for s in reader.fieldnames if 'density' in s.lower()), None)
-                try:
-                    # Extract unit between brackets
-                    unitForD = nameOfDensityCol.split('(')[1].split(')')[0]
-                except:
-                    unitForD = self.unitForD
-                for row in reader:
-                    if row['Label'] in selList:
-                        sol = selList.index(row['Label'])
-                        try:
-                            self.solids[sol].combo.setCurrentText(row['Material'])
-                        except:
-                            app.Console.PrintWarning('Unknown material or unable to find a '
-                                + '"Material" column in the file --> Material set to "custom"')
-                            self.solids[sol].combo.setCurrentText('custom')
-                        if self.solids[sol].combo.currentText() == 'custom':
-                            try:
-                                qty = row[nameOfDensityCol] + ' ' + unitForD
-                                self.solids[sol].spinDens.setValue(
-                                    Units.Quantity(qty).getValueAs(self.unitForD))
-                            except:
-                                self.solids[sol].combo.setCurrentText('default')
-                                app.Console.PrintWarning('Unable to find a "Density" column '
-                                    + 'in the file --> Material set to "default"')
-                        matLoaded += 1
-                app.Console.PrintMessage(str(matLoaded) + ' materials loaded')
+        """Load a previously exported or an external bill of materials (BOM)"""
+        encoding, delimiter = 'utf-8', '\t'    # default
+        fileFilter = ('CSV (Tab-separated) (*.csv)','Text (Tab-separated) (*.txt)',
+                      'CSV (Excel, semicolons) (*.csv)')
+        fileName, selectedFilter = QtGui.QFileDialog.getOpenFileName(self,
+            'Open file', os.path.expanduser('~'), ';;'.join(fileFilter))
+        if fileName == '':
+            return
+        if selectedFilter == fileFilter[-1]:
+            import locale
+            encoding = locale.getpreferredencoding()
+            delimiter = ';'
+        with open(fileName, 'r', encoding=encoding) as csvfile:
+            app.Console.PrintMessage('Reading from %s\n' % fileName)
+            reader = csv.DictReader(csvfile, delimiter=delimiter, skipinitialspace=True)
+            col = {}    # first columns for label(s), density/ies, mass(es), material(s)
+            for name in ['label', 'densit', 'mass', 'material']:
+                col[name] = next((s for s in reader.fieldnames if name in s.lower()), None)
+            if col['mass'] and 'cent' in col['mass'].lower():
+                col['mass'] = None    # col['mass'] was "Center of mass"
+            col_values_w_o_label = list(col.values())[1:]
+            reader_list = list(reader)    # make whole file accessible
+        if not col['label']:
+            error_message('Unable to find a "Label" column in the file.')
+            return
+        if not any(col_values_w_o_label):
+            error_message('Unable to find a "Density", "Mass" or "Material" column in the file.')
+            return
+        if sum(bool(x) for x in col_values_w_o_label) > 1:
+            app.Console.PrintWarning('  Mass takes precedence over material card over density\n')
+
+        # Extract unit between round brackets
+        try:
+            unitForD = col['densit'].split('(')[1].split(')')[0]
+        except:
+            unitForD = self.unitForD
+        try:
+            unitForM = col['mass'].split('(')[1].split(')')[0]
+        except:
+            unitForM = self.unitForM
+
+        self.compute_centerOfMass(False)
+        loaded = [False] * self.solid_count    # bool list whether solids have been updated
+        reader_labels = [row[col['label']] for row in reader_list]
+        for sol, selfsol in enumerate(self.solids):
+            selLabel = g_sel[sol].Label
+            if selLabel in reader_labels:
+                row = reader_list[reader_labels.index(selLabel)]
+            elif selLabel[-3:].isnumeric() and selLabel[:-3] in reader_labels:
+                # admit FreeCAD's sequential numbering (001 etc.) for same objects
+                row = reader_list[reader_labels.index(selLabel[:-3])]
+            else:
+                continue
+
+            if col['mass'] and row[col['mass']]:
+                qty = row[col['mass']] + ' ' + unitForM
+                qty_qty = Units.Quantity(qty).getValueAs(self.unitForM)
+                selfsol.spinMass.setText('%.3e' % qty_qty)
+                selfsol.on_spinMass_edited()    # trigger update
+                loaded[sol] = True
+            elif col['material'] and selfsol.combo.findText(row[col['material']]) > -1:
+                selfsol.combo.setCurrentText(row[col['material']])
+                loaded[sol] = True
+            elif col['densit'] and row[col['densit']]:
+                qty = row[col['densit']] + ' ' + unitForD
+                selfsol.spinDens.setValue(Units.Quantity(qty).getValueAs(self.unitForD))
+                loaded[sol] = True
+        self.compute_centerOfMass(True)
+
+        msg = str(sum(loaded)) + ' solids loaded'
+        if 0 < sum(loaded) <= self.solid_count/2:
+            msg += ': '
+            msg += str([g_sel[sol].Label for sol in range(self.solid_count) if loaded[sol]])
+        if self.solid_count/2 < sum(loaded) < self.solid_count:
+            msg += '.\nNot loaded: '
+            msg += str([g_sel[sol].Label for sol in range(self.solid_count) if not loaded[sol]])
+        app.Console.PrintMessage(msg + '\n')
 
 
 def valid_density_string(string):
