@@ -396,10 +396,10 @@ def create_compartment(box,
 
     doc.recompute()
     _add_lines_to_box_side(parts, holes)
-
+    
     if mybox:
-        compartment.adjustRelativeLinks(mybox)
-        mybox.ViewObject.dropObject(compartment, None, '', [])
+        parts.append(compartment)
+        mybox.Links = parts
         doc.recompute()
         return mybox
 
@@ -410,7 +410,7 @@ def create_compartment(box,
 def _add_lines_to_box_side(box, holes):
     epsilon = 1e-7
     for side in box:
-        if hasattr(side, 'Base') and hasattr(side.Base, 'Objects'):
+        if hasattr(side, 'Base') and hasattr(side.Base, 'Objects')and not side.Name.startswith("compartment"):
             outline = side.Base
             obox = outline.Shape.BoundBox
 
