@@ -18,15 +18,15 @@
 #  to "default")
 #
 # Credits:
-# 2018 - present: schupin
+# 2018 - 2022: schupin
 # 2022 - present: SyProLei project (Saarland University)
 #
 
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
-__Version__ = '0.7'
-__Date__ = '2022-12-19'
+__Version__ = '0.7.0'
+__Date__ = '2023-01-23'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -183,9 +183,13 @@ class SolidsWidget():
 
         # layout grid
         if sol == 0:
+            searchL = QtGui.QLineEdit(parent, placeholderText='Search...')
+            searchL.setClearButtonEnabled(True)
+            searchL.textEdited.connect(parent.on_searchL_edited)
             label02 = QtGui.QLabel('Material', parent)
             label03 = QtGui.QLabel('Density', parent)
             label04 = QtGui.QLabel('Mass', parent)
+            parent.solidLayout.addWidget(searchL, sol, 1)
             parent.solidLayout.addWidget(label02, sol, 2)
             parent.solidLayout.addWidget(label03, sol, 3)
             parent.solidLayout.addWidget(label04, sol, 4)
@@ -343,9 +347,10 @@ class CenterofmassWidget(QtGui.QWidget):
         solidGroupBox = QtGui.QGroupBox()
         solidGroupBox.setFlat(True)
         solidGroupBox.setLayout(self.solidLayout)
-        scroll = QtGui.QScrollArea()
-        scroll.setWidget(solidGroupBox)
-        scroll.setWidgetResizable(True)
+        self.scroll = QtGui.QScrollArea()
+        self.scroll.setWidget(solidGroupBox)
+        self.scroll.setWidgetResizable(True)
+        self.found_labels = []    # for search
 
         # custom icon set of pies for SolidsWidget().combo
         self.pieIcon = []
@@ -409,7 +414,7 @@ class CenterofmassWidget(QtGui.QWidget):
 
         self.mainGroupBox = QtGui.QGroupBox('Selected solids: 0')
         mainGroupLayout = QtGui.QVBoxLayout()
-        mainGroupLayout.addWidget(scroll)
+        mainGroupLayout.addWidget(self.scroll)
         mainGroupLayout.addWidget(buttonGroupBox)
         self.mainGroupBox.setLayout(mainGroupLayout)
         layout.addWidget(self.mainGroupBox)
@@ -504,6 +509,23 @@ class CenterofmassWidget(QtGui.QWidget):
             )
         self.mainGroupBox.setTitle('Selected solids: ' + str(self.solid_count))
         self.compute_centerOfMass(True)
+
+    def on_searchL_edited(self, text):
+        """Highlight all findings and scroll to first or reset"""
+        if self.found_labels:
+            # Reset label highlighting
+            for label in self.found_labels:
+                label.setFrameStyle(QtGui.QFrame.NoFrame)
+            self.found_labels = []
+        if text == '':
+            self.scroll.ensureWidgetVisible(self.solids[0].label)
+            return
+        for selfsol in self.solids:
+            if text.lower() in selfsol.label.text().lower():
+                self.found_labels.append(selfsol.label)
+                selfsol.label.setFrameShape(QtGui.QFrame.StyledPanel)
+        if self.found_labels:
+            self.scroll.ensureWidgetVisible(self.found_labels[0])
 
     def on_focusChanged(self, oldWidget, nowWidget):
         """Toggle appearance of solid being edited"""
