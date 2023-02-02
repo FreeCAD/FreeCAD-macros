@@ -1,13 +1,6 @@
 # Macro Cadbase Library
-{{Macro
-|Name=CadbaseLibrary
-|Icon=CadbaseLibrary.svg
-|Description=This CadbaseLibrary macro to use components (parts) from CADBase in FreeCAD.
-|Author=mnnxp
-|Version=0.2.0
-|Date=2023-02-02
-|FCVersion=0.19
-}}
+
+This macro allows the user to interact with CADBase (upload/download parts) via the FreeCAD interface.
 
 ## Description
 
