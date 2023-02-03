@@ -26,7 +26,7 @@ __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
 __Version__ = '0.7.0'
-__Date__ = '2023-01-23'
+__Date__ = '2023-02-03'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -736,12 +736,12 @@ class CenterofmassWidget(QtGui.QWidget):
     def convert_length(self, length):
         """Convert length from internal FreeCAD to preference unit"""
         pq = Units.parseQuantity
-        return float(pq('{} mm'.format(length)) / pq(self.unitForL))
+        return float(pq(f'{length} mm') / pq(self.unitForL))
 
     def convert_volume(self, volume):
         """Convert volume from internal FreeCAD to preference unit"""
         pq = Units.parseQuantity
-        return float(pq('%f mm^3' % volume) / pq(self.unitForV))
+        return float(pq(f'{volume} mm^3') / pq(self.unitForV))
 
     def on_comboUnitDensity_changed(self, newText):
         unitForD_prev = self.unitForD
@@ -824,11 +824,11 @@ class CenterofmassWidget(QtGui.QWidget):
             progress_bar.next()
         progress_bar.stop()
 
-    def compute_centerOfMass(self, setAllow=None):
-        """Compute joint center of mass from all objects."""
-        if setAllow is not None:
-            self.compute_allow = setAllow
-        if not self.compute_allow:
+    def compute_centerOfMass(self, enabled=None):
+        """Compute joint center of mass from all objects if enabled. Block by setting to False."""
+        if enabled is not None:
+            self.compute_enabled = enabled
+        if not self.compute_enabled:
             return
         self.massTot = 0.
         self.volTot = 0.
@@ -848,18 +848,17 @@ class CenterofmassWidget(QtGui.QWidget):
             self.TotalCoM += 1 / self.massTot * self.masses[sol] * self.CoMs[sol]
         # output
         for sol, selfsol in enumerate(self.solids):
-            selfsol.spinMass.setText(format(self.masses[sol], '.3e'))
-            selfsol.spinMass.setToolTip(
-                'mass of ' + selfsol.label.text() + ' (in ' + self.unitForM + ')')
+            selfsol.spinMass.setText(f'{self.masses[sol]:.3e}')
+            selfsol.spinMass.setToolTip(f'mass of {selfsol.label.text()} (in {self.unitForM})')
         for axis in range(3):
-            self.resultCdG[axis].setText('{:.4}'.format(self.convert_length(self.TotalCoM[axis])))
-        self.resultCdG[0].setToolTip('center of mass X (in %s)' % self.unitForL)
-        self.resultCdG[1].setToolTip('center of mass Y (in %s)' % self.unitForL)
-        self.resultCdG[2].setToolTip('center of mass Z (in %s)' % self.unitForL)
-        self.resultMass.setText('{:.6}'.format(self.massTot))
-        self.resultMass.setToolTip('total weight (in %s)' % self.unitForM)
-        self.resultDensity.setText('{:.6}'.format(self.massTot/self.volTot))
-        self.resultDensity.setToolTip('total density (in %s)' % self.unitForD_text)
+            self.resultCdG[axis].setText(f'{self.convert_length(self.TotalCoM[axis]):.6}')
+        self.resultCdG[0].setToolTip(f'center of mass X (in {self.unitForL})')
+        self.resultCdG[1].setToolTip(f'center of mass Y (in {self.unitForL})')
+        self.resultCdG[2].setToolTip(f'center of mass Z (in {self.unitForL})')
+        self.resultMass.setText(f'{self.massTot:.6}')
+        self.resultMass.setToolTip(f'total weight (in {self.unitForM})')
+        self.resultDensity.setText(f'{self.massTot/self.volTot :.6}')
+        self.resultDensity.setToolTip(f'total density (in {self.unitForD_text})')
         if self.doc.getObject('CenterOfMass'):
             self.draw_centerOfMass()
         if self.checkColorify.isChecked():
@@ -1070,25 +1069,25 @@ class CenterofmassWidget(QtGui.QWidget):
         app.Console.PrintMessage('Saving ' + fileName + '\n')
         densTot = self.massTot/self.volTot if self.volTot != 0 else 0.
         head = ['Number', 'Label', 'Material',
-                'Volume (%s)'%self.unitForV,
-                'Density (%s)'%self.unitForD,
-                'Mass (%s)'%self.unitForM,
-              *('Center of mass ' + axis + ' (' + self.unitForL + ')' for axis in ['X','Y','Z'])]
+                f'Volume ({self.unitForV})',
+                f'Density ({self.unitForD})',
+                f'Mass ({self.unitForM})',
+              *(f'Center of mass {axis} ({self.unitForL})' for axis in ['X','Y','Z'])]
         foot = ['Total', '', '',
-                '%.6e'%self.volTot,
-                '%.6e'%densTot,
-                '%.6e'%self.massTot,
-              *('%.6e'%self.convert_length(self.TotalCoM[axis]) for axis in range(3))]
+                f'{self.volTot:.6e}',
+                f'{densTot:.6e}',
+                f'{self.massTot:.6e}',
+              *(f'{self.convert_length(self.TotalCoM[axis]):.6e}' for axis in range(3))]
         try:
             f = open(fileName, 'w', encoding=encoding)
             f.write(delimiter.join(head) + '\n')
             for selfsol in self.solids:
                 sol = selfsol.sol
-                row = ['%d'%(sol + 1), '%s'%g_sel[sol].Label, '%s'%selfsol.combo.currentText(),
-                       '%.6e'%self.convert_volume(self.volumes[sol]),
-                       '%.6e'%selfsol.spinDens.value(),
-                       '%.6e'%self.masses[sol],
-                     *('%.6e'%self.convert_length(self.CoMs[sol][axis]) for axis in range(3))]
+                row = [f'{sol + 1}', g_sel[sol].Label, selfsol.combo.currentText(),
+                       f'{self.convert_volume(self.volumes[sol]):.6e}',
+                       f'{selfsol.spinDens.value():.6e}',
+                       f'{self.masses[sol]:.6e}',
+                     *(f'{self.convert_length(self.CoMs[sol][axis]):.6e}' for axis in range(3))]
                 f.write(delimiter.join(row) + '\n')
             f.write(delimiter.join(foot))
             f.close()
@@ -1110,13 +1109,15 @@ class CenterofmassWidget(QtGui.QWidget):
             encoding = locale.getpreferredencoding()
             delimiter = ';'
         with open(fileName, 'r', encoding=encoding) as csvfile:
-            app.Console.PrintMessage('Reading from %s\n' % fileName)
+            app.Console.PrintMessage(f'Reading from {fileName}\n')
             reader = csv.DictReader(csvfile, delimiter=delimiter, skipinitialspace=True)
-            col = {}    # first columns for label(s), density/ies, mass(es), material(s)
+            col = {}
+            # find first column titled label(s), densit(y/ies), mass(es), material(s) respectively
             for name in ['label', 'densit', 'mass', 'material']:
                 col[name] = next((s for s in reader.fieldnames if name in s.lower()), None)
             if col['mass'] and 'cent' in col['mass'].lower():
-                col['mass'] = None    # col['mass'] was "Center of mass"
+                # the column was titled something like "Center of mass" which is not mass
+                col['mass'] = None
             col_values_w_o_label = list(col.values())[1:]
             reader_list = list(reader)    # make whole file accessible
         if not col['label']:
@@ -1126,7 +1127,7 @@ class CenterofmassWidget(QtGui.QWidget):
             error_message('Unable to find a "Density", "Mass" or "Material" column in the file.')
             return
         if sum(bool(x) for x in col_values_w_o_label) > 1:
-            app.Console.PrintWarning('  Mass takes precedence over material card over density\n')
+            app.Console.PrintWarning('  Material card takes precedence over mass over density\n')
 
         # Extract unit between round brackets
         try:
@@ -1151,14 +1152,14 @@ class CenterofmassWidget(QtGui.QWidget):
             else:
                 continue
 
-            if col['mass'] and row[col['mass']]:
+            if col['material'] and selfsol.combo.findText(row[col['material']]) > -1:
+                selfsol.combo.setCurrentText(row[col['material']])
+                loaded[sol] = True
+            elif col['mass'] and row[col['mass']]:
                 qty = row[col['mass']] + ' ' + unitForM
                 qty_qty = Units.Quantity(qty).getValueAs(self.unitForM)
-                selfsol.spinMass.setText('%.3e' % qty_qty)
+                selfsol.spinMass.setText(str(qty_qty))
                 selfsol.on_spinMass_edited()    # trigger update
-                loaded[sol] = True
-            elif col['material'] and selfsol.combo.findText(row[col['material']]) > -1:
-                selfsol.combo.setCurrentText(row[col['material']])
                 loaded[sol] = True
             elif col['densit'] and row[col['densit']]:
                 qty = row[col['densit']] + ' ' + unitForD
