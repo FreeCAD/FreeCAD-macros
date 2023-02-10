@@ -26,7 +26,7 @@ __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
 __Version__ = '0.7.0'
-__Date__ = '2023-02-03'
+__Date__ = '2023-02-09'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -343,10 +343,8 @@ class CenterofmassWidget(QtGui.QWidget):
 
         # solidGroupBox
         self.load_materials()    # load material cards
-        self.solidLayout = QtGui.QGridLayout()
-        solidGroupBox = QtGui.QGroupBox()
-        solidGroupBox.setFlat(True)
-        solidGroupBox.setLayout(self.solidLayout)
+        solidGroupBox = QtGui.QWidget()
+        self.solidLayout = QtGui.QGridLayout(solidGroupBox)
         self.scroll = QtGui.QScrollArea()
         self.scroll.setWidget(solidGroupBox)
         self.scroll.setWidgetResizable(True)
@@ -400,17 +398,15 @@ class CenterofmassWidget(QtGui.QWidget):
         readDensities.setIconSize(g_icon_size)
         readDensities.clicked.connect(self.on_pushButton_Import)
 
-        buttonGroupBox = QtGui.QGroupBox()
-        buttonGroupBox.setFlat(True)
-        buttonLayout = QtGui.QHBoxLayout()
+        buttonGroupBox = QtGui.QWidget()
+        buttonLayout = QtGui.QHBoxLayout(buttonGroupBox)
         buttonLayout.addWidget(newSelection)
         buttonLayout.addWidget(update)
         buttonLayout.addWidget(save)
         buttonLayout.addWidget(export)
         buttonLayout.addWidget(readDensities)
-        buttonGroupBox.setLayout(buttonLayout)
         margin = buttonLayout.contentsMargins()
-        buttonLayout.setContentsMargins(0, margin.top(), 0, 0)
+        buttonLayout.setContentsMargins(0, margin.top()/2, 0, 0)
 
         self.mainGroupBox = QtGui.QGroupBox('Selected solids: 0')
         mainGroupLayout = QtGui.QVBoxLayout()
@@ -1060,7 +1056,7 @@ class CenterofmassWidget(QtGui.QWidget):
     def on_pushButton_Export(self):
         """Export values in a Tab-separated table"""
         encoding, delimiter = 'utf-8', '\t'    # default
-        fileFilter = ('CSV (Tab-separated) (*.csv)','Text (Tab-separated) (*.txt)')
+        fileFilter = ('Tab-separated CSV (*.csv)','Tab-separated Text (*.txt)')
         fileName, selectedFilter = QtGui.QFileDialog.getSaveFileName(self,
             'Export values', os.path.expanduser('~'), ';;'.join(fileFilter))
         if fileName == '':
@@ -1098,8 +1094,8 @@ class CenterofmassWidget(QtGui.QWidget):
     def on_pushButton_Import(self):
         """Load a previously exported or an external bill of materials (BOM)"""
         encoding, delimiter = 'utf-8', '\t'    # default
-        fileFilter = ('CSV (Tab-separated) (*.csv)','Text (Tab-separated) (*.txt)',
-                      'CSV (Excel, semicolons) (*.csv)')
+        fileFilter = ('Tab-separated CSV or Text (*.csv *.txt)',
+                      'Semicolon-CSV from Excel (*.csv)')
         fileName, selectedFilter = QtGui.QFileDialog.getOpenFileName(self,
             'Open file', os.path.expanduser('~'), ';;'.join(fileFilter))
         if fileName == '':
