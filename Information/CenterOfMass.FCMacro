@@ -12,21 +12,21 @@
 # Options:
 # * Color the solids according to density.
 # * Display where is the center of mass.
-# * Export and import densities (even if it's not a .csv file from the macro,
-#  as soon as there is a column named "Density").
+# * Export and import masses, materials and densities (even if it's not a .csv
+#  file from the macro, as soon as there is a column named accordingly).
 # * Save densities in the document (remove them again when setting material
 #  to "default")
 #
 # Credits:
-# 2018 - present: schupin
+# 2018 - 2022: schupin
 # 2022 - present: SyProLei project (Saarland University)
 #
 
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
-__Version__ = '0.6.0'
-__Date__ = '2022-07-13'
+__Version__ = '0.7.0'
+__Date__ = '2023-02-09'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -183,9 +183,13 @@ class SolidsWidget():
 
         # layout grid
         if sol == 0:
+            searchL = QtGui.QLineEdit(parent, placeholderText='Search...')
+            searchL.setClearButtonEnabled(True)
+            searchL.textEdited.connect(parent.on_searchL_edited)
             label02 = QtGui.QLabel('Material', parent)
             label03 = QtGui.QLabel('Density', parent)
             label04 = QtGui.QLabel('Mass', parent)
+            parent.solidLayout.addWidget(searchL, sol, 1)
             parent.solidLayout.addWidget(label02, sol, 2)
             parent.solidLayout.addWidget(label03, sol, 3)
             parent.solidLayout.addWidget(label04, sol, 4)
@@ -199,9 +203,8 @@ class SolidsWidget():
         spinBoxDigits = 6
         # don't trigger on_spinDensity_changed (e.g. when on_comboUnitDensity_changed)
         spin.blockSignals(True)
-        spin.setMaximum(Units.Quantity(MAXIMUM_DENSITY).getValueAs(unitForD))
+        spin.setRange(0., Units.Quantity(MAXIMUM_DENSITY).getValueAs(unitForD))
         decimals = spinBoxDigits - math.floor(math.fabs(math.log10(spin.maximum())))
-        spin.setMinimum(math.pow(10, -decimals))
         spin.setDecimals(decimals)
         spin.setStepType(QtGui.QAbstractSpinBox.StepType.AdaptiveDecimalStepType)
         spin.setValue(qty.getValueAs(unitForD))
@@ -314,12 +317,14 @@ class CenterofmassWidget(QtGui.QWidget):
                                       self.defaultDensitySpin,
                                       Units.Quantity(DEFAULT_DENSITY),
                                       self.unitForD)
+        self.defaultDensitySpin.setMinimum(math.pow(10, -self.defaultDensitySpin.decimals()))
         self.defaultDensitySpin.setToolTip(
             'set default density (in ' + self.unitForD_text + ')')
         self.defaultDensitySpin.valueChanged.connect(self.on_spinDefaultDensity_changed)
         self.material_base['default'] = Units.Quantity(DEFAULT_DENSITY)
 
-        allToDefaultDensity = QtGui.QPushButton('Apply to all')
+        iconPath = ':/icons/measure/Part_Measure_Step_Active.svg'
+        allToDefaultDensity = QtGui.QPushButton(QtGui.QIcon(iconPath),' to all')
         allToDefaultDensity.setToolTip('Set all solids to default density')
         allToDefaultDensity.clicked.connect(self.on_pushButton_allToDefaultDensity)
 
@@ -338,13 +343,12 @@ class CenterofmassWidget(QtGui.QWidget):
 
         # solidGroupBox
         self.load_materials()    # load material cards
-        self.solidLayout = QtGui.QGridLayout()
-        solidGroupBox = QtGui.QGroupBox()
-        solidGroupBox.setFlat(True)
-        solidGroupBox.setLayout(self.solidLayout)
-        scroll = QtGui.QScrollArea()
-        scroll.setWidget(solidGroupBox)
-        scroll.setWidgetResizable(True)
+        solidGroupBox = QtGui.QWidget()
+        self.solidLayout = QtGui.QGridLayout(solidGroupBox)
+        self.scroll = QtGui.QScrollArea()
+        self.scroll.setWidget(solidGroupBox)
+        self.scroll.setWidgetResizable(True)
+        self.found_labels = []    # for search
 
         # custom icon set of pies for SolidsWidget().combo
         self.pieIcon = []
@@ -389,26 +393,24 @@ class CenterofmassWidget(QtGui.QWidget):
         export.clicked.connect(self.on_pushButton_Export)
 
         readDensities = QtGui.QPushButton('Import')
-        readDensities.setToolTip('Import densities from a .csv file')
+        readDensities.setToolTip('Import masses, materials or densities from a file')
         readDensities.setIcon(QtGui.QIcon(':/icons/Std_Import.svg'))
         readDensities.setIconSize(g_icon_size)
         readDensities.clicked.connect(self.on_pushButton_Import)
 
-        buttonGroupBox = QtGui.QGroupBox()
-        buttonGroupBox.setFlat(True)
-        buttonLayout = QtGui.QHBoxLayout()
+        buttonGroupBox = QtGui.QWidget()
+        buttonLayout = QtGui.QHBoxLayout(buttonGroupBox)
         buttonLayout.addWidget(newSelection)
         buttonLayout.addWidget(update)
         buttonLayout.addWidget(save)
         buttonLayout.addWidget(export)
         buttonLayout.addWidget(readDensities)
-        buttonGroupBox.setLayout(buttonLayout)
         margin = buttonLayout.contentsMargins()
-        buttonLayout.setContentsMargins(0, margin.top(), 0, 0)
+        buttonLayout.setContentsMargins(0, margin.top()/2, 0, 0)
 
         self.mainGroupBox = QtGui.QGroupBox('Selected solids: 0')
         mainGroupLayout = QtGui.QVBoxLayout()
-        mainGroupLayout.addWidget(scroll)
+        mainGroupLayout.addWidget(self.scroll)
         mainGroupLayout.addWidget(buttonGroupBox)
         self.mainGroupBox.setLayout(mainGroupLayout)
         layout.addWidget(self.mainGroupBox)
@@ -502,7 +504,24 @@ class CenterofmassWidget(QtGui.QWidget):
                 sol=sol
             )
         self.mainGroupBox.setTitle('Selected solids: ' + str(self.solid_count))
-        self.compute_centerOfMass()
+        self.compute_centerOfMass(True)
+
+    def on_searchL_edited(self, text):
+        """Highlight all findings and scroll to first or reset"""
+        if self.found_labels:
+            # Reset label highlighting
+            for label in self.found_labels:
+                label.setFrameStyle(QtGui.QFrame.NoFrame)
+            self.found_labels = []
+        if text == '':
+            self.scroll.ensureWidgetVisible(self.solids[0].label)
+            return
+        for selfsol in self.solids:
+            if text.lower() in selfsol.label.text().lower():
+                self.found_labels.append(selfsol.label)
+                selfsol.label.setFrameShape(QtGui.QFrame.StyledPanel)
+        if self.found_labels:
+            self.scroll.ensureWidgetVisible(self.found_labels[0])
 
     def on_focusChanged(self, oldWidget, nowWidget):
         """Toggle appearance of solid being edited"""
@@ -557,11 +576,11 @@ class CenterofmassWidget(QtGui.QWidget):
             if hasattr(s_, 'Shape') and s_.Shape.Volume:
                 if s_.TypeId == 'App::Part':
                     # because contains bodies
-                    csList = s_.Shape.childShapes(False,False)    # ignore placement of parent
-                    for cs in range(len(csList)):
+                    for cs in s_.Shape.childShapes(False,False):
+                        # childShapes(False,False): ignore placement of parent
                         # get first match from OutList (contains different object types)
                         for ot in s_.OutList:
-                            if hasattr(ot, 'Shape') and ot.Shape.isEqual(csList[cs]):
+                            if hasattr(ot, 'Shape') and ot.Shape.isEqual(cs):
                                 # nested App:Part and App:Link in App:Part not match here
                                 vsel.append(ot)
                                 break
@@ -597,8 +616,7 @@ class CenterofmassWidget(QtGui.QWidget):
         # create valid objects list (e.g. shapes)
         import Part
         objs = []
-        for i_ in range(len(vsel)):
-            s_ = vsel[i_]
+        for i_, s_ in enumerate(vsel):
             if hasattr(s_, 'Shape'):
                 # local placement correction (transform to global coordinate system)
                 o_ = Part.getShape(s_)    # copy shape for transformation
@@ -626,8 +644,11 @@ class CenterofmassWidget(QtGui.QWidget):
         return objs
 
     def on_pushButton_newSelection(self):
+        initial = self.checkColorify.checkState()
+        self.checkColorify.setCheckState(QtCore.Qt.Unchecked)    # preserve SolidsWidget.orgColor
         self.doc = app.activeDocument()
         self.update_selection(gui.Selection.getSelection())
+        self.checkColorify.setCheckState(initial)
 
     def on_pushButton_update(self):
         initial = self.checkColorify.checkState()
@@ -697,8 +718,8 @@ class CenterofmassWidget(QtGui.QWidget):
         self.load_materials()
         # add combo items for newly created materials
         new_materials = [m for m in self.material_base if m not in material_base_old]
-        for sol in range(self.solid_count):
-            self.solids[sol].combo.addItems(new_materials)
+        for selfsol in self.solids:
+            selfsol.combo.addItems(new_materials)
 
     def store_prefered_units(self, txt):
         """Get units set as preference"""
@@ -711,23 +732,21 @@ class CenterofmassWidget(QtGui.QWidget):
     def convert_length(self, length):
         """Convert length from internal FreeCAD to preference unit"""
         pq = Units.parseQuantity
-        return float(pq('{} mm'.format(length)) / pq(self.unitForL))
+        return float(pq(f'{length} mm') / pq(self.unitForL))
 
     def convert_volume(self, volume):
         """Convert volume from internal FreeCAD to preference unit"""
         pq = Units.parseQuantity
-        return float(pq('%f mm^3' % volume) / pq(self.unitForV))
+        return float(pq(f'{volume} mm^3') / pq(self.unitForV))
 
     def on_comboUnitDensity_changed(self, newText):
         unitForD_prev = self.unitForD
         self.store_prefered_units(newText)
-        for sol in range(self.solid_count):
-            qty = str(self.solids[sol].spinDens.value()) + ' ' + unitForD_prev
-            self.solids[sol].init_spinDensity(self.solids[sol].spinDens,
-                                              Units.Quantity(qty),
-                                              self.unitForD)
-            self.solids[sol].spinDens.setToolTip(
-                'density of ' + g_sel[sol].Label + ' (in ' + self.unitForD_text + ')')
+        for selfsol in self.solids:
+            qty = str(selfsol.spinDens.value()) + ' ' + unitForD_prev
+            selfsol.init_spinDensity(selfsol.spinDens, Units.Quantity(qty), self.unitForD)
+            selfsol.spinDens.setToolTip(
+                'density of ' + selfsol.label.text() + ' (in ' + self.unitForD_text + ')')
         qty = self.material_base.get('default', 0)
         SolidsWidget.init_spinDensity(self, self.defaultDensitySpin,
                                       Units.Quantity(qty),
@@ -738,11 +757,17 @@ class CenterofmassWidget(QtGui.QWidget):
     def on_spinDefaultDensity_changed(self, newValue):
         qty = str(newValue) + ' ' + self.unitForD
         self.material_base['default'] = Units.Quantity(qty)
+        self.compute_centerOfMass(False)
+        for selfsol in self.solids:
+            if selfsol.combo.currentText() == 'default':
+                selfsol.on_comboMaterial_changed(1)    # trigger update of "default"
+        self.compute_centerOfMass(True)
 
     def on_pushButton_allToDefaultDensity(self):
-        for sol in range(self.solid_count):
-            self.solids[sol].combo.setCurrentIndex(0)    # reset "default" to "custom"
-            self.solids[sol].combo.setCurrentText('default')
+        self.compute_centerOfMass(False)
+        for selfsol in self.solids:
+            selfsol.combo.setCurrentText('default')
+        self.compute_centerOfMass(True)
 
     def find_all_centerOfMass(self, objs):
         """Find all center of mass (CoMs) depending on the type of object."""
@@ -795,32 +820,41 @@ class CenterofmassWidget(QtGui.QWidget):
             progress_bar.next()
         progress_bar.stop()
 
-    def compute_centerOfMass(self):
-        """Compute joint center of mass from all objects."""
+    def compute_centerOfMass(self, enabled=None):
+        """Compute joint center of mass from all objects if enabled. Block by setting to False."""
+        if enabled is not None:
+            self.compute_enabled = enabled
+        if not self.compute_enabled:
+            return
         self.massTot = 0.
         self.volTot = 0.
         self.TotalCoM = app.Vector(0,0,0)
         for sol in range(self.solid_count):
             volumeInUnit = self.convert_volume(self.volumes[sol])
             self.masses[sol] = volumeInUnit * self.solids[sol].spinDens.value()
+            if self.masses[sol] == 0:
+                continue
             self.massTot += self.masses[sol]
             self.volTot += volumeInUnit
+        if self.massTot == 0:
+            error_message('All masses were set to zero. Last one reset to default.')
+            self.solids[-1].combo.setCurrentText('default')
+            return
         for sol in range(self.solid_count):
             self.TotalCoM += 1 / self.massTot * self.masses[sol] * self.CoMs[sol]
         # output
-        for sol in range(self.solid_count):
-            self.solids[sol].spinMass.setText(format(self.masses[sol], '.3e'))
-            self.solids[sol].spinMass.setToolTip(
-                'mass of ' + self.solids[sol].label.text() + ' (in ' + self.unitForM + ')')
+        for sol, selfsol in enumerate(self.solids):
+            selfsol.spinMass.setText(f'{self.masses[sol]:.3e}')
+            selfsol.spinMass.setToolTip(f'mass of {selfsol.label.text()} (in {self.unitForM})')
         for axis in range(3):
-            self.resultCdG[axis].setText('{:.4}'.format(self.convert_length(self.TotalCoM[axis])))
-        self.resultCdG[0].setToolTip('center of mass X (in %s)' % self.unitForL)
-        self.resultCdG[1].setToolTip('center of mass Y (in %s)' % self.unitForL)
-        self.resultCdG[2].setToolTip('center of mass Z (in %s)' % self.unitForL)
-        self.resultMass.setText('{:.6}'.format(self.massTot))
-        self.resultMass.setToolTip('total weight (in %s)' % self.unitForM)
-        self.resultDensity.setText('{:.6}'.format(self.massTot/self.volTot))
-        self.resultDensity.setToolTip('total density (in %s)' % self.unitForD_text)
+            self.resultCdG[axis].setText(f'{self.convert_length(self.TotalCoM[axis]):.6}')
+        self.resultCdG[0].setToolTip(f'center of mass X (in {self.unitForL})')
+        self.resultCdG[1].setToolTip(f'center of mass Y (in {self.unitForL})')
+        self.resultCdG[2].setToolTip(f'center of mass Z (in {self.unitForL})')
+        self.resultMass.setText(f'{self.massTot:.6}')
+        self.resultMass.setToolTip(f'total weight (in {self.unitForM})')
+        self.resultDensity.setText(f'{self.massTot/self.volTot :.6}')
+        self.resultDensity.setToolTip(f'total density (in {self.unitForD_text})')
         if self.doc.getObject('CenterOfMass'):
             self.draw_centerOfMass()
         if self.checkColorify.isChecked():
@@ -862,6 +896,8 @@ class CenterofmassWidget(QtGui.QWidget):
         # Spheres for all center of mass
         if self.solid_count > 1:
             for sol in range(self.solid_count):
+                if self.masses[sol] == 0:
+                    continue
                 sphere = self.doc.addObject('Part::Sphere', 'CoM_' + g_sel[sol].Name)
                 sphere.Label = 'CoM_' + g_sel[sol].Label
                 sphere.Placement.Base = self.CoMs[sol]
@@ -946,12 +982,12 @@ class CenterofmassWidget(QtGui.QWidget):
         if state == QtCore.Qt.Checked:
             self.colorify()
         else:
-            for sol in range(self.solid_count):
-                orgColorFC = self.solids[sol].orgColorFC
-                self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = orgColorFC
+            for sol, selfsol in enumerate(self.solids):
+                name = g_sel[sol].Name
+                self.doc.getObject(name).ViewObject.ShapeColor = selfsol.orgColorFC
                 if COLOR_SPHERES and self.changeRadius.isEnabled():
-                    self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = orgColorFC
-                self.solids[sol].spinDens.setPalette(QtGui.QPalette())    # reset to normal
+                    self.doc.getObject('CoM_' + name).ViewObject.ShapeColor = selfsol.orgColorFC
+                selfsol.spinDens.setPalette(QtGui.QPalette())    # reset to normal
 
     def on_comboColormap_changed(self, newText):
         if self.checkColorify.isChecked():
@@ -962,18 +998,19 @@ class CenterofmassWidget(QtGui.QWidget):
         if cmName != 'Traffic':
             import matplotlib.cm
             cm = matplotlib.cm.get_cmap(cmName)
-        pq = Units.parseQuantity
-        densityConverted = []
-        for sol in range(self.solid_count):
-            density = self.solids[sol].spinDens.value()
-            densityConverted.append(float(pq('%f %s' % (density, self.unitForD)) / pq('kg/m^3')))
-        maxD = max(densityConverted)
-        minD = min(densityConverted)
-        for sol in range(self.solid_count):
+        densities = [selfsol.spinDens.value() for selfsol in self.solids]
+        maxD = max(densities)
+        minD = min([i_ for i_ in densities if i_ != 0])    # min without zeros
+        for sol, selfsol in enumerate(self.solids):
+            name = g_sel[sol].Name
+            if self.masses[sol] == 0:
+                self.doc.getObject(name).ViewObject.ShapeColor = selfsol.orgColorFC
+                selfsol.spinDens.setPalette(QtGui.QPalette())    # reset to normal
+                continue
             if maxD == minD:
                 drel = 0    # default to low color
             else:
-                drel = (densityConverted[sol]-minD) / (maxD-minD)
+                drel = (densities[sol]-minD) / (maxD-minD)
             if cmName == 'Traffic':
                 # density value to hsv color range green to red
                 drel = math.acos(1-2*drel) / math.pi    # stretch yellow (sigmoid-like)
@@ -982,9 +1019,9 @@ class CenterofmassWidget(QtGui.QWidget):
             else:
                 color = QtGui.QColor.fromRgbF(*cm(drel))
             color.setHsvF(color.hueF(), COLOR_SATURAT/100, color.valueF())    # skips if s > 1
-            self.doc.getObject(g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
+            self.doc.getObject(name).ViewObject.ShapeColor = color.getRgbF()
             if COLOR_SPHERES and self.changeRadius.isEnabled():
-                self.doc.getObject('CoM_' + g_sel[sol].Name).ViewObject.ShapeColor = color.getRgbF()
+                self.doc.getObject('CoM_' + name).ViewObject.ShapeColor = color.getRgbF()
             pal = QtGui.QPalette()
             pal.setColor(QtGui.QPalette.Base, color)
             lum = color.getRgbF()
@@ -993,7 +1030,7 @@ class CenterofmassWidget(QtGui.QWidget):
                 c = c/12.92 if c <= 0.04045 else math.pow((c+0.055)/1.055, 2.4)
             if 0.2126*lum[0] + 0.7152*lum[1] + 0.0722*lum[2] < 0.5:
                 pal.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
-            self.solids[sol].spinDens.setPalette(pal)
+            selfsol.spinDens.setPalette(pal)
 
     def on_pushButton_toPreferences(self):
         gui.runCommand('Std_DlgParameter',0)
@@ -1017,80 +1054,123 @@ class CenterofmassWidget(QtGui.QWidget):
                 g_sel[sol].Mat_Density = str(self.solids[sol].spinDens.value()) + ' ' + self.unitForD
 
     def on_pushButton_Export(self):
-        densTot = 0.
-        if self.volTot:
-            densTot = self.massTot/self.volTot
-        fileName = ''
-        fileName, Filter = QtGui.QFileDialog.getSaveFileName(self,
-            'Export values',
-            os.path.expanduser('~'),
-            'CSV (Tab-separated) (*.csv);;Text (Tab-separated) (*.txt)')
+        """Export values in a Tab-separated table"""
+        encoding, delimiter = 'utf-8', '\t'    # default
+        fileFilter = ('Tab-separated CSV (*.csv)','Tab-separated Text (*.txt)')
+        fileName, selectedFilter = QtGui.QFileDialog.getSaveFileName(self,
+            'Export values', os.path.expanduser('~'), ';;'.join(fileFilter))
         if fileName == '':
-            app.Console.PrintWarning('no file saved \n')
-        else:
-            app.Console.PrintMessage('Saving ' + fileName + '\n')
-            delimiter = '\t'
-            head = ['Number', 'Label', 'Material',
-                    'Volume (%s)'%self.unitForV, 'Density (%s)'%self.unitForD, 'Weight (%s)'%self.unitForM,
-                    'Center of mass X (%s)'%self.unitForL, 'Center of mass Y (%s)'%self.unitForL ,'Center of mass Z (%s)'%self.unitForL]
-            foot = ['Total', '', '',
-                    '%.6e'%self.volTot, '%.6e'%densTot, '%.6e'%self.massTot,
-                  *('%.6e'%self.convert_length(self.TotalCoM[axis]) for axis in range(3))]
-            try:
-                f = open(fileName, 'w', encoding="utf-8")
-                f.write(delimiter.join(head) + '\n')
-                for sol in range(self.solid_count):
-                    row = ['%d'%(sol + 1), '%s'%g_sel[sol].Label, '%s'%self.solids[sol].combo.currentText(),
-                           '%.6e'%self.convert_volume(self.volumes[sol]), '%.6e'%self.solids[sol].spinDens.value(), '%.6e'%self.masses[sol],
-                         *('%.6e'%self.convert_length(self.CoMs[sol][axis]) for axis in range(3))]
-                    f.write(delimiter.join(row) + '\n')
-                f.write(delimiter.join(foot))
-                f.close()
-                app.Console.PrintMessage(fileName + ' saved \n')
-            except:
-                error_message('Error writing file ' + fileName)
+            app.Console.PrintWarning('No file saved \n')
+            return
+        app.Console.PrintMessage('Saving ' + fileName + '\n')
+        densTot = self.massTot/self.volTot if self.volTot != 0 else 0.
+        head = ['Number', 'Label', 'Material',
+                f'Volume ({self.unitForV})',
+                f'Density ({self.unitForD})',
+                f'Mass ({self.unitForM})',
+              *(f'Center of mass {axis} ({self.unitForL})' for axis in ['X','Y','Z'])]
+        foot = ['Total', '', '',
+                f'{self.volTot:.6e}',
+                f'{densTot:.6e}',
+                f'{self.massTot:.6e}',
+              *(f'{self.convert_length(self.TotalCoM[axis]):.6e}' for axis in range(3))]
+        try:
+            f = open(fileName, 'w', encoding=encoding)
+            f.write(delimiter.join(head) + '\n')
+            for selfsol in self.solids:
+                sol = selfsol.sol
+                row = [f'{sol + 1}', g_sel[sol].Label, selfsol.combo.currentText(),
+                       f'{self.convert_volume(self.volumes[sol]):.6e}',
+                       f'{selfsol.spinDens.value():.6e}',
+                       f'{self.masses[sol]:.6e}',
+                     *(f'{self.convert_length(self.CoMs[sol][axis]):.6e}' for axis in range(3))]
+                f.write(delimiter.join(row) + '\n')
+            f.write(delimiter.join(foot))
+            f.close()
+            app.Console.PrintMessage(fileName + ' saved \n')
+        except:
+            error_message('Error writing file ' + fileName)
 
     def on_pushButton_Import(self):
-        fileName, Filter = QtGui.QFileDialog.getOpenFileName(self,
-            'Open file',
-            os.path.expanduser('~'),
-            'CSV (Tab-separated) (*.csv);;Text (Tab-separated) (*.txt)')
-        if fileName:
-            selList = [0] * self.solid_count
-            # name list of selected solids
-            for sol in range(self.solid_count):
-                selList[sol] = g_sel[sol].Label
-            with open(fileName, 'r', encoding='utf-8') as csvfile:
-                app.Console.PrintMessage('Reading from %s\n' % fileName)
-                reader = csv.DictReader(csvfile, delimiter='\t')
-                matLoaded = 0
-                # Syntax: [ EXP for x in seq if COND ]
-                nameOfDensityCol = next((s for s in reader.fieldnames if 'density' in s.lower()), None)
-                try:
-                    # Extract unit between brackets
-                    unitForD = nameOfDensityCol.split('(')[1].split(')')[0]
-                except:
-                    unitForD = self.unitForD
-                for row in reader:
-                    if row['Label'] in selList:
-                        sol = selList.index(row['Label'])
-                        try:
-                            self.solids[sol].combo.setCurrentText(row['Material'])
-                        except:
-                            app.Console.PrintWarning('Unknown material or unable to find a '
-                                + '"Material" column in the file --> Material set to "custom"')
-                            self.solids[sol].combo.setCurrentText('custom')
-                        if self.solids[sol].combo.currentText() == 'custom':
-                            try:
-                                qty = row[nameOfDensityCol] + ' ' + unitForD
-                                self.solids[sol].spinDens.setValue(
-                                    Units.Quantity(qty).getValueAs(self.unitForD))
-                            except:
-                                self.solids[sol].combo.setCurrentText('default')
-                                app.Console.PrintWarning('Unable to find a "Density" column '
-                                    + 'in the file --> Material set to "default"')
-                        matLoaded += 1
-                app.Console.PrintMessage(str(matLoaded) + ' materials loaded')
+        """Load a previously exported or an external bill of materials (BOM)"""
+        encoding, delimiter = 'utf-8', '\t'    # default
+        fileFilter = ('Tab-separated CSV or Text (*.csv *.txt)',
+                      'Semicolon-CSV from Excel (*.csv)')
+        fileName, selectedFilter = QtGui.QFileDialog.getOpenFileName(self,
+            'Open file', os.path.expanduser('~'), ';;'.join(fileFilter))
+        if fileName == '':
+            return
+        if selectedFilter == fileFilter[-1]:
+            import locale
+            encoding = locale.getpreferredencoding()
+            delimiter = ';'
+        with open(fileName, 'r', encoding=encoding) as csvfile:
+            app.Console.PrintMessage(f'Reading from {fileName}\n')
+            reader = csv.DictReader(csvfile, delimiter=delimiter, skipinitialspace=True)
+            col = {}
+            # find first column titled label(s), densit(y/ies), mass(es), material(s) respectively
+            for name in ['label', 'densit', 'mass', 'material']:
+                col[name] = next((s for s in reader.fieldnames if name in s.lower()), None)
+            if col['mass'] and 'cent' in col['mass'].lower():
+                # the column was titled something like "Center of mass" which is not mass
+                col['mass'] = None
+            col_values_w_o_label = list(col.values())[1:]
+            reader_list = list(reader)    # make whole file accessible
+        if not col['label']:
+            error_message('Unable to find a "Label" column in the file.')
+            return
+        if not any(col_values_w_o_label):
+            error_message('Unable to find a "Density", "Mass" or "Material" column in the file.')
+            return
+        if sum(bool(x) for x in col_values_w_o_label) > 1:
+            app.Console.PrintWarning('  Material card takes precedence over mass over density\n')
+
+        # Extract unit between round brackets
+        try:
+            unitForD = col['densit'].split('(')[1].split(')')[0]
+        except:
+            unitForD = self.unitForD
+        try:
+            unitForM = col['mass'].split('(')[1].split(')')[0]
+        except:
+            unitForM = self.unitForM
+
+        self.compute_centerOfMass(False)
+        loaded = [False] * self.solid_count    # bool list whether solids have been updated
+        reader_labels = [row[col['label']] for row in reader_list]
+        for sol, selfsol in enumerate(self.solids):
+            selLabel = g_sel[sol].Label
+            if selLabel in reader_labels:
+                row = reader_list[reader_labels.index(selLabel)]
+            elif selLabel[-3:].isnumeric() and selLabel[:-3] in reader_labels:
+                # admit FreeCAD's sequential numbering (001 etc.) for same objects
+                row = reader_list[reader_labels.index(selLabel[:-3])]
+            else:
+                continue
+
+            if col['material'] and selfsol.combo.findText(row[col['material']]) > -1:
+                selfsol.combo.setCurrentText(row[col['material']])
+                loaded[sol] = True
+            elif col['mass'] and row[col['mass']]:
+                qty = row[col['mass']] + ' ' + unitForM
+                qty_qty = Units.Quantity(qty).getValueAs(self.unitForM)
+                selfsol.spinMass.setText(str(qty_qty))
+                selfsol.on_spinMass_edited()    # trigger update
+                loaded[sol] = True
+            elif col['densit'] and row[col['densit']]:
+                qty = row[col['densit']] + ' ' + unitForD
+                selfsol.spinDens.setValue(Units.Quantity(qty).getValueAs(self.unitForD))
+                loaded[sol] = True
+        self.compute_centerOfMass(True)
+
+        msg = str(sum(loaded)) + ' solids loaded'
+        if 0 < sum(loaded) <= self.solid_count/2:
+            msg += ': '
+            msg += str([g_sel[sol].Label for sol in range(self.solid_count) if loaded[sol]])
+        if self.solid_count/2 < sum(loaded) < self.solid_count:
+            msg += '.\nNot loaded: '
+            msg += str([g_sel[sol].Label for sol in range(self.solid_count) if not loaded[sol]])
+        app.Console.PrintMessage(msg + '\n')
 
 
 def valid_density_string(string):
