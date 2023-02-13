@@ -1,0 +1,67 @@
+# Generated with the macro ObjectsToPython then modified to get it working.
+
+from FreeCAD import Vector, Placement, Rotation
+import Sketcher
+import Part
+import FreeCAD as app
+
+
+def make_GetGlobalPlacement_test():
+	doc = app.activeDocument()
+
+	Cube = doc.addObject('Part::Box', 'Cube')
+	Cube.Placement = Placement(Vector(2.00, 0.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
+
+	Cube001 = doc.addObject('App::Link', 'Cube001')
+	Cube001.LinkPlacement = Placement(Vector(5.00, -1.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
+	Cube001.LinkedObject = Cube
+	Cube001.Placement = Placement(Vector(5.00, -1.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
+	Cube001.Scale = 0.50
+	Cube001.ScaleVector = Vector(0.50, 0.50, 0.50)
+
+	Cube002 = doc.addObject('App::Link', 'Cube002')
+	Cube002.LinkPlacement = Placement(Vector(7.00, 0.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
+	Cube002.LinkedObject = Cube
+	Cube002.Placement = Placement(Vector(7.00, 0.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
+
+	Cube003 = doc.addObject('App::Link', 'Cube003')
+	Cube003.LinkPlacement = Placement(Vector(8.00, -2.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
+	Cube003.LinkedObject = Cube001
+	Cube003.Placement = Placement(Vector(8.00, -2.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
+
+	Part = doc.addObject('App::Part', 'Part')
+	Part.Placement = Placement(Vector(1.00, 0.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
+
+	Part001 = doc.addObject('App::Part', 'Part001')
+	Part001.Placement = Placement(Vector(4.00, -1.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
+
+	Part002 = doc.addObject('App::Part', 'Part002')
+	Part002.Placement = Placement(Vector(6.00, -1.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
+
+	Part003 = doc.addObject('App::Link', 'Part003')
+	Part003.LinkPlacement = Placement(Vector(3.00, -2.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
+	Part003.LinkedObject = Part002
+	Part003.Placement = Placement(Vector(3.00, -2.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
+	Part003.Scale = 2.00
+	Part003.ScaleVector = Vector(2.00, 2.00, 2.00)
+
+	Part.Group = [Cube]
+	Part001.Group = [Cube001, Part002, Part003]
+	Part002.Group = [Cube002, Cube003]
+
+	doc.recompute()
+
+
+make_GetGlobalPlacement_test()
+
+# Correct results:
+#
+# Part001.Origin001: 4.000, -1.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# Part001.Part002.Origin002: 10.000, -2.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# Part001.Part003.Origin002: 7.000, -3.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# Part001.Cube001: 9.000, -2.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# Part001.Part002.Cube002: 17.000, -2.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# Part001.Part002.Cube003: 18.000, -4.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# Part001.Part003.Cube002: 21.000, -3.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# Part001.Part003.Cube003: 23.000, -7.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+

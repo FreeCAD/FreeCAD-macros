@@ -1,41 +1,34 @@
 """Get the global placement of selected objects, respecting links."""
-# Usage: select some objects or some subelements and run.
+# Usage: select some objects or some subelements, run and get the result in the
+# Report View.
 
 __Name__ = 'Get Global Placement'
-__Comment__ = 'Get the global placement, respecting links'
-__Author__ = 'galou_breizh'
-__Version__ = '1.0.1'
-__Date__ = '2022-02-04'
+__Comment__ = 'Get the global placement, respecting links, link arrays and link scale'
+__Author__ = 'galou_breizh,Jolbas'
+__Version__ = '1.1.0'
+__Date__ = '2023-02-12'
 __License__ = 'LGPL-2.0-or-later'
 __Web__ = 'http://forum.freecadweb.org/viewtopic.php?f=?&t=????'
 __Wiki__ = 'http://www.freecadweb.org/wiki/Macro_Title_Of_macro'
 __Icon__ = ''
 __Help__ = 'Select some objects or some subelements and run'
 __Status__ = ''
-__Requires__ = 'FreeCAD >=0.19'
+__Requires__ = 'FreeCAD >=0.21'
 __Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
-__Files__ = ''
+__Files__ = 'GetGlobalPlacement.svg'
 
-from typing import List
+from math import copysign, hypot
+from typing import Set, Tuple
 
 import FreeCAD as app
-
 import FreeCADGui as gui
-
-
-def get_subobject_by_name(object_: app.DocumentObject,
-                          subobject_name: str,
-                          ) -> app.DocumentObject:
-    """Return the appropriate object from object_.OutListRecursive."""
-    for o in object_.OutListRecursive:
-        if o.Name == subobject_name:
-            return o
 
 
 def strip_subelement(sub_fullpath: str) -> str:
     """Return sub_fullpath without the last sub-element.
 
     A sub-element is a face, edge or vertex.
+
     Parameters
     ----------
     - subobject_fullpath: SelectionObject.SubElementNames[i], where
@@ -54,17 +47,13 @@ def strip_subelement(sub_fullpath: str) -> str:
     return sub_fullpath.rsplit('.', maxsplit=1)[0]
 
 
-def get_subobjects_by_full_name(
-        root_object: app.DocumentObject,
+def get_global_placement_and_scale(
+        object: app.DocumentObject,
         subobject_fullpath: str,
-        ) -> List[app.DocumentObject]:
-    """Return the list of objects from root_object excluded to the named object.
-
-    The last part of ``subobject_fullpath`` is then a specific vertex, edge or
-    face and is ignored.
-    So, subobject_fullpath has the form 'name0.name1.Edge001', for example; in
-    this case, the returned objects are
-    [object_named_name0, object_named_name1].
+        ) -> Tuple[app.Placement, app.Vector]:
+    """Return the global placement and the total scale, respecting links.
+    This is in contrast with ``object.getGlobalPlacement()`` that returns
+    the placement of the original object, not the linked one.
 
     Parameters
     ----------
@@ -78,28 +67,30 @@ def get_subobjects_by_full_name(
             primitve" in PartDesign.
         - 'Body.Box001.Face6' if you select the top face of a Part->Body->
             "additive primitve" in PartDesign.
-
     """
-    objects = []
-    names = strip_subelement(subobject_fullpath).split('.')
-    subobject = root_object
-    for name in names:
-        subobject = get_subobject_by_name(subobject, name)
-        if subobject is None:
-            # This should not append.
-            return []
-        objects.append(subobject)
-    return objects
+    placement = object.getSubObject(subobject_fullpath, 4, transform=True)
+    if placement is None:
+        return
+    # Find scale.
+    # Works only if uniform?
+    s_gen = (copysign(hypot(*placement.col(i)), placement.col(i)[i]) for i in range(3))
+    scale_vec = app.Vector(*s_gen)
+    # Remove the scale from the rotation.
+    unscaled = app.Matrix(placement)
+    pos = unscaled.col(3)
+    unscaled.setCol(3, app.Vector())
+    unscaled.scale(*(1/s for s in scale_vec))
+    unscaled.setCol(3, pos)
+    return app.Placement(unscaled), scale_vec
 
 
-def get_global_placement(root_object: app.DocumentObject,
-                         subobject_fullpath: str,
-                         ) -> app.Placement:
-    """Return the global placement by recursively going through parents.
-
-    ``object.getGlobalPlacement()`` returns the placement of the original
-    object, not the linked one. This function recursively goes through the
-    hierarchy, including links to retrieve the linked object placement.
+def get_global_placement(
+        object: app.DocumentObject,
+        subobject_fullpath: str,
+        ) -> app.Placement:
+    """Return the global placement respecting links.
+    This is in contrast with ``object.getGlobalPlacement()`` that returns
+    the placement of the original object, not the linked one.
 
     Parameters
     ----------
@@ -113,13 +104,11 @@ def get_global_placement(root_object: app.DocumentObject,
             primitve" in PartDesign.
         - 'Body.Box001.Face6' if you select the top face of a Part->Body->
             "additive primitve" in PartDesign.
-
     """
-    objects = get_subobjects_by_full_name(root_object, subobject_fullpath)
-    placement = root_object.Placement
-    for o in objects:
-        placement *= o.Placement
-    return placement
+    p_and_s = get_global_placement_and_scale(object, subobject_fullpath)
+    if p_and_s is None:
+        return
+    return p_and_s[0]
 
 
 def print_placement(object_name: str,
@@ -134,7 +123,7 @@ def print_placement(object_name: str,
         + ' {q[0]:.4f}, {q[1]:.4f}, {q[2]:.4f}, {q[3]:.4f};'.format(
             q=placement.Rotation.Q)
         + ' (rpy: {r[2]:.2f}, {r[1]:.2f}, {r[0]:.2f}) deg'.format(
-            r=placement.Rotation.toEuler())
+            r=placement.Rotation.getYawPitchRoll())
         + '\n')
 
 
@@ -149,7 +138,7 @@ def get_and_print_selected_placements():
         app.Console.PrintWarning('Nothing selected, nothing to do\n')
         return
 
-    shown_paths: List[str] = []
+    shown_paths: Set[str] = set()
     for selection_object in selection:
         object_ = selection_object.Object
         sub_fullpaths = selection_object.SubElementNames
@@ -164,7 +153,7 @@ def get_and_print_selected_placements():
             path = object_.Name + wo_subelement
             if path in shown_paths:
                 continue
-            shown_paths.append(path)
+            shown_paths.add(path)
             placement = get_global_placement(object_, sub_fullpath)
             print_placement(object_.Name, wo_subelement, placement)
 
