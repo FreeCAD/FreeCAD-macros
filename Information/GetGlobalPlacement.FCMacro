@@ -27,8 +27,8 @@ def get_global_placement_and_scale(object: app.DocumentObject,
                          subobject_fullpath: str,
                          ) -> Tuple[app.Placement, app.Vector]:
     """Return the global placement and the total scale, respecting links.
-    This is in contrast with``object.getGlobalPlacement()`` that returns the placement of the original
-    object, not the linked one.
+    This is in contrast with ``object.getGlobalPlacement()`` that returns
+    the placement of the original object, not the linked one.
 
     Parameters
     ----------
@@ -72,8 +72,8 @@ def get_global_placement(object: app.DocumentObject,
                          subobject_fullpath: str,
                          ) -> app.Placement:
     """Return the global placement respecting links.
-    In contrast with``object.getGlobalPlacement()`` that returns the placement of the original
-    object, not the linked one.
+    This is in contrast with ``object.getGlobalPlacement()`` that returns
+    the placement of the original object, not the linked one.
 
     Parameters
     ----------
