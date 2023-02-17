@@ -1,26 +1,26 @@
-#***************************************************************************
-#*                                                                         *
-#*   Copyright (c) 2022 mnnxp <in@cadbase.rs>              *
-#*                                                                         *
-#*   This program is free software; you can redistribute it and/or modify  *
-#*   it under the terms of the GNU Lesser General Public License (LGPL)    *
-#*   as published by the Free Software Foundation; either version 2 of     *
-#*   the License, or (at your option) any later version.                   *
-#*   for detail see the LICENCE text file.                                 *
-#*                                                                         *
-#*   This program is distributed in the hope that it will be useful,       *
-#*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
-#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
-#*   GNU Library General Public License for more details.                  *
-#*                                                                         *
-#*   You should have received a copy of the GNU Library General Public     *
-#*   License along with this program; if not, write to the Free Software   *
-#*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
-#*   USA                                                                   *
-#*                                                                         *
-#***************************************************************************
+# ***************************************************************************
+# *                                                                         *
+# *   Copyright (c) 2022 mnnxp <in@cadbase.rs>                              *
+# *                                                                         *
+# *   This program is free software; you can redistribute it and/or modify  *
+# *   it under the terms of the GNU Lesser General Public License (LGPL)    *
+# *   as published by the Free Software Foundation; either version 2 of     *
+# *   the License, or (at your option) any later version.                   *
+# *   for detail see the LICENCE text file.                                 *
+# *                                                                         *
+# *   This program is distributed in the hope that it will be useful,       *
+# *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+# *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+# *   GNU Library General Public License for more details.                  *
+# *                                                                         *
+# *   You should have received a copy of the GNU Library General Public     *
+# *   License along with this program; if not, write to the Free Software   *
+# *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
+# *   USA                                                                   *
+# *                                                                         *
+# ***************************************************************************
 
-'''
+"""
 Macro to integrate FreeCAD with CADBase
 
 The macro is designed to load and use components (parts) from CADBase in the FreeCAD interface.
@@ -30,8 +30,8 @@ For a component modification, sets of files for various CAD systems are loaded. 
 INSTALLATION
 
 - in menu Tools select Addon Manager Select the Macros tab find CADBaseLibrary in the list and click Install
-After it is installed, it will be available in the macros menu.
-- create an account on the platform [CADBase](https://cadbase.rs/#/register) for yourself
+After it is installed, it will be available in the macro's menu.
+- create an account on the platform [CADBase](https://cadbase.rs) for yourself
 - open "Macro" in the ToolBar
 - select "Macros..." and choose the "CadbaseLibrary.FCMacro" macro and "execute"
 - then you will be prompted to select a folder for data (where the files from the CADBase storage will be loaded)
@@ -43,27 +43,28 @@ A widget "CADBase Library" will be generated in a separate window.
 
 USAGE
 
-- for update access token need in the "CADBase library" window, in the "Options" tab, click the "Settings" button, in the "CADBase library configuration" window that opens, you need to set the username/password to gain access to CADBase and wait for a new token to be received after pressing the "OK" button
-- add target components to bookmarks (favorites) on the CADBase site. In FreeCAD will only display components that the user has bookmarked on CADBase, as well as those that have been previously downloaded
-- clicking "Update from CADBase" only updates the list of components from bookmarks active user, without downloading component modifications and files
-- double-clicking on a component folder to get component's modifications
-- getting files of a fileset for FreeCAD occurs after double-clicking on the modification folder
-- double-clicking on file for use it
+- for update access token need in the "CADBase library" window, in the "Options" tab, click the "Settings" button,
+in the "CADBase library configuration" window that opens, you need to set the username/password to gain access to
+CADBase and wait for a new token to be received after pressing the "OK" button - add target components to bookmarks (
+favorites) on the CADBase site. In FreeCAD will only display components that the user has bookmarked on CADBase,
+as well as those that have been previously downloaded - clicking "Update from CADBase" only updates the list of
+components from bookmarks active user, without downloading component modifications and files - double-clicking on a
+component folder to get component's modifications - getting files of a fileset for FreeCAD occurs after
+double-clicking on the modification folder - double-clicking on file for use it
 
 COMMUNICATION
 
-If you want to share a tip, get involved, report a problem, or anything else, please create a issue or post in this FreeCAD forum thread:
-https://forum.freecadweb.org/viewtopic.php?f=22&t=69389
-'''
+If you want to share a tip, get involved, report a problem, or anything else, please create an issue or post in this
+FreeCAD forum thread: https://forum.freecadweb.org/viewtopic.php?f=22&t=69389 """
 
 from __future__ import print_function
 
-__Title__= 'CADBase Library'
+__Title__ = 'CADBase Library'
 __Name__ = 'CadbaseLibrary'
 __Comment__ = 'This CadbaseLibrary macro to use components (parts) from CADBase in app.'
 __Author__ = 'mnnxp'
-__Date__ = '2022-11-13'
-__Version__ = '0.1.3'
+__Date__ = '2023-02-02'
+__Version__ = '0.2.0'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://cadbase.rs'
 __Wiki__ = 'https://github.com/FreeCAD/FreeCAD-macros/blob/master/ImportExport/CadbaseLibrary/README.md'
@@ -72,31 +73,43 @@ __Help__ = 'Requires CADBase account to correct use the macro.'
 __Status__ = 'Stable'
 __Requires__ = 'FreeCAD >= 0.19'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=69389'
-__Files__ = 'CadbaseLibrary/cadbase_library_config.ui, CadbaseLibrary/cadbase_library.ui, CadbaseLibrary/CdbsApi.py, CadbaseLibrary/CdbsAuth.py, CadbaseLibrary/CdbsEvn.py, CadbaseLibrary/DataHandler.py, CadbaseLibrary/QueriesApi.py, CadbaseLibrary/README.md, CadbaseLibrary.svg'
+__Files__ = 'CadbaseLibrary/cadbase_library_config.ui,CadbaseLibrary/cadbase_library.ui,CadbaseLibrary/CdbsApi.py,CadbaseLibrary/CdbsAuth.py,CadbaseLibrary/CdbsEvn.py,CadbaseLibrary/DataHandler.py,CadbaseLibrary/QueriesApi.py,CadbaseLibrary/CdbsStorage.py,CadbaseLibrary/CdbsStorageApi.py,CadbaseLibrary/README.md,CadbaseLibrary.svg'
 
 import zipfile
 import tempfile
 import pathlib
+from pathlib import Path
 from types import SimpleNamespace
-from PySide import QtGui, QtCore
+from PySide import QtGui, QtCore  # FreeCAD's PySide
 import Part
-import FreeCAD as app
-import FreeCADGui as gui
-from CadbaseLibrary.CdbsEvn import g_param, g_cdbs_api, g_library_path
-from CadbaseLibrary.CdbsEvn import g_ui_file, g_ui_file_config
+import FreeCADGui as Gui
+import CadbaseLibrary.CdbsEvn
 from CadbaseLibrary.CdbsAuth import CdbsAuth
 from CadbaseLibrary.CdbsApi import CdbsApi
+from CadbaseLibrary.CdbsStorage import CdbsStorage
 from CadbaseLibrary.QueriesApi import QueriesApi
 import CadbaseLibrary.DataHandler as DataHandler
-from CadbaseLibrary.DataHandler import logger
 
 try:
-    QtCore.QTextCodec.setCodecForTr(QTextCodec.codecForName('UTF-8'))
-except:
-    pass # Will fallback to Latin-1
+    QtCore.QTextCodec.setCodecForTr(QtCore.QTextCodec.codecForName('UTF-8'))
+except Exception as e:
+    DataHandler.logger('log', f'Will fall back to Latin-1: {e}')
+try:
+    CadbaseLibrary.CdbsEvn.set_library_path()  # get the location for the CADBase library
+except Exception as e:
+    DataHandler.logger('error', f'Failed to set path for local library: {e}')
+try:
+    CadbaseLibrary.CdbsEvn.set_base_param()  # set default options if they weren't set before
+    CadbaseLibrary.CdbsEvn.update_api_points()  # update api points (in case a non-official server is used)
+except Exception as e:
+    DataHandler.logger('error', f'Failed with settings base parameters: {e}')
+g_selected_component_uuid: str = ''
+g_selected_modification_uuid: str = ''
+g_last_clicked_object: Path = Path('')
+
 
 class ExpFileSystemModel(QtGui.QFileSystemModel):
-    ''' a custom QFileSystemModel that displays freecad file icons '''
+    """ a custom QFileSystemModel that displays freecad file icons """
 
     def __init__(self):
         QtGui.QFileSystemModel.__init__(self)
@@ -111,15 +124,15 @@ class ExpFileSystemModel(QtGui.QFileSystemModel):
 
 
 class ExpCdbsWidget(QtGui.QDockWidget):
-    ''' a library explorer CADBase widget '''
+    """ a library explorer CADBase widget """
 
-    def __init__(self, parent=None):
+    def __init__(self):
         QtGui.QDockWidget.__init__(self)
         self.setObjectName('CADBaseLibrary')
-        self.form = gui.PySideUic.loadUi(g_ui_file)
+        self.form = Gui.PySideUic.loadUi(CadbaseLibrary.CdbsEvn.g_ui_file)
 
         self.dirmodel = ExpFileSystemModel()
-        self.dirmodel.setRootPath(g_library_path)
+        self.dirmodel.setRootPath(CadbaseLibrary.CdbsEvn.g_library_path)
         self.dirmodel.setNameFilters([
             '*.fcstd',
             '*.FcStd',
@@ -132,13 +145,13 @@ class ExpCdbsWidget(QtGui.QDockWidget):
             '*.BRP',
             '*.brep',
             '*.BREP',
-            ])
+        ])
         self.dirmodel.setNameFilterDisables(0)
         self.form.folder.setModel(self.dirmodel)
         self.form.folder.hideColumn(1)
         self.form.folder.hideColumn(2)
         self.form.folder.hideColumn(3)
-        self.form.folder.setRootIndex(self.dirmodel.index(g_library_path))
+        self.form.folder.setRootIndex(self.dirmodel.index(CadbaseLibrary.CdbsEvn.g_library_path))
 
         self.previewframe = self.form.toolBox.widget(0)
         self.previewframe.preview = \
@@ -146,91 +159,108 @@ class ExpCdbsWidget(QtGui.QDockWidget):
         self.optbuttons = self.form.toolBox.widget(1)
         self.optbuttons.updatebutton = \
             self.optbuttons.findChild(QtGui.QToolButton, 'updatebutton')
+        self.optbuttons.uploadbutton = \
+            self.optbuttons.findChild(QtGui.QToolButton, 'uploadbutton')
         self.optbuttons.configbutton = \
             self.optbuttons.findChild(QtGui.QToolButton, 'configbutton')
         self._connect_widgets()
         self.setWidget(self.form)
 
-
     def _connect_widgets(self):
         self.form.folder.clicked.connect(self.clicked)
         self.form.folder.doubleClicked.connect(self.doubleclicked)
-        self.optbuttons.updatebutton.clicked.connect(self.updatelibrary)
+        self.optbuttons.updatebutton.clicked.connect(self.update_library)
+        self.optbuttons.uploadbutton.clicked.connect(self.upload_files)
         self.optbuttons.configbutton.clicked.connect(self.setconfig)
 
     def clicked(self, index):
-        path = self.dirmodel.filePath(index)
-        if path.lower().endswith('.fcstd'):
-            try:
-                zfile = zipfile.ZipFile(path)
-                files = zfile.namelist()
-                # check for meta-file if it's really a FreeCAD document
-                if files[0] == 'Document.xml':
-                    image = 'thumbnails/Thumbnail.png'
-                    if image in files:
-                        image = zfile.read(image)
-                        thumbfile = tempfile.mkstemp(suffix='.png')[1]
-                        thumb = open(thumbfile, 'wb')
-                        thumb.write(image)
-                        thumb.close()
-                        im = QtGui.QPixmap(thumbfile)
-                        self.previewframe.preview.setPixmap(im)
-                        return
-            except Exception as e:
-                logger(1, f'{e}: {path}')
-        self.previewframe.preview.clear()
+        global g_last_clicked_object
+        g_last_clicked_object = pathlib.Path(self.dirmodel.filePath(index))
+        self.previewframe.preview.clear()  # clear preview frame
+        if g_last_clicked_object.suffix.lower() == '.fcstd':
+            self.set_preview_img()
+        if g_last_clicked_object.is_dir():
+            update_selected_object_uuid()
 
     def doubleclicked(self, index):
-        clck_path = pathlib.Path(self.dirmodel.filePath(index))
+        global g_last_clicked_object
+        g_last_clicked_object = pathlib.Path(self.dirmodel.filePath(index))
+        if not g_last_clicked_object.is_dir():
+            self.add_part()
+            return
+        if not CadbaseLibrary.CdbsEvn.g_param.GetString('auth-token'):
+            DataHandler.logger('error', 'Token not found')
+            return
+        # user-clicked was on directory, need updating uuid of selected component or modification
+        update_selected_object_uuid()
+        if g_selected_component_uuid:
+            update_component()
+            return
+        if g_selected_modification_uuid:
+            update_component_modificaion()
 
-        if clck_path.is_dir():
-            if g_param.GetString('auth-token'):
-                component_file = clck_path / 'component'
-                if component_file.exists():
-                    component_data = DataHandler.read_object_info(component_file, 'component')
-                    CdbsApi(QueriesApi.component_modifications(component_data.uuid))
-                    update_component(g_library_path, clck_path)
-                modification_file = clck_path / 'modification'
-                if modification_file.exists():
-                    modification_data = DataHandler.read_object_info(modification_file, 'modification')
-                    CdbsApi(QueriesApi.target_fileset(modification_data.uuid))
-                    update_component_modificaion(g_library_path, clck_path,
-                            modification_data.uuid)
-            else:
-                logger(1, 'Token not found')
-        else:
-            str_path = str(clck_path.resolve())
-            str_path_l = str_path.lower()
-            try:
-                if str_path_l.endswith('.stp') \
-                    or str_path_l.endswith('.step') \
-                    or str_path_l.endswith('.brp') \
-                    or str_path_l.endswith('.brep'):
-                    Part.show(Part.read(str_path))
-                elif str_path_l.endswith('.fcstd'):
-                    gui.activeDocument().mergeProject(str_path)
-            except Exception as e:
-                logger(1, e)
-            gui.SendMsgToActiveView('ViewFit')
+    def update_library(self):
+        update_components_list()
 
-
-    def updatelibrary(self):
-        CdbsApi(QueriesApi.fav_components())
-        update_components_list(g_library_path)
+    def upload_files(self):
+        arg = (g_selected_modification_uuid, g_last_clicked_object)
+        CdbsStorage(arg)
 
     def setconfig(self):
         ConfigDialog(parent=self)
 
+    def add_part(self):
+        """ Adding a part to an open document or in a new one """
+        DataHandler.logger('message', 'Processing the part...')
+        str_path = str(g_last_clicked_object.resolve())
+        path_suffix = g_last_clicked_object.suffix.lower()
+        try:
+            if path_suffix == '.stp' \
+                    or path_suffix == '.step' \
+                    or path_suffix == '.brp' \
+                    or path_suffix == '.brep':
+                Part.show(Part.read(str_path))
+            elif path_suffix == '.fcstd':
+                Gui.activeDocument().mergeProject(str_path)
+            Gui.SendMsgToActiveView('ViewFit')
+        except Exception as e:
+            DataHandler.logger('error', str(e))
+            return
+
+    def set_preview_img(self):
+        """ Setting image in preview tab (trying to get image of FreeCAD file) """
+        try:
+            zfile = zipfile.ZipFile(g_last_clicked_object)
+            files = zfile.namelist()
+            # check for meta-file if it's really a FreeCAD document
+            if not files[0] == 'Document.xml':
+                return
+            DataHandler.logger('log', 'Processing for preview the part...')
+            image = 'thumbnails/Thumbnail.png'
+            if image in files:
+                image = zfile.read(image)
+                thumbfile = tempfile.mkstemp(suffix='.png')[1]
+                thumb = open(thumbfile, 'wb')
+                thumb.write(image)
+                thumb.close()
+                im = QtGui.QPixmap(thumbfile)
+                self.previewframe.preview.setPixmap(im)
+        except Exception as e:
+            DataHandler.logger('error', f'{e}: {g_last_clicked_object}')
+            self.previewframe.preview.clear()  # clear preview in case of any error
+
+
 class ConfigDialog(QtGui.QDialog):
-    ''' a dialog for macro settings and get access token '''
+    """ a dialog for macro settings and get access token """
 
     def __init__(self, parent=None):
         QtGui.QDialog.__init__(self, parent)
         self.setObjectName('CADBaseLibraryConfig')
-        self.form = gui.PySideUic.loadUi(g_ui_file_config)
+        self.form = Gui.PySideUic.loadUi(CadbaseLibrary.CdbsEvn.g_ui_file_config)
         self._connect_widgets()
         self.form.show()
-        self.form.lineEdit_3.setText(g_param.GetString('destination',''))
+        self.form.lineEdit_3.setText(CadbaseLibrary.CdbsEvn.g_param.GetString('destination', ''))
+        self.form.lineEdit.setText(CadbaseLibrary.CdbsEvn.g_param.GetString('api-url', ''))
 
     def _connect_widgets(self):
         self.form.buttonBox.accepted.connect(self.accept)
@@ -239,39 +269,38 @@ class ConfigDialog(QtGui.QDialog):
         self.form.pushButton_3.clicked.connect(self.changepath)
 
     def setdefaulturl(self):
-        self.form.lineEdit.setText(g_cdbs_api)
+        self.form.lineEdit.setText(CadbaseLibrary.CdbsEvn.g_base_api)
 
     def changepath(self):
-        g_library_path = g_param.GetString('destination','')
-        np = QtGui.QFileDialog.getExistingDirectory(
-            self,
-            'Local location of your existing CADBase library',
-            g_library_path
-            )
+        CadbaseLibrary.CdbsEvn.g_library_path = CadbaseLibrary.CdbsEvn.g_param.GetString('destination', '')
+        np = QtGui.QFileDialog.getExistingDirectory(self,
+                                                    'Local location of your existing CADBase library',
+                                                    CadbaseLibrary.CdbsEvn.g_library_path)
         if np:
             self.form.lineEdit_3.setText(np)
 
     def reject(self):
-        logger(3, 'Changes not accepted')
+        DataHandler.logger('message', 'Changes not accepted')
         self.form.close()
 
     def accept(self):
         if self.form.lineEdit.text():
-            g_param.SetString('api-url',self.form.lineEdit.text())
-        if self.form.lineEdit_3.text() != g_param.GetString('destination'):
-            g_param.SetString('destination',self.form.lineEdit_3.text())
-            logger(2, 'Please restart FreeCAD')
+            CadbaseLibrary.CdbsEvn.g_param.SetString('api-url', self.form.lineEdit.text())
+            CadbaseLibrary.CdbsEvn.update_api_points()
+        if self.form.lineEdit_3.text() != CadbaseLibrary.CdbsEvn.g_library_path:
+            CadbaseLibrary.CdbsEvn.g_param.SetString('destination', self.form.lineEdit_3.text())
+            DataHandler.logger('warning', 'Please restart FreeCAD')
         if self.form.lineEdit_2.text() and self.form.lineEdit_4.text():
             username = self.form.lineEdit_2.text()
             password = self.form.lineEdit_4.text()
             CdbsAuth(username, password)
-        logger(3, 'Configuration updated')
+        DataHandler.logger('message', 'Configuration updated')
         self.form.close()
 
 
-if QtCore.QDir(g_library_path).exists():
-    m = gui.getMainWindow()
-    w = m.findChild(QtGui.QDockWidget,'CADBaseLibrary')
+if QtCore.QDir(CadbaseLibrary.CdbsEvn.g_library_path).exists():
+    m = Gui.getMainWindow()
+    w = m.findChild(QtGui.QDockWidget, 'CADBaseLibrary')
     if w and hasattr(w, 'isVisible'):
         if w.isVisible():
             w.hide()
@@ -280,59 +309,94 @@ if QtCore.QDir(g_library_path).exists():
     else:
         m.addDockWidget(QtCore.Qt.RightDockWidgetArea, ExpCdbsWidget())
 else:
-    logger(2, f'Library path "{g_library_path}" not found.')
+    DataHandler.logger('warning', f'Library path "{CadbaseLibrary.CdbsEvn.g_library_path}" not found.')
 
 
-def update_components_list(g_library_path):
+def update_components_list():
+    """ Create folders for all bookmark components of the current user  """
+    CdbsApi(QueriesApi.fav_components())
     data = DataHandler.parsing_gpl()
-    if isinstance(data, SimpleNamespace):
-        if data.components:
-            for component in data.components:
-                logger(4, component.uuid)
-                new_dir = pathlib.Path(g_library_path) \
-                    / f'{component.name} (from  {component.ownerUser.username})'
-                DataHandler.create_object_path(new_dir, component, 'component')
-        else:
-            logger(2, "You don't have favorite components")
-    logger(3, 'Component list update finished')
+    if not isinstance(data, SimpleNamespace):
+        DataHandler.logger('warning', 'Received data about components is not suitable for processing')
+        return
+    if not data.components:
+        DataHandler.logger('warning', "You don't have favorite components")
+        return
+    for component in data.components:
+        DataHandler.logger('log', f'Component uuid: {component.uuid}')
+        new_dir: Path = \
+            pathlib.Path(CadbaseLibrary.CdbsEvn.g_library_path) / f'{component.name} (from  {component.ownerUser.username})'
+        DataHandler.create_object_path(new_dir, component, 'component')
+    DataHandler.logger('message', 'Component list update finished')
 
 
-def update_component(g_library_path, component_path):
+def update_component():
+    """ Creating folders for all component modifications of current component  """
+    if not g_selected_component_uuid:
+        DataHandler.logger('warning', 'Not set uuid for select component')
+        return
+    CdbsApi(QueriesApi.component_modifications(g_selected_component_uuid))
     data = DataHandler.parsing_gpl()
-    if isinstance(data, SimpleNamespace):
-        if data.componentModifications:
-            for modification in data.componentModifications:
-                new_dir = pathlib.Path(component_path)
-                new_dir /= modification.modificationName
-                DataHandler.create_object_path(new_dir, modification, 'modification')
-        else:
-            logger(2, 'No modifications for the component')
-    logger(3, 'Updated the list of component modifications')
+    if not isinstance(data, SimpleNamespace):
+        DataHandler.logger('warning', 'Received data about component is not suitable for processing')
+        return
+    if not data.componentModifications:
+        DataHandler.logger('warning', 'No modifications for the component')
+    for modification in data.componentModifications:
+        new_dir = g_last_clicked_object / modification.modificationName
+        DataHandler.create_object_path(new_dir, modification, 'modification')
+    DataHandler.logger('message', 'Updated the list of component modifications')
 
 
-def update_component_modificaion(g_library_path, modification_path,
-                               modification_uuid):
+def update_component_modificaion():
+    """ Updating files on modification folder  """
+    if not g_selected_modification_uuid:
+        DataHandler.logger('warning', 'Not set uuid for select modification')
+        return
+    CdbsApi(QueriesApi.target_fileset(g_selected_modification_uuid))
     data = DataHandler.parsing_gpl()
-    if isinstance(data, SimpleNamespace):
-        if data.componentModificationFilesets:
-            CdbsApi(QueriesApi.fileset_files(data.componentModificationFilesets[0].uuid))
-            data = DataHandler.parsing_gpl()
-            if isinstance(data, SimpleNamespace):
-                if data.componentModificationFilesetFiles:
-                    urls = []
-                    fns = []
+    if not isinstance(data, SimpleNamespace):
+        DataHandler.logger('warning', 'Received data about fileset is not suitable for processing')
+        return
+    if not data.componentModificationFilesets:
+        DataHandler.logger('warning', 'Fileset not found for FreeCAD')
+        return
+    CdbsApi(QueriesApi.fileset_files(data.componentModificationFilesets[0].uuid))
+    data = DataHandler.parsing_gpl()
+    if not isinstance(data, SimpleNamespace):
+        DataHandler.logger('warning', 'Received data about files of fileset is not suitable for processing')
+        return
+    if not data.componentModificationFilesetFiles:
+        DataHandler.logger('warning', 'No files in fileset')
+        return
+    # necessary data to start downloading files
+    urls = []  # for store pre-signed URLs for downloading files
+    fns = []  # for store full patches with filenames
+    for file_of_fileset in data.componentModificationFilesetFiles:
+        urls.append(file_of_fileset.downloadUrl)
+        fns.append(g_last_clicked_object / file_of_fileset.filename)
+    inputs = zip(urls, fns)
+    DataHandler.download_parallel(inputs)
+    DataHandler.logger('message', f'Download is completed ({len(urls)} file(s))')
+    DataHandler.logger('message', 'Component modification files update completed')
 
-                    for file_of_fileset in \
-                        data.componentModificationFilesetFiles:
-                        urls.append(file_of_fileset.downloadUrl)
-                        fns.append(pathlib.Path(modification_path)
-                                   / file_of_fileset.filename)
 
-                    inputs = zip(urls, fns)
-                    DataHandler.download_parallel(inputs)
-                    logger(3, f'Download is completed ({len(urls)} file(s))')
-                else:
-                    logger(2, 'No files in fileset')
-        else:
-            logger(2, 'Fileset not found for FreeCAD')
-    logger(3, 'Updated component modification files')
+def update_selected_object_uuid():
+    """ Upgrading selected uuid for a object, get data from user-selected a folder """
+    global g_selected_component_uuid
+    global g_selected_modification_uuid
+    # clearing old uuids
+    g_selected_component_uuid = ''
+    g_selected_modification_uuid = ''
+    component_file = g_last_clicked_object / 'component'
+    # check file with component info
+    if component_file.exists():
+        component_data = DataHandler.read_object_info(component_file, 'component')
+        g_selected_component_uuid = component_data.uuid
+        return
+    modification_file = g_last_clicked_object / 'modification'
+    # check file with modification info
+    if modification_file.exists():
+        modification_data = DataHandler.read_object_info(modification_file, 'modification')
+        # save the uuid of the selected modification for uploading files
+        g_selected_modification_uuid = modification_data.uuid
