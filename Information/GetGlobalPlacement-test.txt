@@ -1,67 +1,74 @@
-# Generated with the macro ObjectsToPython then modified to get it working.
+from FreeCAD import Vector, Placement, Rotation, activeDocument
 
-from FreeCAD import Vector, Placement, Rotation
-import Sketcher
-import Part
-import FreeCAD as app
+def position(x, y, z):
+	return Placement(Vector(x, y, z), Rotation ())
 
-
-def make_GetGlobalPlacement_test():
-	doc = app.activeDocument()
+def make_GetGlobalPlacement_test(check = False):
+	# just a visual reference point
+	doc = activeDocument()
+	Ref = doc.addObject('PartDesign::CoordinateSystem', 'Ref')
 
 	Cube = doc.addObject('Part::Box', 'Cube')
-	Cube.Placement = Placement(Vector(2.00, 0.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
+	Cube.Width = Cube.Height = Cube.Length = 2
+	Cube.Placement = position(0, 0, -1)
 
-	Cube001 = doc.addObject('App::Link', 'Cube001')
-	Cube001.LinkPlacement = Placement(Vector(5.00, -1.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
-	Cube001.LinkedObject = Cube
-	Cube001.Placement = Placement(Vector(5.00, -1.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
-	Cube001.Scale = 0.50
-	Cube001.ScaleVector = Vector(0.50, 0.50, 0.50)
-
-	Cube002 = doc.addObject('App::Link', 'Cube002')
-	Cube002.LinkPlacement = Placement(Vector(7.00, 0.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
-	Cube002.LinkedObject = Cube
-	Cube002.Placement = Placement(Vector(7.00, 0.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
-
-	Cube003 = doc.addObject('App::Link', 'Cube003')
-	Cube003.LinkPlacement = Placement(Vector(8.00, -2.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
-	Cube003.LinkedObject = Cube001
-	Cube003.Placement = Placement(Vector(8.00, -2.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
+	CubeLink = doc.addObject('App::Link', 'CubeLink')
+	CubeLink.Placement = position(8, -2, 0)
+	CubeLink.LinkedObject = Cube
+	CubeLink.Scale = 0.50
+	CubeLink.LinkTransform = True
 
 	Part = doc.addObject('App::Part', 'Part')
-	Part.Placement = Placement(Vector(1.00, 0.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
-
-	Part001 = doc.addObject('App::Part', 'Part001')
-	Part001.Placement = Placement(Vector(4.00, -1.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
-
-	Part002 = doc.addObject('App::Part', 'Part002')
-	Part002.Placement = Placement(Vector(6.00, -1.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
-
-	Part003 = doc.addObject('App::Link', 'Part003')
-	Part003.LinkPlacement = Placement(Vector(3.00, -2.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
-	Part003.LinkedObject = Part002
-	Part003.Placement = Placement(Vector(3.00, -2.00, 0.00), Rotation (0.0, 0.0, 0.0, 1.0))
-	Part003.Scale = 2.00
-	Part003.ScaleVector = Vector(2.00, 2.00, 2.00)
-
+	Part.Placement = position(0, 4, 0)
 	Part.Group = [Cube]
-	Part001.Group = [Cube001, Part002, Part003]
-	Part002.Group = [Cube002, Cube003]
 
+	PartLink = doc.addObject('App::Link', 'PartLink')
+	PartLink.Placement = position(-2, -2, 0)
+	PartLink.LinkedObject = Part
+	PartLink.ElementCount = 2
+	PartLink.ShowElement = True
+	PartLink.ElementList[0].Scale = 2
+	PartLink.ElementList[0].Placement.Rotation.Yaw = 60
+	PartLink.ElementList[1].Placement = position(5, 0, 0)
 	doc.recompute()
+
+
+# not possible to import a .FCMacro
+# the suffix must be changed to .py
+# keep testscript as comment here anyway
+
+# from GetGlobalPlacement import get_global_placement_and_scale as p_and_s
+# def check_GetGlobalPlacement_test():
+# 	doc = app.activeDocument()
+# 	Cube = doc.getObject('Cube')
+# 	CubeLink = doc.getObject('CubeLink')
+# 	Part = doc.getObject('Part')
+# 	PartLink = doc.getObject('PartLink')
+# 	assert p_and_s(Cube,'')[0].isSame(position(0, 0, -1)) 
+# 	assert p_and_s(CubeLink,'')[0].isSame(position(8, -2, -0.5)) 
+# 	assert p_and_s(Part,'')[0].isSame(position(0, 4, 0)) 
+# 	assert p_and_s(Part,'Cube.')[0].isSame(position(0, 4, -1)) 
+# 	assert p_and_s(PartLink,'')[0].isSame(position(-2, -2, 0)) 
+# 	p = Placement(Vector(-2, -2, 0), Rotation(60, 0, 0))
+# 	assert p_and_s(PartLink,'PartLink_i0.')[0].isSame(p, 1e-6)
+# 	p = Placement(Vector(-2, -2, -2), Rotation(60, 0, 0))
+# 	assert p_and_s(PartLink,'0.Cube.Edge1')[0].isSame(p, 1e-6)
+# 	assert p_and_s(PartLink,'1.')[0].isSame(position(3, -2, 0))
+# 	assert p_and_s(PartLink,'1.Cube.Edge1')[0].isSame(position(3, -2, -1))
+# 	print('OK')
 
 
 make_GetGlobalPlacement_test()
 
 # Correct results:
 #
-# Part001.Origin001: 4.000, -1.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
-# Part001.Part002.Origin002: 10.000, -2.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
-# Part001.Part003.Origin002: 7.000, -3.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
-# Part001.Cube001: 9.000, -2.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
-# Part001.Part002.Cube002: 17.000, -2.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
-# Part001.Part002.Cube003: 18.000, -4.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
-# Part001.Part003.Cube002: 21.000, -3.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
-# Part001.Part003.Cube003: 23.000, -7.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
-
+#  Ref: 0.000, 0.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+#  CubeLink: 8.000, -2.000, -0.500; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+#  Part: 0.000, 4.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+#  Part.Cube: 0.000, 4.000, -1.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+#  PartLink: -2.000, -2.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+#  PartLink.PartLink_i0: -2.000, -2.000, 0.000; 0.0000, 0.0000, 0.5000, 0.8660; (rpy: 0.00, 0.00, 60.00) deg
+#  PartLink.PartLink_i0.Origin.Z_Axis: -2.000, -2.000, 0.000; -0.1830, 0.6830, 0.1830, 0.6830; (rpy: -30.00, 90.00, 0.00) deg
+#  PartLink.PartLink_i0.Cube: -2.000, -2.000, -2.000; 0.0000, 0.0000, 0.5000, 0.8660; (rpy: 0.00, 0.00, 60.00) deg
+#  PartLink.PartLink_i1: 3.000, -2.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+#  PartLink.PartLink_i1.Cube: 3.000, -2.000, -1.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
