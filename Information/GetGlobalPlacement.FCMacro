@@ -79,9 +79,9 @@ def get_global_placement_and_scale(
     if scale_type == app.ScaleType.NoScaling:
         return app.Placement(matrix), app.Vector(1.0, 1.0, 1.0)
     if scale_type != app.ScaleType.Uniform:
-        app.Console.PrintWarning('Non-uniform scaling not supported')
+        app.Console.PrintWarning('Non-uniform scaling not supported\n')
         return
-    app.Console.PrintWarning('Uniform scaling may give wrong results, use with care')
+    app.Console.PrintWarning('Uniform scaling may give wrong results, use with care\n')
     # Find scale.
     # Works only if uniform?
     s_gen = (copysign(hypot(*matrix.col(i)), matrix.col(i)[i])
