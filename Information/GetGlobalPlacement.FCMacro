@@ -5,8 +5,8 @@
 __Name__ = 'Get Global Placement'
 __Comment__ = 'Get the global placement, respecting links, link arrays and link scale'
 __Author__ = 'galou_breizh, Jolbas'
-__Version__ = '1.1.1'
-__Date__ = '2023-02-15'
+__Version__ = '1.1.2'
+__Date__ = '2023-02-27'
 __License__ = 'LGPL-2.0-or-later'
 __Web__ = '' #'http://forum.freecadweb.org/viewtopic.php?f=?&t=????'
 __Wiki__ = '' #'http://www.freecadweb.org/wiki/Macro_Title_Of_macro'
@@ -70,21 +70,31 @@ def get_global_placement_and_scale(
         - 'Body.Box001.Face6' if you select the top face of a Part->Body->
             "additive primitve" in PartDesign.
     """
-    placement = object.getSubObject(subobject_fullpath, 6, transform=True)
-    if placement is None:
+    return_type_link_matrix = 6  # Cf. DocumentObjectPyImp.cpp::getSubObject (l.417).
+    matrix = object.getSubObject(subobject_fullpath, return_type_link_matrix,
+                                 transform=True)
+    if matrix is None:
         return
+    scale_type = matrix.hasScale(1e-5)
+    if scale_type == app.ScaleType.NoScaling:
+        return app.Placement(matrix), app.Vector(1.0, 1.0, 1.0)
+    if scale_type != app.ScaleType.Uniform:
+        app.Console.PrintWarning('Non-uniform scaling not supported')
+        return
+    app.Console.PrintWarning('Uniform scaling may give wrong results, use with care')
     # Find scale.
     # Works only if uniform?
-    s_gen = (copysign(hypot(*placement.col(i)), placement.col(i)[i]) for i in range(3))
+    s_gen = (copysign(hypot(*matrix.col(i)), matrix.col(i)[i])
+             for i in range(3))
     scale_vec = app.Vector(*s_gen)
     # Workaround for scale affecting rotation
     # see https://forum.freecad.org/viewtopic.php?t=75448
     # Remove the scale from the rotation.
-    position = placement.col(3)
-    placement.setCol(3, app.Vector())
-    placement.scale(*(1/s for s in scale_vec))
-    placement.setCol(3, position)
-    return app.Placement(placement), scale_vec
+    position = matrix.col(3)
+    matrix.setCol(3, app.Vector())
+    matrix.scale(*(1/s for s in scale_vec))
+    matrix.setCol(3, position)
+    return app.Placement(matrix), scale_vec
 
 
 def get_global_placement(
@@ -126,17 +136,20 @@ def print_placement(object_name: str,
     if placement:
         app.Console.PrintMessage(
             f'{object_name}{dot}{sub_fullpath}:'
-            + ' {b.x:.3f}, {b.y:.3f}, {b.z:.3f};'.format(b=placement.Base)
-            + ' {q[0]:.4f}, {q[1]:.4f}, {q[2]:.4f}, {q[3]:.4f};'.format(
-                q=placement.Rotation.Q)
+            + (' {b.x:.3f}, {b.y:.3f}, {b.z:.3f};'
+               ' {q[0]:.4f}, {q[1]:.4f}, {q[2]:.4f}, {q[3]:.4f};'
+               ' App.Placement(App.Vector({b.x:.3f}, {b.y:.3f}, {b.z:.3f}),'
+               ' App.Rotation({q[0]:.5f}, {q[1]:.5f}, {q[2]:.5f}, {q[3]:.5f}));'
+              ).format(
+                   b=placement.Base,
+                   q=placement.Rotation.Q)
             + ' (rpy: {r[2]:.2f}, {r[1]:.2f}, {r[0]:.2f}) deg'.format(
                 r=placement.Rotation.getYawPitchRoll())
             + '\n')
     else:
-         app.Console.PrintMessage(
+        app.Console.PrintMessage(
             f'{object_name}{dot}{sub_fullpath}:'
             + 'Couldn\'t find the placement\n')
-       
 
 
 def get_and_print_selected_placements():

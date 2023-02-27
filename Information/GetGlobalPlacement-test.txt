@@ -1,7 +1,14 @@
 from FreeCAD import Vector, Placement, Rotation, activeDocument
 
+# A matrix with no rotation.
+g_placement_fail_1_1_1 = Placement(
+		Vector(),
+		Rotation(0.45642222410108496, 0.49809724456331667, 0.5849212871934979, -0.4488262203714842))
+
+
 def position(x, y, z):
 	return Placement(Vector(x, y, z), Rotation ())
+
 
 def make_GetGlobalPlacement_test(check = False):
 	# just a visual reference point
@@ -30,45 +37,61 @@ def make_GetGlobalPlacement_test(check = False):
 	PartLink.ElementList[0].Scale = 2
 	PartLink.ElementList[0].Placement.Rotation.Yaw = 60
 	PartLink.ElementList[1].Placement = position(5, 0, 0)
+
+	# A test that fails on version 1.1.1 because of scale retrieval.
+	# Should return the same rotation.
+	cube_1_1_1 = doc.addObject('Part::Box', 'Fails_on_1_1_1')
+	cube_1_1_1.Width = 1.0
+	cube_1_1_1.Height = 1.0
+	cube_1_1_1.Length = 1.0
+	cube_1_1_1.Placement = g_placement_fail_1_1_1
+
 	doc.recompute()
 
 
-# not possible to import a .FCMacro
-# the suffix must be changed to .py
-# keep testscript as comment here anyway
+# Not possible to import a .FCMacro
+# the suffix must be changed to .py (for example via a symlink).
+try:
+	from GetGlobalPlacement import get_global_placement_and_scale as p_and_s
+except ImportError:
+	pass
 
-# from GetGlobalPlacement import get_global_placement_and_scale as p_and_s
-# def check_GetGlobalPlacement_test():
-# 	doc = app.activeDocument()
-# 	Cube = doc.getObject('Cube')
-# 	CubeLink = doc.getObject('CubeLink')
-# 	Part = doc.getObject('Part')
-# 	PartLink = doc.getObject('PartLink')
-# 	assert p_and_s(Cube,'')[0].isSame(position(0, 0, -1)) 
-# 	assert p_and_s(CubeLink,'')[0].isSame(position(8, -2, -0.5)) 
-# 	assert p_and_s(Part,'')[0].isSame(position(0, 4, 0)) 
-# 	assert p_and_s(Part,'Cube.')[0].isSame(position(0, 4, -1)) 
-# 	assert p_and_s(PartLink,'')[0].isSame(position(-2, -2, 0)) 
-# 	p = Placement(Vector(-2, -2, 0), Rotation(60, 0, 0))
-# 	assert p_and_s(PartLink,'PartLink_i0.')[0].isSame(p, 1e-6)
-# 	p = Placement(Vector(-2, -2, -2), Rotation(60, 0, 0))
-# 	assert p_and_s(PartLink,'0.Cube.Edge1')[0].isSame(p, 1e-6)
-# 	assert p_and_s(PartLink,'1.')[0].isSame(position(3, -2, 0))
-# 	assert p_and_s(PartLink,'1.Cube.Edge1')[0].isSame(position(3, -2, -1))
-# 	print('OK')
+
+def check_GetGlobalPlacement_test():
+	tol = 1e-6
+	doc = App.activeDocument()
+	Cube = doc.getObject('Cube')
+	CubeLink = doc.getObject('CubeLink')
+	Part = doc.getObject('Part')
+	PartLink = doc.getObject('PartLink')
+	cube_1_1_1 = doc.getObject('Fails_on_1_1_1')
+	assert p_and_s(Cube,'')[0].isSame(position(0, 0, -1), tol)
+	assert p_and_s(CubeLink,'')[0].isSame(position(8, -2, -0.5), tol)
+	assert p_and_s(Part,'')[0].isSame(position(0, 4, 0), tol)
+	assert p_and_s(Part,'Cube.')[0].isSame(position(0, 4, -1), tol)
+	assert p_and_s(PartLink,'')[0].isSame(position(-2, -2, 0), tol)
+	p = Placement(Vector(-2, -2, 0), Rotation(60, 0, 0))
+	assert p_and_s(PartLink,'PartLink_i0.')[0].isSame(p, tol)
+	p = Placement(Vector(-2, -2, -2), Rotation(60, 0, 0))
+	assert p_and_s(PartLink,'0.Cube.Edge1')[0].isSame(p, tol)
+	assert p_and_s(PartLink,'1.')[0].isSame(position(3, -2, 0), tol)
+	assert p_and_s(PartLink,'1.Cube.Edge1')[0].isSame(position(3, -2, -1), tol)
+	assert p_and_s(cube_1_1_1, '')[0].isSame(g_placement_fail_1_1_1, tol)
+	print('OK')
 
 
 make_GetGlobalPlacement_test()
 
 # Correct results:
 #
-#  Ref: 0.000, 0.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
-#  CubeLink: 8.000, -2.000, -0.500; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
-#  Part: 0.000, 4.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
-#  Part.Cube: 0.000, 4.000, -1.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
-#  PartLink: -2.000, -2.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
-#  PartLink.PartLink_i0: -2.000, -2.000, 0.000; 0.0000, 0.0000, 0.5000, 0.8660; (rpy: 0.00, 0.00, 60.00) deg
-#  PartLink.PartLink_i0.Origin.Z_Axis: -2.000, -2.000, 0.000; -0.1830, 0.6830, 0.1830, 0.6830; (rpy: -30.00, 90.00, 0.00) deg
-#  PartLink.PartLink_i0.Cube: -2.000, -2.000, -2.000; 0.0000, 0.0000, 0.5000, 0.8660; (rpy: 0.00, 0.00, 60.00) deg
-#  PartLink.PartLink_i1: 3.000, -2.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
-#  PartLink.PartLink_i1.Cube: 3.000, -2.000, -1.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# Ref: 0.000, 0.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# CubeLink: 8.000, -2.000, -0.500; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# Part: 0.000, 4.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# Part.Cube: 0.000, 4.000, -1.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# PartLink: -2.000, -2.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# PartLink.PartLink_i0: -2.000, -2.000, 0.000; 0.0000, 0.0000, 0.5000, 0.8660; (rpy: 0.00, 0.00, 60.00) deg
+# PartLink.PartLink_i0.Origin.Z_Axis: -2.000, -2.000, 0.000; -0.1830, 0.6830, 0.1830, 0.6830; (rpy: -30.00, 90.00, 0.00) deg
+# PartLink.PartLink_i0.Cube: -2.000, -2.000, -2.000; 0.0000, 0.0000, 0.5000, 0.8660; (rpy: 0.00, 0.00, 60.00) deg
+# PartLink.PartLink_i1: 3.000, -2.000, 0.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# PartLink.PartLink_i1.Cube: 3.000, -2.000, -1.000; 0.0000, 0.0000, 0.0000, 1.0000; (rpy: 0.00, 0.00, 0.00) deg
+# Fails_on_1_1_1: 0.000, 0.000, 0.000; 0.4564, 0.4981, 0.5849, -0.4488; App.Placement(App.Vector(0.000, 0.000, 0.000), App.Rotation(0.45642, 0.49810, 0.58492, -0.44883)); (rpy: 63.26, -78.83, -158.70) deg
