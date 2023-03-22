@@ -1,3 +1,8 @@
+# Make a copy of the shape of all children of a part and make a compound
+# from them.
+
+from __future__ import annotations
+
 __Name__ = 'Deep Copy'
 __Comment__ = 'Takes a part and makes a compound out of it'
 __License__ = 'Apache-2.0'
@@ -6,24 +11,72 @@ __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_DeepCopy'
 __Icon__ = 'DeepCopy.svg'
 __Help__ = 'Select a part and launch'
 __Author__ = 'galou_breizh'
-__Version__ = '1.0.0'
+__Version__ = '1.1.0'
+__Date__ = '2023-03-22'
 __Status__ = 'Stable'
 __Requires__ = 'FreeCAD >= v0.17'
 __Files__ = 'DeepCopy.svg'
+
+from typing import Iterable, Optional
+
+from Arch import pruneIncluded
 
 import FreeCAD as app
 import FreeCADGui as gui
 
 
-def deep_copy(doc):
-    for sel_object in gui.Selection.getSelectionEx():
-        deep_copy_part(doc, sel_object.Object)
+# Typing hints.
+DO: app.DocumentObject
+AppPart: DO  # TypeId == 'App::Part'.
+DOList: Iterable[DO]
 
 
-def deep_copy_part(doc, part):
-    if part.TypeId != 'App::Part':
-        # Part is not a part, return.
+def deep_copy(doc: Optional[app.Document] = None):
+    """Copy the shape of the selected objects.
+
+    Parameters
+    ----------
+    - doc: document to copy the shape to. Defaults to the document of the
+      selected objects.
+
+    """
+    sel = gui.Selection.getSelectionEx()
+    if not sel:
+        app.Console.PrintWarning('No objects selected')
         return
+    # Check that all selected objects are in the same document.
+    if doc is None:
+        doc = sel[0].Object.Document
+        for sel_object in sel:
+            if sel_object.Object.Document is not doc:
+                app.Console.PrintError('Selected objects belong to'
+                                       ' different documents\n')
+                return
+
+    for sel_object in sel:
+        deep_copy_part(sel_object.Object, doc)
+
+
+def deep_copy_part(part: AppPart, doc: Optional[app.Document] = None):
+    """Copy the shape of a "App::Part" object.
+
+    Parameters
+    ----------
+    - doc: document to copy the shape to. Defaults to the document of the
+      given object.
+
+    """
+    if (not hasattr(part, 'TypeId')) or part.TypeId != 'App::Part':
+        # Part is not a part, return.
+        try:
+            app.Console.PrintWarning(f'"{part.Label}" ({part.Name})'
+                                     ' is not a part, ignoring\n')
+        except AttributeError:
+            app.Console.PrintWarning('Object is not a part, ignoring\n')
+        return
+
+    if doc is None:
+        doc = part.Document
 
     copied_subobjects = []
     for o in get_all_subobjects(part):
@@ -31,61 +84,75 @@ def deep_copy_part(doc, part):
 
     compound = doc.addObject('Part::Compound', 'Copy of ' + part.Label)
     compound.Links = copied_subobjects
+    compound.Placement = part.Placement
     doc.recompute()
 
 
-def get_all_subobjects(o):
+def get_all_subobjects(obj: DO) -> DOList:
     """Recursively get all subobjects
 
-    Subobjects of objects having a Shape attribute are not included otherwise each
-    single feature of the object would be copied. The result is that bodies,
-    compounds, and the result of boolean operations will be converted into a
-    simple copy of their shape.
+    Subobjects of objects having a Shape attribute are not included otherwise
+    each single feature of the object would be copied. The result is that
+    bodies, compounds, and the result of boolean operations will be converted
+    into a simple copy of their shape.
+
     """
     # Depth-first search algorithm.
     discovered = []
     # We do not need an extra copy for stack because OutList is already a copy.
-    stack = o.OutList
+    stack = obj.OutList
     while stack:
         v = stack.pop(0)
         if v not in discovered:
             discovered.append(v)
             if not hasattr(v, 'Shape'):
                 stack += v.OutList
-    return discovered
+    return pruneIncluded(discovered)
 
 
-def copy_subobject(doc, o):
+def copy_subobject(doc: app.DocumentObject, obj: DO) -> DOList:
     """Copy the shape of an object
 
     Some GUI attributes are also copied
+
     """
     copied_object = []
-    if not hasattr(o, 'Shape') or o.Shape.isNull():
+    if not hasattr(obj, 'Shape') or obj.Shape.isNull():
         return copied_object
-    vo_o = o.ViewObject
+    vobj = obj.ViewObject
     try:
-        copy = doc.addObject('Part::Feature', o.Name + '_Shape')
-        copy.Shape = o.Shape
-        copy.Label = 'Copy of ' + o.Label
-        copy.Placement = o.getGlobalPlacement()
-
-        vo_copy = copy.ViewObject
-        vo_copy.ShapeColor = vo_o.ShapeColor
-        vo_copy.LineColor = vo_o.LineColor
-        vo_copy.PointColor = vo_o.PointColor
-        vo_copy.DiffuseColor = vo_o.DiffuseColor
-        vo_copy.Transparency = vo_o.Transparency
-    except AttributeError:
+        copy = doc.addObject('Part::Feature', obj.Name + '_Shape')
+        copy.Shape = obj.Shape
+        copy.Label = 'Copy of ' + obj.Label
+    except AttributeError as e:
+        app.Console.PrintLog(e)
         pass
     else:
         copied_object = [copy]
+    vo_copy = copy.ViewObject
+    # Implementation note: cannot use __setattr__ and __getattribute__.
+    try:
+        vo_copy.ShapeColor = vobj.ShapeColor
+    except AttributeError:
+        pass
+    try:
+        vo_copy.LineColor = vobj.LineColor
+    except AttributeError:
+        pass
+    try:
+        vo_copy.PointColor = vobj.PointColor
+    except AttributeError:
+        pass
+    try:
+        vo_copy.DiffuseColor = vobj.DiffuseColor
+    except AttributeError:
+        pass
+    try:
+        vo_copy.Transparency = vobj.Transparency
+    except AttributeError:
+        pass
     return copied_object
 
 
 if __name__ == '__main__':
-    doc = app.activeDocument()
-    if doc:
-        deep_copy(doc)
-    else:
-        app.Console.PrintWarning('No active document')
+    deep_copy()
