@@ -25,8 +25,8 @@
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
-__Version__ = '0.7.0'
-__Date__ = '2023-02-09'
+__Version__ = '0.7.1'
+__Date__ = '2023-08-03'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
@@ -58,6 +58,7 @@ from FreeCAD import Units
 
 # Preferences
 MAXIMUM_DENSITY = '25000 kg/m^3'    # maximum physically meaningful value
+VALUE_DELIMITER = '\t'              # delimiter-separated values format: Tab
 
 # FreeCAD: Tools -> Edit Parameters, 2nd parameter of .GetX sets the default
 MACRO_SETTINGS  = 'User parameter:BaseApp/Preferences/Macros/' + __Name__
@@ -461,10 +462,16 @@ class CenterofmassWidget(QtGui.QWidget):
             self.resultCdG[axis].setObjectName('center of mass')
             self.resultCdG[axis].setReadOnly(True)
 
+        toClipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'),'')
+        toClipboard.setToolTip(f'Copy to clipboard ({Units.listSchemas(Units.getSchema())})')
+        toClipboard.setFlat(True)
+        toClipboard.clicked.connect(self.on_pushButton_copyToClipboardCdG)
+
         cdgLayout = QtGui.QHBoxLayout()
         cdgLayout.addWidget(label_CdG)
         for axis in range(3):
             cdgLayout.addWidget(self.resultCdG[axis])
+        cdgLayout.addWidget(toClipboard)
         cdgGroupBox = QtGui.QGroupBox()
         cdgGroupBox.setLayout(cdgLayout)
         layout.addWidget(cdgGroupBox)
@@ -481,12 +488,18 @@ class CenterofmassWidget(QtGui.QWidget):
         self.resultDensity = QtGui.QLineEdit(self)
         self.resultDensity.setReadOnly(True)
 
+        toClipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'),'')
+        toClipboard.setToolTip(f'Copy to clipboard ({Units.listSchemas(Units.getSchema())})')
+        toClipboard.setFlat(True)
+        toClipboard.clicked.connect(self.on_pushButton_copyToClipboardTotal)
+
         totalLayout = QtGui.QHBoxLayout()
         totalLayout.addWidget(label_Mass)
         totalLayout.addWidget(self.resultMass)
         totalLayout.addSpacing(GUI_FONT_SIZE)
         totalLayout.addWidget(label_Density)
         totalLayout.addWidget(self.resultDensity)
+        totalLayout.addWidget(toClipboard)
         totalGroupBox = QtGui.QGroupBox('Total')
         totalGroupBox.setLayout(totalLayout)
         layout.addWidget(totalGroupBox)
@@ -1035,6 +1048,16 @@ class CenterofmassWidget(QtGui.QWidget):
     def on_pushButton_toPreferences(self):
         gui.runCommand('Std_DlgParameter',0)
 
+    def on_pushButton_copyToClipboardCdG(self):
+        """Copy Vector to clipboard (in FreeCAD Standard unit system)"""
+        string = VALUE_DELIMITER.join(str(self.TotalCoM[axis]) for axis in range(3))
+        QtGui.QGuiApplication.clipboard().setText(string)
+
+    def on_pushButton_copyToClipboardTotal(self):
+        """Copy total mass and density to clipboard (in FreeCAD Standard unit system)"""
+        string = VALUE_DELIMITER.join((str(self.massTot), str(self.massTot/self.volTot)))
+        QtGui.QGuiApplication.clipboard().setText(string)
+
     def on_pushButton_Save(self):
         for sol in range(self.solid_count):
             mat_selected = self.solids[sol].combo.currentText()
@@ -1054,9 +1077,10 @@ class CenterofmassWidget(QtGui.QWidget):
                 g_sel[sol].Mat_Density = str(self.solids[sol].spinDens.value()) + ' ' + self.unitForD
 
     def on_pushButton_Export(self):
-        """Export values in a Tab-separated table"""
-        encoding, delimiter = 'utf-8', '\t'    # default
-        fileFilter = ('Tab-separated CSV (*.csv)','Tab-separated Text (*.txt)')
+        """Export values in a delimiter-separated table (default: Tab)"""
+        encoding, delimiter = 'utf-8', VALUE_DELIMITER
+        dstr = 'Tab' if VALUE_DELIMITER == '\t' else 'User-delimiter'
+        fileFilter = (f'{dstr}-separated CSV (*.csv)',f'{dstr}-separated Text (*.txt)')
         fileName, selectedFilter = QtGui.QFileDialog.getSaveFileName(self,
             'Export values', os.path.expanduser('~'), ';;'.join(fileFilter))
         if fileName == '':
@@ -1093,8 +1117,9 @@ class CenterofmassWidget(QtGui.QWidget):
 
     def on_pushButton_Import(self):
         """Load a previously exported or an external bill of materials (BOM)"""
-        encoding, delimiter = 'utf-8', '\t'    # default
-        fileFilter = ('Tab-separated CSV or Text (*.csv *.txt)',
+        encoding, delimiter = 'utf-8', VALUE_DELIMITER
+        dstr = 'Tab' if VALUE_DELIMITER == '\t' else 'User-delimiter'
+        fileFilter = (f'{dstr}-separated CSV or Text (*.csv *.txt)',
                       'Semicolon-CSV from Excel (*.csv)')
         fileName, selectedFilter = QtGui.QFileDialog.getOpenFileName(self,
             'Open file', os.path.expanduser('~'), ';;'.join(fileFilter))
