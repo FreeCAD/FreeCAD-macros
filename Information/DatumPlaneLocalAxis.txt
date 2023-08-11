@@ -1,0 +1,54 @@
+from FreeCAD import Vector, Placement, Rotation
+import FreeCAD as app
+
+
+def make_test_datum_plane_local_axis():
+    doc = app.activeDocument()
+
+    # Part / Body / DatumPlane + Part / LinkToBody / DatumPlane.
+    Part = doc.addObject('App::Part', 'Part')
+    Part.Placement = Placement(Vector(0.0, 0.0, 10.0),
+	    Rotation(0.0, 0.0, 0.0, 1.0))
+
+    Body = doc.addObject('PartDesign::Body', 'Body')
+    Part.addObject(Body)
+    Body.Placement = Placement(Vector(0.0, 0.0, 20.0),
+	    Rotation(0.0, 0.0, 0.0, 1.0))
+
+    DatumPlane = doc.addObject('PartDesign::Plane', 'DatumPlane')
+    Body.addObject(DatumPlane)
+    DatumPlane.AttachmentOffset = Placement(Vector(10.0, 0.0, 0.0),
+	    Rotation(0.0, 0.0, 0.0, 1.0))
+    DatumPlane.MapMode = 'FlatFace'
+    DatumPlane.Placement = Placement(Vector(10.0, 0.0, 0.0),
+	    Rotation(0.0, 0.0, 0.0, 1.0))
+    DatumPlane.Support = [(Body.Origin.OriginFeatures[3], (''))]  # XY-plane.
+
+    Box = doc.addObject('PartDesign::AdditiveBox', 'Box')
+    Body.addObject(Box)
+
+    LinkToBody = doc.addObject('App::Link', 'LinkToBody')
+    Part.addObject(LinkToBody)
+    LinkToBody.LinkedObject = Body
+    LinkToBody.LinkPlacement = Placement(Vector(0.0, 0.0, 40.0),
+	    Rotation(0.0, 0.0, 0.0, 1.0))
+
+
+    # LinkToPart / Body / DatumPlane + LinkToPart / LinkToBody / DatumPlane
+    LinkToPart = doc.addObject('App::Link', 'LinkToPart')
+    LinkToPart.LinkPlacement = Placement(Vector(0.0, 50.0, 0.0),
+	    Rotation(0.0, 0.0, 0.0, 1.0))
+    LinkToPart.LinkedObject = Part
+
+    # Body / DatumPlane.
+    Body002 = doc.addObject('PartDesign::Body', 'Body002')
+
+    DatumPlane001 = doc.addObject('PartDesign::Plane', 'DatumPlane001')
+    Body002.addObject(DatumPlane001)
+    DatumPlane001.MapMode = 'FlatFace'
+    DatumPlane001.Support = [(Body002.Origin.OriginFeatures[3], (''))]  # XY-plane.
+
+    doc.recompute()
+
+
+make_test_datum_plane_local_axis()
