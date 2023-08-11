@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 24.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#FFFFFF;stroke:#020203;stroke-miterlimit:10;}
+	.st1{fill:none;stroke:#020203;stroke-miterlimit:10;}
+	.st2{fill:none;stroke:#020203;stroke-width:3;stroke-miterlimit:10;}
+	.st3{fill:url(#SVGID_1_);}
+	.st4{fill:url(#SVGID_2_);}
+	.st5{fill:url(#SVGID_3_);}
+	.st6{fill:#F4E725;}
+	.st7{fill:#020203;}
+	.st8{fill:none;stroke:#000000;stroke-width:5;stroke-miterlimit:10;}
+	.st9{fill:url(#SVGID_4_);}
+	.st10{fill:url(#SVGID_5_);}
+</style>
+<path class="st0" d="M91.9,88.4l-0.1-82c0-2.5-2-4.5-4.5-4.5H11.5C9,2,7,4,7,6.5v87.1c0,2.5,2,4.5,4.5,4.5h72L91.9,88.4z"/>
+<polyline class="st1" points="83.6,98.1 83.6,88.6 91.9,88.4 "/>
+<g>
+	<line class="st2" x1="67.1" y1="47.4" x2="81.7" y2="47.4"/>
+	<line class="st2" x1="67.1" y1="63.6" x2="81.7" y2="63.6"/>
+	<polyline class="st2" points="67.1,36.4 67.1,79.3 81.7,79.3 	"/>
+	
+		<radialGradient id="SVGID_1_" cx="81.6987" cy="54.597" r="4.3927" gradientTransform="matrix(1 0 0 -1 0 102)" gradientUnits="userSpaceOnUse">
+		<stop  offset="1" style="stop-color:#2B5998"/>
+		<stop  offset="1" style="stop-color:#4B78B1"/>
+		<stop  offset="1" style="stop-color:#6694C8"/>
+		<stop  offset="1" style="stop-color:#729FD1"/>
+	</radialGradient>
+	<circle class="st3" cx="81.7" cy="47.4" r="4.4"/>
+	
+		<radialGradient id="SVGID_2_" cx="81.6987" cy="38.3759" r="4.3927" gradientTransform="matrix(1 0 0 -1 0 102)" gradientUnits="userSpaceOnUse">
+		<stop  offset="1" style="stop-color:#2B5998"/>
+		<stop  offset="1" style="stop-color:#4B78B1"/>
+		<stop  offset="1" style="stop-color:#6694C8"/>
+		<stop  offset="1" style="stop-color:#729FD1"/>
+	</radialGradient>
+	<circle class="st4" cx="81.7" cy="63.6" r="4.4"/>
+	
+		<radialGradient id="SVGID_3_" cx="81.6987" cy="22.6106" r="4.3969" gradientTransform="matrix(1 0 0 -1 0 102)" gradientUnits="userSpaceOnUse">
+		<stop  offset="1" style="stop-color:#2B5998"/>
+		<stop  offset="1" style="stop-color:#4B78B1"/>
+		<stop  offset="1" style="stop-color:#6694C8"/>
+		<stop  offset="1" style="stop-color:#729FD1"/>
+	</radialGradient>
+	<circle class="st5" cx="81.7" cy="79.3" r="4.4"/>
+	<g>
+		<polygon class="st6" points="55,36.7 55,10.3 71.4,10.3 71.4,23.5 85,23.5 85,36.7 		"/>
+		<path class="st7" d="M70.4,11.3v11.2v2h2H84v11.2H72.4H56V11.3H70.4 M72.4,9.3H54v28.4h18.4H86V22.5H72.4V9.3L72.4,9.3z"/>
+	</g>
+</g>
+<g>
+	<g>
+		<path class="st8" d="M27.5,64.6c0,14.8,1.9,26,35.7,21.7"/>
+		<g>
+			<polygon points="49.6,96 48.4,93.8 63,86.2 47,82.6 47.6,80.2 70.2,85.3 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<line class="st2" x1="26.5" y1="47.4" x2="41.1" y2="47.4"/>
+	<polyline class="st2" points="26.5,36.4 26.5,63.6 41.1,63.6 	"/>
+	
+		<radialGradient id="SVGID_4_" cx="41.1267" cy="54.597" r="4.3927" gradientTransform="matrix(1 0 0 -1 0 102)" gradientUnits="userSpaceOnUse">
+		<stop  offset="1" style="stop-color:#2B5998"/>
+		<stop  offset="1" style="stop-color:#4B78B1"/>
+		<stop  offset="1" style="stop-color:#6694C8"/>
+		<stop  offset="1" style="stop-color:#729FD1"/>
+	</radialGradient>
+	<circle class="st9" cx="41.1" cy="47.4" r="4.4"/>
+	
+		<radialGradient id="SVGID_5_" cx="41.1267" cy="38.3541" r="4.3969" gradientTransform="matrix(1 0 0 -1 0 102)" gradientUnits="userSpaceOnUse">
+		<stop  offset="1" style="stop-color:#2B5998"/>
+		<stop  offset="1" style="stop-color:#4B78B1"/>
+		<stop  offset="1" style="stop-color:#6694C8"/>
+		<stop  offset="1" style="stop-color:#729FD1"/>
+	</radialGradient>
+	<circle class="st10" cx="41.1" cy="63.6" r="4.4"/>
+	<g>
+		<polygon class="st6" points="14.4,36.7 14.4,10.3 30.9,10.3 30.9,23.5 44.4,23.5 44.4,36.7 		"/>
+		<path class="st7" d="M29.9,11.3v11.2v2h2h11.5v11.2H31.9H15.4V11.3H29.9 M31.9,9.3H13.4v28.4h18.4h13.5V22.5H31.9V9.3L31.9,9.3z"
+			/>
+	</g>
+</g>
+</svg>
