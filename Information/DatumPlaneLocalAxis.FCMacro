@@ -1,0 +1,101 @@
+# -*- coding: utf-8 -*-
+# view loacal axis of selected datum plane macro
+# Author: Avinash Pudale
+# License: LGPL v 2.1
+
+from __future__ import annotations
+
+__Name__ = 'Datum-Plane Local Axis'
+__Comment__ = 'Select a datum plane in the 3D view then run, this macro will shows local axes for all selected planes or delete all created local axes if nothing is selected'
+__Author__ = 'Avinash Pudale'
+__Date__ = '2023-08-11'
+__Version__ = 'v0.2.0'
+__License__ = 'LGPL-2.1'
+__Web__ = 'https://forum.freecad.org/viewtopic.php?t=79562'
+__Wiki__ = ''
+__Icon__ = 'DatumPlaneLocalAxis.svg'
+__Xpm__ = ''
+__Help__ = 'The macro will add small X-, Y-, and Z-axis representations on the selected datum planes in the 3D view. The X-axis is represented in red, the Y-axis in green, and the Z-axis in blue. To clear the axis representations, simply run the macro again without selecting anything.'
+__Status__ = 'Stable'
+__Requires__ = 'FreeCAD >=0.20'
+__Communication__ = 'https://github.com/FabLabBaramati/freecadDatumLoacalAxisMacro/issues'
+__Files__ = 'DatumPlaneLocalAxis.svg'
+
+
+import FreeCAD as app
+import FreeCADGui as gui
+
+import Part
+import Draft
+
+# The 3 axes representing a plane will be inside a group that
+# starts with this label.
+GROUP_LABEL = 'Datum_Plane_Axis'
+
+
+def add_local_axis():
+    doc = app.activeDocument()
+
+    if not doc:
+        return
+
+    # Check if a datum plane is selected in the tree view.
+    selection = gui.Selection.getSelectionEx()
+
+    if not selection:
+        # Delete all axis representations if no object is selected.
+        objs_to_delete: list[Part.Feature] = []
+        for obj in doc.Objects:
+            if (obj.isDerivedFrom('App::DocumentObjectGroup')
+                    and obj.Label.startswith(GROUP_LABEL)):
+                for child_obj in obj.Group:
+                    objs_to_delete.append(child_obj)
+                objs_to_delete.append(obj)
+        # Delete the groups and lines.
+        for obj in objs_to_delete:
+            doc.removeObject(obj.Name)
+        doc.recompute()
+        return
+
+    # The list of selected planes.
+    planes: set[Part.Feature] = set()
+    for sel in selection:
+        if sel.Object.isDerivedFrom('PartDesign::Plane'):
+            planes.add(sel.Object)
+            continue
+
+    for plane in planes:
+        # Create a group to contain the axis representations.
+        group = doc.addObject('App::DocumentObjectGroup', GROUP_LABEL)
+
+        # Size of the line reprenting an axis.
+        size = 0.95 * min(plane.Length, plane.Width) / 2.0
+
+        points_colors = (
+            (app.Vector(size, 0, 0), (1.0, 0.0, 0.0)),  # Red for X-axis.
+            (app.Vector(0, size, 0), (0.0, 1.0, 0.0)),  # Green for Y-axis.
+            (app.Vector(0, 0, size), (0.0, 0.0, 1.0)),  # Blue for Z-axis.
+            )
+
+        for point, color in points_colors:
+            # Create Draft objects for the axis.
+            axis = Draft.makeLine(app.Vector(0, 0, 0), point)
+
+            # Set the placements for the axis representations
+            # TODO: Fix placement of links to datum planes.
+            axis.Placement = plane.Placement
+
+            # Set the display mode of the axis representations to 'Wireframe'
+            axis.ViewObject.DisplayMode = 'Wireframe'
+
+            # Set the colors of the axis representations
+            axis.ViewObject.LineColor = color
+
+            # Add the axis representations as child objects to the group
+            group.addObject(axis)
+
+        doc.recompute()
+
+
+if __name__ == '__main__':
+    add_local_axis()
