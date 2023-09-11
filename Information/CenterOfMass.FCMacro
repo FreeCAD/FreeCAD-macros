@@ -19,29 +19,29 @@
 #
 # Credits:
 # 2018 - 2022: schupin
-# 2022 - present: SyProLei project (Saarland University)
+# 2022 - 2023: SyProLei project (Saarland University)
 #
 
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
-__Version__ = '0.7.0'
-__Date__ = '2023-02-09'
+__Version__ = '0.7.3'
+__Date__ = '2023-09-07'
 __License__ = 'LGPL-3.0-or-later'
-__Web__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
-__Wiki__ = 'https://www.freecadweb.org/wiki/Macro_CenterOfMass'
-__Icon__ = 'https://wiki.freecadweb.org/images/4/41/Macro_CenterOfMass.png'
+__Web__ = 'https://forum.freecad.org/viewtopic.php?f=24&t=31883'
+__Wiki__ = 'https://wiki.freecad.org/Macro_CenterOfMass'
+__Icon__ = 'https://wiki.freecad.org/images/a/a6/Macro_CenterOfMass.svg'
 __Help__ = 'Select one or more bodies and launch'
 __Status__ = 'Alpha'
 __Requires__ = 'FreeCAD >= 0.19'
-__Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=24&t=31883'
+__Communication__ = 'https://forum.freecad.org/viewtopic.php?f=24&t=31883'
 __Files__ = ''
 
 # Todo:
 # - error with draft array of meshes (relevant?)
 # - App:Link lacks the .getGlobalPlacement() method and childShapes() do not equal,
 # so .InListRecursive and .OutList is used as a workaround.
-# @realthunder proposes https://forum.freecadweb.org/viewtopic.php?p=569083#p569083
+# @realthunder proposes https://forum.freecad.org/viewtopic.php?p=569083#p569083
 # Ideas:
 # - moments of inertia with arrows that allow the user to see the relative magnitudes
 
@@ -58,6 +58,7 @@ from FreeCAD import Units
 
 # Preferences
 MAXIMUM_DENSITY = '25000 kg/m^3'    # maximum physically meaningful value
+VALUE_DELIMITER = '\t'              # delimiter-separated values format: Tab
 
 # FreeCAD: Tools -> Edit Parameters, 2nd parameter of .GetX sets the default
 MACRO_SETTINGS  = 'User parameter:BaseApp/Preferences/Macros/' + __Name__
@@ -80,9 +81,10 @@ CUSTOM_MAT_DIR = MATERIAL_SETTINGS.GetString('CustomMaterialsDir', '')
 WINDOW_WIDTH = int(0.2 * QtGui.QGuiApplication.screens()[0].geometry().width())
 WINDOW_HEIGHT = int(0.5 * QtGui.QGuiApplication.screens()[0].geometry().height())
 
-# FreeCAD 0.20 is able to run with Qt 5.9.5 but Qt 5.12 was adopted here
-if QtCore.QLibraryInfo.version() < QtCore.QVersionNumber(5,12):
-    app.Console.PrintWarning('Qt 5.12 or higher is needed to run\n')
+if int(app.Version()[1]) < 21:
+    # FreeCAD 0.20 is able to run with Qt 5.9.5 but Qt 5.12 was adopted here
+    if QtCore.QLibraryInfo.version() < QtCore.QVersionNumber(5,12):
+        app.Console.PrintWarning('Qt 5.12 or higher is needed to run\n')
 
 app.ParamGet(MACRO_SETTINGS).SetString('Default density', DEFAULT_DENSITY)
 app.ParamGet(MACRO_SETTINGS).SetBool('Docked window', DOCKED_WINDOW)
@@ -165,11 +167,12 @@ class SolidsWidget():
         self.combo.insertSeparator(2)    # after custom+default
         mat_name = getattr(g_sel[sol], 'Mat_Name', 'default')
         mat_density = getattr(g_sel[sol], 'Mat_Density', parent.material_base['default'])
+        # class 'Base.Quantity' for saves with FreeCAD > 0.21, before: class 'str'
         if hasattr(g_sel[sol], 'Material'):
             if hasattr(g_sel[sol].Material, 'Material'):
                 # overwrite if Arch Material set
                 mat_name = g_sel[sol].Material.Material['CardName']
-                mat_density = g_sel[sol].Material.Material['Density']
+                mat_density = g_sel[sol].Material.Material['Density']    # class 'str'
         self.combo.setCurrentText(mat_name)    # not found: stays 0=custom
         self.combo.currentIndexChanged.connect(self.on_comboMaterial_changed)
         self.init_spinDensity(self.spinDens, Units.Quantity(mat_density), parent.unitForD)
@@ -461,10 +464,16 @@ class CenterofmassWidget(QtGui.QWidget):
             self.resultCdG[axis].setObjectName('center of mass')
             self.resultCdG[axis].setReadOnly(True)
 
+        toClipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'),'')
+        toClipboard.setToolTip(f'Copy to clipboard ({Units.listSchemas(Units.getSchema())})')
+        toClipboard.setFlat(True)
+        toClipboard.clicked.connect(self.on_pushButton_copyToClipboardCdG)
+
         cdgLayout = QtGui.QHBoxLayout()
         cdgLayout.addWidget(label_CdG)
         for axis in range(3):
             cdgLayout.addWidget(self.resultCdG[axis])
+        cdgLayout.addWidget(toClipboard)
         cdgGroupBox = QtGui.QGroupBox()
         cdgGroupBox.setLayout(cdgLayout)
         layout.addWidget(cdgGroupBox)
@@ -481,12 +490,18 @@ class CenterofmassWidget(QtGui.QWidget):
         self.resultDensity = QtGui.QLineEdit(self)
         self.resultDensity.setReadOnly(True)
 
+        toClipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'),'')
+        toClipboard.setToolTip(f'Copy to clipboard ({Units.listSchemas(Units.getSchema())})')
+        toClipboard.setFlat(True)
+        toClipboard.clicked.connect(self.on_pushButton_copyToClipboardTotal)
+
         totalLayout = QtGui.QHBoxLayout()
         totalLayout.addWidget(label_Mass)
         totalLayout.addWidget(self.resultMass)
         totalLayout.addSpacing(GUI_FONT_SIZE)
         totalLayout.addWidget(label_Density)
         totalLayout.addWidget(self.resultDensity)
+        totalLayout.addWidget(toClipboard)
         totalGroupBox = QtGui.QGroupBox('Total')
         totalGroupBox.setLayout(totalLayout)
         layout.addWidget(totalGroupBox)
@@ -609,9 +624,13 @@ class CenterofmassWidget(QtGui.QWidget):
         else:
             tree = g_main_window.findChild(QtGui.QTreeWidget)
             iterator = QtGui.QTreeWidgetItemIterator(tree, QtGui.QTreeWidgetItemIterator.Editable)
-            # Syntax: [ EXP for x in seq if COND ]
             self.tree_list = [i_.value().text(0) for i_ in list(iterator)]
-            vsel.sort(key=sort_selection_by_tree)
+            if self.tree_list:
+                vsel.sort(key=sort_selection_by_tree)
+            else:
+                # e.g. some FreeCAD 0.21 weekly builds
+                app.Console.PrintWarning('Could not take over the sorting of the tree view\n')
+                vsel.sort(key=sort_selection_by_label)
 
         # create valid objects list (e.g. shapes)
         import Part
@@ -677,8 +696,8 @@ class CenterofmassWidget(QtGui.QWidget):
         """Load density from material cards, get resource paths from FEM preferences"""
         resources = []
         if USE_BUILT_IN_MATERIALS:
-            # FreeCAD.getResourceDir() returns inconsistent path
-            # (https://forum.freecadweb.org/viewtopic.php?t=32036)
+            # FreeCAD.getResourceDir() returns inconsistent path separators
+            # (https://forum.freecad.org/viewtopic.php?t=32036)
             resources.append(os.path.join(
                 os.path.normpath(app.getResourceDir()), "Mod", "Material", "StandardMaterial")
             )
@@ -686,7 +705,8 @@ class CenterofmassWidget(QtGui.QWidget):
             resources.append(os.path.join(app.ConfigGet("UserAppData"), "Material"))
         if USE_MAT_FROM_CUSTOM_DIR and CUSTOM_MAT_DIR:
             resources.append(CUSTOM_MAT_DIR)
-        print('Looking for material cards according to User parameter:BaseApp/Preferences/Mod/Material/Resources')
+        print('Looking for material cards according to',
+              'User parameter:BaseApp/Preferences/Mod/Material/Resources')
         for path in resources:
             print('  ' + path)    # cards found later with same name will override previous ones
 
@@ -1035,6 +1055,16 @@ class CenterofmassWidget(QtGui.QWidget):
     def on_pushButton_toPreferences(self):
         gui.runCommand('Std_DlgParameter',0)
 
+    def on_pushButton_copyToClipboardCdG(self):
+        """Copy Vector to clipboard (in FreeCAD Standard unit system)"""
+        string = VALUE_DELIMITER.join(str(self.TotalCoM[axis]) for axis in range(3))
+        QtGui.QGuiApplication.clipboard().setText(string)
+
+    def on_pushButton_copyToClipboardTotal(self):
+        """Copy total mass and density to clipboard (in FreeCAD Standard unit system)"""
+        string = VALUE_DELIMITER.join((str(self.massTot), str(self.massTot/self.volTot)))
+        QtGui.QGuiApplication.clipboard().setText(string)
+
     def on_pushButton_Save(self):
         for sol in range(self.solid_count):
             mat_selected = self.solids[sol].combo.currentText()
@@ -1050,13 +1080,19 @@ class CenterofmassWidget(QtGui.QWidget):
                 g_sel[sol].Mat_Name = mat_selected
                 # Density
                 if not hasattr(g_sel[sol], 'Mat_Density'):
-                    g_sel[sol].addProperty('App::PropertyString', 'Mat_Density', *tip)
+                    if int(app.Version()[1]) <= 21:
+                        g_sel[sol].addProperty('App::PropertyString', 'Mat_Density', *tip)
+                    else:
+                        # 'App::PropertyDensity' available since FreeCAD 0.21
+                        # -> cannot be opened in FreeCAD < 0.21 so start using with the next version
+                        g_sel[sol].addProperty('App::PropertyDensity', 'Mat_Density', *tip)
                 g_sel[sol].Mat_Density = str(self.solids[sol].spinDens.value()) + ' ' + self.unitForD
 
     def on_pushButton_Export(self):
-        """Export values in a Tab-separated table"""
-        encoding, delimiter = 'utf-8', '\t'    # default
-        fileFilter = ('Tab-separated CSV (*.csv)','Tab-separated Text (*.txt)')
+        """Export values in a delimiter-separated table (default: Tab)"""
+        encoding, delimiter = 'utf-8', VALUE_DELIMITER
+        dstr = 'Tab' if VALUE_DELIMITER == '\t' else 'User-delimiter'
+        fileFilter = (f'{dstr}-separated CSV (*.csv)',f'{dstr}-separated Text (*.txt)')
         fileName, selectedFilter = QtGui.QFileDialog.getSaveFileName(self,
             'Export values', os.path.expanduser('~'), ';;'.join(fileFilter))
         if fileName == '':
@@ -1093,8 +1129,9 @@ class CenterofmassWidget(QtGui.QWidget):
 
     def on_pushButton_Import(self):
         """Load a previously exported or an external bill of materials (BOM)"""
-        encoding, delimiter = 'utf-8', '\t'    # default
-        fileFilter = ('Tab-separated CSV or Text (*.csv *.txt)',
+        encoding, delimiter = 'utf-8', VALUE_DELIMITER
+        dstr = 'Tab' if VALUE_DELIMITER == '\t' else 'User-delimiter'
+        fileFilter = (f'{dstr}-separated CSV or Text (*.csv *.txt)',
                       'Semicolon-CSV from Excel (*.csv)')
         fileName, selectedFilter = QtGui.QFileDialog.getOpenFileName(self,
             'Open file', os.path.expanduser('~'), ';;'.join(fileFilter))
