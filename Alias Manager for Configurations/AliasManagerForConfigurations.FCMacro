@@ -43,15 +43,14 @@ __date__    = "23/10/2023"
  
 __Comment__ = "This macro helps managing aliases inside FreeCAD Spreadsheet workbench. It is able to set/clear the alias of a cell(s). The text in the cell above or left is used for the alias."
  
-__Wiki__ = "https://github.com/pgilfernandez/FreeCAD_AliasManagerConfig"
-__Help__ = "https://github.com/pgilfernandez/FreeCAD_AliasManagerConfig"
+__Wiki__ = "https://github.com/ronz0215/Macro_AliasManagerForConfigurations"
+__Help__ = "https://github.com/ronz0215/Macro_AliasManagerForConfigurations"
 __Status__ = "dev"
 __Requires__ = "FreeCAD 0.16"
 
 from PySide import QtGui, QtCore
 from PySide.QtCore import Qt
 from FreeCAD import Gui
-#import os
 import string
 import re
 App = FreeCAD
