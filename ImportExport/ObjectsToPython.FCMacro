@@ -127,7 +127,7 @@ def addObject(doc, obj, objectlist):
     
     
 def addProperties(obj, objname, refobj, objectlist):
-    skipProperties = ['Label', 'Shape', 'Proxy', 'AddSubShape', 'FullyConstrained']
+    skipProperties = ['Label', 'Shape', 'Proxy', 'AddSubShape', 'FullyConstrained', 'VisualLayerList']
     skipObjProp = [('Sketcher::SketchObject', 'Geometry'), ('Sketcher::SketchObject', 'Constraints'),
         ('PartDesign::Body', 'Origin'), ('PartDesign::Body', 'Tip')]
     
