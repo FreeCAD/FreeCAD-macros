@@ -12,11 +12,11 @@
 __Name__ = 'Airfoil Import and Scale'
 __Comment__ = 'Imports and scales an Airfoil in the form of a Draft Wire (DWire) or Basic Spline (BSpline)'
 __Author__ = "quick61"
-__Version__ = '2.1.1'
-__Date__ = '2019-02-02'
+__Version__ = '2.1.2'
+__Date__ = '2024-01-14'
 __License__ = ''
-__Web__ = "http://forum.freecadweb.org/viewtopic.php?f=22&t=5554"
-__Wiki__ = "http://www.freecadweb.org/wiki/Macro_Airfoil_Import_%26_Scale"
+__Web__ = 'http://forum.freecadweb.org/viewtopic.php?f=22&t=5554'
+__Wiki__ = 'http://www.freecadweb.org/wiki/Macro_Airfoil_Import_%26_Scale'
 __Icon__ = ''
 __Help__ = ''
 __Status__ = 'stable'
@@ -26,81 +26,89 @@ __Files__ = ''
 
 
 import FreeCAD as app
-from PySide import QtCore, QtGui
-from PySide.QtGui import QLineEdit, QRadioButton
-import Draft
-import importAirfoilDAT
+import FreeCADGui as gui
+from PySide import QtCore, QtGui  # FreeCAD's PySide!
+import Draft  # FreeCAD.
+import importAirfoilDAT  # From the Draft module.
 
 # Select .dat airfoil data file to be imported
 
 # PySide returns a tuple (filename, filter) instead of just a string like in PyQt
 filename, filefilter = QtGui.QFileDialog.getOpenFileName(
-    QtGui.qApp.activeWindow(), 'Open An Airfoil File', '*.dat')
+    gui.getMainWindow(), 'Open An Airfoil File', '*.dat')
+
 
 class AirfoilImporterAndScaler():
+
     def __init__(self):
         self.dialog = None
-        self.s1 = None
-
 
         # Make dialog box and get the scale size
-        self.dialog = QtGui.QDialog()
-        self.dialog.resize(350,100)
-        self.dialog.setWindowTitle("Airfoil Import & Scale")
-        la = QtGui.QVBoxLayout(self.dialog)
-        t1 = QtGui.QLabel("Chord Length")
-        la.addWidget(t1)
-        self.s1 = QtGui.QLineEdit()
-        la.addWidget(self.s1)
+        self.dialog = QtGui.QDialog(gui.getMainWindow())
+        self.dialog.resize(350, 100)
+        self.dialog.setWindowTitle('Airfoil Import & Scale')
+        layout = QtGui.QVBoxLayout(self.dialog)
+        label = QtGui.QLabel('Chord Length')
+        layout.addWidget(label)
+        self.line_edit_scale = QtGui.QLineEdit()
+        layout.addWidget(self.line_edit_scale)
 
         # Add radio buttons to select between DWire and BSpline
-        self.radio1 = QtGui.QRadioButton("Make DWire")
-        self.radio2 = QtGui.QRadioButton("Make BSpline")
+        self.radio_dwire = QtGui.QRadioButton('Make DWire')
+        self.radio_bspline = QtGui.QRadioButton('Make BSpline')
 
         # set default to DWire & make radio buttons - Change self.radio1.setChecked(True) to
         # self.radio2.setChecked(True) to set BSpline as default
 
-        self.radio1.setChecked(True)
-        la.addWidget(self.radio1)
-        la.addWidget(self.radio2)
+        self.radio_dwire.setChecked(True)
+        layout.addWidget(self.radio_dwire)
+        layout.addWidget(self.radio_bspline)
 
         # Add OK / Cancel buttons
-        okbox = QtGui.QDialogButtonBox(self.dialog)
-        okbox.setOrientation(QtCore.Qt.Horizontal)
-        okbox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
-        la.addWidget(okbox)
-        QtCore.QObject.connect(okbox, QtCore.SIGNAL("accepted()"), self.proceed)
-        QtCore.QObject.connect(okbox, QtCore.SIGNAL("rejected()"), self.close)
+        button_box = QtGui.QDialogButtonBox(self.dialog)
+        button_box.setOrientation(QtCore.Qt.Horizontal)
+        button_box.setStandardButtons(
+                QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Ok)
+        layout.addWidget(button_box)
+        button_box.accepted.connect(self.proceed)
+        button_box.rejected.connect(self.close)
         QtCore.QMetaObject.connectSlotsByName(self.dialog)
         self.dialog.show()
         self.dialog.exec_()
 
     def proceed(self):
         global filename
-        if self.radio1.isChecked():
+        if self.radio_dwire.isChecked():
             try:
                 # This produces a scaled Airfoil with a DWire
-                scalefactor=float(self.s1.text())
-                f1=str(filename)
-                importAirfoilDAT.insert(f1,"Unnamed")
-                Draft.scale(App.ActiveDocument.ActiveObject,delta=App.Vector(scalefactor,scalefactor,scalefactor),center=App.Vector(0,0,0),legacy=True)
+                scalefactor = float(self.line_edit_scale.text())
+                f1 = str(filename)
+                importAirfoilDAT.insert(f1, 'Unnamed')
+                Draft.scale(
+                        app.ActiveDocument.ActiveObject,
+                        delta=app.Vector(scalefactor, scalefactor, scalefactor),
+                        center=app.Vector(0, 0, 0),
+                        legacy=True)
             except Exception as e:
-                app.Console.PrintError("Error, not a valid .dat file\n")
+                app.Console.PrintError('Error, not a valid .dat file\n')
 
             self.close()
 
-        if self.radio2.isChecked():
+        if self.radio_bspline.isChecked():
             try:
                 # This produces a scaled Airfoil with a BSpline
-                scalefactor=float(self.s1.text())
-                f1=str(filename)
-                importAirfoilDAT.insert(f1,"Unnamed")
+                scalefactor = float(self.line_edit_scale.text())
+                f1 = str(filename)
+                importAirfoilDAT.insert(f1, 'Unnamed')
                 points = app.ActiveDocument.ActiveObject.Points
                 Draft.makeBSpline(points, closed=True)
-                Draft.scale(App.ActiveDocument.ActiveObject,delta=App.Vector(scalefactor,scalefactor,scalefactor),center=App.Vector(0,0,0),legacy=True)
-                App.getDocument("Unnamed").removeObject("DWire")
+                Draft.scale(app.ActiveDocument.ActiveObject,
+                            delta=app.Vector(scalefactor, scalefactor, scalefactor),
+                            center=app.Vector(0, 0, 0),
+                            legacy=True)
+                app.getDocument('Unnamed').removeObject('DWire')
             except:
-                app.Console.PrintError("Error, not a valid .dat file\n")
+                app.Console.PrintError('Error, not a valid .dat file\n')
 
             self.close()
 
