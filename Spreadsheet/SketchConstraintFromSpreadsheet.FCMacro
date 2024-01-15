@@ -1314,24 +1314,25 @@ def main():
                 x1, x2, y1, y2 = x2, x1, y2, y1
 
 
-
     if column!=get_next_column(get_column(getIniCellForAlias())) and getIniCheckboxStateForAlias():
-        get_user_input("no", "no", "no", "no", "no","In spreadsheet, a value have been selected in a wrong cell. Put your value in column " +
-                get_column(nextCell(getIniCellForAlias())) + " in cell " + nextCell(getIniCellForAlias()) + " or under. " +
-                 "\n\n Or change value below. ")
+        get_user_input("no", "no", "no", "no", "no","In spreadsheet, a value have been selected in a wrong cell."+
+               " \nPut the alias name in column "+get_column(getIniCellForAlias())+ " in cell "+ getIniCellForAlias() +
+                " or under \nand value in cell to the right in column "+ get_column(nextCell(getIniCellForAlias()))+
+                ". \n\nSelect the cell with value before running the macro " +
+                 "\n\n Otherwise, change the value below or uncheck the box . ")
         return
         
-        
-
 
     if getIniCheckboxStateForAlias() :
         setAlias()
 
     cellAlias = App.ActiveDocument.getObject(mySpreadSheetName).getAlias(cellCode)
-    if cellAlias == None and getIniCheckboxStateForAlias():    
-        get_user_input("no", "no", "no", "no", "no","In spreadsheet, a value have been selected in a wcell without alias. Put your value in column " +
-                get_column(nextCell(getIniCellForAlias())) + " in cell " + nextCell(getIniCellForAlias()) + " or under. " +
-                 "\n\n Or change value below. ")
+    if cellAlias == None and getIniCheckboxStateForAlias():  
+        get_user_input("no", "no", "no", "no", "no","In spreadsheet, a value have been selected in a cell without alias." +    
+               " \nPut the alias name in column " + get_column(getIniCellForAlias())+ " in cell "+ getIniCellForAlias() +
+                " or under \nand value in cell to the right in column "+ get_column(nextCell(getIniCellForAlias()))+
+                ". \n\nSelect the cell with value before running the macro " +
+                 "\n\n Otherwise, change the value below or uncheck the box . ")
         return
     
     
