@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # ========================================================================
 # Macro Sketch Constraint From Spreadsheet
-# file name : SketchConstraintFromSpreadsheet.FCMacro
+# file name : Sketch_Constraint_From_Spreadsheet.FCMacro
 # ========================================================================
 # ==                                                                    ==
 # == Adds a length constraint to a line, circle, points ...             ==
