@@ -57,7 +57,7 @@ __Title__="FCCircularText"
 __Author__ = "Mario52"
 __Version__ = "00.11"
 __Date__    = "12/06/2015"
-__License__ = "LGPL-2.0-or-later
+__License__ = "LGPL-2.0-or-later"
 
 __Comment__ = "This macro creates a text around a cylinder"
 __Web__ = "http://forum.freecadweb.org/viewtopic.php?f=3&t=7384"
