@@ -40,6 +40,7 @@ __IconW__  = "C:/Documents and Settings/YourUserName/Application Data/FreeCAD"
 __Help__ = "start the macro and follow the instructions"
 __Status__ = ""
 __Requires__ = ""
+__License__ = "GPL-3.0-or-later"
 __Communication__ = "https://forum.freecadweb.org/memberlist.php?mode=viewprofile&u=2030"
 
 
