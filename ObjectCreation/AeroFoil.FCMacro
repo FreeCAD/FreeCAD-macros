@@ -111,6 +111,7 @@ __Icon__          = "AeroFoil.svg"
 __Help__          = "Click on the AeroFoil button/macro, and follow the instructions in the subsequent dialog boxes."
 __Status__        = "stable"
 __Requires__      = "Freecad >= v0.17"
+__License__       = "LGPL-2.1-or-later"
 __Communication__ = "https://github.com/melwyncarlo/AeroFoil/issues"
 __Files__         = "AeroFoil_UI_Files/AeroFoil_Initial_Dialog.ui,AeroFoil_UI_Files/AeroFoil_NACA4Digit_Dialog.ui,AeroFoil_UI_Files/AeroFoil_NACA5Digit_Dialog.ui,AeroFoil_UI_Files/AeroFoil_CurvesInput_Dialog.ui,AeroFoil_UI_Files/AeroFoil_PointsInput_Dialog.ui,AeroFoil_UI_Files/AeroFoil_DATInput_Dialog.ui,AeroFoil_UI_Files/AeroFoil_CSVInput_Dialog.ui,AeroFoil_UI_Files/AeroFoil_FileLoad_Dialog.ui,AeroFoil_UI_Files/AeroFoil_Final_Dialog.ui,AeroFoil_UI_Files/AeroFoil_Math_Functions_Box.ui,AeroFoil_UI_Files/AeroFoil_mfb_img.gif,AeroFoil.svg"
 
