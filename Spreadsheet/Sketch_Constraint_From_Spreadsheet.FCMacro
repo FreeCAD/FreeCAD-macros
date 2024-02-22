@@ -28,7 +28,7 @@ __Date__    = "2024/01/27"    #YYYY/MM/DD
 __Version__ = __Date__
 __Icon__    = "https://wiki.freecad.org/images/d/dc/Macro_Sketch_Constraint_From_Spreadsheet.svg"
 __Wiki__    = "https://wiki.freecad.org/Macro_sketchConstraintFromSpreadsheet"
-
+__License__ = "Apache-2.0"
 
 from PySide import QtGui, QtCore
 from PySide2.QtGui import QIcon
@@ -237,6 +237,10 @@ messages = {
     }
 }
     
+
+
+
+
 
 # save objects names in ini file
 #typeObject : Spreadsheet, Body....
