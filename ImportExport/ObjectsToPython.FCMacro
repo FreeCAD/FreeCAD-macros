@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__Version__ = '0.7.1'
-__Date__ = '2023-11-20'
+__Version__ = '0.7.2'
+__Date__ = '2024-03-13'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = 'README.md'
@@ -358,9 +358,19 @@ def addSketch(obj, objname):
         elif con.Type == 'PointOnObject':
             conargs = f'{first}, {con.FirstPos}, {sec}'
         elif con.Type == 'Vertical':
-            conargs = str(first)
+            if sec[:3] == 'geo':
+                # Two points.
+                conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}'
+            else:
+                # Line.
+                conargs = str(first)
         elif con.Type == 'Horizontal':
-            conargs = str(first)
+            if sec[:3] == 'geo':
+                # Two points.
+                conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}'
+            else:
+                # Line.
+                conargs = str(first)
         elif con.Type == 'Parallel':
             conargs = f'{first}, {sec}'
         elif con.Type == 'Perpendicular':
