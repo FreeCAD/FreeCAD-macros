@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__Version__ = '0.7.2'
-__Date__ = '2024-03-13'
+__Version__ = '0.7.3'
+__Date__ = '2024-03-16'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = 'README.md'
