@@ -81,7 +81,7 @@ def exportObjectsToPython(doc=None):
             add_body_line(f'{varname(obj)}.Group = {varname(obj)}_Group')
             if obj.Tip:
                 add_body_line(f'{varname(obj)}.Tip = {varname(obj.Tip)}')
-
+                
     add_body_line('')
     add_body_line('doc.recompute()')
     add_script_line('')
@@ -297,13 +297,13 @@ def objectToText(obj, objectlist=None):
 def addSketch(obj, objname):
     prop = obj.getPropertyByName('Geometry')
     gflist = obj.GeometryFacadeList
-
+    
     n = 0
     exposing = 0
     exposed = []
     for geo in prop:
         objstr = objectToText(geo)
-
+    
         if exposing > 0:
             exposed.append(n)
             exposing = exposing - 1
@@ -311,27 +311,27 @@ def addSketch(obj, objname):
             add_body_line(f'geo{n} = {objname}.addGeometry({objstr})')
             if gflist[n].Construction:
                 add_body_line(f'{objname}.toggleConstruction(geo{n})')
-
+            
             if isinstance(geo, Part.BSplineCurve):
                 poles = len(geo.getPoles())
                 exposing = poles - 2
                 if exposing < 2:
                     exposing = 2
-
+            
             if isinstance(geo, Part.ArcOfParabola):
                 exposing = 2
-
+            
             if isinstance(geo, Part.ArcOfHyperbola):
                 exposing = 3
-
+            
             if isinstance(geo, Part.ArcOfEllipse):
                 exposing = 4
-
+            
             if exposing > 0:
                 add_body_line(f'{objname}.exposeInternalGeometry(geo{n})')
-
+        
         n = n + 1
-
+    
     splinecount = 0
     concount = 0
     prop = obj.getPropertyByName('Constraints')
@@ -342,21 +342,22 @@ def addSketch(obj, objname):
             first = str(con.First)
         else:
             first = f'geo{con.First}'
-
+        
         if con.Second < 0:
             sec = str(con.Second)
         else:
             sec = f'geo{con.Second}'
-
+        
         if con.Third < 0:
             third = str(con.Third)
         else:
             third = f'geo{con.Third}'
-
+        
         if con.Type == 'Coincident':
             conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}'
         elif con.Type == 'PointOnObject':
             conargs = f'{first}, {con.FirstPos}, {sec}'
+            
         elif con.Type == 'Vertical':
             if sec[:3] == 'geo':
                 # Two points.
@@ -364,6 +365,7 @@ def addSketch(obj, objname):
             else:
                 # Line.
                 conargs = str(first)
+                
         elif con.Type == 'Horizontal':
             if sec[:3] == 'geo':
                 # Two points.
@@ -373,53 +375,86 @@ def addSketch(obj, objname):
                 conargs = str(first)
         elif con.Type == 'Parallel':
             conargs = f'{first}, {sec}'
+            
+        elif con.Type == 'PerpendicularViaPoint':
+            conargs = f'{first}, {sec}, {third}, {con.ThirdPos}'  
         elif con.Type == 'Perpendicular':
-            conargs = f'{first}, {sec}'
-        elif con.Type == 'Tangent':
-            if sec == -2000:
-                conargs = f'{first}, {con.FirstPos}'
-            elif con.Third == -2000:
-                conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}'
+            if con.FirstPos == 0:
+            	conargs = f'{first}, {sec}'
+            elif third[:3] == 'geo':
+                contype = 'PerpendicularViaPoint' # compatiblity to FreeCAD 2.20
+                conargs = f'{first}, {sec}, {third}, {con.ThirdPos}'  
+            elif con.SecondPos ==0:
+                conargs = f'{first}, {con.FirstPos}, {sec}'
             else:
-                contype = 'TangentViaPoint'
-                conargs = f'{first}, {sec}, {third}, {con.ThirdPos}'
+                conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}'
+                          
+        elif con.Type == 'TangentViaPoint':
+            conargs = f'{first}, {sec}, {third}, {con.ThirdPos}'    
+        elif con.Type == 'Tangent':
+            if con.Second < 0:
+                conargs = f'{first}, {con.FirstPos}'     
+            elif third[:3] == 'geo':
+                contype = 'TangentViaPoint' # compatiblity to FreeCAD 2.20
+                conargs = f'{first}, {sec}, {third}, {con.ThirdPos}'  
+            elif con.SecondPos == 0:
+                conargs = f'{first}, {con.FirstPos}, {sec}'
+            else:
+                conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}'
+                   
         elif con.Type == 'Equal':
             conargs = f'{first}, {sec}'
+            
         elif con.Type == 'Symmetric':
             conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}, {third}, {con.ThirdPos}'
         elif con.Type == 'Block':
             conargs = str(first)
+            
         elif con.Type == 'Distance':
-            if con.Second == -2000:
+            if sec[:3] != 'geo':
                 conargs = f'{first}, {floatstr(con.Value)}'
+            elif con.FirstPos == 0:
+                conargs = f'{first}, {sec}, {floatstr(con.Value)}'
+            elif con.SecondPos == 0:
+                conargs = f'{first}, {con.FirstPos}, {sec}, {floatstr(con.Value)}'   
             else:
-                conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}, {floatstr(con.Value)}'
+                conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}, {floatstr(con.Value)}' 
         elif con.Type == 'DistanceX' or con.Type == 'DistanceY':
-            if con.Second == -2000:
+            if sec[:3] != 'geo':
                 conargs = f'{first}, {con.FirstPos}, {floatstr(con.Value)}'
             else:
                 conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}, {floatstr(con.Value)}'
-        elif con.Type == 'Weight' or con.Type == 'Radius':
+        
+        elif con.Type == 'AngleViaPoint':
+            conargs = f'{first}, {sec}, {third}, {floatstr(con.Value)}'
+        elif con.Type == 'Angle':
+            if con.FirstPos == 0:
+                conargs = f'{first}, {sec}, {floatstr(con.Value)}'
+            elif third[:3] == 'geo':
+                contype = 'AngleViaPoint' # compatiblity to FreeCAD 2.20
+                conargs = f'{first}, {sec}, {third}, {floatstr(con.Value)}'
+            else:
+                conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}, {floatstr(con.Value)}'
+        
+        elif con.Type == 'Weight' or con.Type == 'Radius' or con.Type == 'Diameter':
             conargs = f'{first}, {floatstr(con.Value)}'
             splinecount = 0
-        elif con.Type == 'Angle':
-            conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}, {floatstr(con.Value)}'
+            
         elif con.Type == 'InternalAlignment':
             if con.Second > con.First:
                 contype = 'InternalAlignment:Sketcher::BSplineControlPoint'
                 conargs = f'{first}, {con.FirstPos}, {sec}, {splinecount}'
-                splinecount += 1
+                splineindex = con.Second
+                splinecount = splinecount + 1
             else:
                 conargs = None
-        elif con.Type == 'Weight':
-            conargs = f'{first}, {floatstr(con.Value)}'
-
+                
         if conargs is not None:
-            add_body_line(f'{objname}.addConstraint(Sketcher.Constraint("{contype}", {conargs}))')
-
+            add_body_line(f"{objname}.addConstraint(Sketcher.Constraint('{contype}', {conargs}))")
+        
         if con.Name != "":
             add_body_line(f"{objname}.renameConstraint({concount}, '{con.Name}')")
-
+        
         concount = concount + 1
 
 
@@ -438,8 +473,8 @@ def addSpreadsheet(obj, objname):
 
 
 def floatstr(f):
-    return '{:.2f}'.format(f)
-
+    #return '{:.2f}'.format(f)
+    return str(f)
 
 def vecstr(v):
     return f'Vector({floatstr(v.x)}, {floatstr(v.y)}, {floatstr(v.z)})'
