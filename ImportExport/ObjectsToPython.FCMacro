@@ -326,9 +326,6 @@ def addSketch(obj, objname):
             
             if isinstance(geo, Part.ArcOfEllipse):
                 exposing = 4
-            
-            if exposing > 0:
-                add_body_line(f'{objname}.exposeInternalGeometry(geo{n})')
         
         n = n + 1
     
