@@ -19,14 +19,14 @@
 #
 # Credits:
 # 2018 - 2022: schupin
-# 2022 - 2023: SyProLei project (Saarland University)
+# 2022 - 2024: SyProLei project (Saarland University)
 #
 
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
-__Version__ = '0.7.3'
-__Date__ = '2023-09-07'
+__Version__ = '0.7.4'
+__Date__ = '2024-07-16'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecad.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://wiki.freecad.org/Macro_CenterOfMass'
@@ -81,7 +81,7 @@ CUSTOM_MAT_DIR = MATERIAL_SETTINGS.GetString('CustomMaterialsDir', '')
 WINDOW_WIDTH = int(0.2 * QtGui.QGuiApplication.screens()[0].geometry().width())
 WINDOW_HEIGHT = int(0.5 * QtGui.QGuiApplication.screens()[0].geometry().height())
 
-if int(app.Version()[1]) < 21:
+if float(f'{app.Version()[0]}.{app.Version()[1]}') < 0.21:
     # FreeCAD 0.20 is able to run with Qt 5.9.5 but Qt 5.12 was adopted here
     if QtCore.QLibraryInfo.version() < QtCore.QVersionNumber(5,12):
         app.Console.PrintWarning('Qt 5.12 or higher is needed to run\n')
@@ -326,8 +326,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.defaultDensitySpin.valueChanged.connect(self.on_spinDefaultDensity_changed)
         self.material_base['default'] = Units.Quantity(DEFAULT_DENSITY)
 
-        iconPath = ':/icons/measure/Part_Measure_Step_Active.svg'
-        allToDefaultDensity = QtGui.QPushButton(QtGui.QIcon(iconPath),' to all')
+        allToDefaultDensity = QtGui.QPushButton(QtGui.QIcon(':/icons/Std_Revert.svg'),' to all')
         allToDefaultDensity.setToolTip('Set all solids to default density')
         allToDefaultDensity.clicked.connect(self.on_pushButton_allToDefaultDensity)
 
@@ -391,7 +390,7 @@ class CenterofmassWidget(QtGui.QWidget):
 
         export = QtGui.QPushButton('Export')
         export.setToolTip('Export values to a .csv file')
-        export.setIcon(QtGui.QIcon(':/icons/Std_SaveCopy.svg'))
+        export.setIcon(QtGui.QIcon(':/icons/Std_Export.svg'))
         export.setIconSize(g_icon_size)
         export.clicked.connect(self.on_pushButton_Export)
 
@@ -693,41 +692,38 @@ class CenterofmassWidget(QtGui.QWidget):
             self.draw_centerOfMass()
 
     def load_materials(self):
-        """Load density from material cards, get resource paths from FEM preferences"""
-        resources = []
+        """Load density from material cards, get resource paths from preferences"""
+        import importFCMat
+        from pathlib import Path
+        resources: list[Path] = []
         if USE_BUILT_IN_MATERIALS:
-            # FreeCAD.getResourceDir() returns inconsistent path separators
-            # (https://forum.freecad.org/viewtopic.php?t=32036)
-            resources.append(os.path.join(
-                os.path.normpath(app.getResourceDir()), "Mod", "Material", "StandardMaterial")
-            )
+            if float(f'{app.Version()[0]}.{app.Version()[1]}') < 0.22:
+                resources.append(Path(app.getResourceDir(), "Mod", "Material", "StandardMaterial"))
+            else:
+                resources.append(Path(
+                    app.getResourceDir(), "Mod", "Material", "Resources", "Materials", "Standard")
+                )
         if USE_MAT_FROM_CONFIG_DIR:
-            resources.append(os.path.join(app.ConfigGet("UserAppData"), "Material"))
+            resources.append(Path(app.ConfigGet("UserAppData"), "Material"))
         if USE_MAT_FROM_CUSTOM_DIR and CUSTOM_MAT_DIR:
-            resources.append(CUSTOM_MAT_DIR)
+            resources.append(Path(CUSTOM_MAT_DIR))
         print('Looking for material cards according to',
               'User parameter:BaseApp/Preferences/Mod/Material/Resources')
-        for path in resources:
-            print('  ' + path)    # cards found later with same name will override previous ones
 
         # Read material cards
-        import importFCMat
-        mat_cards = {}              # all material cards
-        self.material_cards = {}    # with valid density
         for p in resources:
-            if os.path.exists(p):
-                for f in sorted(os.listdir(p)):
-                    b, e = os.path.splitext(f)
-                    if e.upper() == ".FCMAT":
-                        mat_cards[b] = os.path.join(p, f)
-        for mat_name in sorted(mat_cards):
-            try:
-                d = importFCMat.read(mat_cards[mat_name]).get('Density')
-                if (len(d) > 1 and Units.Quantity(d).Value > 0):
-                    self.material_base[mat_name] = Units.Quantity(d)
-                    self.material_cards[mat_name] = mat_cards[mat_name]
-            except:
-                pass
+            print(f'  {p}')    # cards found later with same name will override previous ones
+            dir_gen = p.rglob('*.FCMat')   # is generator -> use only once
+            for f in dir_gen:
+                if f.stem == 'Default':
+                    continue
+                try:
+                    d = importFCMat.read(str(f)).get('Density')
+                except LookupError:
+                    pass
+                else:
+                    if d and Units.Quantity(d).Value > 0:
+                        self.material_base[f.stem] = Units.Quantity(d)
         qtys = self.material_base.values()
         self.material_base_range = (min(qtys), max(qtys))
 
@@ -1080,7 +1076,7 @@ class CenterofmassWidget(QtGui.QWidget):
                 g_sel[sol].Mat_Name = mat_selected
                 # Density
                 if not hasattr(g_sel[sol], 'Mat_Density'):
-                    if int(app.Version()[1]) <= 21:
+                    if float(f'{app.Version()[0]}.{app.Version()[1]}') < 0.22:
                         g_sel[sol].addProperty('App::PropertyString', 'Mat_Density', *tip)
                     else:
                         # 'App::PropertyDensity' available since FreeCAD 0.21
