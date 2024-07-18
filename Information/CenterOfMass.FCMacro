@@ -25,8 +25,8 @@
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin'
-__Version__ = '0.7.4'
-__Date__ = '2024-07-16'
+__Version__ = '0.7.5'
+__Date__ = '2024-07-17'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecad.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://wiki.freecad.org/Macro_CenterOfMass'
@@ -138,7 +138,11 @@ class SolidsWidget():
     def __init__(self, parent, solid, sol):
         self.parent = parent
         self.sol = sol
-        color = solid.ViewObject.ShapeColor
+        if hasattr(solid.ViewObject,'ShapeColor'):
+            color = solid.ViewObject.ShapeColor
+        elif hasattr(solid.ViewObject,'ShapeAppearance'):
+            # App::Link in FreeCAD 0.22
+            color = solid.ViewObject.ShapeAppearance[0].DiffuseColor
         self.orgColorFC = color
         self.orgColorQT = QtGui.QColor.fromRgbF(*color)
         self.orgTransparency = solid.ViewObject.Transparency
@@ -434,7 +438,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.checkColorify = QtGui.QCheckBox(toolTip='Color shapes depending on density')
         self.checkColorify.setIcon(QtGui.QIcon(':/icons/Std_RandomColor.svg'))
         self.checkColorify.setIconSize(g_icon_size)
-        self.checkColorify.stateChanged.connect(self.on_stateChanged_Colorify)
+        self.checkColorify.stateChanged.connect(self.on_stateChanged_Coloring)
 
         self.comboColormap = QtGui.QComboBox(toolTip='Colormap to color shapes depending on density')
         self.comboColormap.addItem('Traffic')    # built-in default
@@ -566,7 +570,7 @@ class CenterofmassWidget(QtGui.QWidget):
 
         # Add contents of group objects 'groupObjs' (breadth-first search).
         # For PartDesign objects a Group contains recursive features treated separately.
-        groupObjs = ('App::DocumentObjectGroup', 'App::GeometryPython')
+        groupObjs = ('App::DocumentObjectGroup', 'App::GeometryPython', 'Assembly::AssemblyObject')
         i_ = 0
         while i_ < len(_sel):
             if hasattr(_sel[i_], 'Group') and _sel[i_].TypeId in groupObjs:
@@ -633,6 +637,8 @@ class CenterofmassWidget(QtGui.QWidget):
 
         # create valid objects list (e.g. shapes)
         import Part
+        if float(f'{app.Version()[0]}.{app.Version()[1]}') >= 0.22:
+            import UtilsAssembly
         objs = []
         for i_, s_ in enumerate(vsel):
             if hasattr(s_, 'Shape'):
@@ -640,11 +646,13 @@ class CenterofmassWidget(QtGui.QWidget):
                 o_ = Part.getShape(s_)    # copy shape for transformation
                 if callable(getattr(s_, 'getGlobalPlacement', None)):
                     o_.Placement = s_.getGlobalPlacement()
-                else:
                     # e.g. App::Link has no method getGlobalPlacement
+                elif float(f'{app.Version()[0]}.{app.Version()[1]}') < 0.22:
                     if s_.InList:
                         for it in s_.InListRecursive:
                             o_.Placement = o_.Placement.multiply(it.Placement)
+                else:
+                    o_.Placement = UtilsAssembly.getGlobalPlacement(s_)
                 objs.append(o_)
             elif hasattr(s_, 'Mesh'):
                 objs.append(s_.Mesh)
@@ -874,7 +882,7 @@ class CenterofmassWidget(QtGui.QWidget):
         if self.doc.getObject('CenterOfMass'):
             self.draw_centerOfMass()
         if self.checkColorify.isChecked():
-            self.colorify()
+            self.coloring()
 
     def draw_centerOfMass(self):
         boundBoxL = (self.boundBox.XLength, self.boundBox.YLength, self.boundBox.ZLength)
@@ -994,22 +1002,31 @@ class CenterofmassWidget(QtGui.QWidget):
     def on_slideButton_changeRadius(self):
         self.draw_update_sphere_radius()
 
-    def on_stateChanged_Colorify(self, state):
+    def on_stateChanged_Coloring(self, state):
         if state == QtCore.Qt.Checked:
-            self.colorify()
+            self.coloring()
         else:
             for sol, selfsol in enumerate(self.solids):
-                name = g_sel[sol].Name
-                self.doc.getObject(name).ViewObject.ShapeColor = selfsol.orgColorFC
+                self.set_object_color(g_sel[sol].Name, selfsol.orgColorFC)
                 if COLOR_SPHERES and self.changeRadius.isEnabled():
-                    self.doc.getObject('CoM_' + name).ViewObject.ShapeColor = selfsol.orgColorFC
+                    self.set_object_color('CoM_' + g_sel[sol].Name, selfsol.orgColorFC)
                 selfsol.spinDens.setPalette(QtGui.QPalette())    # reset to normal
 
     def on_comboColormap_changed(self, newText):
         if self.checkColorify.isChecked():
-            self.colorify()
+            self.coloring()
 
-    def colorify(self):
+    def set_object_color(self, name, color):
+        obj = self.doc.getObject(name)
+        if hasattr(obj.ViewObject,'ShapeColor'):
+            obj.ViewObject.ShapeColor = color
+        elif hasattr(obj.ViewObject,'ShapeAppearance'):
+            # App::Link in FreeCAD 0.22
+            material = obj.ViewObject.ShapeAppearance[0]
+            material.DiffuseColor = color
+            obj.ViewObject.ShapeAppearance = (material, )    # overwrite tuple
+
+    def coloring(self):
         cmName = self.comboColormap.currentText()
         if cmName != 'Traffic':
             import matplotlib.cm
@@ -1018,9 +1035,8 @@ class CenterofmassWidget(QtGui.QWidget):
         maxD = max(densities)
         minD = min([i_ for i_ in densities if i_ != 0])    # min without zeros
         for sol, selfsol in enumerate(self.solids):
-            name = g_sel[sol].Name
             if self.masses[sol] == 0:
-                self.doc.getObject(name).ViewObject.ShapeColor = selfsol.orgColorFC
+                self.set_object_color(g_sel[sol].Name, selfsol.orgColorFC)
                 selfsol.spinDens.setPalette(QtGui.QPalette())    # reset to normal
                 continue
             if maxD == minD:
@@ -1035,9 +1051,9 @@ class CenterofmassWidget(QtGui.QWidget):
             else:
                 color = QtGui.QColor.fromRgbF(*cm(drel))
             color.setHsvF(color.hueF(), COLOR_SATURAT/100, color.valueF())    # skips if s > 1
-            self.doc.getObject(name).ViewObject.ShapeColor = color.getRgbF()
+            self.set_object_color(g_sel[sol].Name, color.getRgbF())
             if COLOR_SPHERES and self.changeRadius.isEnabled():
-                self.doc.getObject('CoM_' + name).ViewObject.ShapeColor = color.getRgbF()
+                self.set_object_color('CoM_' + g_sel[sol].Name, color.getRgbF())
             pal = QtGui.QPalette()
             pal.setColor(QtGui.QPalette.Base, color)
             lum = color.getRgbF()
