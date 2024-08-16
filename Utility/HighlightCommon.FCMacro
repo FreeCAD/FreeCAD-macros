@@ -134,7 +134,7 @@ def main():
     else:
         # If no collision has been found, just inform the user about it.
         doc.abortTransaction()
-        if len(object_list) == 2:
+        if len(object_list) >= 2:
             app.Console.PrintWarning('No collision found between selected objects\n')
         else:
             app.Console.PrintWarning('No suitable objects selected, select at least two objects\n')
