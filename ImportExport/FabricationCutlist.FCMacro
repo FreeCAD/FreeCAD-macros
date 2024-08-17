@@ -1,0 +1,51 @@
+# This macro aims to make it easy to create an accurate cutlist when you are going to fabricate something made out of rectangles and round bar. 
+# For example, if you're welding together a gate from commercial mild steel, you are probably using square tubing, round bar and / or angle iron.
+# For all of these you can use Part WB's *Box* and *Cylinder* types.
+# Having done so, this macro will create a comma-separated set of values that make up your cutlist. The collumns are as follows:
+#   Timestamp: Just throw this away
+#   Label: The label you gave the part. Perhaps use this to indicate the role of the part in your design.
+#   Label2: The secondary label you gave the part. Perhaps use this to indicate the profile ("roundbar", "squaretube" etc)
+#   Dim1: For round bar, this is the diameter. For box shapes, this is one dimension of the profile size.
+#   Dim2: For round bar, this is blank. For box shapes this is the other dimension of the profile size.
+#   Length: How long this piece is.
+
+__Name__ = 'Fabrication Cutlist Maker'
+__Comment__ = 'For designs made of Part WB Box and Cylinder primitives, creates a CSV cutlist.'
+__Author__ = 'Johan Pretorius'
+__Date__ = '2024-08-09'
+__Version__ = '2024-08-09'
+__License__ = 'AAL'
+__Web__ = 'https://github.com/FreeCAD/FreeCAD-macros'
+__Wiki__ = ''
+__Icon__ = 'FabricationCutlist.png'
+__Xpm__ = ''
+__Help__ = 'Make your design out of "Box" and "Cylinder" primitives in Part WB. Then run the macro to get a cutlist in the Report View.'
+__Status__ = 'Stable'
+__Requires__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
+__Communication__ = ''
+__Files__ = ''
+
+
+doc = App.activeDocument()
+if (doc):
+	objects = doc.Objects
+	
+	App.Console.PrintMessage("------- CSV Cutlist Begins -------\n")
+
+	for obj in objects:
+		label = obj.Label
+		label2 = obj.Label2
+		
+		if ((obj.TypeId == 'Part::Cylinder') & (label2.__len__() > 0)):
+			diameter = obj.Radius.Value * 2
+			length = obj.Height.Value
+			App.Console.PrintMessage(", " + str(label) + ", " + str(label2) + ", " + str(diameter) + ", " + "" + ", " + str(length) + "\n")
+		else:
+			if ((obj.TypeId == 'Part::Box') & (label2.__len__() > 0)):
+				size = [obj.Length.Value, obj.Width.Value, obj.Height.Value]
+				size.sort()
+				App.Console.PrintMessage(", " + str(label) + ", " + str(label2) + ", " + str(size[0]) + ", " + str(size[1]) + ", " + str(size[2]) + "\n")
+			else:
+			    App.Console.PrintWarning(", " + str(label) + ", not used - only considering Box and Cylinder objects\n")
+
+	App.Console.PrintMessage("======= CSV Cutlist Completed =======\n")
