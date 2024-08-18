@@ -29,7 +29,8 @@ __Files__ = ''
 doc = App.activeDocument()
 if (doc):
 	objects = doc.Objects
-	
+	warnings = []
+
 	App.Console.PrintMessage("------- CSV Cutlist Begins -------\n")
 
 	for obj in objects:
@@ -46,6 +47,9 @@ if (doc):
 				size.sort()
 				App.Console.PrintMessage(", " + str(label) + ", " + str(label2) + ", " + str(size[0]) + ", " + str(size[1]) + ", " + str(size[2]) + "\n")
 			else:
-			    App.Console.PrintWarning(", " + str(label) + ", not used - only considering Box and Cylinder objects\n")
+				warnings.append("\"" + str(label) + "\" not used - only considering Box and Cylinder objects\n")
 
 	App.Console.PrintMessage("======= CSV Cutlist Completed =======\n")
+
+	for w in warnings:
+		App.Console.PrintWarning(w)
