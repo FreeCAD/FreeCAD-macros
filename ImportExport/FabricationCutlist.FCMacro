@@ -12,8 +12,8 @@
 __Name__ = 'Fabrication Cutlist Maker'
 __Comment__ = 'For designs made of Part WB Box and Cylinder primitives, creates a CSV cutlist.'
 __Author__ = 'Johan Pretorius'
-__Date__ = '2024-08-09'
-__Version__ = '2024-08-09'
+__Date__ = '2024-08-28'
+__Version__ = '2024.8.10'
 __License__ = 'AAL'
 __Web__ = 'https://github.com/FreeCAD/FreeCAD-macros'
 __Wiki__ = ''
@@ -25,31 +25,40 @@ __Requires__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
 __Communication__ = ''
 __Files__ = ''
 
+import FreeCAD as app
 
-doc = App.activeDocument()
-if (doc):
-	objects = doc.Objects
-	warnings = []
+doc = app.activeDocument()
+if doc:
+    objects = doc.Objects
+    warnings = []
 
-	App.Console.PrintMessage("------- CSV Cutlist Begins -------\n")
+    app.Console.PrintMessage('------- CSV Cutlist Begins -------\n')
 
-	for obj in objects:
-		label = obj.Label
-		label2 = obj.Label2
-		
-		if ((obj.TypeId == 'Part::Cylinder') & (label2.__len__() > 0)):
-			diameter = obj.Radius.Value * 2
-			length = obj.Height.Value
-			App.Console.PrintMessage(", " + str(label) + ", " + str(label2) + ", " + str(diameter) + ", " + "" + ", " + str(length) + "\n")
-		else:
-			if ((obj.TypeId == 'Part::Box') & (label2.__len__() > 0)):
-				size = [obj.Length.Value, obj.Width.Value, obj.Height.Value]
-				size.sort()
-				App.Console.PrintMessage(", " + str(label) + ", " + str(label2) + ", " + str(size[0]) + ", " + str(size[1]) + ", " + str(size[2]) + "\n")
-			else:
-				warnings.append("\"" + str(label) + "\" not used - only considering Box and Cylinder objects\n")
+    for obj in objects:
+        label = obj.Label
+        label2 = obj.Label2
 
-	App.Console.PrintMessage("======= CSV Cutlist Completed =======\n")
+        if (obj.TypeId == 'Part::Cylinder') and label2:
+            diameter = obj.Radius.Value * 2
+            length = obj.Height.Value
+            app.Console.PrintMessage(
+                    f', {label}, {label2}, {diameter}, , {length}\n')
+        elif obj.TypeId == 'Part::Cylinder':
+            warnings.append(
+                    f'"{label}" not used, it is a Part::Cylinder object but has no Label2\n')
+        elif (obj.TypeId == 'Part::Box') and label2:
+            size = [obj.Length.Value, obj.Width.Value, obj.Height.Value]
+            size.sort()
+            app.Console.PrintMessage(
+                    f', {label}, {label2}, {size[0]}, {size[1]}, {size[2]}\n')
+        elif obj.TypeId == 'Part::Box':
+            warnings.append(
+                    f'"{label}" not used, it is a Part::Box object but has no Label2\n')
+        else:
+            warnings.append(
+                    f'"{label}" not used, only considering Box and Cylinder objects\n')
 
-	for w in warnings:
-		App.Console.PrintWarning(w)
+    app.Console.PrintMessage('======= CSV Cutlist Completed =======\n')
+
+    for w in warnings:
+        app.Console.PrintWarning(w)
