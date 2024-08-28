@@ -3,9 +3,9 @@
 
 __Title__ = '3D Print / Slice'
 __Author__ = 'Damian Łoziński'
-__Version__ = '0.4'
-__Date__ = '2024-05-06'
-__Comment__ = 'Export selected objects to amf/stl files and open it in slicing program'
+__Version__ = '0.4.1'
+__Date__ = '2024-08-28'
+__Comment__ = 'Export selected objects to amf/stl files and open them in slicing program'
 __Web__ = 'https://github.com/dlozinski/FreeCAD-macros/blob/doc/ImportExport/ExportToSlicer.md'
 __Wiki__ = ''
 __Icon__ = 'Export2Slicer.png'
@@ -15,14 +15,15 @@ __Requires__ = 'freecad 0.17+'
 __Communication__ = 'lozinski dot d at gmail dot com'
 __Files__ = 'Export2Slicer.png'
 
-
 import os
 import re
-from  subprocess import Popen
+from subprocess import Popen
 import shlex
+
+import FreeCAD as app
+import FreeCADGui as gui
 import Mesh
 import MeshPart
-import FreeCAD as app
 
 
 MACRO_PARAMS = app.ParamGet('User parameter:BaseApp/Preferences/Macros/Export2Slicer')
@@ -53,11 +54,11 @@ angular_deflection = get_float_param('AngularDeflection', DEFAULT_ANGULAR_DEFLEC
 
 
 def escape(text):
-    return  re.sub(r'\W', '_', text)
+    return re.sub(r'\W', '_', text)
 
 
 def get_mesh_filename(doc_filename, mesh_names):
-    '''Returns valid filename for temporary mesh file'''
+    """Returns valid filename for temporary mesh file."""
     if doc_filename:
         dirname = os.path.dirname(doc_filename)
         filename = (
@@ -77,18 +78,18 @@ def main():
     if not doc:
         raise RuntimeError('Export2Slicer: No active document')
 
-    selection = Gui.Selection.getSelectionEx()
+    selection = gui.Selection.getSelectionEx()
     objects_to_export = [x.Object for x in selection] or [doc.ActiveObject]
     try:
         # Create temporary doc to store meshes so that we don't affect current doc history
-        tmp_doc = app.newDocument('meshes_to_export')
+        tmp_doc = app.newDocument('meshes_to_export', temp=True)
         meshes = []
         mesh_names = []
         for o in objects_to_export:
             if o.TypeId == 'Mesh::Feature':
                 meshes.append(o)
             else:
-                mesh = tmp_doc.addObject('Mesh::Feature', '{}_{}'.format(doc.Label, o.Label))
+                mesh = tmp_doc.addObject('Mesh::Feature', f'{doc.Label}_{o.Label}')
                 mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=angular_deflection, Relative=False)
                 meshes.append(mesh)
                 mesh_names.append(o.Label)
@@ -100,11 +101,11 @@ def main():
     finally:
         app.closeDocument('meshes_to_export')
         for x in selection:
-            Gui.Selection.addSelection(doc.Name, x.ObjectName)	
+            gui.Selection.addSelection(doc.Name, x.ObjectName)
 
     # Launch Slicer with meshes
     Popen(shlex.split(slicer_cmd.format(file=mesh_path)))
-    app.Console.PrintMessage('Export2Slicer: Objects exported into: {}\n'.format(mesh_path))
+    app.Console.PrintMessage(f'Export2Slicer: Objects exported into: {mesh_path}\n')
 
 
 try:
