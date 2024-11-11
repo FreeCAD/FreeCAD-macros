@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
+#***************************************************************************
+#                          BSpline3D
+#***************************************************************************
+# Create a parametric BSpline from Vertices selected in 3D view
+# Select two or more vertices in the 3D view, then execute the macro.
+#***************************************************************************
+#*   Copyright (c) 2024 Eric Price (CorvusCorax)                           *
+#*                      <eric.price[at]tuebingen.mpg.de>                   *
+#*                                                                         *
+#*   This file is an extension of FreeCAD.                                 *
+#*                                                                         *
+#*   FreeCAD is free software: you can redistribute it and/or modify it    *
+#*   under the terms of the GNU Lesser General Public License as           *
+#*   published by the Free Software Foundation, either version 2.1 of the  *
+#*   License, or (at your option) any later version.                       *
+#*                                                                         *
+#*   FreeCAD is distributed in the hope that it will be useful, but        *
+#*   WITHOUT ANY WARRANTY; without even the implied warranty of            *
+#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU      *
+#*   Lesser General Public License for more details.                       *
+#*                                                                         *
+#*   You should have received a copy of the GNU Lesser General Public      *
+#*   License along with FreeCAD. If not, see                               *
+#*   <https://www.gnu.org/licenses/>.                                      *
+#*                                                                         *
+#**************************************************************************/
+
+_Name__ = 'BSpline3D'
+__Comment__ = 'Create a parametric BSpline from Vertices selected in 3D view'
+__Author__ = 'CorvusCorax'
+__Version__ = '0.0.1'
+__Date__ = '2024-11-11'
+__License__ = 'LGPL-2.1-or-later'
+__Web__ = 'https://github.com/CorvusCorax/FreeCAD-BSpline3D'
+__Wiki__ = 'https://github.com/CorvusCorax/FreeCAD-BSpline3D/wiki'
+__Help__ = 'Select two or more vertices in the 3D view, then execute the macro.'
+__Status__ = 'beta'
+__Requires__ = 'FreeCAD >= v0.20'
+__Contact__ = 'https://github.com/CorvusCorax'
+__Communication__ = 'https://github.com/CorvusCorax/FreeCAD-BSpline3D/issues'
+__Files__ = ''
+__Xpm__ = """
+/* XPM */
+static char * XFACE[] = {
+"32 32 2 1",
+"  c #FFFFFF",
+". c #000000",
+"                                ",
+"                                ",
+"                                ",
+"                                ",
+"                                ",
+"              ........         .",
+"     ....   ...      ...    . . ",
+"    ..... ...          .   ...  ",
+"    .  ....            ..  .... ",
+"    .  ...              .  ...  ",
+"    .....               . .     ",
+"       ..                       ",
+"       .                        ",
+"      ..             ....       ",
+"      .             .....       ",
+"      ..            .  ..       ",
+"       .            .  ..       ",
+"       ..           ....        ",
+"        .                       ",
+"        ..                      ",
+"         ..                     ",
+"          ..                    ",
+"           ..                   ",
+"      .......                   ",
+"     ........                   ",
+"     .    ...                   ",
+"     .    ...                   ",
+"     .    ..                    ",
+"     ......                     ",
+"                                ",
+"                                ",
+"                                "};
+"""
+
+import FreeCAD, FreeCADGui
+import Draft
+
+def BSpline3D():
+    selection = FreeCADGui.Selection.getCompleteSelection()
+    vertices=[]
+    for obj in selection:
+        for i,feature in enumerate(obj.SubObjects):
+            if (feature.ShapeType=="Vertex"):
+                vertices.append((obj.Document.Label, obj.Object.Label, obj.SubElementNames[i]))
+            else:
+                FreeCAD.Console.PrintError("Selected object is not a Vertex\n")
+                return False
+    if len(vertices)<2:
+        FreeCAD.Console.PrintError("Please select at least 2 Vertices\n")
+        return False
+    reference="list(" \
+        + "; ".join([ "vector( " \
+            + "; ".join([ "<<" \
+                + vertex[0]+">>#<<"+vertex[1] +">>.Shape."+vertex[2]+"."+axis \
+                for axis in ['X','Y','Z' ] ]) \
+            + ")" for vertex in vertices]) \
+        + ")"
+    FreeCADGui.doCommand("import Draft")
+    FreeCADGui.doCommand("Draft.make_bspline([ FreeCAD.Vector(0,0,0), FreeCAD.Vector(1,1,1) ], closed=False, face=False, support=None).setExpression('Points', '%s')"%(reference))
+    return True
+
+BSpline3D()
+#End
