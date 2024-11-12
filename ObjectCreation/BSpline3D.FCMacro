@@ -91,21 +91,16 @@ def BSpline3D():
     vertices=[]
     for obj in selection:
         for i,feature in enumerate(obj.SubObjects):
-            if (feature.ShapeType=="Vertex"):
-                vertices.append((obj.Document.Label, obj.Object.Label, obj.SubElementNames[i]))
+            if (feature.ShapeType!="Vertex"):
+                FreeCAD.Console.PrintWarning("Selected object %s is not a Vertex (%s) - using Centerpoint.\n"%(obj.Object.Label+"."+ obj.SubElementNames[i], feature.ShapeType))
+            if (obj.SubElementNames[i]!=""):
+                vertices.append("<<"+obj.Document.Label+">>#<<"+obj.Object.Label+">>.Shape."+obj.SubElementNames[i]+".CenterOfGravity")
             else:
-                FreeCAD.Console.PrintError("Selected object is not a Vertex\n")
-                return False
+                vertices.append("<<"+obj.Document.Label+">>#<<"+obj.Object.Label+">>.Shape.CenterOfGravity")
     if len(vertices)<2:
-        FreeCAD.Console.PrintError("Please select at least 2 Vertices\n")
+        FreeCAD.Console.PrintError("Please select at least 2 Points\n")
         return False
-    reference="list(" \
-        + "; ".join([ "vector( " \
-            + "; ".join([ "<<" \
-                + vertex[0]+">>#<<"+vertex[1] +">>.Shape."+vertex[2]+"."+axis \
-                for axis in ['X','Y','Z' ] ]) \
-            + ")" for vertex in vertices]) \
-        + ")"
+    reference="list(" + "; ".join(vertices) + ")"
     FreeCADGui.doCommand("import Draft")
     FreeCADGui.doCommand("Draft.make_bspline([ FreeCAD.Vector(0,0,0), FreeCAD.Vector(1,1,1) ], closed=False, face=False, support=None).setExpression('Points', '%s')"%(reference))
     return True
