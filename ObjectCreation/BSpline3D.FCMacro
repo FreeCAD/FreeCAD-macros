@@ -87,18 +87,32 @@ import FreeCAD, FreeCADGui
 import Draft
 
 def BSpline3D():
-    selection = FreeCADGui.Selection.getCompleteSelection()
+    selection = FreeCADGui.Selection.getCompleteSelection(Gui.Selection.ResolveMode.NoResolve)
     vertices=[]
     for obj in selection:
         for i,feature in enumerate(obj.SubObjects):
             if (feature.ShapeType!="Vertex"):
-                FreeCAD.Console.PrintWarning("Selected object %s is not a Vertex (%s) - using Centerpoint.\n"%(obj.Object.Label+"."+ obj.SubElementNames[i], feature.ShapeType))
-            if (obj.SubElementNames[i]!=""):
-                vertices.append("<<"+obj.Document.Label+">>#<<"+obj.Object.Label+">>.Shape."+obj.SubElementNames[i]+".CenterOfGravity")
+                FreeCAD.Console.PrintWarning("Selected object %s is not a Vertex (%s), using CenterOfGravity.\n"%(obj.Object.Label+"."+ obj.SubElementNames[i], feature.ShapeType)) # dirty little secret: we use CenterOfGravity for vertices as well.
+            subelements=obj.SubElementNames[i].split('.')
+            if len(subelements)==1:
+                # The feature selected is an independent shape and not subject to placements
+                target="<<"+obj.Document.Label+">>#<<"+obj.Object.Label+">>."
+                placement=""
             else:
-                vertices.append("<<"+obj.Document.Label+">>#<<"+obj.Object.Label+">>.Shape.CenterOfGravity")
+                # The feature selected is subelement of a Part, Body, Assembly or similar and subject to a chain of placements
+                placement="<<"+obj.Document.Label+">>#<<"+obj.Object.Label+">>.Placement * "
+                for i in range(0,len(subelements)-2):
+                    placement+="<<"+obj.Document.Label+">>#<<"+obj.Document.getObject(subelements[i]).Label+">>.Placement * "
+                target="<<"+obj.Document.Label+">>#<<"+obj.Document.getObject(subelements[-2]).Label+">>."
+            if subelements[-1]=="":
+                #selected element is the whole shape of a feature
+                target+="Shape.CenterOfGravity"
+            else:
+                #selected element is a subelement of a shape (Vertex, Edge, SubShape, ...)
+                target+="Shape."+subelements[-1]+".CenterOfGravity"
+            vertices.append("( "+placement+target+" )")
     if len(vertices)<2:
-        FreeCAD.Console.PrintError("Please select at least 2 Points\n")
+        FreeCAD.Console.PrintError("Please select at least 2 Points.\n")
         return False
     reference="list(" + "; ".join(vertices) + ")"
     FreeCADGui.doCommand("import Draft")
