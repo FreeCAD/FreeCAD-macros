@@ -1,0 +1,130 @@
+__Name__ = "Wiki Property-inator"
+__Comment__ = "Create Wiki markup code of the properties of selected scripted objects."
+__Author__ = "hasecilu"
+__Date__ = "2024-11-11"
+__Version__ = "0.1.0"
+__License__ = "GPL-3.0-or-later"
+__Web__ = ""
+__Wiki__ = ""
+__Icon__ = ""
+__Xpm__ = ""
+__Help__ = "Selct and object on the tree and execute the macro."
+__Status__ = "Beta"
+__Requires__ = ""
+__Communication__ = "https://forum.freecad.org/viewtopic.php?t=92100"
+__Files__ = ""
+
+import FreeCAD
+import FreeCADGui
+
+from dataclasses import dataclass
+
+
+@dataclass
+class PropertyInfo:
+    data_type: str
+    default_value: str
+    tooltip: str
+
+
+def create_documentation(obj):
+    """Print to the console the Wiki markup code."""
+    # Group example:
+    # {{Properties_Title|Box features}}
+    # Property example:
+    # * {{PropertyData|BoxOpenFront|Bool}}: Default is {{value|False}}. Leave front of box open
+
+    FreeCAD.Console.PrintMessage(
+        "\nA WBName ObjectName object is derived from a "
+        "[[Part_Feature|Part Feature]] object and inherits all its "
+        "properties. It also has the following additional properties:\n\n"
+        "=== Data ===\n\n"
+    )
+    # Sort groups and properties within each group
+    grouped_properties = collect_properties(obj)
+    for group in sorted(grouped_properties):
+        FreeCAD.Console.PrintMessage(f"\n{{{{Properties_Title|{group}}}}}\n\n")
+        for prop, data in sorted(grouped_properties[group]):
+            FreeCAD.Console.PrintMessage(
+                f"* {{{{PropertyData|{prop}|{data.data_type.replace("App::Property", "")}}}}}: "
+                f"Default is {{{{value|{data.default_value}}}}}. {data.tooltip}.\n"
+            )
+    FreeCAD.Console.PrintMessage("\n\n")
+
+
+def collect_properties(obj):
+    grouped_properties = {}
+
+    # Loop through all properties and save custom ones.
+    for prop in obj.PropertiesList:
+        if prop not in [  # ignore FreeCAD's properties
+            "AttacherEngine",
+            "AttacherType",
+            "AttachmentOffset",
+            "AttachmentSupport",
+            "MapMode",
+            "MapPathParameter",
+            "MapReversed",
+            "ExpressionEngine",
+            "Label",
+            "Label2",
+            "Placement",
+            "Proxy",
+            "Shape",
+            "ShapeMaterial",
+            "Visibility",
+        ]:
+            prop_value = getattr(obj, prop, "N/A")
+            prop_type = (
+                obj.getTypeIdOfProperty(prop)
+                if hasattr(obj, "getTypeIdOfProperty")
+                else "Unknown Type\n"
+            )
+            prop_tooltip = (
+                obj.getDocumentationOfProperty(prop)
+                if hasattr(obj, "getDocumentationOfProperty")
+                else "No Documentation\n"
+            )
+            prop_group = (
+                obj.getGroupOfProperty(prop)
+                if hasattr(obj, "getGroupOfProperty")
+                else "No Group\n"
+            )
+
+            # Add property information to the respective group
+            if prop_group not in grouped_properties:
+                grouped_properties[prop_group] = []
+            grouped_properties[prop_group].append(
+                (
+                    prop,
+                    PropertyInfo(
+                        data_type=prop_type,
+                        default_value=prop_value,
+                        tooltip=prop_tooltip,
+                    ),
+                )
+            )
+
+    return grouped_properties
+
+
+params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/OutputWindow")
+csrt = params.GetBool("checkShowReportTimecode")
+# Deactivate time stamp on each console message
+params.SetBool("checkShowReportTimecode", False)
+
+
+# Run this on the currently selected object in the FreeCAD GUI
+selection = FreeCADGui.Selection.getSelection()
+if selection:
+    for i in range(len(selection)):
+        selected_obj = FreeCADGui.Selection.getSelection()[i]
+        FreeCAD.Console.PrintMessage(
+            f"\nSelected object #{i+1} -> {selected_obj.Label} ({selected_obj.Name})\n\n"
+        )
+        create_documentation(selected_obj)
+
+else:
+    FreeCAD.Console.PrintError("No objects selected.\n")
+
+params.SetBool("checkShowReportTimecode", csrt)
