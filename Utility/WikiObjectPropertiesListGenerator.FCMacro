@@ -50,7 +50,7 @@ __Help__ = "Select a scripted objects on the tree and execute the macro."
 __Status__ = "Beta"
 __Requires__ = ""
 __Communication__ = "https://forum.freecad.org/viewtopic.php?f=21&t=61998"
-__Files__ = ""
+__Files__ = "./WikiObjectPropertiesListGenerator.svg"
 
 # NOTE: Changelog
 # ---------
