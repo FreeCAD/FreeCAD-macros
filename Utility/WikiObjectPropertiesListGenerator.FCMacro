@@ -135,7 +135,12 @@ def generate_markup_list(grouped_properties: dict, print_status: bool = False):
     for group in sorted(grouped_properties):
         FreeCAD.Console.PrintMessage(f"\n{{{{Properties_Title|{group}}}}}\n\n")
         for prop, data in sorted(grouped_properties[group]):
-            status = "|" + data.status if print_status else ""
+            if print_status:
+                status = "|" + data.status
+            elif "Hidden" in data.status:  # make exception, all other status will be ignored
+                status = "|" + "hidden"  # manually use lowercase
+            else:
+                status = ""
             FreeCAD.Console.PrintMessage(
                 f"* {{{{Property{data.property_type}|{prop}|{data.data_type}{status}}}}}: "
                 f"Default is {{{{value|{data.default_value}}}}}. {data.tooltip}.\n"
