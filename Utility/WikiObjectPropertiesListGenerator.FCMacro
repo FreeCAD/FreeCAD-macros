@@ -285,6 +285,12 @@ class CustomDialog(QtWidgets.QDialog):
 
         self.setWindowTitle("Properties Generator")
         self.resize(300, 150)
+        self.button_strings = [
+            "Only Main",
+            "All Properties",
+            "Inherits + Unique Properties",
+            "Only Unique Properties",
+        ]
 
         # Layouts
         layout = QtWidgets.QVBoxLayout(self)
@@ -307,16 +313,16 @@ class CustomDialog(QtWidgets.QDialog):
         layout.addWidget(self.checkbox)
 
         # Buttons
-        button_om = QtWidgets.QPushButton("Only Main", self)
+        button_om = QtWidgets.QPushButton(self.button_strings[0], self)
         button_om.clicked.connect(self.handle_button_click)
         button_layout.addWidget(button_om)
-        button_ap = QtWidgets.QPushButton("All Properties", self)
+        button_ap = QtWidgets.QPushButton(self.button_strings[1], self)
         button_ap.clicked.connect(self.handle_button_click)
         button_layout.addWidget(button_ap)
-        button_iup = QtWidgets.QPushButton("Inherits + Unique Properties", self)
+        button_iup = QtWidgets.QPushButton(self.button_strings[2], self)
         button_iup.clicked.connect(self.handle_button_click)
         button_layout.addWidget(button_iup)
-        button_oup = QtWidgets.QPushButton("Only Unique Properties", self)
+        button_oup = QtWidgets.QPushButton(self.button_strings[3], self)
         button_oup.clicked.connect(self.handle_button_click)
         button_layout.addWidget(button_oup)
 
@@ -344,18 +350,14 @@ def show_dialog():
 
     if result == QtWidgets.QDialog.Accepted:
         clear_report_view()
-        if dialog.pressed_button == "Only Main":
+        if dialog.pressed_button == dialog.button_strings[0]:
             data_ignore_list, view_ignore_list = fill_ignore_lists(True)
-        elif dialog.pressed_button in [
-            "All Properties",
-            "Inherits + Unique Properties",
-            "Only Unique Properties",
-        ]:
+        elif dialog.pressed_button in dialog.button_strings[1:4]:  # 1,2,3
             name = sel[0].Name
             act_obj = Gui.activeDocument().getObject(name)
             data_ignore_list = {}
             view_ignore_list = {}
-            if dialog.pressed_button in ["Inherits + Unique Properties", "Only Unique Properties"]:
+            if dialog.pressed_button in dialog.button_strings[2:4]:  # 2,3
                 data_ignore_list, view_ignore_list = fill_ignore_lists(False)
             print("\n== Properties ==")
             print("\n=== View ===")
@@ -363,7 +365,7 @@ def show_dialog():
                 act_obj,
                 "View",
                 view_ignore_list,
-                dialog.pressed_button == "Inherits + Unique Properties",
+                dialog.pressed_button == dialog.button_strings[3],
                 dialog.checkbox.isChecked(),
             )
             print("\n=== Data ===")
@@ -372,7 +374,7 @@ def show_dialog():
                 act_obj,
                 "Data",
                 data_ignore_list,
-                dialog.pressed_button == "Inherits + Unique Properties",
+                dialog.pressed_button == dialog.button_strings[3],
                 dialog.checkbox.isChecked(),
             )
     else:
