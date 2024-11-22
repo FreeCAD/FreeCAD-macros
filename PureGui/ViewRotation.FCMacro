@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # FreeCAD macro ViewRotation.
 # This GUI allows the view to be rotated with more precision than when using
@@ -9,12 +8,12 @@
 # changed by editing.
 # [http://forum.freecadweb.org/viewtopic.php?f=3&t=1784&hilit=View+Rotation#p12012 View+Rotation]
 
-from __future__ import division
 
 __Name__ = 'View Rotation'
 __Comment__ = 'This GUI allows the view to be rotated precisely'
 __Author__ = 'Joe Dowsett'
-__Version__ = '1.0'
+__Version__ = '1.0.1'
+__Date__ = '2024-11-22'
 __License__ = 'CC-BY-3.0'
 __Web__ = 'https://www.freecadweb.org/wiki/Macro_View_Rotation'
 __Wiki__ = 'https://www.freecadweb.org/wiki/Macro_View_Rotation'
@@ -25,33 +24,28 @@ __Requires__ = ''
 __Files__ = 'ViewRotationOut.png,ViewRotationRight.png,ViewRotationUp.png'
 
 from math import pi
+from functools import partial
 import os
 
-from PySide import QtCore
-from PySide import QtGui
+from PySide import QtCore  # FreeCAD's PySide!
+from PySide import QtGui  # FreeCAD's PySide!
 from pivy import coin
 
 import FreeCAD as app
 import FreeCADGui as gui
 
 
-def get_macro_dir():
-    """Return the directory where macros are located"""
-    default_macro_dir = os.path.join(app.ConfigGet('UserAppData'), 'Macro')
-    return app.ParamGet('User parameter:BaseApp/Preferences/Macro').GetString('MacroPath', default_macro_dir)
-
-
 def find_centre():
     doc = app.activeDocument()
     if doc is None:
-        return app.Vector(0, 0, 0)
+        return app.Vector(0.0, 0.0, 0.0)
 
-    xmax = 0
-    xmin = 0
-    ymax = 0
-    ymin = 0
-    zmax = 0
-    zmin = 0
+    xmax = 0.0
+    xmin = 0.0
+    ymax = 0.0
+    ymin = 0.0
+    zmax = 0.0
+    zmin = 0.0
     for obj in doc.Objects:
         try:
             if obj.TypeId[:4] == 'Mesh':
@@ -76,19 +70,23 @@ def find_centre():
 
 class RotateGui(QtGui.QWidget):
     def __init__(self):
-        super(RotateGui, self).__init__()
+        super().__init__()
         self.init_ui()
         self.init_rotate()
 
     def init_ui(self):
-        macro_dir = get_macro_dir()
+        macro_dir = app.getUserMacroDir(True)
         self.sliders = []
         self.line_edits = []
 
         vbox = QtGui.QVBoxLayout()
 
-        icons = ('ViewRotationRight.png', 'ViewRotationUp.png', 'ViewRotationOut.png')
-        for icon in icons:
+        icons = (
+                'ViewRotationRight.png',
+                'ViewRotationUp.png',
+                'ViewRotationOut.png',
+        )
+        for i, icon in enumerate(icons):
             slider = QtGui.QSlider(QtCore.Qt.Horizontal, self)
             slider.setFocusPolicy(QtCore.Qt.NoFocus)
             slider.setSingleStep(5)
@@ -96,7 +94,7 @@ class RotateGui(QtGui.QWidget):
             slider.setValue(0)
             slider.setMaximum(180)
             slider.setMinimum(-180)
-            slider.valueChanged[int].connect(self.valueChange)
+            slider.valueChanged.connect(partial(self.on_slider_value_changed, i))
             self.sliders.append(slider)
 
             line_edit = QtGui.QLineEdit(self)
@@ -132,16 +130,17 @@ class RotateGui(QtGui.QWidget):
 
         self.setLayout(vbox)
 
-        desktop_widget = QtGui.QDesktopWidget()
-        right = desktop_widget.availableGeometry().width()
+        qapp = QtCore.QCoreApplication.instance()
+        screen_number = QtGui.QDesktopWidget().screenNumber(self)
+        right = qapp.screens()[screen_number].geometry().width()
 
         self.setGeometry(right - 300, 0, 300, 150)
         self.setWindowTitle('Rotate view')
         self.show()
 
     def init_rotate(self):
-        self.internal = False
-        self.current = 0
+        # Index in [right, up, out]
+        self._current_axis = 0
 
         self.cam = gui.activeDocument().ActiveView.getCameraNode()
         self.centre = coin.SbVec3f(find_centre())
@@ -155,91 +154,110 @@ class RotateGui(QtGui.QWidget):
 
         self.config_direction(0)
 
-
     def reset(self):
         # Reset the view to the original one.
         self.cam.orientation = self.original_view
         self.cam.position = self.original_pos
-        self.internal = True
-        for sld in self.sliders:
-            sld.setValue(0)
-        self.internal = False
+        for slider in self.sliders:
+            # Deactivate callbacks.
+            slider.blockSignals(True)
+            slider.setValue(0)
+            slider.blockSignals(False)
         for tbox in self.line_edits:
-            tbox.setText("0")
+            tbox.setText('0')
         self.config_direction(0)
 
     def cancel(self):
         self.reset()
         self.close()
 
+    def config_direction(self, axis_index):
+        """
+        Assign `self.direction` to either the right, up or out vector.
 
-    def config_direction(self, i):
-        # Evaluate the vectors corresponding to the three directions for the
-        # current view, and assign the i-th one to self.direction.
+        Evaluate the vectors corresponding to the three directions for the
+        current view, and assign `self.direction` to the one at index `axis_index`.
+
+        """
         self.view = self.cam.orientation.getValue()
         self.view = coin.SbRotation(self.view.getValue())
         self.pos = self.cam.position.getValue()
         self.pos = coin.SbVec3f(self.pos.getValue())
 
-        up = coin.SbVec3f(0,1,0)
+        up = coin.SbVec3f(0, 1, 0)
         self.up = self.view.multVec(up)
-        out = coin.SbVec3f(0,0,1)
+        out = coin.SbVec3f(0, 0, 1)
         self.out = self.view.multVec(out)
         u = self.up.getValue()
         o = self.out.getValue()
         r = (u[1]*o[2]-u[2]*o[1], u[2]*o[0]-u[0]*o[2], u[0]*o[1]-u[1]*o[0])
         self.right = coin.SbVec3f(r)
 
-        self.direction = [self.right, self.up, self.out][i]
+        self.direction = [self.right, self.up, self.out][axis_index]
 
-    def check(self, i):
-        # Check if the direction of rotation has changed, if so then set
-        # previous slider & textbox to zero, and setup the new direction.
-        if i != self.current:
-            self.internal = True
-            self.sliders[self.current].setValue(0)
-            self.line_edits[self.current].setText("0")
-            self.internal = False
-            self.current = i
-            self.config_direction(i)
+    def check(self, axis_index):
+        """
+        Check if the direction of rotation has changed.
+
+        Check if the direction of rotation has changed, if so then set
+        previous slider and textbox to zero, and setup the new direction.
+
+        """
+        if axis_index != self._current_axis:
+            # Deactivate callbacks.
+            self.sliders[self._current_axis].blockSignals(True)
+            self.sliders[self._current_axis].setValue(0)
+            self.sliders[self._current_axis].blockSignals(False)
+            self.line_edits[self._current_axis].blockSignals(True)
+            self.line_edits[self._current_axis].setText("0")
+            self.line_edits[self._current_axis].blockSignals(False)
+            self._current_axis = axis_index
+            self.config_direction(axis_index)
 
     def rotate(self, value):
         # Carry out the desired rotation about self.direction.
-        val = value*pi/180.0
+        val = value * pi / 180.0
         rot = coin.SbRotation(self.direction, -val)
         nrot = self.view*rot
         prot = rot.multVec(self.pos - self.centre) + self.centre
         self.cam.orientation = nrot
         self.cam.position = prot
 
-    def valueChange(self, value):
-        # Respond to the change in value of a slider, update the corresponding
-        # text box, check for a direction change then rotate
-        # if the value was changed internally, ignore event.
-        if self.internal:
-            return
+    def on_slider_value_changed(self, slider_index: int, value: int):
+        """
+        Respond to the change in value of a slider.
 
-        sender = self.sender()
-        for i in range(3):
-            if sender == self.sliders[i]:
-                break
-        self.line_edits[i].setText(str(value))
-        self.check(i)
+        Respond to the change in value of a slider, update the corresponding
+        text box, check for a direction change then rotate
+        if the value was changed internally, ignore event.
+
+        """
+        self.line_edits[slider_index].setText(str(value))
+        self.check(slider_index)
         self.rotate(value)
 
     def valueEntered(self):
-        # Respond to a value being entered in a text box, updating the
-        # corresponding slider, check for direction change then rotate.
+        """
+        Respond to a value being entered in a text box.
+
+        Respond to a value being entered in a text box, updating the
+        corresponding slider, checking for direction change then rotate.
+
+        """
         sender = self.sender()
         for i in range(3):
             if sender == self.line_edits[i]:
                 break
-        value = int(self.line_edits[i].text())
-        self.internal = True
+        value = round(float(self.line_edits[i].text()))
+        self.sliders[i].blockSignals(True)
         self.sliders[i].setValue(value)
-        self.internal = False
+        self.sliders[i].blockSignals(False)
+        self.line_edits[i].blockSignals(True)
+        self.line_edits[i].setText(str(value))
+        self.line_edits[i].blockSignals(False)
         self.check(i)
         self.rotate(value)
+
 
 if __name__ == '__main__':
     # We need to set a variable, otherwise, the dialog doesn't appear.
