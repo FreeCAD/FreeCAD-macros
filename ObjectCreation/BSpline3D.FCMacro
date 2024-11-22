@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 #***************************************************************************
@@ -29,11 +28,11 @@
 #*                                                                         *
 #**************************************************************************/
 
-_Name__ = 'BSpline3D'
+__Name__ = 'BSpline3D'
 __Comment__ = 'Create a parametric BSpline from Vertices selected in 3D view'
 __Author__ = 'CorvusCorax'
-__Version__ = '0.0.1'
-__Date__ = '2024-11-11'
+__Version__ = '0.0.2'
+__Date__ = '2024-11-22'
 __License__ = 'LGPL-2.1-or-later'
 __Web__ = 'https://github.com/CorvusCorax/FreeCAD-BSpline3D'
 __Wiki__ = 'https://github.com/CorvusCorax/FreeCAD-BSpline3D/wiki'
