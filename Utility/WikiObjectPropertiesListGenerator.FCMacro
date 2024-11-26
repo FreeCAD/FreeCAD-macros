@@ -113,11 +113,10 @@ status_dictionary = {
 }
 
 
-def clear_report_view(clear: bool = True):
+def clear_report_view():
     """Clear content of Report View panel."""
-    if clear:
-        main_window = gui.getMainWindow()
-        main_window.findChild(QtGui.QTextEdit, "Report view").clear()
+    main_window = gui.getMainWindow()
+    main_window.findChild(QtGui.QTextEdit, "Report view").clear()
 
 
 def print_sr(text: str, show_report: bool = True):
@@ -365,7 +364,8 @@ def show_dialog():
     result = dialog.exec()
 
     if result == QtWidgets.QDialog.Accepted:
-        clear_report_view(dialog.clear_report_view.isChecked())
+        if dialog.clear_report_view.isChecked():
+            clear_report_view()
         if dialog.pressed_button == dialog.button_strings[0]:
             data_ignore_list, view_ignore_list = fill_ignore_lists(True)
         elif dialog.pressed_button in dialog.button_strings[1:4]:  # 1,2,3
