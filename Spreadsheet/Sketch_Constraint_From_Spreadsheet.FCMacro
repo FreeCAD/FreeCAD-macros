@@ -727,8 +727,10 @@ def addTheObjects():
             # attachedTo=App.ActiveDocument.getObject('Body')
             # attachedTo=firstObject('PartDesign::Body' )
             firstSketch=firstBody.newObject('Sketcher::SketchObject', user_input['textboxSketchName'])
-            firstSketch.AttachmentSupport = (App.ActiveDocument.getObject(sketchSupport),[''])
-            #firstSketch.Support = (App.ActiveDocument.getObject(sketchSupport),[''])
+            if hasattr(firstSketch, 'AttachmentSupport'):            
+              firstSketch.AttachmentSupport = (App.ActiveDocument.getObject(sketchSupport),[''])
+            else :
+              firstSketch.Support = (App.ActiveDocument.getObject(sketchSupport),[''])
             firstSketch.MapMode = 'FlatFace'
             #Gui.ActiveDocument.getObject(firstSketch.Name).doubleClicked()
             Gui.runCommand('Std_TileWindows',0)
