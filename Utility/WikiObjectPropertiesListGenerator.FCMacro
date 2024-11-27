@@ -39,8 +39,8 @@ Usage:
 __Name__ = "Wiki Object Properties List Generator"
 __Comment__ = "Generates lists of object properties for use in the FreeCAD Wiki documentation."
 __Author__ = "Evgeniy"
-__Date__ = "2024-11-15"
-__Version__ = "0.16"
+__Date__ = "2024-11-23"
+__Version__ = "0.16.1"
 __License__ = "LGPL-3.0-or-later"  # 6 matches for LGPL on https://spdx.org/licenses/
 __Web__ = ""
 __Wiki__ = "https://wiki.freecad.org/Macro_Wiki_Object_Properties_List_Generator"
@@ -54,20 +54,22 @@ __Files__ = "./WikiObjectPropertiesListGenerator.svg"
 
 # NOTE: Changelog
 # ---------
-# - 0.16 - 2024-11-15
+# - 0.16.1 - 2024-11-23
+#   - Attend change requests: imports, use semver, f-string, simplify condition, function style.
+#   - Add checkbox to let user decide if wants to clear or not the Report View
+# - 0.16.0 - 2024-11-15
 #   - Refactor code: add custom dataclass, update functions' signatures, make some fixes.
 #   - Include property's value on the list.
 #   - Create custom dialog to add checkbox to let user disable/enable property status.
-# - 0.15 - 2021-09
+# - 0.15.0 - 2021-09
 #   - Initial release.
 
 import re
-
-import FreeCAD
-import FreeCADGui as Gui
-from PySide import QtCore, QtGui, QtWidgets
-
 from dataclasses import dataclass
+
+import FreeCAD as app
+import FreeCADGui as gui
+from PySide import QtCore, QtGui, QtWidgets  # FreeCAD's PySide!
 
 
 @dataclass
@@ -113,13 +115,13 @@ status_dictionary = {
 
 def clear_report_view():
     """Clear content of Report View panel."""
-    main_window = Gui.getMainWindow()
+    main_window = gui.getMainWindow()
     main_window.findChild(QtGui.QTextEdit, "Report view").clear()
 
 
 def print_sr(text: str, show_report: bool = True):
     """Print the given text if "show report" flag is enabled."""
-    FreeCAD.Console.PrintMessage(text) if show_report else None
+    app.Console.PrintMessage(text) if show_report else None
 
 
 def generate_markup_list(grouped_properties: dict, print_status: bool = False):
@@ -133,7 +135,7 @@ def generate_markup_list(grouped_properties: dict, print_status: bool = False):
 
     # Sort groups and properties within each group
     for group in sorted(grouped_properties):
-        FreeCAD.Console.PrintMessage(f"\n{{{{Properties_Title|{group}}}}}\n\n")
+        app.Console.PrintMessage(f"\n{{{{Properties_Title|{group}}}}}\n\n")
         for prop, data in sorted(grouped_properties[group]):
             if print_status:
                 status = "|" + data.status
@@ -141,11 +143,11 @@ def generate_markup_list(grouped_properties: dict, print_status: bool = False):
                 status = "|" + "hidden"  # manually use lowercase
             else:
                 status = ""
-            FreeCAD.Console.PrintMessage(
+            app.Console.PrintMessage(
                 f"* {{{{Property{data.property_type}|{prop}|{data.data_type}{status}}}}}: "
                 f"Default is {{{{value|{data.default_value}}}}}. {data.tooltip}.\n"
             )
-    FreeCAD.Console.PrintMessage("\n\n")
+    app.Console.PrintMessage("\n\n")
 
 
 def print_obj_properties(
@@ -162,7 +164,7 @@ def print_obj_properties(
         # Get all possible status variants
         stat = obj.getPropertyStatus(prop) or ""
 
-        if stat != (""):
+        if stat:
             for st in stat:
                 # get status without name from dictionary
                 if isinstance(st, int):
@@ -176,7 +178,7 @@ def print_obj_properties(
         else:
             stat = ""
 
-        if ignore_list is None or (ignore_list is not None and prop not in ignore_list):
+        if prop not in ignore_list:
             # Add property information to the respective group
             if prop_group not in grouped_properties:
                 grouped_properties[prop_group] = []
@@ -198,12 +200,17 @@ def print_obj_properties(
 
     if inherits != "" and show_inherits:
         # angle brackets is masked as \x3C and \x3E so this code can be published in the Wiki
-        print("\n\x3c!--\n{inherits}--\x3e")
+        print(f"\n\x3c!--\n{inherits}--\x3e")
 
     generate_markup_list(grouped_properties, print_status)
 
 
-def add_properties_to_ignore_list(obj, ignore_list: dict, obj_type: str, show_report: bool = True):
+def add_properties_to_ignore_list(
+    obj,
+    ignore_list: dict,
+    obj_type: str,
+    show_report: bool = True,
+):
     """Add properties to the ignore list if not present"""
     for prop in obj.PropertiesList:
         if prop not in ignore_list:
@@ -225,23 +232,24 @@ def add_to_ignore_list(
     print_sr(f"Class: '{obj_type}'", show_report)
 
     # Make temporary object and get its Data parameters
-    obj = FreeCAD.activeDocument().addObject(obj_type, temp_obj_name)
+    obj = app.activeDocument().addObject(obj_type, temp_obj_name)
     name = obj.Name
     print_sr("Data parameters list:", show_report)
     data_ignore_list = add_properties_to_ignore_list(obj, data_ignore_list, obj_type, show_report)
 
     # Try to get View parameters if possible
-    obj = Gui.activeDocument().getObject(name)
+    view_obj = obj.ViewObject
+
     try:
         print_sr("View parameters list:", show_report)
         view_ignore_list = add_properties_to_ignore_list(
-            obj, view_ignore_list, obj_type, show_report
+            view_obj, view_ignore_list, obj_type, show_report
         )
     except:
         print_sr("This class does not support View parameters.", show_report)
 
     # Remove temporary object
-    FreeCAD.activeDocument().removeObject(name)
+    app.activeDocument().removeObject(name)
     print_sr("", show_report)
 
     return data_ignore_list, view_ignore_list
@@ -313,9 +321,11 @@ class CustomDialog(QtWidgets.QDialog):
         )
         layout.addWidget(self.instruction_label)
 
-        # Checkbox
-        self.checkbox = QtWidgets.QCheckBox("Include status of the property", self)
-        layout.addWidget(self.checkbox)
+        # Checkboxes
+        self.include_prop_status = QtWidgets.QCheckBox("Include status of the property", self)
+        layout.addWidget(self.include_prop_status)
+        self.clear_report_view = QtWidgets.QCheckBox("Clear all content on Report View", self)
+        layout.addWidget(self.clear_report_view)
 
         # Buttons
         button_om = QtWidgets.QPushButton(self.button_strings[0], self)
@@ -350,16 +360,17 @@ class CustomDialog(QtWidgets.QDialog):
 
 # Function to display dialog and retrieve data
 def show_dialog():
-    dialog = CustomDialog(Gui.getMainWindow())
+    dialog = CustomDialog(gui.getMainWindow())
     result = dialog.exec()
 
     if result == QtWidgets.QDialog.Accepted:
-        clear_report_view()
+        if dialog.clear_report_view.isChecked():
+            clear_report_view()
         if dialog.pressed_button == dialog.button_strings[0]:
             data_ignore_list, view_ignore_list = fill_ignore_lists(True)
         elif dialog.pressed_button in dialog.button_strings[1:4]:  # 1,2,3
             name = sel[0].Name
-            act_obj = Gui.activeDocument().getObject(name)
+            act_obj = gui.activeDocument().getObject(name)
             data_ignore_list = {}
             view_ignore_list = {}
             if dialog.pressed_button in dialog.button_strings[2:4]:  # 2,3
@@ -371,16 +382,16 @@ def show_dialog():
                 "View",
                 view_ignore_list,
                 dialog.pressed_button == dialog.button_strings[3],
-                dialog.checkbox.isChecked(),
+                dialog.include_prop_status.isChecked(),
             )
             print("\n=== Data ===")
-            act_obj = FreeCAD.activeDocument().getObject(name)
+            act_obj = app.activeDocument().getObject(name)
             print_obj_properties(
                 act_obj,
                 "Data",
                 data_ignore_list,
                 dialog.pressed_button == dialog.button_strings[3],
-                dialog.checkbox.isChecked(),
+                dialog.include_prop_status.isChecked(),
             )
     else:
         print("Dialog canceled")
@@ -389,7 +400,7 @@ def show_dialog():
 ####################################################################################################
 # Main code
 
-sel = Gui.Selection.getSelection()
+sel = gui.Selection.getSelection()
 if len(sel) != 1:
     msgbox = QtGui.QMessageBox(
         QtGui.QMessageBox.Question,
