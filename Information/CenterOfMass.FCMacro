@@ -725,7 +725,11 @@ class CenterofmassWidget(QtGui.QWidget):
                 if callable(getattr(s_, 'getGlobalPlacement', None)):
                     o_.Placement = s_.getGlobalPlacement()
                     # e.g. App::Link has no method getGlobalPlacement
-                elif s_.TypeId != 'Assembly::JointGroup' and float(f'{app.Version()[0]}.{app.Version()[1]}') < 0.22 or s_.TypeId == 'App::Link':
+                elif float(f'{app.Version()[0]}.{app.Version()[1]}') < 0.22:
+                    if s_.InList:
+                        for it in s_.InListRecursive:
+                            o_.Placement = o_.Placement.multiply(it.Placement)
+                elif s_.TypeId != 'Assembly::JointGroup' or s_.TypeId == 'App::Link':
                     if s_.InList:
                         for it in s_.InListRecursive:
                             if it.TypeId != 'Assembly::JointGroup':
