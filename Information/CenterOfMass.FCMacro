@@ -259,6 +259,8 @@ class SolidsWidget():
     def get_object_material(solid):
         """Retrieves material properties, handling PartDesign features correctly."""
         material = None
+        if float(f'{app.Version()[0]}.{app.Version()[1]}') < 0.22:
+            return material
         if hasattr(solid, "ShapeMaterial"):
             material = solid.ShapeMaterial
         elif hasattr(solid, "getParentGroup") and solid.getParentGroup():
