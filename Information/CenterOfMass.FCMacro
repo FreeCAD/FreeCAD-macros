@@ -490,10 +490,10 @@ class CenterofmassWidget(QtGui.QWidget):
             self.resultCdG[axis].setObjectName('center of mass')
             self.resultCdG[axis].setReadOnly(True)
 
-        toClipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'), '')
-        toClipboard.setToolTip(f'Copy to clipboard ({self.unitForL})')
-        toClipboard.setFlat(True)
-        toClipboard.clicked.connect(self.on_pushButton_copyToClipboardCdG)
+        self.com_clipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'), '')
+        self.com_clipboard.setToolTip(f'Copy to clipboard ({self.unitForL})')
+        self.com_clipboard.setFlat(True)
+        self.com_clipboard.clicked.connect(self.on_pushButton_copyToClipboardCdG)
 
         axis_labels = [{'label': 'X', 'style': 'color:rgb(255, 0, 0)'}, {'label': 'Y', 'style': 'color:rgb(0, 255, 0)'}, {'label': 'Z', 'style': 'color:rgb(0, 0, 255)'}]
         cdgLayout = QtGui.QHBoxLayout()
@@ -502,7 +502,7 @@ class CenterofmassWidget(QtGui.QWidget):
             label_CdG.setStyleSheet(axis['style'])
             cdgLayout.addWidget(label_CdG)
             cdgLayout.addWidget(self.resultCdG[index])
-        cdgLayout.addWidget(toClipboard)
+        cdgLayout.addWidget(self.com_clipboard)
         cdgGroupBox = QtGui.QGroupBox('Center of Mass')
         cdgGroupBox.setLayout(cdgLayout)
         layout.addWidget(cdgGroupBox)
@@ -519,22 +519,22 @@ class CenterofmassWidget(QtGui.QWidget):
         self.resultDensity = QtGui.QLineEdit(self)
         self.resultDensity.setReadOnly(True)
 
-        toClipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'), '')
-        toClipboard.setToolTip(f'Copy to clipboard ({self.unitForM} and {self.unitForD})')
-        toClipboard.setFlat(True)
-        toClipboard.clicked.connect(self.on_pushButton_copyToClipboardTotal)
+        self.total_clipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'), '')
+        self.total_clipboard.setToolTip(f'Copy to clipboard ({self.unitForM} and {self.unitForD})')
+        self.total_clipboard.setFlat(True)
+        self.total_clipboard.clicked.connect(self.on_pushButton_copyToClipboardTotal)
 
         totalLayout = QtGui.QGridLayout()
         totalLayout.addWidget(label_Mass, 0, 0)
         totalLayout.addWidget(self.resultMass, 0, 1)
         totalLayout.addWidget(label_Density, 0, 2)
         totalLayout.addWidget(self.resultDensity, 0, 3)
-        totalLayout.addWidget(toClipboard, 0, 4)
+        totalLayout.addWidget(self.total_clipboard, 0, 4)
 
-        toClipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'), '')
-        toClipboard.setToolTip(f'Copy to clipboard ({self.unitForV} and {self.unitForA})')
-        toClipboard.setFlat(True)
-        toClipboard.clicked.connect(self.on_pushButton_copyToClipboardVolume)
+        self.volume_clipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'), '')
+        self.volume_clipboard.setToolTip(f'Copy to clipboard ({self.unitForV} and {self.unitForA})')
+        self.volume_clipboard.setFlat(True)
+        self.volume_clipboard.clicked.connect(self.on_pushButton_copyToClipboardVolume)
 
         label_Volume = QtGui.QLabel('Volume')
 
@@ -551,7 +551,7 @@ class CenterofmassWidget(QtGui.QWidget):
         totalLayout.addWidget(self.resultVolume, 1, 1)
         totalLayout.addWidget(label_Area, 1, 2)
         totalLayout.addWidget(self.resultArea, 1, 3)
-        totalLayout.addWidget(toClipboard, 1, 4)
+        totalLayout.addWidget(self.volume_clipboard, 1, 4)
         totalGroupBox = QtGui.QGroupBox('Total')
         totalGroupBox.setLayout(totalLayout)
         layout.addWidget(totalGroupBox)
@@ -582,11 +582,11 @@ class CenterofmassWidget(QtGui.QWidget):
         inertiaGroupBox.setLayout(inertiaLayout)
         layout.addWidget(inertiaGroupBox)
 
-        toClipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'), '')
-        toClipboard.setToolTip(f'Copy to clipboard ({self.unitForI})')
-        toClipboard.setFlat(True)
-        toClipboard.clicked.connect(self.on_pushButton_copyToClipboardInertia)
-        inertiaLayout.addWidget(toClipboard, 2, 4)
+        self.inertia_clipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'), '')
+        self.inertia_clipboard.setToolTip(f'Copy to clipboard ({self.unitForI})')
+        self.inertia_clipboard.setFlat(True)
+        self.inertia_clipboard.clicked.connect(self.on_pushButton_copyToClipboardInertia)
+        inertiaLayout.addWidget(self.inertia_clipboard, 2, 4)
 
         qApp = QtGui.QApplication.instance()
         qApp.focusChanged.connect(self.on_focusChanged)    # emits on each focus change in FreeCAD
@@ -876,6 +876,10 @@ class CenterofmassWidget(QtGui.QWidget):
                                       Units.Quantity(qty),
                                       self.unitForD)
         self.defaultDensitySpin.setToolTip('set default density (in ' + self.unitForD_text + ')')
+        self.com_clipboard.setToolTip(f'Copy to clipboard ({self.unitForL})')
+        self.total_clipboard.setToolTip(f'Copy to clipboard ({self.unitForM} and {self.unitForD})')
+        self.volume_clipboard.setToolTip(f'Copy to clipboard ({self.unitForV} and {self.unitForA})')
+        self.inertia_clipboard.setToolTip(f'Copy to clipboard ({self.unitForI})')
         self.compute_centerOfMass()
 
     def on_spinDefaultDensity_changed(self, newValue):
