@@ -491,7 +491,7 @@ class CenterofmassWidget(QtGui.QWidget):
             self.resultCdG[axis].setReadOnly(True)
 
         toClipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'), '')
-        toClipboard.setToolTip(f'Copy to clipboard ({Units.listSchemas(Units.getSchema())})')
+        toClipboard.setToolTip(f'Copy to clipboard ({self.unitForL})')
         toClipboard.setFlat(True)
         toClipboard.clicked.connect(self.on_pushButton_copyToClipboardCdG)
 
@@ -520,7 +520,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.resultDensity.setReadOnly(True)
 
         toClipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'), '')
-        toClipboard.setToolTip(f'Copy to clipboard ({Units.listSchemas(Units.getSchema())})')
+        toClipboard.setToolTip(f'Copy to clipboard ({self.unitForM} and {self.unitForD})')
         toClipboard.setFlat(True)
         toClipboard.clicked.connect(self.on_pushButton_copyToClipboardTotal)
 
@@ -532,7 +532,7 @@ class CenterofmassWidget(QtGui.QWidget):
         totalLayout.addWidget(toClipboard, 0, 4)
 
         toClipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'), '')
-        toClipboard.setToolTip(f'Copy to clipboard ({Units.listSchemas(Units.getSchema())})')
+        toClipboard.setToolTip(f'Copy to clipboard ({self.unitForV} and {self.unitForA})')
         toClipboard.setFlat(True)
         toClipboard.clicked.connect(self.on_pushButton_copyToClipboardVolume)
 
@@ -583,7 +583,7 @@ class CenterofmassWidget(QtGui.QWidget):
         layout.addWidget(inertiaGroupBox)
 
         toClipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'), '')
-        toClipboard.setToolTip(f'Copy to clipboard ({Units.listSchemas(Units.getSchema())})')
+        toClipboard.setToolTip(f'Copy to clipboard ({self.unitForI})')
         toClipboard.setFlat(True)
         toClipboard.clicked.connect(self.on_pushButton_copyToClipboardInertia)
         inertiaLayout.addWidget(toClipboard, 2, 4)
