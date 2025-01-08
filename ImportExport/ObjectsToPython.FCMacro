@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__Version__ = '0.7.3'
-__Date__ = '2024-03-16'
+__Version__ = '0.7.4'
+__Date__ = '2025-01-07'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = 'README.md'
@@ -71,8 +71,7 @@ def exportObjectsToPython(doc=None):
         if (obj.TypeId, obj.Label) not in skip_objects:
             add_script_line('')
             if obj.TypeId == 'Sketcher::SketchObject':
-                add_body_line(f'{varname(obj)} = createSketch_{
-                              varname(obj)}(doc)')
+                add_body_line(f'{varname(obj)} = createSketch_{varname(obj)}(doc)')
             else:
                 addObject(doc, obj, objectlist)
 
@@ -407,8 +406,7 @@ def addSketch(obj, objname):
             conargs = f'{first}, {sec}'
 
         elif con.Type == 'Symmetric':
-            conargs = f'{first}, {con.FirstPos}, {sec}, {
-                con.SecondPos}, {third}, {con.ThirdPos}'
+            conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}, {third}, {con.ThirdPos}'
         elif con.Type == 'Block':
             conargs = str(first)
 
@@ -418,17 +416,14 @@ def addSketch(obj, objname):
             elif con.FirstPos == 0:
                 conargs = f'{first}, {sec}, {floatstr(con.Value)}'
             elif con.SecondPos == 0:
-                conargs = f'{first}, {con.FirstPos}, {
-                    sec}, {floatstr(con.Value)}'
+                conargs = f'{first}, {con.FirstPos}, {sec}, {floatstr(con.Value)}'
             else:
-                conargs = f'{first}, {con.FirstPos}, {sec}, {
-                    con.SecondPos}, {floatstr(con.Value)}'
+                conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}, {floatstr(con.Value)}'
         elif con.Type == 'DistanceX' or con.Type == 'DistanceY':
             if sec[:3] != 'geo':
                 conargs = f'{first}, {con.FirstPos}, {floatstr(con.Value)}'
             else:
-                conargs = f'{first}, {con.FirstPos}, {sec}, {
-                    con.SecondPos}, {floatstr(con.Value)}'
+                conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}, {floatstr(con.Value)}'
 
         elif con.Type == 'AngleViaPoint':
             conargs = f'{first}, {sec}, {third}, {floatstr(con.Value)}'
@@ -439,8 +434,7 @@ def addSketch(obj, objname):
                 contype = 'AngleViaPoint'  # compatiblity to FreeCAD 2.20
                 conargs = f'{first}, {sec}, {third}, {floatstr(con.Value)}'
             else:
-                conargs = f'{first}, {con.FirstPos}, {sec}, {
-                    con.SecondPos}, {floatstr(con.Value)}'
+                conargs = f'{first}, {con.FirstPos}, {sec}, {con.SecondPos}, {floatstr(con.Value)}'
 
         elif con.Type == 'Weight' or con.Type == 'Radius' or con.Type == 'Diameter':
             conargs = f'{first}, {floatstr(con.Value)}'
@@ -460,8 +454,7 @@ def addSketch(obj, objname):
                 f"{objname}.addConstraint(Sketcher.Constraint('{contype}', {conargs}))")
 
         if con.Name != "":
-            add_body_line(f"{objname}.renameConstraint({
-                          concount}, '{con.Name}')")
+            add_body_line(f"{objname}.renameConstraint({concount}, '{con.Name}')")
 
         concount = concount + 1
 
