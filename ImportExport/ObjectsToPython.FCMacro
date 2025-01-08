@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__Version__ = '0.7.4'
-__Date__ = '2025-01-07'
+__Version__ = '0.7.5'
+__Date__ = '2025-01-08'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = 'README.md'
@@ -143,14 +143,46 @@ def addObject(doc, obj, objectlist):
 
 
 def addProperties(obj, objname, refobj, objectlist):
-    skipProperties = ['Label', 'Shape', 'Proxy',
-                      'AddSubShape', 'FullyConstrained', 'VisualLayerList']
+    skipProperties = [
+            'AddSubShape',
+            'FullyConstrained',
+            'InternalShape',
+            'Label',
+            'MaterialName',
+            'Proxy',
+            'Shape',
+            'ShapeAppearance',
+            'ShapeMaterial',
+            'SuppressedShape',
+            'VisualLayerList',
+    ]
+
     skipObjProp = [
         ('Sketcher::SketchObject', 'Geometry'),
         ('Sketcher::SketchObject', 'Constraints'),
         ('PartDesign::Body', 'Origin'),
         ('PartDesign::Body', 'Tip'),
     ]
+
+    # Cf. https://github.com/FreeCAD/FreeCAD/blob/278ce803907ef72548d7ac761613038ac435c481/src/App/Property.h#L60
+    statusdict = {
+            'PropStaticBegin': 21,
+            'PropDynamic': 21,
+            'PropNoPersist': 22,
+            'PropNoRecompute': 23,
+            'PropReadOnly': 24,
+            'PropTransient': 25,
+            'PropHidden': 26,
+            'PropOutput': 27,
+            'PropStaticEnd': 28,
+    }
+
+    def dontWriteProperty(obj, propname, statuslist):
+        statusnums = obj.getPropertyStatus(propname)
+        for status in statuslist:
+            if statusdict[status] in statusnums:
+                return True
+        return False
 
     if obj.TypeId == 'Spreadsheet::Sheet':
         addSpreadsheet(obj, objname)
@@ -161,7 +193,8 @@ def addProperties(obj, objname, refobj, objectlist):
 
     for propname in obj.PropertiesList:
         if ((propname not in skipProperties)
-                and ((obj.TypeId, propname) not in skipObjProp)):
+                and ((obj.TypeId, propname) not in skipObjProp)
+                and (not dontWriteProperty(obj, propname, ["PropReadOnly", "PropOutput"]))):
             prop = obj.getPropertyByName(propname)
             val = objectToText(prop, objectlist)
 
