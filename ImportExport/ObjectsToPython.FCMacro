@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__Version__ = '0.7.4'
+__Version__ = '0.7.6'
 __Date__ = '2025-01-09'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
