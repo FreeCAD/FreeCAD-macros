@@ -673,7 +673,8 @@ class CenterofmassWidget(QtGui.QWidget):
         # create valid selection list
         vsel = []
         for s_ in _sel:
-            p_ = s_.getParent()
+            p_ = s_.getParent() if callable(getattr(s_, 'getParent', None)) else False
+            # no getParent() in FreeCAD 0.20
             if p_ and p_.Name == 'CenterOfMass' and p_.TypeId == 'App::DocumentObjectGroup':
                 # Skip objects created for the macro to avoid error or crash
                 continue
