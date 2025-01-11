@@ -20,13 +20,14 @@
 # Credits:
 # 2018 - 2022: schupin
 # 2022 - 2024: SyProLei project (Saarland University)
+# 2025: farahats9, s-quirin (former SyProLei project)
 #
 
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
-__Author__ = 'chupins, s-quirin'
-__Version__ = '0.8.0'
-__Date__ = '2024-12-17'
+__Author__ = 'chupins, s-quirin, farahats9'
+__Version__ = '0.8.1'
+__Date__ = '2025-01-10'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecad.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://wiki.freecad.org/Macro_CenterOfMass'
@@ -627,8 +628,13 @@ class CenterofmassWidget(QtGui.QWidget):
             # skip if focus changes between combo box and its dropdown list
             return
         for w in (oldWidget, nowWidget):
-            # deleted (None) objects can be passed
-            if w is not None and w.parent() == self.solidLayout.parentWidget():
+            macroWidgetFocus = False
+            if w is not None:
+                try:
+                    macroWidgetFocus = w.parent() == self.solidLayout.parentWidget()
+                except RuntimeError:
+                    pass    # deleted (None) objects can be passed
+            if macroWidgetFocus:
                 idx = self.solidLayout.indexOf(w)
                 if idx > 0:
                     row = self.solidLayout.getItemPosition(idx)[0] - 1    # minus header
