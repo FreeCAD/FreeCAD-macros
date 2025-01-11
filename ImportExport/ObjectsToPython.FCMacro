@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__Version__ = '0.7.6'
-__Date__ = '2025-01-09'
+__Version__ = '0.7.7'
+__Date__ = '2025-01-11'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = ''
 __Wiki__ = 'README.md'
@@ -141,11 +141,21 @@ def addObject(doc, obj, objectlist):
                   defaultobj.ViewObject, [])
     doc.removeObject(obj.Name + 'Default')
 
+
 def addProperties(obj, objname, refobj, objectlist):
-    skipProperties = ['Label', 'Shape', 'Proxy',
-                      'AddSubShape', 'FullyConstrained', 'VisualLayerList',
-                     'InternalShape', 'ShapeMaterial', 'ShapeAppearance', 'MaterialName',
-                     'SuppressedShape']
+    skipProperties = [
+            'AddSubShape',
+            'FullyConstrained',
+            'InternalShape',
+            'Label',
+            'MaterialName',
+            'Proxy',
+            'Shape',
+            'ShapeAppearance',
+            'ShapeMaterial',
+            'SuppressedShape',
+            'VisualLayerList',
+    ]
 
     skipObjProp = [
         ('Sketcher::SketchObject', 'Geometry'),
@@ -177,9 +187,9 @@ def addProperties(obj, objname, refobj, objectlist):
         addSketch(obj, objname)
 
     for propname in obj.PropertiesList:
-        if (propname not in skipProperties)\
-            and ((obj.TypeId, propname) not in skipObjProp)\
-            and not propIsReadonly(obj, propname):
+        if ((propname not in skipProperties) 
+                and ((obj.TypeId, propname) not in skipObjProp) 
+                and not propIsReadonly(obj, propname)):
             prop = obj.getPropertyByName(propname)
             val = objectToText(prop, objectlist)
 
