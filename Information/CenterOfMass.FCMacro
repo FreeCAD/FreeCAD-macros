@@ -629,8 +629,13 @@ class CenterofmassWidget(QtGui.QWidget):
             # skip if focus changes between combo box and its dropdown list
             return
         for w in (oldWidget, nowWidget):
-            # deleted (None) objects can be passed
-            if w is not None and w.parent() == self.solidLayout.parentWidget():
+            macroWidgetFocus = False
+            if w is not None:
+                try:
+                    macroWidgetFocus = w.parent() == self.solidLayout.parentWidget()
+                except RuntimeError:
+                    pass    # deleted (None) objects can be passed
+            if macroWidgetFocus:
                 idx = self.solidLayout.indexOf(w)
                 if idx > 0:
                     row = self.solidLayout.getItemPosition(idx)[0] - 1    # minus header
