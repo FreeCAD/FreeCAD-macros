@@ -20,13 +20,14 @@
 # Credits:
 # 2018 - 2022: schupin
 # 2022 - 2024: SyProLei project (Saarland University)
+# 2025: farahats9, s-quirin (former SyProLei project)
 #
 
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
-__Author__ = 'chupins, s-quirin'
-__Version__ = '0.8.0'
-__Date__ = '2024-12-17'
+__Author__ = 'chupins, s-quirin, farahats9'
+__Version__ = '0.8.1'
+__Date__ = '2025-01-10'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecad.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://wiki.freecad.org/Macro_CenterOfMass'
@@ -450,14 +451,15 @@ class CenterofmassWidget(QtGui.QWidget):
         # viewGroupBox
         showCoM = QtGui.QCheckBox(toolTip='Show center of mass')
         if self.doc.getObject('CenterOfMass'):
-            showCoM.setChecked(True)
+            if self.doc.getObject('CenterOfMass').TypeId == 'App::DocumentObjectGroup':
+                showCoM.setChecked(True)
         showCoM.setIcon(QtGui.QIcon(':/icons/Std_ToggleVisibility.svg'))
         showCoM.setIconSize(g_icon_size)
         showCoM.stateChanged.connect(self.on_stateChanged_showCoM)
 
         self.changeRadius = QtGui.QSlider(QtGui.Qt.Horizontal)
         self.changeRadius.setToolTip('Change radius of spheres')
-        self.changeRadius.setEnabled(False)
+        self.changeRadius.setEnabled(showCoM.isChecked())
         self.changeRadius.setMaximum(49)
         self.changeRadius.valueChanged.connect(self.on_slideButton_changeRadius)
 
@@ -671,7 +673,11 @@ class CenterofmassWidget(QtGui.QWidget):
         # create valid selection list
         vsel = []
         for s_ in _sel:
-            if hasattr(s_, 'Shape') and s_.Shape.Volume:
+            p_ = s_.getParent()
+            if p_ and p_.Name == 'CenterOfMass' and p_.TypeId == 'App::DocumentObjectGroup':
+                # Skip objects created for the macro to avoid error or crash
+                continue
+            elif hasattr(s_, 'Shape') and s_.Shape.Volume:
                 if s_.TypeId == 'App::Part':
                     # because contains bodies
                     for cs in s_.Shape.childShapes(False, False):
@@ -1029,7 +1035,7 @@ class CenterofmassWidget(QtGui.QWidget):
             for j in range(3):
                 self.resultMoI[i][j].setText(f'{self.convert_inertia(self.TotalMoI[i, j]):.6}')
                 self.resultMoI[i][j].setToolTip(f'L{axis[i]}{axis[j]} (in {self.unitForI})')
-        if self.doc.getObject('CenterOfMass'):
+        if self.changeRadius.isEnabled():
             self.draw_centerOfMass()
         if self.checkColorify.isChecked():
             self.coloring()
@@ -1037,12 +1043,17 @@ class CenterofmassWidget(QtGui.QWidget):
     def draw_centerOfMass(self):
         boundBoxL = (self.boundBox.XLength, self.boundBox.YLength, self.boundBox.ZLength)
         self.doc = app.activeDocument()    # it is possible to draw in a different document
-        try:
-            CoMObjs = self.doc.getObject('CenterOfMass')
+        CoMObjs = self.doc.getObject('CenterOfMass')    # none if no object
+        if CoMObjs:
             CoMObjs.removeObjectsFromDocument()    # remove childs
-        except:
+        else:
             CoMObjs = self.doc.addObject('App::DocumentObjectGroup', 'CenterOfMass')
 
+        # These objects will be created by the macro and should not exist anymore in the document
+        for s_ in ('CoMBBoxOfSel', 'CoMLCS', 'CoMTotal', 'CoMPlaneYZ', 'CoMPlaneXZ', 'CoMPlaneXY'):
+            if self.doc.getObject(s_):
+                self.doc.removeObject(s_)
+        
         # Bounding box of valid selection
         BBoxSolid = self.doc.addObject('Part::Box', 'CoMBBoxOfSel')
         BBoxSolid.Placement.Base = self.boundBox.Center.sub(app.Vector(boundBoxL).multiply(0.5))
@@ -1110,7 +1121,6 @@ class CenterofmassWidget(QtGui.QWidget):
         self.draw_update_sphere_radius()
         self.set_objects_transparent(True)
         self.doc.recompute()
-        self.changeRadius.setEnabled(True)
 
     def draw_update_sphere_radius(self):
         boundBoxL = (self.boundBox.XLength, self.boundBox.YLength, self.boundBox.ZLength)
@@ -1138,13 +1148,18 @@ class CenterofmassWidget(QtGui.QWidget):
                 g_sel[sol].ViewObject.Transparency = self.solids[sol].orgTransparency
 
     def on_stateChanged_showCoM(self, state):
+        CoMObjs = self.doc.getObject('CenterOfMass')    # none if no object
         if state == QtCore.Qt.Checked:
+            if CoMObjs and CoMObjs.TypeId != 'App::DocumentObjectGroup':
+                error_message(f'Please delete the object that occupies the name "CenterOfMass".')
+                return
             self.draw_centerOfMass()
+            self.changeRadius.setEnabled(True)
         else:
             self.changeRadius.setEnabled(False)
             try:
                 self.set_objects_transparent(False)
-                self.doc.getObject('CenterOfMass').removeObjectsFromDocument()
+                CoMObjs.removeObjectsFromDocument()
                 self.doc.removeObject('CenterOfMass')
             except:
                 pass
