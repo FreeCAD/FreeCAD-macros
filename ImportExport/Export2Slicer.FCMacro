@@ -4,8 +4,8 @@
 __Title__ = '3D Print / Slice'
 __Author__ = 'Damian Łoziński'
 __Version__ = '0.4.1'
-__Date__ = '2024-08-28'
-__Comment__ = 'Export selected objects to amf/stl files and open them in slicing program'
+__Date__ = '2025-01-12'
+__Comment__ = 'Open selected (or all) objects in slicing program'
 __Web__ = 'https://github.com/dlozinski/FreeCAD-macros/blob/doc/ImportExport/ExportToSlicer.md'
 __Wiki__ = ''
 __Icon__ = 'Export2Slicer.png'
@@ -19,17 +19,16 @@ import os
 import re
 from subprocess import Popen
 import shlex
+import tempfile
 
 import FreeCAD as app
 import FreeCADGui as gui
-import Mesh
-import MeshPart
+import ImportGui
 
 
 MACRO_PARAMS = app.ParamGet('User parameter:BaseApp/Preferences/Macros/Export2Slicer')
 DEFAULT_SLICER_CMD = '"/Applications/Original Prusa Drivers/PrusaSlicer.app/Contents/MacOS/PrusaSlicer" --single-instance "{file}"'
-DEFAULT_OUTPUT_FORMAT = 'amf'
-DEFAULT_ANGULAR_DEFLECTION = 0.07
+DEFAULT_OUTPUT_FORMAT = 'step'
 
 
 def get_string_param(name, default):
@@ -40,75 +39,46 @@ def get_string_param(name, default):
     return value
 
 
-def get_float_param(name, default):
-    value = MACRO_PARAMS.GetFloat(name)
-    if not value:
-        MACRO_PARAMS.SetFloat(name, default)
-        value = default
-    return value
-
-
 slicer_cmd = get_string_param('SlicerCommand', DEFAULT_SLICER_CMD)
 output_format = get_string_param('OutputFormat', DEFAULT_OUTPUT_FORMAT)
-angular_deflection = get_float_param('AngularDeflection', DEFAULT_ANGULAR_DEFLECTION)
 
 
 def escape(text):
-    return re.sub(r'\W', '_', text)
+    return re.sub(r'[^a-zA-Z0-9_-]', '_', text)
 
 
-def get_mesh_filename(doc_filename, mesh_names):
-    """Returns valid filename for temporary mesh file."""
+def get_export_filename(doc_filename, obj_names):
+    """Returns valid filename for export file."""
     if doc_filename:
         dirname = os.path.dirname(doc_filename)
-        filename = (
-            os.path.basename(doc_filename).partition('.')[0]
-            + '-'
-            + escape('_'.join(mesh_names))
-            + '.'
-            + output_format)
+        filename = "{}-{}.{}".format(
+            os.path.basename(doc_filename).partition('.')[0],
+            escape('-'.join(obj_names)),
+            output_format)
         file_path = os.path.join(dirname, filename)
     else:
-        file_path = 'meshes-export.' + output_format
+        suffix = "-{}.{}".format(
+        escape('-'.join(obj_names)),
+        output_format)
+        file_path = tempfile.NamedTemporaryFile(suffix=suffix).name
     return file_path
 
 
 def main():
     doc = app.activeDocument()
     if not doc:
-        raise RuntimeError('Export2Slicer: No active document')
-
+        app.Console.PrintError('Export2Slicer: No active document')
+        return
     selection = gui.Selection.getSelectionEx()
-    objects_to_export = [x.Object for x in selection] or [doc.ActiveObject]
-    try:
-        # Create temporary doc to store meshes so that we don't affect current doc history
-        tmp_doc = app.newDocument('meshes_to_export', temp=True)
-        meshes = []
-        mesh_names = []
-        for o in objects_to_export:
-            if o.TypeId == 'Mesh::Feature':
-                meshes.append(o)
-            else:
-                mesh = tmp_doc.addObject('Mesh::Feature', f'{doc.Label}_{o.Label}')
-                mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=angular_deflection, Relative=False)
-                meshes.append(mesh)
-                mesh_names.append(o.Label)
-        if meshes:
-            mesh_path = get_mesh_filename(doc.FileName, mesh_names)
-            Mesh.export(meshes, mesh_path)
-        else:
-            raise RuntimeError('Export2Slicer: No objects to export')
-    finally:
-        app.closeDocument('meshes_to_export')
-        for x in selection:
-            gui.Selection.addSelection(doc.Name, x.ObjectName)
-
-    # Launch Slicer with meshes
-    Popen(shlex.split(slicer_cmd.format(file=mesh_path)))
-    app.Console.PrintMessage(f'Export2Slicer: Objects exported into: {mesh_path}\n')
+    objects_to_export = [x.Object for x in selection] or doc.Objects
+    if not len(objects_to_export):        
+        app.Console.PrintError('Export2Slicer: No objects to export')
+        return
+    objs_names = [o.Label for o in objects_to_export]
+    export_path = get_export_filename(doc.FileName, objs_names)
+    ImportGui.export(objects_to_export, export_path)
+    Popen(shlex.split(slicer_cmd.format(file=export_path)))
+    app.Console.PrintNotification(f'Export2Slicer: Objects exported into: {export_path}\n')
 
 
-try:
-    main()
-except Exception as e:
-    app.Console.PrintError('Export2Slicer: ERROR: {}\n'.format(e))
+main()
