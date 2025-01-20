@@ -27,7 +27,7 @@ __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin, farahats9'
 __Version__ = '0.8.2'
-__Date__ = '2025-01-16'
+__Date__ = '2025-01-20'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecad.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://wiki.freecad.org/Macro_CenterOfMass'
@@ -377,7 +377,10 @@ class CenterofmassWidget(QtGui.QWidget):
         self.load_materials()    # load material cards
         solidGroupBox = QtGui.QWidget()
         self.solidLayout = QtGui.QGridLayout(solidGroupBox)
+        margin = self.solidLayout.contentsMargins()
+        self.solidLayout.setContentsMargins(0, 0, margin.right(), margin.bottom()/2)
         self.scroll = QtGui.QScrollArea()
+        self.scroll.setFrameShape(QtGui.QFrame.NoFrame)    # remove frame shadow in old themes
         self.scroll.setWidget(solidGroupBox)
         self.scroll.setWidgetResizable(True)
         self.found_labels = []    # for search
@@ -403,31 +406,26 @@ class CenterofmassWidget(QtGui.QWidget):
         newSelection = QtGui.QPushButton('New')
         newSelection.setToolTip('Get solids from selection')
         newSelection.setIcon(QtGui.QIcon(':/icons/LinkSelect.svg'))
-        newSelection.setIconSize(g_icon_size)
         newSelection.clicked.connect(self.on_pushButton_newSelection)
 
         update = QtGui.QPushButton('Update')
         update.setToolTip('Update solids from document')
         update.setIcon(QtGui.QIcon(':/icons/view-refresh.svg'))
-        update.setIconSize(g_icon_size)
         update.clicked.connect(self.on_pushButton_update)
 
         save = QtGui.QPushButton('Save')
         save.setToolTip('Copy material property to your document model data')
         save.setIcon(QtGui.QIcon(':/icons/Std_MergeProjects.svg'))
-        save.setIconSize(g_icon_size)
         save.clicked.connect(self.on_pushButton_Save)
 
         export = QtGui.QPushButton('Export')
         export.setToolTip('Export values to a .csv file')
         export.setIcon(QtGui.QIcon(':/icons/Std_Export.svg'))
-        export.setIconSize(g_icon_size)
         export.clicked.connect(self.on_pushButton_Export)
 
         readDensities = QtGui.QPushButton('Import')
         readDensities.setToolTip('Import masses, materials or densities from a file')
         readDensities.setIcon(QtGui.QIcon(':/icons/Std_Import.svg'))
-        readDensities.setIconSize(g_icon_size)
         readDensities.clicked.connect(self.on_pushButton_Import)
 
         buttonGroupBox = QtGui.QWidget()
@@ -496,7 +494,9 @@ class CenterofmassWidget(QtGui.QWidget):
         self.com_clipboard.setFlat(True)
         self.com_clipboard.clicked.connect(self.on_pushButton_copyToClipboardCdG)
 
-        axis_labels = [{'label': 'X', 'style': 'color:rgb(255, 0, 0)'}, {'label': 'Y', 'style': 'color:rgb(0, 255, 0)'}, {'label': 'Z', 'style': 'color:rgb(0, 0, 255)'}]
+        axis_labels = [{'label': 'X', 'style': 'color:rgb(255, 0, 0)'},
+                       {'label': 'Y', 'style': 'color:rgb(0, 255, 0)'},
+                       {'label': 'Z', 'style': 'color:rgb(0, 0, 255)'}]
         cdgLayout = QtGui.QHBoxLayout()
         for index, axis in enumerate(axis_labels):
             label_CdG = QtGui.QLabel(axis['label'])
@@ -559,6 +559,7 @@ class CenterofmassWidget(QtGui.QWidget):
 
         self.resultMoI = []
         inertiaLayout = QtGui.QGridLayout()
+        inertiaLayout.setVerticalSpacing(0)    # reduce vertical window size
         for i, axis in enumerate(axis_labels):
             label_row = QtGui.QLabel(axis['label'])
             label_row.setStyleSheet(axis['style'])
@@ -582,6 +583,7 @@ class CenterofmassWidget(QtGui.QWidget):
         inertiaGroupBox.setToolTip('Taken at the center of mass and aligned with global coordinates')
         inertiaGroupBox.setLayout(inertiaLayout)
         layout.addWidget(inertiaGroupBox)
+        layout.addStretch()    # minimize all groupboxes to their necessary vertical size
 
         self.inertia_clipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'), '')
         self.inertia_clipboard.setToolTip(f'Copy to clipboard ({self.unitForI})')
@@ -814,12 +816,13 @@ class CenterofmassWidget(QtGui.QWidget):
             resources.append(Path(app.ConfigGet("UserAppData"), "Material"))
         if USE_MAT_FROM_CUSTOM_DIR and CUSTOM_MAT_DIR:
             resources.append(Path(CUSTOM_MAT_DIR))
-        print('Looking for material cards according to',
-              'User parameter:BaseApp/Preferences/Mod/Material/Resources')
+        app.Console.PrintMessage('Looking for material cards according to ' +
+            'User parameter:BaseApp/Preferences/Mod/Material/Resources' + '\n')
 
         # Read material cards
         for p in resources:
-            print(f'  {p}')    # cards found later with same name will override previous ones
+            app.Console.PrintMessage(f'  {p}' + '\n')
+            # cards found later with same name will override previous ones
             dir_gen = p.rglob('*.FCMat')   # is generator -> use only once
             for f in dir_gen:
                 if f.stem == 'Default':
@@ -1437,7 +1440,7 @@ if __name__ == '__main__':
     elif not app.activeDocument():
         error_message('Open a document first.')
     else:
-        print('Loading ' + __Name__ + ' ' + __Version__ + ' ...')
+        app.Console.PrintMessage(f'Loading {__Name__} {__Version__} ...' + '\n')
         gui.updateGui()
         if DOCKED_WINDOW:
             myWidget = CenterofmassDock()
