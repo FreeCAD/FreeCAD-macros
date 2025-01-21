@@ -26,8 +26,8 @@
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin, farahats9'
-__Version__ = '0.8.2'
-__Date__ = '2025-01-20'
+__Version__ = '0.8.3'
+__Date__ = '2025-01-21'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecad.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://wiki.freecad.org/Macro_CenterOfMass'
@@ -68,6 +68,7 @@ COLOR_SATURAT = app.ParamGet(MACRO_SETTINGS).GetUnsigned('Color saturation', 80)
 COLORMAP_USER = app.ParamGet(MACRO_SETTINGS).GetString('Matplotlib colormap', 'Spectral_r')
 GUI_FONT_SIZE = app.ParamGet('User parameter:BaseApp/Preferences/Editor').GetInt('FontSize', 10)
 GUI_ICON_SIZE = app.ParamGet('User parameter:BaseApp/Preferences/General').GetInt('ToolbarIconSize', 24)
+GUI_THEME = app.ParamGet('User parameter:BaseApp/Preferences/MainWindow').GetString('Theme', '')
 
 MATERIAL_SETTINGS = app.ParamGet('User parameter:BaseApp/Preferences/Mod/Material/Resources')
 USE_BUILT_IN_MATERIALS = MATERIAL_SETTINGS.GetBool('UseBuiltInMaterials', True)
@@ -613,6 +614,8 @@ class CenterofmassWidget(QtGui.QWidget):
             # Reset label highlighting
             for label in self.found_labels:
                 label.setFrameStyle(QtGui.QFrame.NoFrame)
+                if GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:    # BUG: theme non Classic (1.0)
+                    label.setStyleSheet('')
             self.found_labels = []
         if text == '':
             self.scroll.ensureWidgetVisible(self.solids[0].label)
@@ -621,6 +624,8 @@ class CenterofmassWidget(QtGui.QWidget):
             if text.lower() in selfsol.label.text().lower():
                 self.found_labels.append(selfsol.label)
                 selfsol.label.setFrameShape(QtGui.QFrame.StyledPanel)
+                if GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:    # BUG: theme non Classic (1.0)
+                    selfsol.label.setStyleSheet('QFrame {border: 1px solid #B477FF}')
         if self.found_labels:
             self.scroll.ensureWidgetVisible(self.found_labels[0])
 
@@ -1184,6 +1189,8 @@ class CenterofmassWidget(QtGui.QWidget):
                 if COLOR_SPHERES and self.changeRadius.isEnabled():
                     self.set_object_color('CoM_' + g_sel[sol].Name, selfsol.orgColorFC)
                 selfsol.spinDens.setPalette(QtGui.QPalette())    # reset to normal
+                if GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:    # BUG: theme non Classic (1.0)
+                    selfsol.spinDens.setStyleSheet('')
 
     def on_comboColormap_changed(self, newText):
         if self.checkColorify.isChecked():
@@ -1202,8 +1209,12 @@ class CenterofmassWidget(QtGui.QWidget):
     def coloring(self):
         cmName = self.comboColormap.currentText()
         if cmName != 'Traffic':
-            import matplotlib.cm
-            cm = matplotlib.cm.get_cmap(cmName)
+            if FREECAD_VERSION < 0.22:
+                import matplotlib.cm
+                cm = matplotlib.cm.get_cmap(cmName)
+            else:
+                import matplotlib
+                cm = matplotlib.colormaps[cmName]
         densities = [selfsol.spinDens.value() for selfsol in self.solids]
         maxD = max(densities)
         minD = min([i_ for i_ in densities if i_ != 0])    # min without zeros
@@ -1211,6 +1222,8 @@ class CenterofmassWidget(QtGui.QWidget):
             if self.masses[sol] == 0:
                 self.set_object_color(g_sel[sol].Name, selfsol.orgColorFC)
                 selfsol.spinDens.setPalette(QtGui.QPalette())    # reset to normal
+                if GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:    # BUG: theme non Classic (1.0)
+                    selfsol.spinDens.setStyleSheet('')
                 continue
             if maxD == minD:
                 drel = 0    # default to low color
@@ -1235,7 +1248,13 @@ class CenterofmassWidget(QtGui.QWidget):
                 c = c/12.92 if c <= 0.04045 else math.pow((c+0.055)/1.055, 2.4)
             if 0.2126*lum[0] + 0.7152*lum[1] + 0.0722*lum[2] < 0.5:
                 pal.setColor(QtGui.QPalette.Text, QtCore.Qt.white)
+                textColor = 'white'
+            else:
+                textColor = 'black'
             selfsol.spinDens.setPalette(pal)
+            if GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:    # BUG: theme non Classic (1.0)
+                selfsol.spinDens.setStyleSheet(
+                    'QDoubleSpinBox {background-color: %s; color: %s}' % (color.name(), textColor))
 
     def on_pushButton_toPreferences(self):
         gui.runCommand('Std_DlgParameter', 0)
