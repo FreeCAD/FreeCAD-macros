@@ -614,7 +614,8 @@ class CenterofmassWidget(QtGui.QWidget):
             # Reset label highlighting
             for label in self.found_labels:
                 label.setFrameStyle(QtGui.QFrame.NoFrame)
-                if GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:    # BUG: theme non Classic (1.0)
+                if FREECAD_VERSION > 0.22 and GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:
+                    # BUG if theme non Classic
                     label.setStyleSheet('')
             self.found_labels = []
         if text == '':
@@ -624,7 +625,8 @@ class CenterofmassWidget(QtGui.QWidget):
             if text.lower() in selfsol.label.text().lower():
                 self.found_labels.append(selfsol.label)
                 selfsol.label.setFrameShape(QtGui.QFrame.StyledPanel)
-                if GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:    # BUG: theme non Classic (1.0)
+                if FREECAD_VERSION > 0.22 and GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:
+                    # BUG if theme non Classic
                     selfsol.label.setStyleSheet('QFrame {border: 1px solid #B477FF}')
         if self.found_labels:
             self.scroll.ensureWidgetVisible(self.found_labels[0])
@@ -724,8 +726,12 @@ class CenterofmassWidget(QtGui.QWidget):
             vsel.sort(key=sort_selection_by_label)
         else:
             tree = g_main_window.findChild(QtGui.QTreeWidget)
+            if tree.topLevelItem(0) is None:    # FreeCAD > 0.22
+                for t_ in g_main_window.findChildren(QtGui.QTreeWidget):
+                    if t_.topLevelItem(0) is not None:
+                        tree = t_
             iterator = QtGui.QTreeWidgetItemIterator(tree, QtGui.QTreeWidgetItemIterator.Editable)
-            self.tree_list = [i_.value().text(0) for i_ in list(iterator)]
+            self.tree_list = [i_.value().text(0) for i_ in iterator]
             if self.tree_list:
                 vsel.sort(key=sort_selection_by_tree)
             else:
@@ -1189,7 +1195,8 @@ class CenterofmassWidget(QtGui.QWidget):
                 if COLOR_SPHERES and self.changeRadius.isEnabled():
                     self.set_object_color('CoM_' + g_sel[sol].Name, selfsol.orgColorFC)
                 selfsol.spinDens.setPalette(QtGui.QPalette())    # reset to normal
-                if GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:    # BUG: theme non Classic (1.0)
+                if FREECAD_VERSION > 0.22 and GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:
+                    # BUG if theme non Classic
                     selfsol.spinDens.setStyleSheet('')
 
     def on_comboColormap_changed(self, newText):
@@ -1222,7 +1229,8 @@ class CenterofmassWidget(QtGui.QWidget):
             if self.masses[sol] == 0:
                 self.set_object_color(g_sel[sol].Name, selfsol.orgColorFC)
                 selfsol.spinDens.setPalette(QtGui.QPalette())    # reset to normal
-                if GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:    # BUG: theme non Classic (1.0)
+                if FREECAD_VERSION > 0.22 and GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:
+                    # BUG if theme non Classic
                     selfsol.spinDens.setStyleSheet('')
                 continue
             if maxD == minD:
@@ -1252,7 +1260,8 @@ class CenterofmassWidget(QtGui.QWidget):
             else:
                 textColor = 'black'
             selfsol.spinDens.setPalette(pal)
-            if GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:    # BUG: theme non Classic (1.0)
+            if FREECAD_VERSION > 0.22 and GUI_THEME in ['FreeCAD Light', 'FreeCAD Dark']:
+                # BUG if theme non Classic
                 selfsol.spinDens.setStyleSheet(
                     'QDoubleSpinBox {background-color: %s; color: %s}' % (color.name(), textColor))
 
