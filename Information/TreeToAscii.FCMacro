@@ -8,6 +8,7 @@
 # This mainly aims at documenting the model.
 #
 # Version history:
+# *0.7: add option to exclude origin objects
 # *0.6: introduce last fork string definition, add new style
 # *0.5: beta release
 #
@@ -19,7 +20,7 @@ from __future__ import annotations
 __Name__ = 'TreeToAscii'
 __Comment__ = 'Prints the Tree of selected object(s) as ASCII art'
 __Author__ = 'openBrain'
-__Version__ = '0.6'
+__Version__ = '0.7.0'
 __Date__ = '2020-03-23'
 __License__ = 'LGPL v2'
 __Web__ = 'https://www.freecadweb.org/wiki/Macro_TreeToAscii'
@@ -49,9 +50,21 @@ DEF_STYLE = list(STYLES.keys())[0]
 g_ascii_tree = ''
 
 
-def print_children(objs: list, level=0, baseline=''):
-    """Build ASCII tree by recursive call."""
+def print_children(objs: list, level=0, baseline='', excluded=None):
+    """Build ASCII tree by recursive call.
+
+    Parameters
+    ==========
+    objs: List objects to print and start the recursion from.
+    level: Current level of recursion.
+    baseline: String to print before the object name.
+    excluded: List of objects to exclude from the tree.
+              As of v0.7.0, optionaly exclude part origins and origin's children.
+
+    """
     global g_ascii_tree
+    if excluded is None:
+        excluded = []
     for i, obj in enumerate(objs, start=1):
         data = {
             'LBL': obj.Label,
@@ -61,6 +74,15 @@ def print_children(objs: list, level=0, baseline=''):
             'BTYP': obj.TypeId.partition('::')[0],
             'STYP': obj.TypeId.rpartition('::')[-1]
         }
+        if (
+                getattr(obj, 'TypeId', '') == 'App::Part'
+                and not gen_include_origins.isChecked()
+        ):
+            excluded.append(obj.Origin)
+            excluded += obj.Origin.OriginFeatures
+
+        if obj in excluded:
+            continue
         branch_str = STYLES[gen_style.currentText()][0]
         fork_str = STYLES[gen_style.currentText()][1]
         last_fork_str = STYLES[gen_style.currentText()][-1]
@@ -80,7 +102,12 @@ def print_children(objs: list, level=0, baseline=''):
             baselinechi = baseline + ' ' * len(branch_str)
         else:
             baselinechi = baseline + branch_str
-        print_children(obj.ViewObject.claimChildren(), level + 1, baselinechi)
+        print_children(
+                obj.ViewObject.claimChildren(),
+                level + 1,
+                baselinechi,
+                excluded,
+        )
 
 
 def copy_to_clipboard():
@@ -160,10 +187,14 @@ gen_run.clicked.connect(on_generate)
 gen_style = QtGui.QComboBox(dlg)
 gen_style.addItems(list(STYLES.keys()))
 gen_style.setCurrentIndex(list(STYLES.keys()).index(g_tree_style))
+gen_include_origins = QtGui.QCheckBox('Include origins', dlg)
+gen_include_origins.setChecked(True)
+gen_include_origins.stateChanged.connect(on_generate)
 gen_layout.addWidget(QtGui.QLabel('Generating pattern: '))
 gen_layout.addWidget(gen_pattern)
 gen_layout.addWidget(QtGui.QLabel('Style: '))
 gen_layout.addWidget(gen_style)
+gen_layout.addWidget(gen_include_origins)
 gen_layout.addWidget(gen_run)
 tree_view = QtGui.QPlainTextEdit(g_ascii_tree)
 tree_view.setReadOnly(True)
