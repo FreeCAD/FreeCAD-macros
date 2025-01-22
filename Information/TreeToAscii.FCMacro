@@ -50,7 +50,7 @@ DEF_STYLE = list(STYLES.keys())[0]
 g_ascii_tree = ''
 
 
-def print_children(objs: list, baseline='', excluded=None):
+def print_children(objs: list, top_level=True, baseline='', excluded=None):
     """Build ASCII tree by recursive call.
 
     Parameters
@@ -87,9 +87,11 @@ def print_children(objs: list, baseline='', excluded=None):
         last_fork_str = STYLES[gen_style.currentText()][-1]
         if i == len(objs):
             # The last object.
-            g_ascii_tree += baseline + last_fork_str
+            if not top_level:
+                g_ascii_tree += baseline + last_fork_str
         else:
-            g_ascii_tree += baseline + fork_str
+            if not top_level:
+                g_ascii_tree += baseline + fork_str
         try:
             g_ascii_tree += gen_pattern.text().format(**data)
         except (ValueError, IndexError, KeyError):
@@ -98,11 +100,18 @@ def print_children(objs: list, baseline='', excluded=None):
         g_ascii_tree += '\n'
         if i == len(objs):
             # The last object.
-            baseline_children = baseline + ' ' * len(branch_str)
+            if top_level:
+                baseline_children = ''
+            else:
+                baseline_children = baseline + ' ' * len(branch_str)
         else:
-            baseline_children = baseline + branch_str
+            if top_level:
+                baseline_children = ''
+            else:
+                baseline_children = baseline + branch_str
         print_children(
                 obj.ViewObject.claimChildren(),
+                False,
                 baseline_children,
                 excluded,
         )
