@@ -30,8 +30,8 @@ __Status__ = 'Beta'
 __Requires__ = 'FreeCAD >= 0.17'
 __Communication__ = 'https://forum.freecadweb.org/viewtopic.php?f=22&t=43504'
 
-import FreeCAD as App
-import FreeCADGui as Gui
+import FreeCAD as app
+import FreeCADGui as gui
 from PySide import QtGui, QtCore  # Special FreeCAD's PySide, which may be PySide2!
 
 PREF_PATH = 'User parameter:BaseApp/Preferences/Mod/TreeToAscii'
@@ -104,7 +104,7 @@ def embedToText():
     """Stores ASCII tree into an embedded document"""
     text_doc = None
     try:
-        text_doc = App.ActiveDocument.addObject("App::TextDocument","ModelTree")
+        text_doc = app.ActiveDocument.addObject("App::TextDocument","ModelTree")
     except:
         tree_view.setPlainText("ERROR : can't create Text document. Maybe your version is too old")
     if text_doc:
@@ -116,7 +116,7 @@ def updateTxt():
     """Updates ASCII tree"""
     global g_ascii_tree
     g_ascii_tree=""
-    printChildren(Gui.Selection.getSelection())
+    printChildren(gui.Selection.getSelection())
     tree_view.setPlainText(g_ascii_tree)
 
 
@@ -127,14 +127,14 @@ def onGenerate():
     updateTxt()
 
 # Get saved parameters or use defaults.
-p = App.ParamGet(PREF_PATH)
+p = app.ParamGet(PREF_PATH)
 g_name_pattern = p.GetString(PREF_PATTERN, DEF_PATTERN)
 g_tree_style = p.GetString(PREF_STYLE, DEF_STYLE)
 if g_tree_style not in STYLES:
     g_tree_style = DEF_STYLE
 
 # Build UI and show
-dlg = QtGui.QDialog(Gui.getMainWindow(), QtCore.Qt.Tool)
+dlg = QtGui.QDialog(gui.getMainWindow(), QtCore.Qt.Tool)
 dlg_layout = QtGui.QVBoxLayout(dlg)
 gen_layout = QtGui.QHBoxLayout()
 gen_pattern = QtGui.QLineEdit(g_name_pattern, dlg)
@@ -158,8 +158,8 @@ gen_layout.addWidget(gen_style)
 gen_layout.addWidget(gen_run)
 tree_view = QtGui.QPlainTextEdit(g_ascii_tree)
 tree_view.setReadOnly(True)
-tree_view.setMinimumWidth(Gui.getMainWindow().width()/2)
-tree_view.setMinimumHeight(Gui.getMainWindow().height()/2)
+tree_view.setMinimumWidth(gui.getMainWindow().width()/2)
+tree_view.setMinimumHeight(gui.getMainWindow().height()/2)
 tree_view.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
 button_box = QtGui.QDialogButtonBox()
 copy_clip_but = QtGui.QPushButton("Copy to clipboard", button_box)
