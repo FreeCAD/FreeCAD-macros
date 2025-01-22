@@ -20,7 +20,7 @@ from __future__ import annotations
 __Name__ = 'TreeToAscii'
 __Comment__ = 'Prints the Tree of selected object(s) as ASCII art'
 __Author__ = 'openBrain'
-__Version__ = '0.7.0'
+__Version__ = '0.7.1'
 __Date__ = '2020-03-23'
 __License__ = 'LGPL v2'
 __Web__ = 'https://www.freecadweb.org/wiki/Macro_TreeToAscii'
@@ -122,15 +122,14 @@ def save_to_file():
     """Save the global ASCII tree to file system."""
     path = QtGui.QFileDialog.getSaveFileName()
     if path[0]:
-        save_file = QtCore.QFile(path[0])
-        if save_file.open(QtCore.QFile.ReadWrite):
-            file_stream = QtCore.QTextStream(save_file)
-            file_stream << g_ascii_tree
-            save_file.flush()
-            save_file.close()
-            tree_view.setPlainText(f'Saved to file: "{path[0]}"')
+        filename = path[0]
+        try:
+            with open(filename, 'w') as f:
+                f.write(g_ascii_tree)
+        except OSError:
+            tree_view.setPlainText(f'ERROR: Can not open file: "{filename}"')
         else:
-            tree_view.setPlainText(f'ERROR: Can not open file: "{path[0]}"')
+            tree_view.setPlainText(f'Saved to file: "{filename}"')
         QtCore.QTimer.singleShot(3000, lambda:tree_view.setPlainText(g_ascii_tree))
 
 
