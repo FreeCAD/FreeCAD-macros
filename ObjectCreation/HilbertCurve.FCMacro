@@ -46,12 +46,12 @@ from PySide import QtGui, QtCore
 
 class HilbertCurve:
     """The class of the Hilbert curve.
-    
+
     By this class it's possible to create a wire
     of a fractal Hilbert curve with
     a fixed number of dimensions and iterations.
     """
-    
+
     def __init__(self, dimensions, iterations):
         """Initialize the Hilbert curve.
 
@@ -147,7 +147,7 @@ class HilbertCurve:
 
 class Hilbert_Dialog(QtGui.QDialog):
     """The dialog for the Hilbert curve
-    
+
     This class opens in FreeCAD a dialog to input
     the number of dimensions and the number of iterations
     to create the Hilbert curve.

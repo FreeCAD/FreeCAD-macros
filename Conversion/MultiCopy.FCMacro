@@ -16,8 +16,8 @@
 #  as the successor of the GNU Library Public License, version 2, hence
 #  the version number 2.1.]
 #
-#  'MultiCopy' is a FreeCAD macro package. MultiCopy allows the duplication 
-#  (copy and paste) of multiple FreeCAD objects that can be labelled 
+#  'MultiCopy' is a FreeCAD macro package. MultiCopy allows the duplication
+#  (copy and paste) of multiple FreeCAD objects that can be labelled
 #  sequentially and in a custom manner.
 #
 #  Copyright (C) 2021  Melwyn Francis Carlo
@@ -46,8 +46,8 @@
 #
 #
 #
-#  The MultiCopy macro was developed and tested on a platform containing the 
-#  following system and FreeCAD software specifications : 
+#  The MultiCopy macro was developed and tested on a platform containing the
+#  following system and FreeCAD software specifications :
 #
 #  - OS			: Ubuntu 18.04.5 LTS (LXDE/Lubuntu)
 #  - Word size of OS	: 64-bit
@@ -67,10 +67,10 @@
 """
   To use this macro, the steps to be followed are simple and straightforward :
   select one or more FreeCAD objects from the Tree view, and then select 'MultiCopy'.
-  In the dialog box that pops up, choose the copy method, select and input the relevant 
+  In the dialog box that pops up, choose the copy method, select and input the relevant
   paste parameters and commands, and then click on 'Paste'.
 
-  Note (1)	The single underscore prefix (e.g. _name) denotes a private 
+  Note (1)	The single underscore prefix (e.g. _name) denotes a private
 		function or a private variable.
   Note (2)	Some of the short forms used in this script are as follows:
 		  'mc' stands for MultiCopy

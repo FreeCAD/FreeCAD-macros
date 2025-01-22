@@ -315,7 +315,7 @@ def create_compartment(box,
         doc = box[0].Document
     except (IndexError, AttributeError) as e:
         app.Console.PrintError(
-            'Could not get a document where to create the compartment: {}'.format(e))
+            f'Could not get a document where to create the compartment: {e}')
         return
 
     cpos = direction * offset
@@ -396,7 +396,7 @@ def create_compartment(box,
 
     doc.recompute()
     _add_lines_to_box_side(parts, holes)
-    
+
     if mybox:
         parts.append(compartment)
         mybox.Links = parts

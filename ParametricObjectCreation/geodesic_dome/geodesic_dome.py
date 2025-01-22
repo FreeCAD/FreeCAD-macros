@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # ************************************************************************
 # * Copyright (c)2015 Ulrich Brammer <ulrich1a[at]users.sourceforge.net> *
 # *                                                                      *
@@ -23,7 +21,6 @@
 # *                                                                      *
 # ************************************************************************
 
-from __future__ import division
 
 import math
 import sys
@@ -200,7 +197,7 @@ def say(s):
     app.Console.PrintMessage(str(s) + '\n')
 
 
-class Ui_Dialog(object):
+class Ui_Dialog:
     def setupUi(self, Dialog):
         Dialog.setObjectName("GeodesicDome")
         self.dia = Dialog
@@ -307,7 +304,7 @@ def showDialog():
     d.show()
 
 
-class GeodesicDome(object):
+class GeodesicDome:
     def __init__(self, doc):
         host = doc.addObject('Part::FeaturePython', 'GeoDome')
         self.host = host
@@ -340,7 +337,7 @@ class GeodesicDome(object):
         return None
 
 
-class VPGeodesicDome(object):
+class VPGeodesicDome:
     def __init__(self, host):
         host.Proxy = self
 

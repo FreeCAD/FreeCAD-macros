@@ -112,7 +112,7 @@ class HoneycombSolid:
         min_col_range = int(math.ceil(-n_cols / 2))
         max_col_range = int(math.ceil(n_cols / 2))
         min_row_range = int(math.ceil(-(n_rows / 2)))
-        max_row_range = int(math.ceil((n_rows / 2)))
+        max_row_range = int(math.ceil(n_rows / 2))
         e_faces = []
         for column in range(min_col_range, max_col_range):
             # Stagger every other column

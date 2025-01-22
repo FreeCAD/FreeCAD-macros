@@ -775,7 +775,7 @@ class Ui_MainWindow(object):
         global valueTest
 
         valeur = 0.0
-        valeur = math.radians(value)         # valeur in degrees converted to radians 
+        valeur = math.radians(value)         # valeur in degrees converted to radians
         self.DS_Angle.setStyleSheet("color : Base")
         self.label_07.setStyleSheet("color : Base")
 
@@ -1253,7 +1253,7 @@ class Ui_MainWindow(object):
             pl = App.Placement()
             pl.Rotation.Q = (xP,yP,zP,qP)         # rotation of object
 
-            pl.Base = App.Vector(positionX, positionY, positionZ) # 'plan' XYZ coordinates 
+            pl.Base = App.Vector(positionX, positionY, positionZ) # 'plan' XYZ coordinates
 
             # Draft.makeRectangle(length=radiusP, height=radiusP, placement=pl, face=False, support=None)
             points = [App.Vector(-(radiusP*1.5),0,0), App.Vector((radiusP*1.5),0,0)]

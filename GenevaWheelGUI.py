@@ -1,7 +1,7 @@
 # see http://www.freecadweb.org/wiki/Macro_Geneva_Wheel_GUI
 
 #Creation of a Geneva Wheel with Parametric values  By: Isaac Ayala (drei) & Mark Stephen (quick61)
-#This Macro creates the main parts of a Geneva Wheel Mechanism 
+#This Macro creates the main parts of a Geneva Wheel Mechanism
 
 #It depends on six values that must be altered in the following code
 #The variables are a, b, n, p, t and h.
@@ -12,7 +12,7 @@
 #b = Geneva Wheel Radius
 #p = Drive Pin Radius
 #t = Geneva Wheel Tolerance
-#h = Geneva Wheel Height 
+#h = Geneva Wheel Height
 #n = Driven Slot Quantity
 #    Output
 #c = Distance Between Centers
@@ -31,7 +31,6 @@
 #c = b/math.cos(math.pi/n)
 #a = math.sqrt((math.pow(c,2))-(math.pow(b,2)))
 
-from __future__ import division
 import math
 from FreeCAD import Base
 from PySide import QtGui, QtCore
@@ -161,7 +160,7 @@ class p():
       la.addWidget(self.gWn)
 
       #
-      # - Include graphic image in dialog window - 
+      # - Include graphic image in dialog window -
       #
       # Insure that image is in the same directory as this Macro.
       # Image should be available from same source as Macro.
@@ -180,7 +179,7 @@ class p():
       hbox.addStretch()
       hbox.addWidget(self.PiX)
       hbox.addStretch()
-      
+
       la.addSpacing(15)
       la.addLayout(hbox)
       la.addSpacing(15)

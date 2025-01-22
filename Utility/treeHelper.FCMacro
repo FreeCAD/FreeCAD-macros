@@ -134,7 +134,7 @@ class TreeDrops(QtGui.QTreeWidget):
                     return
                 else:
                     origin_obj = App.ActiveDocument.getObjectsByLabel(origin_label)[0]
-                
+
                 # Buscamos el objeto padre del origen
                 if event.source().selectedItems()[0].parent():
                     origin_father_label = event.source().selectedItems()[0].parent().text(0)
@@ -148,7 +148,7 @@ class TreeDrops(QtGui.QTreeWidget):
                 else:
                     if App.ActiveDocument.getObjectsByLabel(origin_father_label):
                         origin_father = App.ActiveDocument.getObjectsByLabel(origin_father_label)[0]
-                
+
                 App.ActiveDocument.openTransaction('moveobject')
                 # Object moved between sub-elements
                 if App.ActiveDocument.getObject(destiny):
@@ -157,14 +157,14 @@ class TreeDrops(QtGui.QTreeWidget):
                 else:
                     # Object moved to main
                     origin_father.removeObject(origin_obj)
-                
+
             # Repaint FreeCAD QtreeWidget for update changes
             tw = mw.findChildren(QtGui.QTreeWidget)
             tw0 = [t.repaint() for t in tw]
-            
+
             App.ActiveDocument.commitTransaction()
             App.ActiveDocument.recompute()
-            
+
             self.itemDropped.emit()
 
 class Treehelper(QDockWidget,ui_treewindow.Ui_DockWidget):
@@ -172,7 +172,7 @@ class Treehelper(QDockWidget,ui_treewindow.Ui_DockWidget):
     def __init__(self,parent=None):
         super(Treehelper,self).__init__(parent,QtCore.Qt.WindowStaysOnTopHint)
         self.setupUi(self)
-        param = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Macro")     
+        param = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Macro")
         self.path = param.GetString("MacroPath","") + "/"
         self.path = self.path.replace("\\","/")
         self.treeWidget2 = TreeDrops(self)
@@ -235,7 +235,7 @@ class Treehelper(QDockWidget,ui_treewindow.Ui_DockWidget):
             top_item = widget.topLevelItem(i)
             self.get_subtree_nodes(widget,top_item)
         return
-        
+
     def loadtree(self):
         """Lee el árbol de FreeCAD a partir del elemento seleccionado y lo carga en el árbol de ayuda
         """
@@ -291,7 +291,7 @@ class Treehelper(QDockWidget,ui_treewindow.Ui_DockWidget):
                 primaryTreeItem.setText(0,doc.Name)
                 primaryTreeItem.setText(1,doc.Name)
                 primaryTreeItem.setExpanded(True)
-            
+
         # Iteramos sobre los objetos bajo el objeto seleccionado
         dictObjs = OrderedDict()
         lstObjs = [[0,objSel,'main']]
@@ -309,7 +309,7 @@ class Treehelper(QDockWidget,ui_treewindow.Ui_DockWidget):
                     ct+=1
                 dictObjs[dcName] = [level+1,obj,crrObj[1].Name]
                 lstObjs.append(dictObjs[obj.Name])
-        
+
         # Iteramos ahora sobre los objetos recogidos para insertarlos en el árbol
         dictItems = {}
         dictItems[objSel.Name] = primaryTreeItem
@@ -330,7 +330,7 @@ class Treehelper(QDockWidget,ui_treewindow.Ui_DockWidget):
                     itemElem.setExpanded(True)
             dictItems[k] = itemElem
 
-if __name__ == '__main__': 
+if __name__ == '__main__':
     mw = Gui.getMainWindow()
     mform=Treehelper(mw)
     mform.loadtree()

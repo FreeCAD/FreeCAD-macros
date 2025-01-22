@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 
 ##########################################################################################
@@ -503,9 +502,9 @@ def __validate_check_assignment(lineOfText, tags_list, tabs_n):
         .replace('\r', '')
         .strip()
     )
-    if input_label_text.count('\{') != input_label_text.count('\}'):
+    if input_label_text.count(r'\{') != input_label_text.count(r'\}'):
         return False
-    input_label_text = input_label_text.replace('\{', '').replace('\}', '')
+    input_label_text = input_label_text.replace(r'\{', '').replace(r'\}', '')
     if input_label_text.count('{') != input_label_text.count('}'):
         return False
     while input_label_text.count('{') > 0:

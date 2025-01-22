@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Form implementation generated from reading ui file 'tree_window_.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.7
@@ -11,7 +9,7 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 
 
-class Ui_DockWidget(object):
+class Ui_DockWidget:
     def setupUi(self, DockWidget):
         DockWidget.setObjectName("Tree helper")
         DockWidget.resize(400, 300)

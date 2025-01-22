@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 
 ##########################################################################################
@@ -59,8 +58,8 @@ v2.0.0
 
 DESCRIPTION
 --------------------
-'MultiCopy' is a user-created macro to be used within the FreeCAD application. 
-MultiCopy allows the duplication (copy and paste) of multiple FreeCAD objects 
+'MultiCopy' is a user-created macro to be used within the FreeCAD application.
+MultiCopy allows the duplication (copy and paste) of multiple FreeCAD objects
 that can be labelled sequentially and in a custom manner.
 
 Key features include:
@@ -71,9 +70,9 @@ Key features include:
  > Duplicate with or without dependencies
  > Add custom label separators
  > Add padded numbering to labels
- > Numbering types: Ordinary numerals, upper/lower-case roman numerals and 
+ > Numbering types: Ordinary numerals, upper/lower-case roman numerals and
    upper/lower-case alphabetic characters
- > Unique 'Paste Code Commands' that allow multiple duplication procedurally 
+ > Unique 'Paste Code Commands' that allow multiple duplication procedurally
    as well as in nested loops
  > Both CUI and GUI methods available
 

@@ -39,7 +39,7 @@ __Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
 __Files__ = ''
 
 
-# convert v0.18 Rotation values to v0.19 
+# convert v0.18 Rotation values to v0.19
 
 import FreeCAD as App
 import TechDraw

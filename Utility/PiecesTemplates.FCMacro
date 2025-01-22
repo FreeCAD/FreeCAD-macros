@@ -29,7 +29,7 @@ import re
 # Autor:            18Turbo
 # Fecha Inicial:    1-07-2022
 # Versión:      1.4.1
-#   
+#
 # Funcionalidad:    Crea una estructura de una pieza con una serie de subcarpetas dentro con varios nombres
 #
 # Descripción:  Al pinchar la macro (o el botón en la barra de herramientas), su comportamiento siempre es la de crear una pieza
@@ -54,13 +54,13 @@ import re
 #               Se aumenta la capacidad visual de los checkbox a 7
 #               Corrección de errores
 # v.1.2.0:      Se implementa una caja de información para indicar al usuario cómo cambiar los nombres de los grupos (idea
-#                   de Rafael García Rodríguez) 
+#                   de Rafael García Rodríguez)
 #               Se crean unos checkbox por defecto para marcar los directorios que se quieren crear
 # v.1.0.0       Creada ventana donde pide el nombre de la pieza
 # v.0.9.8:      Inicial candidata.
 #
 #
-# Agradecimientos: 
+# Agradecimientos:
 #        - Hugo Sala Sala: por la traducción al inglés del script
 #        - Rocco Vicedomini: por la traducción al italiano del script
 #
@@ -138,7 +138,7 @@ strLang = [
         "per primo",
         "per ultimo",
         "Lista delle parti create:",
-        "Nº di parti create:" 
+        "Nº di parti create:"
     ]
         ]
 
@@ -158,25 +158,25 @@ class PiecesTemplates:
         if not self.doc:
             app.Console.PrintWarning(tr('El documento no está activo') + cIntro)
             return
-        
+
         # Init var
-        self.form = gui.PySideUic.loadUi(ui_path)        
+        self.form = gui.PySideUic.loadUi(ui_path)
         self.numeroPiezas = 0
         self.pieza = ""
         self.form.botonCrear.setEnabled(False)
 
         # Open File "Groups.txt"
         self.openF()
-        
+
         # Init UI with content
         self.mostrarCheckbox()
         self.initStrings()
 
         # Connect
-        self.form.botonCrear.clicked.connect(self.createPart)        
+        self.form.botonCrear.clicked.connect(self.createPart)
         self.form.edicionNombrePieza.returnPressed.connect(self.createPart)
         self.form.edicionNombrePieza.textChanged.connect(self.nombrePiezaCambia)
-        self.form.botonAyuda.clicked.connect(self.mostrarHelp)        
+        self.form.botonAyuda.clicked.connect(self.mostrarHelp)
         self.form.eliminarGrupo.clicked.connect(self.on_eliminarGrupo_clicked)
         self.form.anadirGrupo.clicked.connect(self.on_anadirGrupo_clicked)
 
@@ -214,7 +214,7 @@ class PiecesTemplates:
         self.initCheckbox()
         max = self.longitudListaGrupos
         if max!=0:
-            if max>=1: self.activarUnCheckbox(self.form.cb1,0)                
+            if max>=1: self.activarUnCheckbox(self.form.cb1,0)
             if max>=2: self.activarUnCheckbox(self.form.cb2,1)
             if max>=3: self.activarUnCheckbox(self.form.cb3,2)
             if max>=4: self.activarUnCheckbox(self.form.cb4,3)
@@ -244,7 +244,7 @@ class PiecesTemplates:
         self.unCheckbox(self.form.cb9)
         self.unCheckbox(self.form.cb10)
         self.unCheckbox(self.form.cb11)
-        self.unCheckbox(self.form.cb12)        
+        self.unCheckbox(self.form.cb12)
 
     def mostrarComboGroups(self):
         self.form.comboEliminarGrupo.clear()
@@ -262,7 +262,7 @@ class PiecesTemplates:
         self.form.etNombrePieza.setText(tr("Nombre de la Pieza:"))
         self.form.botonAyuda.setToolTip(tr("Información de Uso"))
         self.form.edicionNombrePieza.setText(tr(""))
-        self.form.etGrupo.setText(tr("Grupos/Directorios a crear:"))            
+        self.form.etGrupo.setText(tr("Grupos/Directorios a crear:"))
         self.form.botonCrear.setText(tr("Crear Estructura de Pieza"))
         self.form.etVersion.setText(tr("Versión:"))
         self.form.version.setText(__Version__)
@@ -299,7 +299,7 @@ class PiecesTemplates:
                 if (cont !=0) and (cont < max):
                     self.form.comboPosicionGrupo.addItem(str(cont+1))
                 if (cont == max-1):
-                    self.form.comboPosicionGrupo.addItem(tr("el último"))                    
+                    self.form.comboPosicionGrupo.addItem(tr("el último"))
 
     def nombrePiezaCambia(self):
         if (self.form.edicionNombrePieza.text() != ''):
@@ -311,13 +311,13 @@ class PiecesTemplates:
         # Delete Group
         aBorrar = self.form.comboEliminarGrupo.currentText()
         listGroups.remove(aBorrar)
-        elementosBorrados.append(aBorrar)       
-        self.longitudListaGrupos = len(listGroups)        
+        elementosBorrados.append(aBorrar)
+        self.longitudListaGrupos = len(listGroups)
         self.mostrarCheckbox()
         self.refreshFichero()
 
     def on_anadirGrupo_clicked(self):
-        # Add Group  
+        # Add Group
         nombrePos = self.form.comboPosicionGrupo.currentText()
         if (nombrePos == "el primero"):
             posicion = 1
@@ -326,11 +326,11 @@ class PiecesTemplates:
         else:
             posicion = int(self.form.comboPosicionGrupo.currentText())
         if self.longitudListaGrupos == 0:
-            listGroups.append(self.form.leAnadirGrupo.text()) 
+            listGroups.append(self.form.leAnadirGrupo.text())
         else:
             listGroups.insert(posicion-1,self.form.leAnadirGrupo.text())
         self.longitudListaGrupos = len(listGroups)
-        
+
         self.mostrarCheckbox()
         self.refreshFichero()
         self.form.eliminarGrupo.setEnabled(True)
@@ -345,10 +345,10 @@ class PiecesTemplates:
         self.posGroup()
         self.mostrarCheckbox()
         self.mostrarComboGroups()
-        self.form.leAnadirGrupo.setText("")           
+        self.form.leAnadirGrupo.setText("")
 
-    def createPart(self): 
-        # Create one piece with groups   
+    def createPart(self):
+        # Create one piece with groups
         self.nombrePieza = self.form.edicionNombrePieza.text()
         App.activeDocument().Tip = App.activeDocument().addObject('App::Part','Part')
         App.ActiveDocument.recompute()
@@ -364,7 +364,7 @@ class PiecesTemplates:
         for nombrePart in FreeCAD.ActiveDocument.Objects:
             if nombrePart.Name.find('Part') > -1:
                 nombrePartUltimo = nombrePart.Name
-        App.activeDocument().getObject(nombrePartUltimo).Label = self.nombrePieza   
+        App.activeDocument().getObject(nombrePartUltimo).Label = self.nombrePieza
 
         listaChecked[0] = self.form.cb1.isChecked()
         listaChecked[1] = self.form.cb2.isChecked()
@@ -378,7 +378,7 @@ class PiecesTemplates:
         listaChecked[9] = self.form.cb10.isChecked()
         listaChecked[10] = self.form.cb11.isChecked()
         listaChecked[11] = self.form.cb12.isChecked()
-    
+
         App.Console.PrintMessage(listaChecked)
         contador = 0
         for labelGrupo in listGroups:

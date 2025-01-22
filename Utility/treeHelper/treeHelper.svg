@@ -21,7 +21,7 @@
 	<line class="st2" x1="67.1" y1="47.4" x2="81.7" y2="47.4"/>
 	<line class="st2" x1="67.1" y1="63.6" x2="81.7" y2="63.6"/>
 	<polyline class="st2" points="67.1,36.4 67.1,79.3 81.7,79.3 	"/>
-	
+
 		<radialGradient id="SVGID_1_" cx="81.6987" cy="54.597" r="4.3927" gradientTransform="matrix(1 0 0 -1 0 102)" gradientUnits="userSpaceOnUse">
 		<stop  offset="1" style="stop-color:#2B5998"/>
 		<stop  offset="1" style="stop-color:#4B78B1"/>
@@ -29,7 +29,7 @@
 		<stop  offset="1" style="stop-color:#729FD1"/>
 	</radialGradient>
 	<circle class="st3" cx="81.7" cy="47.4" r="4.4"/>
-	
+
 		<radialGradient id="SVGID_2_" cx="81.6987" cy="38.3759" r="4.3927" gradientTransform="matrix(1 0 0 -1 0 102)" gradientUnits="userSpaceOnUse">
 		<stop  offset="1" style="stop-color:#2B5998"/>
 		<stop  offset="1" style="stop-color:#4B78B1"/>
@@ -37,7 +37,7 @@
 		<stop  offset="1" style="stop-color:#729FD1"/>
 	</radialGradient>
 	<circle class="st4" cx="81.7" cy="63.6" r="4.4"/>
-	
+
 		<radialGradient id="SVGID_3_" cx="81.6987" cy="22.6106" r="4.3969" gradientTransform="matrix(1 0 0 -1 0 102)" gradientUnits="userSpaceOnUse">
 		<stop  offset="1" style="stop-color:#2B5998"/>
 		<stop  offset="1" style="stop-color:#4B78B1"/>
@@ -61,7 +61,7 @@
 <g>
 	<line class="st2" x1="26.5" y1="47.4" x2="41.1" y2="47.4"/>
 	<polyline class="st2" points="26.5,36.4 26.5,63.6 41.1,63.6 	"/>
-	
+
 		<radialGradient id="SVGID_4_" cx="41.1267" cy="54.597" r="4.3927" gradientTransform="matrix(1 0 0 -1 0 102)" gradientUnits="userSpaceOnUse">
 		<stop  offset="1" style="stop-color:#2B5998"/>
 		<stop  offset="1" style="stop-color:#4B78B1"/>
@@ -69,7 +69,7 @@
 		<stop  offset="1" style="stop-color:#729FD1"/>
 	</radialGradient>
 	<circle class="st9" cx="41.1" cy="47.4" r="4.4"/>
-	
+
 		<radialGradient id="SVGID_5_" cx="41.1267" cy="38.3541" r="4.3969" gradientTransform="matrix(1 0 0 -1 0 102)" gradientUnits="userSpaceOnUse">
 		<stop  offset="1" style="stop-color:#2B5998"/>
 		<stop  offset="1" style="stop-color:#4B78B1"/>

@@ -31,7 +31,7 @@ Please follow the `CamelCase.FCMacro` convention for the macro name (other assoc
 Also, if possible, start the macro name with the type of object it's working on, e.g. use `ViewRotation` instead of `RotateView`, so that all macros related to `View` will be together when sorting alphabetically.
 
 ### Macro metadata
-Please add the following metadata in your macro after the Macro description (mentioned above). 
+Please add the following metadata in your macro after the Macro description (mentioned above).
 
 #### Macro metadata
 

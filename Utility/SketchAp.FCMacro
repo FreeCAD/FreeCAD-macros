@@ -35,7 +35,7 @@ import math
 
 strLang = [
     [ # Español
-        
+
         "Debes seleccionar una sola cara (para crear un sketch apoyado en ella),",
         "o una cara y un plano de referencia (para actualizar un sketch a un nuevo plano de referencia).",
         "Debes seleccionar una sola cara y un DatumPlane.",
@@ -45,11 +45,11 @@ strLang = [
         "Recuerda: si estás actualizando la posición del objeto, ambos objetos deben pertenecer al mismo banco de trabajo.",
         "Si seleccionas una cara en Part Design, un Body debe estar como cuerpo activo.",
         "No necesitas el script para hacer un sketch sobre un Plano de Referencia.",
-        "Versión:"        
+        "Versión:"
 
     ],
     [ # English
-        ## Strings for translation into any language (English Strings)        
+        ## Strings for translation into any language (English Strings)
         "You must select a single face (to create a sketch supported by it),",
         "or a face and a reference plane (to update a sketch to a new reference plane).",
         "You must select a single face and a DatumPlane.",
@@ -92,7 +92,7 @@ def sketchAp (subobjs,tipo,datumPlane,actualizar):
                     body = Gui.ActiveDocument.ActiveView.getActiveObject('pdbody')
                     datumPlane = App.ActiveDocument.addObject('PartDesign::Plane','DatumPlane')
                     body.addObject(datumPlane)
-                    partDesign = True                    
+                    partDesign = True
                 else:
                 # Creo un datumPlane de Part (que es un Plano)
                     datumPlane = FreeCAD.ActiveDocument.addObject("Part::Plane","RefAuxPlaneSketchAp")
@@ -102,7 +102,7 @@ def sketchAp (subobjs,tipo,datumPlane,actualizar):
             datumPlane.Length = longitud
             datumPlane.Width = longitud
             vertice = face.Vertexes[0]
-            
+
             # Esta combinación funciona siempre
             datumPlane.Placement.Base = vertice.Point
             datumPlane.Placement.Rotation = face.Surface.Rotation
@@ -128,32 +128,32 @@ def sketchAp (subobjs,tipo,datumPlane,actualizar):
                         else:
                             rotacion = -90.0
                             rotar = True
-           
+
                 # Esto funciona
                 if rotar:
                     datumPlane.Placement.rotate (face.Surface.Position, face.Placement.Rotation.Axis, rotacion)
                 if rotarZ:
                     datumPlane.Placement.rotate (face.Surface.Position, App.Vector (0,0,1), rotacionZ)
 
-            datumPlane.Support = ''   
+            datumPlane.Support = ''
             gui.ActiveDocument.getObject(datumPlane.Name).Transparency = 60
-            gui.ActiveDocument.getObject(datumPlane.Name).ShapeColor = (1.000,0.667,0.000)    
+            gui.ActiveDocument.getObject(datumPlane.Name).ShapeColor = (1.000,0.667,0.000)
             datumPlane.recompute()
 
             if not actualizar:
                 #Selecciono el Plano de Referencia
                 Gui.Selection.clearSelection()
                 Gui.Selection.addSelection(datumPlane)
-  
-                #Creo el Boceto    
+
+                #Creo el Boceto
                 if partDesign:
                     sketch = body.newObject('Sketcher::SketchObject','Sketch')
-                else:    
+                else:
                     sketch = FreeCAD.ActiveDocument.addObject('Sketcher::SketchObject','Sketch')
                 sketch.Support = (datumPlane,'')
                 sketch.MapMode = 'FlatFace'
                 #sketch.MapReversed = reversed
-    
+
                 #Muestra los objetos activos dependientes
                 FreeCADGui.ActiveDocument.activeObject().HideDependent = False
                 FreeCADGui.ActiveDocument.activeObject().ShowSupport = True
@@ -164,7 +164,7 @@ def sketchAp (subobjs,tipo,datumPlane,actualizar):
                 Gui.ActiveDocument.setEdit(sketch,0)
                 App.ActiveDocument.recompute()
 
-            datumPlane.Visibility = False               
+            datumPlane.Visibility = False
 
         else:
             messageWindow(translate("Debes seleccionar al menos una cara (y debe ser coplanar).") + cIntro + cIntro +
@@ -196,7 +196,7 @@ if len(seleccion) == 1:
     else:
         subObjeto = seleccion[0].SubObjects
         sketchAp (subObjeto, tipoObjeto, planoReferencia, actualizando)
-       
+
 elif len(seleccion) == 2:
 # Update sketch
     actualizando = True
@@ -232,7 +232,7 @@ elif len(seleccion) == 2:
     if flag == True:
         sketchAp (subObjeto, tipoObjeto, planoReferencia, actualizando)
     else:
-        messageWindow(translate("Debes seleccionar una sola cara y un DatumPlane.") + cIntro + " o " + cIntro + 
+        messageWindow(translate("Debes seleccionar una sola cara y un DatumPlane.") + cIntro + " o " + cIntro +
             translate("Debes seleccionar una sola cara y un plano de referencia."))
 else:
     messageWindow(translate("Debes seleccionar una sola cara (para crear un sketch apoyado en ella),") + cSpace +

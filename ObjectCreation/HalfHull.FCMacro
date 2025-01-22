@@ -388,7 +388,7 @@ class HullCrossSection:
 				FreeCAD.Console.PrintMessage("Possible Transom cross-section identified '" + self.label + "'\n")
 				self.possibleTransomCS = True
 		self.defineGeometries() # make S & P & C geometries from the geometry of the supplied Sketch
-				
+
 	def defineGeometries(self):
 		# the supplied geometry is for the starboard side and is part of the user supplied Sketch
 		# - make a direct copy for the starboard half-hull
@@ -405,9 +405,9 @@ class HullCrossSection:
 		# first pass through segment of sketch is to determine the min and max X & Y values
 		for seg in self.sketch.Geometry:
 			# determine the minimum X & Y values
-			self.xMin = min(self.xMin, seg.StartPoint.x, seg.EndPoint.x)	
+			self.xMin = min(self.xMin, seg.StartPoint.x, seg.EndPoint.x)
 			self.yMin = min(self.yMin, seg.StartPoint.y, seg.EndPoint.y)
-			self.xMax = max(self.xMax, seg.StartPoint.x, seg.EndPoint.x)	
+			self.xMax = max(self.xMax, seg.StartPoint.x, seg.EndPoint.x)
 			self.yMax = max(self.yMax, seg.StartPoint.y, seg.EndPoint.y)
 		# second pass is to create the S, P and starboard side of the C geometries
 		for seg in self.sketch.Geometry:
@@ -461,11 +461,11 @@ class HullCrossSection:
 		segCnt = len(self.sketch.Geometry)
 		completeGeometry = list()
 		for i in range(segCnt):
-			completeGeometry.append(self.reverseLineDirection(self.geometryS[segCnt-1-i]))	
+			completeGeometry.append(self.reverseLineDirection(self.geometryS[segCnt-1-i]))
 		for i in range(segCnt):
-			completeGeometry.append(self.reverseLineDirection(self.geometryP[i]))	
+			completeGeometry.append(self.reverseLineDirection(self.geometryP[i]))
 		self.geometryC = completeGeometry
-		
+
 	def reverseLineDirection(self,aLine):
 		return Part.Line(aLine.EndPoint, aLine.StartPoint)
 
@@ -490,7 +490,7 @@ def createBottle(aKeelFlag):
 	minusY = plusY * -0.75
 	plusY = plusY * 1.1
 	#print minusX, " ", plusX, " ", minusY, " ", plusY
-	
+
 	bs0 = FreeCAD.ActiveDocument.addObject("Part::Vertex","Ring0")
 	bs0.Label='Ring0'
 	bs0.X=0.00
@@ -588,7 +588,7 @@ def createBulkheads(aDictionary):
 		FreeCAD.setActiveDocument(outputWorkspaceB)
 		FreeCAD.ActiveDocument = FreeCAD.getDocument(outputWorkspaceB)
 		FreeCADGui.ActiveDocument = FreeCADGui.getDocument(outputWorkspaceB)
-	
+
 		for i in range(forwardBulkheadsToSkip,len(crossSections)-aftBulkheadsToSkip):
 			# add new bulkhead
 			cs = crossSections[i]
@@ -637,13 +637,13 @@ def createBulkheads(aDictionary):
 					Part.Line(	FreeCAD.Vector(xMin, cs.yMax, 0),
 								FreeCAD.Vector(cs.xMax, cs.yMax, 0)))
 				FreeCAD.ActiveDocument.recompute()
-	
+
 			newPad = App.activeDocument().addObject("PartDesign::Pad","Bulkhead")
 			newPad.Sketch = newSketch
 			newPad.Length = 1.0
 			newPad.Sketch.ViewObject.hide()
 			FreeCAD.ActiveDocument.recompute()
-			
+
 		FreeCADGui.SendMsgToActiveView("ViewFit")
 		FreeCADGui.activeDocument().activeView().viewAxometric()
 
@@ -673,21 +673,21 @@ def createPlaque(aSideFlag, aKeelFlag):
 
 	ps = FreeCAD.activeDocument().addObject('Sketcher::SketchObject','PlainPlaqueSketch')
 	ps.Placement = FreeCAD.Placement(FreeCAD.Vector(0.0,0.0,0.0),
-									FreeCAD.Rotation(0.5,0.5,0.5,0.5))		
+									FreeCAD.Rotation(0.5,0.5,0.5,0.5))
 	if aSideFlag==starboardSideFlag: ps.Placement.Base.x = -10
 	ps.addGeometry(Part.Line(FreeCAD.Vector(minusX,plusY,0),FreeCAD.Vector(plusX,plusY,0)))
 	ps.addGeometry(Part.Line(FreeCAD.Vector(plusX,plusY,0),FreeCAD.Vector(plusX,minusY,0)))
 	ps.addGeometry(Part.Line(FreeCAD.Vector(plusX,minusY,0),FreeCAD.Vector(minusX,minusY,0)))
 	ps.addGeometry(Part.Line(FreeCAD.Vector(minusX,minusY,0),FreeCAD.Vector(minusX,plusY,0)))
 	#
-	ps.addConstraint(Sketcher.Constraint('Coincident',0,2,1,1)) 
-	ps.addConstraint(Sketcher.Constraint('Coincident',1,2,2,1)) 
-	ps.addConstraint(Sketcher.Constraint('Coincident',2,2,3,1)) 
-	ps.addConstraint(Sketcher.Constraint('Coincident',3,2,0,1)) 
-	ps.addConstraint(Sketcher.Constraint('Horizontal',0)) 
-	ps.addConstraint(Sketcher.Constraint('Horizontal',2)) 
-	ps.addConstraint(Sketcher.Constraint('Vertical',1)) 
-	ps.addConstraint(Sketcher.Constraint('Vertical',3)) 
+	ps.addConstraint(Sketcher.Constraint('Coincident',0,2,1,1))
+	ps.addConstraint(Sketcher.Constraint('Coincident',1,2,2,1))
+	ps.addConstraint(Sketcher.Constraint('Coincident',2,2,3,1))
+	ps.addConstraint(Sketcher.Constraint('Coincident',3,2,0,1))
+	ps.addConstraint(Sketcher.Constraint('Horizontal',0))
+	ps.addConstraint(Sketcher.Constraint('Horizontal',2))
+	ps.addConstraint(Sketcher.Constraint('Vertical',1))
+	ps.addConstraint(Sketcher.Constraint('Vertical',3))
 	FreeCAD.ActiveDocument.recompute()
 	#
 	pad = FreeCAD.activeDocument().addObject("PartDesign::Pad","PlainPlaquePad")
@@ -759,7 +759,7 @@ def createPlaque(aSideFlag, aKeelFlag):
 	cham.ViewObject.ShapeColor = woodColour
 
 	createPlaqueCover()
-	
+
 	if aSideFlag == starboardSideFlag:
 		FreeCADGui.activeDocument().activeView().viewRight()
 	else:
@@ -830,7 +830,7 @@ def createPlaqueCover():
 			FreeCAD.ActiveDocument.ActiveObject.Curve1=(a,[''])
 			FreeCAD.ActiveDocument.ActiveObject.Curve2=(b,[''])
 			FreeCAD.ActiveDocument.recompute()
-				
+
 		FreeCAD.ActiveDocument.recompute()
 
 def displayChinePanels(crossSectionLabelA, crossSectionLabelB, aSideFlag):
@@ -876,7 +876,7 @@ def displayCompleteHull():
 		App.ActiveDocument=App.getDocument(outputWorkspaceC)
 		docComplete = App.ActiveDocument
 		Gui.ActiveDocument=Gui.getDocument(outputWorkspaceC)
-	
+
 		for cs in crossSections:
 			# add new Sketch object
 			newSketch = FreeCAD.activeDocument().addObject('Sketcher::SketchObject',cs.label)
@@ -893,7 +893,7 @@ def displayCompleteHull():
 						seg.EndPoint.y,0)))
 			Gui.getDocument(doc.Label).resetEdit()
 			#print obj.Name + " " + obj.Label
-	
+
 		FreeCAD.cs = crossSections # debug statement
 		for i in range(0, len(crossSections)-1):
 			displayChinePanels(crossSections[i].altLabel,crossSections[i+1].altLabel, "C")
@@ -934,7 +934,7 @@ def displayHalfHull(aSideFlag):
 		FreeCAD.setActiveDocument(outputWorkspace)
 		FreeCAD.ActiveDocument=FreeCAD.getDocument(outputWorkspace)
 		FreeCADGui.ActiveDocument=FreeCADGui.getDocument(outputWorkspace)
-		
+
 		# place the segments in the document
 		for cs in crossSections:
 			# add new Sketch object
@@ -956,10 +956,10 @@ def displayHalfHull(aSideFlag):
 					FreeCAD.Vector(seg.EndPoint.x,
 						seg.EndPoint.y,0)))
 			Gui.getDocument(doc.Label).resetEdit()
-		
+
 		for i in range(0, len(crossSections)-1):
 			displayChinePanels(crossSections[i].altLabel,crossSections[i+1].altLabel, sideFlag)
-	
+
 		FreeCAD.activeDocument().recompute()
 		FreeCADGui.SendMsgToActiveView("ViewFit")
 		FreeCADGui.activeDocument().activeView().viewAxometric()
@@ -1036,7 +1036,7 @@ def findOpenDocumentFileSpec(aDocumentFileSpec):
 		if FreeCAD.listDocuments()[key].FileName==aDocumentFileSpec:
 			docKey = key
 	return docKey
-	
+
 def findOpenDocumentName(aDocumentName):
 	# check if supplied document is already open
 	# return document name or None
@@ -1045,7 +1045,7 @@ def findOpenDocumentName(aDocumentName):
 		if FreeCAD.listDocuments()[key].Name==aDocumentName:
 			docKey = key
 	return docKey
-	
+
 # Constant definitions
 outputWorkspaceS	= "hull_starboard"
 outputWorkspaceP	= "hull_port"
@@ -1090,7 +1090,7 @@ if configParams.result==userLastFile:
 		# user requested to re-use last file but there isn't one
 		# so reset the choice to pick a file
 		configParams.result = userOK
-			
+
 if configParams.result != userCancelled:
 	# transfer results to control flags
 	starboardHHFlag				= configParams.cb1a
@@ -1112,7 +1112,7 @@ if configParams.result != userCancelled:
 	bulkheadParams["deckThrow"]						= float(configParams.deckThrow.text())
 	bulkheadParams["coachhouseRise"]				= float(configParams.coachhouseRise.text())
 	bulkheadParams["coachhouseIncline"]				= float(configParams.coachhouseIncline.text())
-		
+
 	defaultDir = expanduser("~")
 	defaultDir = "/Data Pool/Coding/FreeCAD/work items/hull mirroring/half-hull/"
 	if configParams.result==userOK:
@@ -1152,7 +1152,7 @@ if configParams.result != userCancelled:
 			if cs.geometryCount <> stemlineSegmentCount:
 				FreeCAD.Console.PrintMessage("Discard for wrong number of segments for '" + str(allCrossSections[key].label) + "'\n")
 				del allCrossSections[key]
-		
+
 		# construct a list with cross sections in order from stemline to transom
 		crossSections.append(stemlineObject)
 		for sk in sorted(allCrossSections.keys(), reverse=True):
@@ -1161,10 +1161,10 @@ if configParams.result != userCancelled:
 		crossSections.append(transomObject)
 
 		FreeCAD.cs = crossSections # debug statement
-		
+
 		# now set the transom elevation at the top of the last cross-section
 		crossSections[-1].zPos = crossSections[-2].zPos + crossSections[-2].yMax
-		
+
 		FreeCAD.cs = crossSections # debug statement
 
 		# depending on user flags, invoke appropriate modules
@@ -1178,7 +1178,7 @@ if configParams.result != userCancelled:
 
 		# save Config Params to FreeCAD global in case user wants to use it next run
 		FreeCAD.MacroHalfHullConfigParams = configParams
-		
+
 		if not keepSourceOpenFlag:
 			FreeCAD.closeDocument(docSrc.Name)
 		resetSketchesVisibility()

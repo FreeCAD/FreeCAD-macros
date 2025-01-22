@@ -23,7 +23,7 @@ __Files__ = 'GroupSorting.svg'
 # Autor:            18Turbo
 # Fecha Incial:     22-07-2022
 # Versión:          0.1.0 BETA
-#   
+#
 # Funcionalidad:   Ordena grupos según sean seleccionados.
 #
 # Notas Importantes:     hay que saber que los grupos sin padre tienen un orden específico en FreeCAD y no se pueden ordenar con este script
@@ -106,7 +106,7 @@ if len(objetosSeleccionados) > 1:
     if not distintoPadre:
         if tienePadre:
             nombrePadre = app.ActiveDocument.getObject(objeto.Name).InList[0].Name
-         
+
         listaNombres = []
         app.activeDocument().Tip = app.activeDocument().addObject('App::DocumentObjectGroup','GrupoAuxiliarOrdenacion')
 
@@ -115,7 +115,7 @@ if len(objetosSeleccionados) > 1:
             if (objetoA.Name.find('Group') > -1) or (objetoA.Name.find('Part') > -1):
                 app.ActiveDocument.getObject(objetoA.Name).removeObject(app.ActiveDocument.getObject(objetoA.Name))
                 app.ActiveDocument.getObject("GroupAuxSorting18T").addObject(app.ActiveDocument.getObject(objetoA.Name))
-                listaNombres.append(objetoA.Name) 
+                listaNombres.append(objetoA.Name)
 
         for nombreObjeto in listaNombres:
             app.ActiveDocument.getObject("GroupAuxSorting18T").removeObject(app.ActiveDocument.getObject(nombreObjeto))

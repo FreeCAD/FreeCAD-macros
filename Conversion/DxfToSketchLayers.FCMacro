@@ -59,7 +59,7 @@ import FreeCADGui
 
 
 #
-# DXF unwrapping and colour converting. 
+# DXF unwrapping and colour converting.
 # TODO: Would like this in a separate file.)
 dxfcolors = ['#000000', '#FF0000', '#FFFF00', '#00FF00',
              '#00FFFF', '#0000FF', '#FF00FF', '#000000',
@@ -170,7 +170,7 @@ def arcextrusionfac(e):
 
 
 #
-# Function to create sketches and inject dxf geometry directly into it 
+# Function to create sketches and inject dxf geometry directly into it
 #
 
 def MakeSketches(addObjectFunc, entitygroups):
@@ -193,12 +193,12 @@ def MakeSketches(addObjectFunc, entitygroups):
                         p0 = Vector(e.dxf.start[0], e.dxf.start[1])
                         p1 = Vector(e.dxf.end[0], e.dxf.end[1])
                         sketch.addGeometry(Part.LineSegment(p0, p1))
-                
+
                 elif e.dxftype() == "CIRCLE":
                     exfac = arcextrusionfac(e)
                     cen = Vector(e.dxf.center[0]*exfac, e.dxf.center[1])
                     sketch.addGeometry(Part.Circle(cen, cnorm, e.dxf.radius))
-                    
+
                 elif e.dxftype() == "ARC":
                     exfac = arcextrusionfac(e)
                     cen = Vector(e.dxf.center[0]*exfac, e.dxf.center[1])
@@ -212,7 +212,7 @@ def MakeSketches(addObjectFunc, entitygroups):
                     cps = [Vector(x[0], x[1])  for x in list(e.control_points)]
                     bspl = Part.BSplineCurve(cps,None,None,False,e.dxf.degree,None,e.closed)
                     sketch.addGeometry(bspl)
-                    
+
                 elif e.dxftype() == "LWPOLYLINE":
                     def lwpgeo(p0, p1, bulge):
                         if bulge != 0:
@@ -232,7 +232,7 @@ def MakeSketches(addObjectFunc, entitygroups):
                             return(Part.ArcOfCircle(circ, mang-th2, mang+th2))
                         else:
                             return Part.LineSegment(p0, p1)
-                            
+
                     p0 = Vector(e[0][0], e[0][1])
                     for i in range(1, len(e)):
                         p1 = Vector(e[i][0], e[i][1])
@@ -240,8 +240,8 @@ def MakeSketches(addObjectFunc, entitygroups):
                         p0 = p1
                     if e.closed:
                         sketch.addGeometry(lwpgeo(p0, Vector(e[0][0], e[0][1]), e[-1][4]))
-                
-                elif e.dxftype() == "POLYLINE": 
+
+                elif e.dxftype() == "POLYLINE":
                     p0s = Vector(e[0].dxf.location[0], e[0].dxf.location[1])
                     p0 = p0s
                     for i in range(1, len(e)):
@@ -251,10 +251,10 @@ def MakeSketches(addObjectFunc, entitygroups):
                         p0 = p1
                     if e.is_closed and p0s != p0:
                         sketch.addGeometry(Part.LineSegment(p0, p0s))
-                        
+
                 else:
                     print("unknown", e.dxftype())
-                    
+
             except Part.OCCError as err:
                 print(e, err)
     return sketches
@@ -272,7 +272,7 @@ def main():
         dfile = ezdxf.readfile(fname)
 
         unitfacmap = {4:1.0} # 4->mm
-        unitfac = unitfacmap[dfile.header['$INSUNITS']]  
+        unitfac = unitfacmap[dfile.header['$INSUNITS']]
         fac = dfile.header['$DIMALTF']
         print("Factor multiply requested (not implemented)", fac, unitfac)
 

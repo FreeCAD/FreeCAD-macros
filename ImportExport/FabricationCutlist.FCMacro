@@ -1,4 +1,4 @@
-# This macro aims to make it easy to create an accurate cutlist when you are going to fabricate something made out of rectangles and round bar. 
+# This macro aims to make it easy to create an accurate cutlist when you are going to fabricate something made out of rectangles and round bar.
 # For example, if you're welding together a gate from commercial mild steel, you are probably using square tubing, round bar and / or angle iron.
 # For all of these you can use Part WB's *Box* and *Cylinder* types.
 # Having done so, this macro will create a comma-separated set of values that make up your cutlist. The collumns are as follows:

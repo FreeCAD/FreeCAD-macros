@@ -159,7 +159,7 @@ def addProperties(obj, objname, refobj, objectlist):
             'Immutable', 1,
             'ReadOnly', 2,
             'PropReadOnly', 24,
-            'PropOutput', 27, 
+            'PropOutput', 27,
     ]
 
     def propIsReadonly(obj, propname):

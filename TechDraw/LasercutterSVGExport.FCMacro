@@ -39,8 +39,8 @@ class LasercutterSVGExport():
             return(True)
         else:
             return(False)
-                
-    def makeExport(self):          
+
+    def makeExport(self):
         # Generate commands in the FreeCAD python console to create LasercutterTechdrawExport
         gui.doCommand('from LasercutterSVGExport import LasercutterTechdrawExport')
 
@@ -48,7 +48,7 @@ class LasercutterSVGExport():
         selection = gui.Selection.getSelectionEx()
         for sel in selection:
             gui.doCommand("lcparts.append(FreeCAD.ActiveDocument.getObject('%s'))"%(sel.ObjectName))
-            
+
         gui.doCommand(f'LasercutterTechdrawExport.makeLasercutterTechdrawExport(lcparts, BeamWidth={self.form.doubleSpinBox.value()}, doc=FreeCAD.activeDocument())')
         self.form.close()
 

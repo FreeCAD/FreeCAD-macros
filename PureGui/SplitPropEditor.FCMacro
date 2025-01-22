@@ -43,10 +43,10 @@ import FreeCADGui as Gui
 class PropEditor(QtGui.QDockWidget):
 
     def __init__(self):
-        mw = Gui.getMainWindow() 
+        mw = Gui.getMainWindow()
         pt = mw.findChild(QtGui.QWidget,'Combo View').findChild(QtGui.QWidget, 'propertyTab') # look for the property editor
         if not pt:
-            raise Exception("Can't find property editor widget, exiting") 
+            raise Exception("Can't find property editor widget, exiting")
         self.ptWid = pt.parent() # find property editor widget
         self.oldParent = pt.parent().parent() # find property editor parent (is a QSplitter)
         self.oldIndex = self.oldParent.indexOf(self.ptWid) # store index of property editor in the QSplitter
