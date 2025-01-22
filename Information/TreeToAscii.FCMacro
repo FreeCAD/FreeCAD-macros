@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #####################################
 # Copyright (c) openBrain 2020
 # Licensed under LGPL v2
@@ -8,13 +7,14 @@
 # It can export to clipboard, file or embedded text document.
 # This mainly aims at documenting the model.
 #
-# Version history :
-# *0.6 : introduce last fork string definition, add new style
-# *0.5 : beta release
+# Version history:
+# *0.6: introduce last fork string definition, add new style
+# *0.5: beta release
 #
 #####################################
 
-# -*- coding: utf-8 -*-
+from __future__ import annotations
+
 
 __Name__ = 'TreeToAscii'
 __Comment__ = 'Prints the Tree of selected object(s) as ASCII art'
@@ -37,32 +37,35 @@ from PySide import QtGui, QtCore  # Special FreeCAD's PySide, which may be PySid
 PREF_PATH = 'User parameter:BaseApp/Preferences/Mod/TreeToAscii'
 PREF_PATTERN = 'TreePattern'
 PREF_STYLE = 'TreeStyle'
-STYLES = {  # defines styles as NAME : [ branch str, fork str, opt:last fork str]
-    'Modern' : [' │ ', ' ├ ', ' └ '],  # Unicode U+251C, Unicode U+2502
-    'Baroque' : [' │  ', ' ├─ ',  ' └─ '],
-    'ASCII' : [' | ', ' \\_']
+# Define styles as NAME: [branch str, fork str, opt:last fork str].
+STYLES = {
+    'Modern': [' │ ', ' ├ ', ' └ '],  # U+2502, U+251C, U+2502
+    'Baroque': [' │  ', ' ├─ ',  ' └─ '],  # U+2502, U+251C + U+2500, U+2514 + U+2500
+    'ASCII': [' | ', ' \\_']
     }
 DEF_PATTERN = '{LBL} ({SNAM})'
 DEF_STYLE = list(STYLES.keys())[0]
 
-g_ascii_tree=""
+g_ascii_tree = ''
 
-def printChildren(objs=None, level=0, baseline=''):
-    """Build ASCII tree by recursive call"""
+
+def print_children(objs: list, level=0, baseline=''):
+    """Build ASCII tree by recursive call."""
     global g_ascii_tree
-    for cnt, obj in enumerate(objs,1):
+    for i, obj in enumerate(objs, start=1):
         data = {
-            "LBL" : obj.Label,
-            "NAM" : obj.Name,
-            "SNAM" : "".join(filter(str.isalpha, obj.Name)),
-            "TYP" : obj.TypeId,
-            "BTYP" : obj.TypeId.partition('::')[0],
-            "STYP" : obj.TypeId.rpartition('::')[-1]
+            'LBL': obj.Label,
+            'NAM': obj.Name,
+            'SNAM': ''.join(filter(str.isalpha, obj.Name)),
+            'TYP': obj.TypeId,
+            'BTYP': obj.TypeId.partition('::')[0],
+            'STYP': obj.TypeId.rpartition('::')[-1]
         }
         branch_str = STYLES[gen_style.currentText()][0]
         fork_str = STYLES[gen_style.currentText()][1]
         last_fork_str = STYLES[gen_style.currentText()][-1]
-        if cnt == len(objs):
+        if i == len(objs):
+            # The last object.
             g_ascii_tree += baseline + last_fork_str
         else:
             g_ascii_tree += baseline + fork_str
@@ -72,59 +75,64 @@ def printChildren(objs=None, level=0, baseline=''):
             g_ascii_tree = 'Error in generating pattern'
             return
         g_ascii_tree += '\n'
-        if cnt == len(objs):
-            baselinechi = baseline + ' '*len(branch_str)
+        if i == len(objs):
+            # The last object.
+            baselinechi = baseline + ' ' * len(branch_str)
         else:
             baselinechi = baseline + branch_str
-        printChildren(obj.ViewObject.claimChildren(), level + 1, baselinechi)
+        print_children(obj.ViewObject.claimChildren(), level + 1, baselinechi)
 
-def copyToClip():
-    """Copies ASCII tree to clipboard"""
+
+def copy_to_clipboard():
+    """Copy the global ASCII tree to clipboard."""
     tree_view.selectAll()
     tree_view.copy()
-    tree_view.setPlainText("Copied to clipboard")
+    tree_view.setPlainText('Copied to clipboard')
     QtCore.QTimer.singleShot(3000, lambda:tree_view.setPlainText(g_ascii_tree))
 
-def saveToFile():
-    """Saves ASCII tree to user system file"""
-    _path = QtGui.QFileDialog.getSaveFileName()
-    if _path[0]:
-        save_file = QtCore.QFile(_path[0])
+
+def save_to_file():
+    """Save the global ASCII tree to file system."""
+    path = QtGui.QFileDialog.getSaveFileName()
+    if path[0]:
+        save_file = QtCore.QFile(path[0])
         if save_file.open(QtCore.QFile.ReadWrite):
-            save_fileContent = QtCore.QTextStream(save_file)
-            save_fileContent << g_ascii_tree
+            file_stream = QtCore.QTextStream(save_file)
+            file_stream << g_ascii_tree
             save_file.flush()
             save_file.close()
-            tree_view.setPlainText("Saved to file : " + _path[0])
+            tree_view.setPlainText(f'Saved to file: "{path[0]}"')
         else:
-            tree_view.setPlainText("ERROR : Can't open file : " + _path[0])
+            tree_view.setPlainText(f'ERROR: Can not open file: "{path[0]}"')
         QtCore.QTimer.singleShot(3000, lambda:tree_view.setPlainText(g_ascii_tree))
 
-def embedToText():
-    """Stores ASCII tree into an embedded document"""
-    text_doc = None
-    try:
-        text_doc = app.ActiveDocument.addObject("App::TextDocument","ModelTree")
-    except:
-        tree_view.setPlainText("ERROR : can't create Text document. Maybe your version is too old")
-    if text_doc:
-        text_doc.Text = g_ascii_tree
-        tree_view.setPlainText("Embedded to text document : " + text_doc.Label)
-    QtCore.QTimer.singleShot(3000, lambda:tree_view.setPlainText(g_ascii_tree))
 
-def updateTxt():
-    """Updates ASCII tree"""
+def embed_in_doc():
+    """Store the global ASCII tree as `App::TextDocument` object."""
+    try:
+        text_obj = app.ActiveDocument.addObject('App::TextDocument', 'ModelTree')
+    except TypeError:
+        tree_view.setPlainText('ERROR: can not create a Text object. Maybe your FreeCAD version is too old')
+        return
+    text_obj.Text = g_ascii_tree
+    tree_view.setPlainText(f'Embedded as text object "{text_obj.Label}"')
+    QtCore.QTimer.singleShot(3000, lambda: tree_view.setPlainText(g_ascii_tree))
+
+
+def update_text():
+    """Update the global ASCII tree."""
     global g_ascii_tree
-    g_ascii_tree=""
-    printChildren(gui.Selection.getSelection())
+    g_ascii_tree = ''
+    print_children(gui.Selection.getSelection())
     tree_view.setPlainText(g_ascii_tree)
 
 
-def onGenerate():
-    """Called when updating ASCII tree"""
+def on_generate():
+    """Called when the 'Generate' button is clicked."""
     p.SetString(PREF_PATTERN, gen_pattern.text())
     p.SetString(PREF_STYLE, gen_style.currentText())
-    updateTxt()
+    update_text()
+
 
 # Get saved parameters or use defaults.
 p = app.ParamGet(PREF_PATH)
@@ -133,27 +141,28 @@ g_tree_style = p.GetString(PREF_STYLE, DEF_STYLE)
 if g_tree_style not in STYLES:
     g_tree_style = DEF_STYLE
 
+
 # Build UI and show
 dlg = QtGui.QDialog(gui.getMainWindow(), QtCore.Qt.Tool)
 dlg_layout = QtGui.QVBoxLayout(dlg)
 gen_layout = QtGui.QHBoxLayout()
 gen_pattern = QtGui.QLineEdit(g_name_pattern, dlg)
-gen_pattern.setToolTip("""Defined variables are :
-    {LBL} : object Label
-    {NAM} : object Name
-    {SNAM} : object ShortName (without digits)
-    {TYP} : object Type
-    {BTYP} : object BaseType
-    {STYP} : object ShortType (without base)
-If you need to print curly braces, they have to be doubled""")
-gen_run = QtGui.QPushButton("Generate",dlg)
-gen_run.clicked.connect(onGenerate)
+gen_pattern.setToolTip('''Defined variables are:
+    {LBL}: object Label
+    {NAM}: object Name
+    {SNAM}: object ShortName (without digits)
+    {TYP}: object Type
+    {BTYP}: object BaseType
+    {STYP}: object ShortType (without base)
+If you need to print curly braces, they have to be doubled''')
+gen_run = QtGui.QPushButton('Generate', dlg)
+gen_run.clicked.connect(on_generate)
 gen_style = QtGui.QComboBox(dlg)
 gen_style.addItems(list(STYLES.keys()))
 gen_style.setCurrentIndex(list(STYLES.keys()).index(g_tree_style))
-gen_layout.addWidget(QtGui.QLabel("Generating pattern: "))
+gen_layout.addWidget(QtGui.QLabel('Generating pattern: '))
 gen_layout.addWidget(gen_pattern)
-gen_layout.addWidget(QtGui.QLabel("Style : "))
+gen_layout.addWidget(QtGui.QLabel('Style: '))
 gen_layout.addWidget(gen_style)
 gen_layout.addWidget(gen_run)
 tree_view = QtGui.QPlainTextEdit(g_ascii_tree)
@@ -162,20 +171,20 @@ tree_view.setMinimumWidth(gui.getMainWindow().width()/2)
 tree_view.setMinimumHeight(gui.getMainWindow().height()/2)
 tree_view.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
 button_box = QtGui.QDialogButtonBox()
-copy_clip_but = QtGui.QPushButton("Copy to clipboard", button_box)
+copy_clip_but = QtGui.QPushButton('Copy to clipboard', button_box)
 button_box.addButton(copy_clip_but, QtGui.QDialogButtonBox.ActionRole)
-copy_clip_but.clicked.connect(copyToClip)
-_but = QtGui.QPushButton("Save to file", button_box)
+copy_clip_but.clicked.connect(copy_to_clipboard)
+_but = QtGui.QPushButton('Save to file', button_box)
 button_box.addButton(_but, QtGui.QDialogButtonBox.ActionRole)
-_but.clicked.connect(saveToFile)
-store_embed_but = QtGui.QPushButton("Embed in a text file", button_box)
+_but.clicked.connect(save_to_file)
+store_embed_but = QtGui.QPushButton('Embed in document', button_box)
 button_box.addButton(store_embed_but, QtGui.QDialogButtonBox.ActionRole)
-store_embed_but.clicked.connect(embedToText)
-close_dlg_but = QtGui.QPushButton("Close", button_box)
+store_embed_but.clicked.connect(embed_in_doc)
+close_dlg_but = QtGui.QPushButton('Close', button_box)
 button_box.addButton(close_dlg_but, QtGui.QDialogButtonBox.RejectRole)
 button_box.rejected.connect(dlg.reject)
-dlg_layout.insertLayout(0,gen_layout)
+dlg_layout.insertLayout(0, gen_layout)
 dlg_layout.addWidget(tree_view)
 dlg_layout.addWidget(button_box)
-updateTxt()
+update_text()
 dlg.exec_()
