@@ -104,3 +104,12 @@ static char * XFACE[] = {
 * `__Requires__` - e.g. FreeCAD >= v0.17, there is no programmatic use of this for now
 * `__Communication__` - e.g. https://github.com/FreeCAD/FreeCAD-macros/issues/ if on the github
 * `__Files__` - comma-separated list of files that should be installed together with this file, use paths relative to this file, do not include this file, and do not wrap the line, all files must be listed in the same single-line quoted string.
+
+#### Locally checking against coding standards
+
+Some checks of coding standards can be found in `.pre-commit-config.yaml`.
+To use them, you need to install [`pre-commit`](https://pre-commit.com/) and run `pre-commit install` in the repository.
+This will install the hooks and run them on every commit.
+If you want to run the checks manually, you can use `pre-commit run --all-files`.
+
+These checks are applied on each pull request and failing checks will prevent merging.
