@@ -1072,7 +1072,7 @@ class CenterofmassWidget(QtGui.QWidget):
         for s_ in ('CoMBBoxOfSel', 'CoMLCS', 'CoMTotal', 'CoMPlaneYZ', 'CoMPlaneXZ', 'CoMPlaneXY'):
             if self.doc.getObject(s_):
                 self.doc.removeObject(s_)
-        
+
         # Bounding box of valid selection
         BBoxSolid = self.doc.addObject('Part::Box', 'CoMBBoxOfSel')
         BBoxSolid.Placement.Base = self.boundBox.Center.sub(app.Vector(boundBoxL).multiply(0.5))

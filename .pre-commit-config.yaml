@@ -34,6 +34,7 @@ repos:
       - id: forbid-submodules
       - id: mixed-line-ending
       - id: trailing-whitespace
+        exclude: '(\.ui|\.svg)$'
   -   repo: https://github.com/asottile/pyupgrade
       rev: v3.19.1
       hooks:
