@@ -24,7 +24,7 @@ __Name__   = "Sketch Constraint From Spreadsheet"
 __Comment__ ="A simple click on a spreadsheet cell, adds a length constraint to a line, circle, points... using a spreadsheet cell alias or address (ex. C2). The macro can create alias for you."
 __Author__ = "2cv001"
 __Title__   = "Macro Sketch Constraint From Spreadsheet"
-__Date__    = "2025/01/23"    #YYYY/MM/DD 
+__Date__    = "2025/01/28"    #YYYY/MM/DD 
 __Version__ = __Date__
 __Icon__    = "https://wiki.freecad.org/images/d/dc/Macro_Sketch_Constraint_From_Spreadsheet.svg"
 __Wiki__    = "https://wiki.freecad.org/Macro_sketchConstraintFromSpreadsheet"
@@ -1184,6 +1184,7 @@ def activateSketchEditingWindow():
             pass
         return False
 
+    #Gui.activateWorkbench("SketcherWorkbench")####################################
     doc = Gui.ActiveDocument
     if not doc:
         QtWidgets.QMessageBox.information(Gui.getMainWindow(), "Activate window", "No active document")
@@ -1661,11 +1662,11 @@ def main():
                 mySketch.delConstraint(indexConstraint)
                 # FreeCAD.ActiveDocument.recompute()
                 
-    recomputeAll()                 
-
     
+    recomputeAll()                 
     activateSketchEditingWindow()
-
+    
+    FreeCADGui.ActiveDocument.setEdit(mySketch.Name, 0)############################################
 
     return
 
