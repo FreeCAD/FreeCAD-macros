@@ -24,7 +24,7 @@ __Name__   = "Sketch Constraint From Spreadsheet"
 __Comment__ ="A simple click on a spreadsheet cell, adds a length constraint to a line, circle, points... using a spreadsheet cell alias or address (ex. C2). The macro can create alias for you."
 __Author__ = "2cv001"
 __Title__   = "Macro Sketch Constraint From Spreadsheet"
-__Date__    = "2025/01/28"    #YYYY/MM/DD 
+__Date__    = "2025/01/30"    #YYYY/MM/DD 
 __Version__ = __Date__
 __Icon__    = "https://wiki.freecad.org/images/d/dc/Macro_Sketch_Constraint_From_Spreadsheet.svg"
 __Wiki__    = "https://wiki.freecad.org/Macro_sketchConstraintFromSpreadsheet"
@@ -928,9 +928,13 @@ def setAlias(aliasCellsSelect, aliasAuto):
                                             messages[language]["NoActiveSpreadsheet"])
         return True
       
-    aw = Gui.getMainWindow().centralWidget().activeSubWindow() # Store the active window      
+    # aw = Gui.getMainWindow().centralWidget().activeSubWindow() # Store the active window 
+    view = Gui.activeView()
+     
     # To get list of all selected cells
-    sel_items = aw.widget().findChild(QtGui.QTableView).selectedIndexes() 
+    # sel_items = aw.widget().findChild(QtGui.QTableView).selectedIndexes() 
+    sel_items = view.selectedCells()
+    # sel_items est un tableau sous la forme ['C4', 'C5', 'C6', 'C7', 'D6', 'D7', 'E4', 'E5', 'E6', 'E7']
 
     ### We define a function that will return the cell identifier from its row (r) and column (c) numbers
     ### Numbers start at 0 for the first row/column
@@ -951,9 +955,9 @@ def setAlias(aliasCellsSelect, aliasAuto):
                 break
 #    else :
     if aliasCellsSelect :
-        for item in sel_items: # The selected cells are scanned
-            tabCells.append( cellName(item.row(), item.column())) # We retrieve the cell ID in tabCells 
-
+        #for item in sel_items: # The selected cells are scanned
+            #tabCells.append( cellName(item.row(), item.column())) # We retrieve the cell ID in tabCells 
+       tabCells=sel_items
        
     changed=False    
     for cell in tabCells: # The selected cells are scanned     
@@ -1454,12 +1458,13 @@ def main():
         return
     mySpreadSheetName = mySpreadsheet.Name
     mySpreadSheetLabel = mySpreadsheet.Label
-    # select the Spreadsheet To be able to retrieve the selected cell :
-    mySpreadsheet.ViewObject.doubleClicked()
+    
+    ################################# select the Spreadsheet To be able to retrieve the selected cell :
+ ############################################################################8""   mySpreadsheet.ViewObject.doubleClicked()
     # retrieve the selected cell
-    ci = lambda :Gui.getMainWindow().centralWidget().activeSubWindow().widget().findChild(QtGui.QTableView).currentIndex()
-    cellCode = '{}{}{}'.format(chr(ci().column()//28 + 64) if ci().column()//26 > 0 else '', chr(ci().column()%26 + 65), ci().row() + 1)
-
+    #ci = lambda :Gui.getMainWindow().centralWidget().activeSubWindow().widget().findChild(QtGui.QTableView).currentIndex()
+    #cellCode = '{}{}{}'.format(chr(ci().column()//28 + 64) if ci().column()//26 > 0 else '', chr(ci().column()%26 + 65), ci().row() + 1)
+    cellCode = Gui.activeView().currentIndex()
 
     try:
         if sels[0].Object.TypeId not in ['Part::Part2DObjectPython'] :  # ShapeString
@@ -1666,7 +1671,7 @@ def main():
     recomputeAll()                 
     activateSketchEditingWindow()
     
-    FreeCADGui.ActiveDocument.setEdit(mySketch.Name, 0)############################################
+    #FreeCADGui.ActiveDocument.setEdit(mySketch.Name, 0)############################################
 
     return
 
