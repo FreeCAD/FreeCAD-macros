@@ -929,11 +929,11 @@ def setAlias(aliasCellsSelect, aliasAuto):
         return True
       
     # aw = Gui.getMainWindow().centralWidget().activeSubWindow() # Store the active window 
-    view = Gui.activeView()
+    #view = Gui.activeView()
      
     # To get list of all selected cells
     # sel_items = aw.widget().findChild(QtGui.QTableView).selectedIndexes() 
-    sel_items = view.selectedCells()
+    sel_items = Gui.activeView().selectedCells()
     # sel_items est un tableau sous la forme ['C4', 'C5', 'C6', 'C7', 'D6', 'D7', 'E4', 'E5', 'E6', 'E7']
 
     ### We define a function that will return the cell identifier from its row (r) and column (c) numbers
