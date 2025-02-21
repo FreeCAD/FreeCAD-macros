@@ -423,6 +423,33 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>doubleSpinBoxWidth</tabstop>
+  <tabstop>doubleSpinBoxLength</tabstop>
+  <tabstop>doubleSpinBoxHeight</tabstop>
+  <tabstop>doubleSpinBoxNotchWidth</tabstop>
+  <tabstop>doubleSpinBoxMaterialWidth</tabstop>
+  <tabstop>checkBoxTop</tabstop>
+  <tabstop>checkBoxLeft</tabstop>
+  <tabstop>checkBoxFront</tabstop>
+  <tabstop>checkBoxBottom</tabstop>
+  <tabstop>checkBoxRight</tabstop>
+  <tabstop>checkBoxBack</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>overhangTopLeft</tabstop>
+  <tabstop>overhangTopRight</tabstop>
+  <tabstop>overhangTopFront</tabstop>
+  <tabstop>overhangTopBack</tabstop>
+  <tabstop>overhangBotLeft</tabstop>
+  <tabstop>overhangBotRight</tabstop>
+  <tabstop>overhangBotFront</tabstop>
+  <tabstop>overhangBotBack</tabstop>
+  <tabstop>pushButtonCreate</tabstop>
+  <tabstop>compartmentOffset</tabstop>
+  <tabstop>pushButton_CompartX</tabstop>
+  <tabstop>pushButton_CompartY</tabstop>
+  <tabstop>pushButton_CompartZ</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
