@@ -24,16 +24,18 @@ __Name__   = "Sketch Constraint From Spreadsheet"
 __Comment__ ="A simple click on a spreadsheet cell, adds a length constraint to a line, circle, points... using a spreadsheet cell alias or address (ex. C2). The macro can create alias for you."
 __Author__ = "2cv001"
 __Title__   = "Macro Sketch Constraint From Spreadsheet"
-__Date__    = "2025/01/30"    #YYYY/MM/DD 
+__Date__ = "2025/02/22"  # YYYY/MM/DD
 __Version__ = __Date__
-__Icon__    = "https://wiki.freecad.org/images/d/dc/Macro_Sketch_Constraint_From_Spreadsheet.svg"
-__Wiki__    = "https://wiki.freecad.org/Macro_sketchConstraintFromSpreadsheet"
+__Icon__ = (
+    "https://wiki.freecad.org/images/d/dc/Macro_Sketch_Constraint_From_Spreadsheet.svg"
+)
+__Wiki__ = "https://wiki.freecad.org/Macro_sketchConstraintFromSpreadsheet"
 __License__ = "Apache-2.0"
 
 from PySide import QtGui, QtCore
-from PySide2.QtGui import QIcon
-from PySide2 import QtWidgets
-from PySide2.QtGui import QGuiApplication
+from PySide.QtGui import QIcon
+from PySide import QtWidgets
+from PySide.QtGui import QGuiApplication
 from datetime import datetime
 import configparser
 import os
@@ -45,7 +47,6 @@ import locale
 # macro directory (for ini file)
 macroDirectory = FreeCAD.getUserMacroDir(True)
 
-from PySide2 import QtWidgets, QtCore
 import FreeCADGui as Gui
 
 
