@@ -416,8 +416,12 @@ class Dialog(QtGui.QDialog):
         self.textboxAlias.setToolTip(toolLip) 
        
                
-        regex = QtCore.QRegExp("^[a-zA-Z]+[0-9]+$")
-        validator = QtGui.QRegExpValidator(regex, self)
+        if hasattr(QtCore, "QRegularExpression"):
+            regex = QtCore.QRegularExpression("^[a-zA-Z]+[0-9]+$")
+            validator = QtGui.QRegularExpressionValidator(regex, self)
+        else:
+            regex = QtCore.QRegExp("^[a-zA-Z]+[0-9]+$")
+            validator = QtGui.QRegExpValidator(regex, self)
         self.textboxAlias.setValidator(validator)  
         self.textboxAlias.textChanged.connect(self.onTextChanged)    
      
@@ -1082,8 +1086,12 @@ class getConstraintType(QtGui.QDialog):
         
         self.checkboxAlias.setToolTip(toolLip) 
         # Only letter in textboxAlias         
-        regex = QtCore.QRegExp("^[a-zA-Z]+[0-9]+$")
-        validator = QtGui.QRegExpValidator(regex, self)
+        if hasattr(QtCore, "QRegularExpression"):
+            regex = QtCore.QRegularExpression("^[a-zA-Z]+[0-9]+$")
+            validator = QtGui.QRegularExpressionValidator(regex, self)
+        else:
+            regex = QtCore.QRegExp("^[a-zA-Z]+[0-9]+$")
+            validator = QtGui.QRegExpValidator(regex, self)
         self.textboxAlias.setValidator(validator)
         self.textboxAlias.textChanged.connect(self.onTextChanged)    
         
