@@ -48,6 +48,7 @@ from datetime import datetime
 import configparser
 import os
 import FreeCAD as App
+import Sketcher
 import re
 import itertools
 import locale
@@ -1331,7 +1332,7 @@ def featuresObjSelected(mySketch, sel, numOrdreObjSelected, indexExtremite):
     itemName = sel.SubElementNames[numOrdreObjSelected]  # ex Edge5 ( line)
 
     tabExternalGeomery = []
-    for item in ActiveSketch.ExternalGeometry:
+    for item in mySketch.ExternalGeometry:
         for objName in item[1]:
             # to get something like
             # [('Sketch', 'Edge2'), ('Sketch001', 'Edge2'), ('Sketch001', 'Edge1'), ('Sketch', 'Edge1')]
@@ -1563,8 +1564,7 @@ def main():
     #   if not getIniCheckboxStateForAlias() :
 
     sels = Gui.Selection.getSelectionEx()
-
-    if not (len(sels) != 0 and len(sels[0].SubElementNames) != 0):  # nothing selected
+    if not (len(sels) != 0 or len(sels[0].SubObjects) != 0):  # nothing selected
         message = messages[language]["NoObjectSelected"]
         if (
             QtGui.QMessageBox.warning(
@@ -1597,6 +1597,7 @@ def main():
 
     ####If we select a Pad, Pocket... not in edition mode and a cell
     myPadOrPocket = None
+
     try:
         sels = Gui.Selection.getSelectionEx()
         # print('sels[0].Object.TypeId',sels[0].Object.TypeId)
@@ -1609,7 +1610,7 @@ def main():
             "PartDesign::Fillet",
         ]:
             myPadOrPocket = sels[0].Object
-            typeIdGeometry1 = myPadad.TypeId
+            typeIdGeometry1 = sels[0].Object.TypeId
     except:
         pass
 
@@ -1702,7 +1703,7 @@ def main():
                 x1,
                 y1,
                 isInternalObject1,
-            ) = featuresObjSelected(ActiveSketch, sels[0], 0, 1)
+            ) = featuresObjSelected(mySketch, sels[0], 0, 1)
 
             if (
                 typeInSubElementName1 == "Constraint"
@@ -1718,7 +1719,7 @@ def main():
                     x2,
                     y2,
                     isInternalObject2,
-                ) = featuresObjSelected(ActiveSketch, sels[0], 0, 2)
+                ) = featuresObjSelected(mySketch, sels[0], 0, 2)
 
         # two obj selected
         # ------------------------
@@ -1731,7 +1732,7 @@ def main():
                 x1,
                 y1,
                 isInternalObject1,
-            ) = featuresObjSelected(ActiveSketch, sels[0], 0, 1)
+            ) = featuresObjSelected(mySketch, sels[0], 0, 1)
             (
                 typeIdGeometry2,
                 typeInSubElementName2,
@@ -1740,7 +1741,7 @@ def main():
                 x2,
                 y2,
                 isInternalObject2,
-            ) = featuresObjSelected(ActiveSketch, sels[0], 1, 1)
+            ) = featuresObjSelected(mySketch, sels[0], 1, 1)
 
             if (
                 typeInSubElementName1
@@ -1935,7 +1936,7 @@ def main():
 
     # put Sketch window ahead
     activateSketchEditingWindow()
-    FreeCADGui.Selection.clearSelection()
+    Gui.Selection.clearSelection()
 
     # if Gui.ActiveDocument.getInEdit() == Gui.ActiveDocument.Sketch:
     # Gui.ActiveDocument.Sketch.doubleClicked()
