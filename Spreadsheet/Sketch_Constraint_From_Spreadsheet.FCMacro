@@ -24,7 +24,7 @@ __Name__ = "Sketch Constraint From Spreadsheet"
 __Comment__ = "A simple click on a spreadsheet cell, adds a length constraint to a line, circle, points... using a spreadsheet cell alias or address (ex. C2). The macro can create alias for you."
 __Author__ = "2cv001"
 __Title__ = "Macro Sketch Constraint From Spreadsheet"
-__Date__ = "2025/02/25"  # YYYY/MM/DD
+__Date__ = "2025/02/26"  # YYYY/MM/DD
 __Version__ = __Date__
 __Icon__ = (
     "https://wiki.freecad.org/images/d/dc/Macro_Sketch_Constraint_From_Spreadsheet.svg"
@@ -1554,28 +1554,29 @@ def getGuiObjsSelect(type=""):
 # Main proceddure
 ##########################################
 def main():
-    # initialization
     sheckBoxConstraintConflicState = False
     indexConstraint = -1
 
-    if addTheObjects():  # Creation of missing objects if wanted
+    if addTheObjects(): # Creation of missing objects if wanted
         return
-
-    # Part of setAlias : problem to create alias ?
-    #   if not getIniCheckboxStateForAlias() :
-
+    #Part of setAlias : problem to create alias ?
     sels = Gui.Selection.getSelectionEx()
-    if not (len(sels) != 0 or len(sels[0].SubObjects) != 0):  # nothing selected
-        message = messages[language]["NoObjectSelected"]
+
+    if not(len(sels) != 0 and len(sels[0].SubElementNames) != 0) :
+
+     if not (len(sels) !=0 and sels[0].Object.TypeId in ['PartDesign::Pad','PartDesign::Pocket',
+                'Part::Part2DObjectPython','PartDesign::Thickness',
+                'PartDesign::Chamfer', 'PartDesign::Fillet']) :
+        message=(messages[language]["NoObjectSelected"])
         if (
             QtGui.QMessageBox.warning(
                 Gui.getMainWindow(),
-                messages[language]["Warning"],
+                messages[language]["Warning"], 
                 message,
                 QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel,
             )
             == QtGui.QMessageBox.Cancel
-        ):
+         ):   
             # if user don't want
             return True
         setAlias(True, False)
