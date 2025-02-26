@@ -113,7 +113,6 @@ messages = {
         "foundCreateOne": "trouvé, en créer un ?",
         "Cancel": "Abandon",
         "Warning": "Attention",
-        "Warning": "Warning",
         "XYPlane": "Plan XY",
         "XZPlane": "Plan XZ",
         "YZPlane": "Plan YZ",
@@ -202,7 +201,6 @@ messages = {
         "getConstraintTypeOption3ButtonSetTextToolTip": "Constrain Distance",
         "getConstraintTypeCheckboxConflic": "Conflict detection",
         "getConstraintTypeCheckboxConflicToolTip": "Warning in case of constraint conflict. Gives the possibility to cancel the constraint.",
-        "getConstraintTypeWindowTitle": "Choose a constraint type",
         "getConstraintTypeWindowTitle": "Choose a constraint type",
         "getConstraintTypeCheckboxAlias": "Texts for Automatic alias labels for this cell, and under :",
     },
@@ -324,14 +322,18 @@ class Dialog(QtGui.QDialog):
 
         self.checkboxAlias.setToolTip(ToolTip)
 
-        self.textboxSpreadsheetName = QtGui.QLineEdit(getIniName("Spreadsheet", config, ini_file))
+        self.textboxSpreadsheetName = QtGui.QLineEdit(
+            getIniName("Spreadsheet", config, ini_file)
+        )
         self.textboxSpreadsheetName.setFixedWidth(200)  # size
         # self.textboxSpreadsheetName.setToolTip('Name for the spreadsheet')
         self.textboxSpreadsheetName.setToolTip(
             messages[language]["DialogTextboxSpreadsheetNameTolLip"]
         )
 
-        self.textboxTextdocumentName = QtGui.QLineEdit(getIniName("Textdocument", config, ini_file))
+        self.textboxTextdocumentName = QtGui.QLineEdit(
+            getIniName("Textdocument", config, ini_file)
+        )
         self.textboxTextdocumentName.setFixedWidth(200)  # size
 
         # self.textboxTextdocumentName.setToolTip('Name for the Text Document')
@@ -414,7 +416,9 @@ class Dialog(QtGui.QDialog):
         )
         self.checkboxBody.setChecked(bodyState == "exist" or bodyState == "on")
         self.checkboxSketch.setChecked(sketchState == "exist" or sketchState == "on")
-        self.checkboxAlias.setChecked(self.getIniCheckboxStateForAlias(config, ini_file))
+        self.checkboxAlias.setChecked(
+            self.getIniCheckboxStateForAlias(config, ini_file)
+        )
 
         self.checkbox1Document.stateChanged.connect(self.update_document_checkbox)
         self.checkboxTextDocument.stateChanged.connect(
@@ -593,10 +597,16 @@ class Dialog(QtGui.QDialog):
         return getIniCheckboxStateForAlias(config, ini_file)
 
     def save_settings(self, config, ini_file):
-        save_settings_Alias(self.textboxAlias.text(), self.checkboxAlias.isChecked(), config, ini_file)
+        save_settings_Alias(
+            self.textboxAlias.text(), self.checkboxAlias.isChecked(), config, ini_file
+        )
         save_settings_Name("Body", self.textboxBodyName.text(), config, ini_file)
-        save_settings_Name("Spreadsheet", self.textboxSpreadsheetName.text(), config, ini_file)
-        save_settings_Name("Textdocument", self.textboxTextdocumentName.text(), config, ini_file)
+        save_settings_Name(
+            "Spreadsheet", self.textboxSpreadsheetName.text(), config, ini_file
+        )
+        save_settings_Name(
+            "Textdocument", self.textboxTextdocumentName.text(), config, ini_file
+        )
         save_settings_Name("Sketch", self.textboxSketchName.text(), config, ini_file)
 
 
@@ -708,7 +718,9 @@ def addTheObjects():
             firstSpreadsheet.setStyle("A1:B1", "bold")
             firstSpreadsheet.set("A1", messages[language]["TITLE"])
             if getIniCellForAlias(config, ini_file):
-                cellAbove, cellRight = get_adjacent_cells(getIniCellForAlias(config, ini_file))
+                cellAbove, cellRight = get_adjacent_cells(
+                    getIniCellForAlias(config, ini_file)
+                )
                 if cellAbove != "" and cellAbove not in ["A1", "B1"]:
                     firstSpreadsheet.set(cellAbove, messages[language]["Textsforalias"])
                     firstSpreadsheet.set(cellRight, messages[language]["Values"])
@@ -1240,7 +1252,9 @@ class getConstraintType(QtGui.QDialog):
             config.write(configfile)
 
     def save_settings(self, config, ini_file):
-        save_settings_Alias(self.textboxAlias.text(), self.checkboxAlias.isChecked(), config, ini_file)
+        save_settings_Alias(
+            self.textboxAlias.text(), self.checkboxAlias.isChecked(), config, ini_file
+        )
 
     def getIniCellForAlias(self, config, ini_file):
         return getIniCellForAlias(config, ini_file)
@@ -1557,30 +1571,39 @@ def main():
     sheckBoxConstraintConflicState = False
     indexConstraint = -1
 
-    if addTheObjects(): # Creation of missing objects if wanted
+    if addTheObjects():  # Creation of missing objects if wanted
         return
-    #Part of setAlias : problem to create alias ?
+    # Part of setAlias : problem to create alias ?
     sels = Gui.Selection.getSelectionEx()
 
-    if not(len(sels) != 0 and len(sels[0].SubElementNames) != 0) :
+    if not (len(sels) != 0 and len(sels[0].SubElementNames) != 0):
 
-     if not (len(sels) !=0 and sels[0].Object.TypeId in ['PartDesign::Pad','PartDesign::Pocket',
-                'Part::Part2DObjectPython','PartDesign::Thickness',
-                'PartDesign::Chamfer', 'PartDesign::Fillet']) :
-        message=(messages[language]["NoObjectSelected"])
-        if (
-            QtGui.QMessageBox.warning(
-                Gui.getMainWindow(),
-                messages[language]["Warning"], 
-                message,
-                QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel,
-            )
-            == QtGui.QMessageBox.Cancel
-         ):   
-            # if user don't want
-            return True
-        setAlias(True, False)
-        return
+        if not (
+            len(sels) != 0
+            and sels[0].Object.TypeId
+            in [
+                "PartDesign::Pad",
+                "PartDesign::Pocket",
+                "Part::Part2DObjectPython",
+                "PartDesign::Thickness",
+                "PartDesign::Chamfer",
+                "PartDesign::Fillet",
+            ]
+        ):
+            message = messages[language]["NoObjectSelected"]
+            if (
+                QtGui.QMessageBox.warning(
+                    Gui.getMainWindow(),
+                    messages[language]["Warning"],
+                    message,
+                    QtGui.QMessageBox.Ok | QtGui.QMessageBox.Cancel,
+                )
+                == QtGui.QMessageBox.Cancel
+            ):
+                # if user don't want
+                return True
+            setAlias(True, False)
+            return
 
     try:
         mySpreadsheet = Gui.ActiveDocument.ActiveView.getSheet()
@@ -1649,11 +1672,9 @@ def main():
     mySpreadSheetName = mySpreadsheet.Name
     mySpreadSheetLabel = mySpreadsheet.Label
 
-    ################################# select the Spreadsheet To be able to retrieve the selected cell :
-    ############################################################################8""   mySpreadsheet.ViewObject.doubleClicked()
+    ###### able to retrieve the selected cell : #####
     # retrieve the selected cell
-    # ci = lambda :Gui.getMainWindow().centralWidget().activeSubWindow().widget().findChild(QtGui.QTableView).currentIndex()
-    # cellCode = '{}{}{}'.format(chr(ci().column()//28 + 64) if ci().column()//26 > 0 else '', chr(ci().column()%26 + 65), ci().row() + 1)
+
     cellCode = Gui.activeView().currentIndex()
 
     try:
@@ -1962,8 +1983,6 @@ def main():
 
     recomputeAll()
     activateSketchEditingWindow()
-
-    # FreeCADGui.ActiveDocument.setEdit(mySketch.Name, 0)############################################
 
     return
 
