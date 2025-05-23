@@ -26,8 +26,8 @@
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin, farahats9'
-__Version__ = '0.8.3'
-__Date__ = '2025-01-21'
+__Version__ = '0.8.4'
+__Date__ = '2025-05-23'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecad.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://wiki.freecad.org/Macro_CenterOfMass'
@@ -1166,8 +1166,22 @@ class CenterofmassWidget(QtGui.QWidget):
             for sol in range(self.solid_count):
                 g_sel[sol].ViewObject.Transparency = self.solids[sol].orgTransparency
 
+    def document_is_open(self):
+        """Checks if the document associated with the selected solids is open."""
+        try:
+            self.doc.Name
+        except ReferenceError:
+            app.Console.PrintError('The document associated with the selected solids is not open.' + '\n')
+            return False
+        else:
+            return True
+    
     def on_stateChanged_showCoM(self, state):
+        if not self.document_is_open():
+            return
         CoMObjs = self.doc.getObject('CenterOfMass')    # none if no object
+        if QtCore.QLibraryInfo.version() >= QtCore.QVersionNumber(6):    # Fix for FreeCAD 1.1.0dev
+            state = QtCore.Qt.CheckState(state)
         if state == QtCore.Qt.Checked:
             if CoMObjs and CoMObjs.TypeId != 'App::DocumentObjectGroup':
                 error_message(f'Please delete the object that occupies the name "CenterOfMass".')
@@ -1184,9 +1198,14 @@ class CenterofmassWidget(QtGui.QWidget):
                 pass
 
     def on_slideButton_changeRadius(self):
-        self.draw_update_sphere_radius()
+        if self.document_is_open():
+            self.draw_update_sphere_radius()
 
     def on_stateChanged_Coloring(self, state):
+        if not self.document_is_open():
+            return
+        if QtCore.QLibraryInfo.version() >= QtCore.QVersionNumber(6):    # Fix for FreeCAD 1.1.0dev
+            state = QtCore.Qt.CheckState(state)
         if state == QtCore.Qt.Checked:
             self.coloring()
         else:
@@ -1200,7 +1219,7 @@ class CenterofmassWidget(QtGui.QWidget):
                     selfsol.spinDens.setStyleSheet('')
 
     def on_comboColormap_changed(self, newText):
-        if self.checkColorify.isChecked():
+        if self.document_is_open() and self.checkColorify.isChecked():
             self.coloring()
 
     def set_object_color(self, name, color):
