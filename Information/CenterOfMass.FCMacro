@@ -1175,7 +1175,7 @@ class CenterofmassWidget(QtGui.QWidget):
             return False
         else:
             return True
-    
+
     def on_stateChanged_showCoM(self, state):
         if not self.document_is_open():
             return
