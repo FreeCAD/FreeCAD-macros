@@ -92,7 +92,7 @@ __Help__='Select one or more FreeCAD objects, then click on the MultiCopy button
 __Status__='stable'
 __Requires__='Freecad >= v0.17'
 __Communication__='https://github.com/melwyncarlo/MultiCopy/issues'
-__Files__='MultiCopyGui.py, MultiCopyCore.py, MultiCopyAuxFunc.py, MultiCopy/resources/MultiCopy_Main_Dialog.ui, MultiCopy/resources/MultiCopy_Commands_Dialog.ui, MultiCopy/resources/MultiCopy.svg'
+__Files__='MultiCopy/MultiCopyGui.py, MultiCopy/MultiCopyCore.py, MultiCopy/MultiCopyAuxFunc.py, MultiCopy/resources/MultiCopy_Main_Dialog.ui, MultiCopy/resources/MultiCopy_Commands_Dialog.ui, MultiCopy/resources/MultiCopy.svg'
 
 
 
