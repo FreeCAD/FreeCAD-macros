@@ -13,13 +13,13 @@
     - An optional 'scipy' dependency enables advanced Voronoi patterns.
   </description>
   <version>1.0.0</version>
-  <date>2025-07-13</date> 
+  <date>2025-07-13</date>
   <maintainer email="regisndetene@gmail.com">Regis Nde Tene</maintainer>
-  <license file="LICENSE">LGPL-2.1+</license> 
-  
+  <license file="LICENSE">LGPL-2.1+</license>
+
   <url type="repository" branch="main">https://github.com/chopinregis/FreeCAD-Parametric-Hatch-Generator</url>
   <url type="readme" branch="main">https://github.com/chopinregis/FreeCAD-Parametric-Hatch-Generator/blob/main/README.md</url>
-  
+
   <content>
     <macro>
       <name>HatchGenerator</name>
@@ -30,8 +30,8 @@
   </content>
 
   <dependencies>
-    <!-- 
-      scipy is an optional dependency for the Voronoi pattern. 
+    <!--
+      scipy is an optional dependency for the Voronoi pattern.
       The macro functions without it, but prints a warning.
     -->
     <dependency type="python" name="scipy" optional="true">

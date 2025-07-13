@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #***************************************************************************
 #*                                                                         *
 #*   Copyright (c) 2023 Regis Nde Tene                                     *
@@ -226,7 +225,7 @@ def generateBuiltInPatternShape(patternType):
         for x in range(0, grid_size, int(tile_size)):
             for y in range(0, grid_size, int(tile_size)):
                 if (x//tile_size + y//tile_size) % 2 == 0:
-                    comp.append(Part.makeCircle(tile_size/3, 
+                    comp.append(Part.makeCircle(tile_size/3,
                         FreeCAD.Vector(x + tile_size/2, y + tile_size/2, 0)))
         return Part.makeCompound(comp)
 
@@ -242,11 +241,11 @@ def generateBuiltInPatternShape(patternType):
                 )
                 points.append(point)
             return Part.makePolygon(points)
-        
+
         shapes = []
         spacing = grid_size/6
         size = spacing/2
-        
+
         for row in range(7):
             offset = spacing/2 if row % 2 else 0
             for col in range(7):
@@ -257,7 +256,7 @@ def generateBuiltInPatternShape(patternType):
                 )
                 rotation = 30 * ((row + col) % 4)
                 shapes.append(create_hexagon(center, size, rotation))
-        
+
         return Part.makeCompound(shapes)
 
     elif patternType == "NestedTriangles":
@@ -277,11 +276,11 @@ def generateBuiltInPatternShape(patternType):
                     points.append(point)
                 shapes.append(Part.makePolygon(points))
             return shapes
-        
+
         patterns = []
         spacing = grid_size/4
         size = spacing/2
-        
+
         for row in range(5):
             offset = spacing/2 if row % 2 else 0
             for col in range(5):
@@ -291,7 +290,7 @@ def generateBuiltInPatternShape(patternType):
                     0
                 )
                 patterns.extend(create_nested_triangle(center, size, 3))
-        
+
         return Part.makeCompound(patterns)
 
     elif patternType == "InterlockingCircles":
@@ -299,7 +298,7 @@ def generateBuiltInPatternShape(patternType):
             shapes = []
             points = []
             steps = 32
-            
+
             # Main circle
             for i in range(steps + 1):
                 angle = 2 * math.pi * i / steps
@@ -310,7 +309,7 @@ def generateBuiltInPatternShape(patternType):
                 )
                 points.append(point)
             shapes.append(Part.makePolygon(points))
-            
+
             # Intersecting arcs
             for i in range(6):
                 arc_points = []
@@ -320,7 +319,7 @@ def generateBuiltInPatternShape(patternType):
                     radius * math.sin(angle_offset),
                     0
                 )
-                
+
                 for j in range(steps//3 + 1):
                     angle = angle_offset + math.pi/2 + (math.pi * j / (steps//3))
                     point = arc_center + FreeCAD.Vector(
@@ -330,13 +329,13 @@ def generateBuiltInPatternShape(patternType):
                     )
                     arc_points.append(point)
                 shapes.append(Part.makePolygon(arc_points))
-            
+
             return shapes
-        
+
         patterns = []
         spacing = grid_size/3
         radius = spacing/2
-        
+
         for row in range(4):
             offset = spacing/2 if row % 2 else 0
             for col in range(4):
@@ -346,17 +345,17 @@ def generateBuiltInPatternShape(patternType):
                     0
                 )
                 patterns.extend(create_circle_pattern(center, radius))
-        
+
         return Part.makeCompound(patterns)
 
     elif patternType == "RecursiveSquares":
         def create_recursive_square(center, size, depth):
             if depth == 0:
                 return []
-                
+
             shapes = []
             points = []
-            
+
             # Create main square
             for i in range(5):
                 angle = math.radians(90 * i + 45)
@@ -367,7 +366,7 @@ def generateBuiltInPatternShape(patternType):
                 )
                 points.append(point)
             shapes.append(Part.makePolygon(points))
-            
+
             # Create four smaller squares
             new_size = size * 0.4
             for i in range(4):
@@ -378,13 +377,13 @@ def generateBuiltInPatternShape(patternType):
                     0
                 )
                 shapes.extend(create_recursive_square(new_center, new_size, depth-1))
-            
+
             return shapes
-        
+
         patterns = []
         spacing = grid_size/3
         size = spacing/2
-        
+
         for row in range(3):
             for col in range(3):
                 center = FreeCAD.Vector(
@@ -393,13 +392,13 @@ def generateBuiltInPatternShape(patternType):
                     0
                 )
                 patterns.extend(create_recursive_square(center, size, 3))
-        
+
         return Part.makeCompound(patterns)
 
     elif patternType == "FlowerOfLife":
         def create_flower_circle(center, radius, num_petals):
             shapes = []
-            
+
             # Center circle
             points = []
             steps = 32
@@ -412,7 +411,7 @@ def generateBuiltInPatternShape(patternType):
                 )
                 points.append(point)
             shapes.append(Part.makePolygon(points))
-            
+
             # Surrounding circles
             for i in range(num_petals):
                 petal_points = []
@@ -422,7 +421,7 @@ def generateBuiltInPatternShape(patternType):
                     radius * math.sin(angle),
                     0
                 )
-                
+
                 for j in range(steps + 1):
                     angle = 2 * math.pi * j / steps
                     point = petal_center + FreeCAD.Vector(
@@ -432,18 +431,18 @@ def generateBuiltInPatternShape(patternType):
                     )
                     petal_points.append(point)
                 shapes.append(Part.makePolygon(petal_points))
-            
+
             return shapes
-        
+
         patterns = []
         radius = grid_size/8
         levels = 3
-        
+
         # Create multiple levels of the flower pattern
         for level in range(levels):
             center = FreeCAD.Vector(grid_size/2, grid_size/2, 0)
             patterns.extend(create_flower_circle(center, radius * (level + 1), 6 * (level + 1)))
-        
+
         return Part.makeCompound(patterns)
 
     elif patternType == "VoronoiMesh":
@@ -451,25 +450,25 @@ def generateBuiltInPatternShape(patternType):
             # Create Voronoi cell boundary
             cell_points = []
             num_segments = len(points)
-            
+
             for i in range(num_segments):
                 p1 = points[i]
                 p2 = points[(i + 1) % num_segments]
                 mid = (p1 + p2) * 0.5
-                
+
                 # Calculate perpendicular bisector
                 diff = p2 - p1
                 perp = FreeCAD.Vector(-diff.y, diff.x, 0).normalize()
-                
+
                 cell_points.append(mid + perp * grid_size/4)
                 cell_points.append(mid - perp * grid_size/4)
-            
+
             return Part.makePolygon(cell_points)
-        
+
         cells = []
         num_points = 12
         points = []
-        
+
         # Generate random points
         for _ in range(num_points):
             point = FreeCAD.Vector(
@@ -478,13 +477,13 @@ def generateBuiltInPatternShape(patternType):
                 0
             )
             points.append(point)
-        
+
         # Create Voronoi cells
         for i, center in enumerate(points):
-            nearby_points = sorted(points, 
+            nearby_points = sorted(points,
                                 key=lambda p: (p - center).Length)[1:6]
             cells.append(create_cell(center, nearby_points))
-        
+
         return Part.makeCompound(cells)
 
     elif patternType == "OffsetChecker":
@@ -813,7 +812,7 @@ def generateBuiltInPatternShape(patternType):
                     FreeCAD.Vector(x+tile,y+tile/2,0)
                 ))
                 # Circular elements
-                comp.append(Part.makeCircle(tile/3, 
+                comp.append(Part.makeCircle(tile/3,
                     FreeCAD.Vector(x+tile/2,y+tile/2,0)))
         return Part.makeCompound(comp)
 
@@ -1038,7 +1037,7 @@ def generateBuiltInPatternShape(patternType):
             for y in range(1, grid_size, 2):
                 comp.append(Part.makeCircle(0.2, FreeCAD.Vector(x, y, 0)))
         return Part.makeCompound(comp)
-    
+
     elif patternType == "InterlockingCircles":
         comp = []
         diameter = 3.0
@@ -1150,42 +1149,42 @@ def generateBuiltInPatternShape(patternType):
         def create_branch(start, length, angle, depth):
             if depth == 0:
                 return []
-                
+
             end = start + FreeCAD.Vector(
                 length * math.cos(angle),
                 length * math.sin(angle),
                 0
             )
-            
+
             shapes = [Part.makeLine(start, end)]
-            
+
             # Create sub-branches with golden ratio
             phi = (1 + math.sqrt(5)) / 2
             new_length = length / phi
-            
+
             # Random angle variations
             angle_var = math.radians(random.uniform(-20, 20))
-            
+
             # Create multiple branches with varying angles
-            angles = [angle + math.pi/4 + angle_var, 
+            angles = [angle + math.pi/4 + angle_var,
                     angle - math.pi/4 - angle_var,
                     angle + angle_var]
-            
+
             for new_angle in angles:
                 shapes.extend(create_branch(end, new_length, new_angle, depth-1))
-                
+
             return shapes
-        
+
         branches = []
         start_points = [
             FreeCAD.Vector(grid_size/2, 0, 0),
             FreeCAD.Vector(grid_size/4, 0, 0),
             FreeCAD.Vector(3*grid_size/4, 0, 0)
         ]
-        
+
         for start in start_points:
             branches.extend(create_branch(start, grid_size/4, math.pi/2, 6))
-        
+
         return Part.makeCompound(branches)
 
     elif patternType == "OrganicMaze":
@@ -1193,27 +1192,27 @@ def generateBuiltInPatternShape(patternType):
             points = [start]
             current = start
             target = end
-            
+
             while (current - target).Length > grid_size/20:
                 # Calculate direction to target
                 direction = (target - current).normalize()
-                
+
                 # Add random perpendicular component
                 perp = FreeCAD.Vector(-direction.y, direction.x, 0)
                 random_offset = perp * random.uniform(-complexity, complexity)
-                
+
                 # Create next point
                 step = direction * grid_size/20 + random_offset
                 current = current + step
                 points.append(current)
-                
+
             points.append(target)
             return Part.makePolygon(points)
-        
+
         segments = []
         num_segments = 15
         points = []
-        
+
         # Generate random points for maze endpoints
         for _ in range(num_segments):
             point = FreeCAD.Vector(
@@ -1222,13 +1221,13 @@ def generateBuiltInPatternShape(patternType):
                 0
             )
             points.append(point)
-        
+
         # Connect points with organic paths
         for i in range(len(points)):
             for j in range(i+1, len(points)):
                 if random.random() < 0.3:  # Only connect some points
                     segments.append(create_maze_segment(points[i], points[j], grid_size/10))
-        
+
         return Part.makeCompound(segments)
 
     elif patternType == "BiomorphicCells":
@@ -1236,12 +1235,12 @@ def generateBuiltInPatternShape(patternType):
             points = []
             num_points = random.randint(12, 18)
             base_radius = size * (1 + random.uniform(-0.2, 0.2))
-            
+
             # Create main cell shape
             for i in range(num_points + 1):
                 angle = 2 * math.pi * i / num_points
                 # Add organic variations
-                radius = base_radius * (1 + 0.3 * math.sin(3 * angle) + 
+                radius = base_radius * (1 + 0.3 * math.sin(3 * angle) +
                                     0.2 * math.sin(5 * angle) +
                                     random.uniform(-0.1, 0.1))
                 point = center + FreeCAD.Vector(
@@ -1250,14 +1249,14 @@ def generateBuiltInPatternShape(patternType):
                     0
                 )
                 points.append(point)
-                
+
             return Part.makePolygon(points)
-        
+
         cells = []
         num_cells = 12
         min_size = grid_size/8
         max_size = grid_size/4
-        
+
         # Create primary cells
         for _ in range(num_cells):
             center = FreeCAD.Vector(
@@ -1267,7 +1266,7 @@ def generateBuiltInPatternShape(patternType):
             )
             size = random.uniform(min_size, max_size)
             cells.append(create_cell_membrane(center, size))
-            
+
             # Add smaller organelle-like structures
             for _ in range(random.randint(2, 4)):
                 offset = FreeCAD.Vector(
@@ -1277,7 +1276,7 @@ def generateBuiltInPatternShape(patternType):
                 )
                 organelle_size = size * random.uniform(0.2, 0.4)
                 cells.append(create_cell_membrane(center + offset, organelle_size))
-        
+
         return Part.makeCompound(cells)
 
     elif patternType == "RadialSunburst":
@@ -1287,7 +1286,7 @@ def generateBuiltInPatternShape(patternType):
             angle = math.radians(i * (360/spokes))
             x = grid_size/2 + 4 * math.cos(angle)
             y = grid_size/2 + 4 * math.sin(angle)
-            comp.append(Part.makeLine(FreeCAD.Vector(grid_size/2, grid_size/2,0), 
+            comp.append(Part.makeLine(FreeCAD.Vector(grid_size/2, grid_size/2,0),
                 FreeCAD.Vector(x,y,0)))
         return Part.makeCompound(comp)
 
@@ -1324,29 +1323,29 @@ def generateBuiltInPatternShape(patternType):
         def create_spiral(center, max_radius, turns, points_per_turn):
             points = []
             total_points = int(turns * points_per_turn)
-            
+
             for i in range(total_points + 1):
                 t = i / points_per_turn  # Current angle in turns
                 radius = max_radius * t / turns
                 angle = 2 * math.pi * t
-                
+
                 point = center + FreeCAD.Vector(
                     radius * math.cos(angle),
                     radius * math.sin(angle),
                     0
                 )
                 points.append(point)
-            
+
             # Create lines between points
             edges = []
             for i in range(len(points) - 1):
                 edges.append(Part.makeLine(points[i], points[i + 1]))
-            
+
             return edges
-        
+
         radius = min(grid_size/2.5, 2)
         center = FreeCAD.Vector(grid_size/2, grid_size/2, 0)
-        
+
         # Create multiple interleaved spirals
         spirals = []
         for i in range(3):  # Number of interleaved spirals
@@ -1357,7 +1356,7 @@ def generateBuiltInPatternShape(patternType):
                 0
             )
             spirals.extend(create_spiral(spiral_center, radius, 4, 50))
-        
+
         return Part.makeCompound(spirals)
 
     elif patternType == "PentaflakeFractal":
@@ -1373,11 +1372,11 @@ def generateBuiltInPatternShape(patternType):
                     ))
                 points.append(points[0])  # Close the pentagon
                 return [Part.makePolygon(points)]
-                
+
             shapes = []
             # Central pentagon
             shapes.extend(pentaflake(center, size/3, depth-1))
-            
+
             # Surrounding pentagons
             for i in range(5):
                 angle = math.radians(72 * i - 18)
@@ -1387,12 +1386,12 @@ def generateBuiltInPatternShape(patternType):
                     0
                 )
                 shapes.extend(pentaflake(new_center, size/3, depth-1))
-                
+
             return shapes
-        
+
         size = min(grid_size/3, 2)
         center = FreeCAD.Vector(grid_size/2, grid_size/2, 0)
-        
+
         return Part.makeCompound(pentaflake(center, size, 3))
 
     elif patternType == "HilbertCurve":
@@ -1401,49 +1400,49 @@ def generateBuiltInPatternShape(patternType):
                 X = x + (xi + yi)/2
                 Y = y + (xj + yj)/2
                 return [FreeCAD.Vector(X, Y, 0)]
-                
+
             points = []
             points.extend(hilbert(x,           y,           yi/2,  yj/2,  xi/2,  xj/2, n-1))
             points.extend(hilbert(x+xi/2,      y+xj/2,      xi/2,  xj/2,  yi/2,  yj/2, n-1))
             points.extend(hilbert(x+xi/2+yi/2, y+xj/2+yj/2, xi/2,  xj/2,  yi/2,  yj/2, n-1))
             points.extend(hilbert(x+xi+yi/2,   y+xj+yj/2,   -yi/2, -yj/2, -xi/2, -xj/2, n-1))
             return points
-        
+
         size = min(grid_size*0.8, 4)
         offset = (grid_size - size)/2
         points = hilbert(offset, offset, size, 0, 0, size, 4)
-        
+
         edges = []
         for i in range(len(points)-1):
             edges.append(Part.makeLine(points[i], points[i+1]))
-        
+
         return Part.makeCompound(edges)
 
     elif patternType == "SierpinskiTriangle":
         def sierpinski(p1, p2, p3, depth):
             if depth == 0:
                 return [Part.makePolygon([p1, p2, p3, p1])]
-                
+
             # Calculate midpoints
             mid1 = (p1 + p2) * 0.5
             mid2 = (p2 + p3) * 0.5
             mid3 = (p3 + p1) * 0.5
-            
+
             # Recursive calls for three smaller triangles
             return (sierpinski(p1, mid1, mid3, depth-1) +
                     sierpinski(mid1, p2, mid2, depth-1) +
                     sierpinski(mid3, mid2, p3, depth-1))
-        
+
         size = min(grid_size/2, 3)
         center = FreeCAD.Vector(grid_size/2, grid_size/2, 0)
         height = size * math.sqrt(3)/2
-        
+
         points = [
             center + FreeCAD.Vector(0, height, 0),
             center + FreeCAD.Vector(-size, -height, 0),
             center + FreeCAD.Vector(size, -height, 0)
         ]
-        
+
         return Part.makeCompound(sierpinski(points[0], points[1], points[2], 4))
 
     elif patternType == "PenroseTiling":
@@ -1453,7 +1452,7 @@ def generateBuiltInPatternShape(patternType):
                 a = math.radians(angle + i)
                 points.append(center + FreeCAD.Vector(size*math.cos(a), size*math.sin(a),0))
             return Part.makePolygon(points[:4])
-        
+
         comp = []
         phi = (1 + math.sqrt(5))/2  # Golden ratio
         sizes = [2.0, 2.0/phi]
@@ -1473,7 +1472,7 @@ def generateBuiltInPatternShape(patternType):
                 points.append(FreeCAD.Vector(x,y,0))
             points.append(points[0])
             return Part.makePolygon(points)
-        
+
         comp = []
         for x in range(0, grid_size*2, 3):
             for y in range(0, grid_size*2, 3):
@@ -1509,7 +1508,7 @@ def generateBuiltInPatternShape(patternType):
                     )
                     comp.append(vline)
         return Part.makeCompound(comp)
-    
+
     elif patternType == "ParquetHerringbone":
         comp = []  # List to store individual components of the pattern
         plank_w = 1.0  # Width of each plank
@@ -1574,7 +1573,7 @@ def generateBuiltInPatternShape(patternType):
         def create_texture_spot(center, size):
             points = []
             num_points = random.randint(6, 8)
-            
+
             for i in range(num_points + 1):
                 angle = 2 * math.pi * i / num_points
                 # Create irregular circular shape
@@ -1585,14 +1584,14 @@ def generateBuiltInPatternShape(patternType):
                     0
                 ))
                 points.append(point)
-                
+
             return Part.makePolygon(points)
-        
+
         spots = []
         size = grid_size
         num_spots = 400
         spot_size = size/60
-        
+
         for _ in range(num_spots):
             center = FreeCAD.Vector(
                 random.uniform(0, size),
@@ -1600,14 +1599,14 @@ def generateBuiltInPatternShape(patternType):
                 0
             )
             spots.append(create_texture_spot(center, spot_size))
-        
+
         return Part.makeCompound(spots)
 
     elif patternType == "DrywallKnockdown":
         def create_knockdown_splatter(center, size):
             points = []
             num_points = random.randint(8, 12)
-            
+
             # Create irregular elongated shape
             for i in range(num_points + 1):
                 angle = 2 * math.pi * i / num_points
@@ -1620,14 +1619,14 @@ def generateBuiltInPatternShape(patternType):
                     0
                 ))
                 points.append(point)
-                
+
             return Part.makePolygon(points)
-        
+
         splatters = []
         size = grid_size
         num_splatters = 200
         splatter_size = size/40
-        
+
         for _ in range(num_splatters):
             center = FreeCAD.Vector(
                 random.uniform(0, size),
@@ -1636,14 +1635,14 @@ def generateBuiltInPatternShape(patternType):
             )
             rotation = random.uniform(0, 2 * math.pi)
             splatters.append(create_knockdown_splatter(center, splatter_size))
-        
+
         return Part.makeCompound(splatters)
 
     elif patternType == "StuccoSandFloat":
         def create_sand_grain(center, size):
             points = []
             num_points = random.randint(4, 6)
-            
+
             for i in range(num_points + 1):
                 angle = 2 * math.pi * i / num_points
                 radius = size * (1 + random.uniform(-0.2, 0.2))
@@ -1653,14 +1652,14 @@ def generateBuiltInPatternShape(patternType):
                     0
                 ))
                 points.append(point)
-                
+
             return Part.makePolygon(points)
-        
+
         grains = []
         size = grid_size
         num_grains = 1000
         grain_size = size/120
-        
+
         for _ in range(num_grains):
             center = FreeCAD.Vector(
                 random.uniform(0, size),
@@ -1668,14 +1667,14 @@ def generateBuiltInPatternShape(patternType):
                 0
             )
             grains.append(create_sand_grain(center, grain_size))
-        
+
         return Part.makeCompound(grains)
 
     elif patternType == "StuccoDash":
         def create_dash_splatter(center, size):
             points = []
             num_points = random.randint(7, 10)
-            
+
             # Create irregular elongated shape
             for i in range(num_points + 1):
                 angle = 2 * math.pi * i / num_points
@@ -1688,14 +1687,14 @@ def generateBuiltInPatternShape(patternType):
                     0
                 ))
                 points.append(point)
-                
+
             return Part.makePolygon(points)
-        
+
         splatters = []
         size = grid_size
         num_splatters = 300
         splatter_size = size/50
-        
+
         for _ in range(num_splatters):
             center = FreeCAD.Vector(
                 random.uniform(0, size),
@@ -1703,7 +1702,7 @@ def generateBuiltInPatternShape(patternType):
                 0
             )
             splatters.append(create_dash_splatter(center, splatter_size))
-        
+
         return Part.makeCompound(splatters)
 
     elif patternType == "DrywallSkipTrowel":
@@ -1711,7 +1710,7 @@ def generateBuiltInPatternShape(patternType):
             points = []
             length = size * random.uniform(0.8, 1.2)
             width = size * random.uniform(0.2, 0.4)
-            
+
             # Create elongated oval shape
             steps = 20
             for i in range(steps + 1):
@@ -1724,14 +1723,14 @@ def generateBuiltInPatternShape(patternType):
                     0
                 ))
                 points.append(point)
-                
+
             return Part.makePolygon(points)
-        
+
         marks = []
         size = grid_size
         num_marks = 200
         mark_size = size/15
-        
+
         for _ in range(num_marks):
             center = FreeCAD.Vector(
                 random.uniform(0, size),
@@ -1740,7 +1739,7 @@ def generateBuiltInPatternShape(patternType):
             )
             angle = random.uniform(0, math.pi)
             marks.append(create_skip_mark(center, mark_size, angle))
-        
+
         return Part.makeCompound(marks)
 
 
@@ -1763,7 +1762,7 @@ def generateBuiltInPatternShape(patternType):
             num_points = random.randint(6, 8)
             points = []
             base_radius = size/2
-            
+
             for i in range(num_points + 1):
                 angle = 2 * math.pi * i / num_points
                 radius = base_radius * (1 + random.uniform(-0.2, 0.2))
@@ -1773,14 +1772,14 @@ def generateBuiltInPatternShape(patternType):
                     0
                 ))
                 points.append(point)
-            
+
             return Part.makePolygon(points)
-        
+
         stones = []
         size = grid_size
         stone_size = size/8
         offset = stone_size * 0.1
-        
+
         for row in range(int(size/stone_size) + 1):
             row_offset = offset * (row % 2)
             for col in range(int(size/stone_size) + 1):
@@ -1790,14 +1789,14 @@ def generateBuiltInPatternShape(patternType):
                     0
                 )
                 stones.append(create_cobblestone(center, stone_size))
-        
+
         return Part.makeCompound(stones)
 
     elif patternType == "ConcreteSaltFinish":
         def create_speckle(center, size):
             num_points = random.randint(4, 6)
             points = []
-            
+
             for i in range(num_points + 1):
                 angle = 2 * math.pi * i / num_points
                 radius = size * (1 + random.uniform(-0.3, 0.3))
@@ -1807,14 +1806,14 @@ def generateBuiltInPatternShape(patternType):
                     0
                 ))
                 points.append(point)
-                
+
             return Part.makePolygon(points)
-        
+
         speckles = []
         size = grid_size
         num_speckles = 300
         speckle_size = size/100
-        
+
         for _ in range(num_speckles):
             center = FreeCAD.Vector(
                 random.uniform(0, size),
@@ -1822,14 +1821,14 @@ def generateBuiltInPatternShape(patternType):
                 0
             )
             speckles.append(create_speckle(center, speckle_size))
-        
+
         return Part.makeCompound(speckles)
 
     elif patternType == "ConcreteFormTiePattern":
         def create_tie_hole(center, radius):
             points = []
             num_points = 16
-            
+
             for i in range(num_points + 1):
                 angle = 2 * math.pi * i / num_points
                 point = center.add(FreeCAD.Vector(
@@ -1838,27 +1837,27 @@ def generateBuiltInPatternShape(patternType):
                     0
                 ))
                 points.append(point)
-                
+
             return Part.makePolygon(points)
-        
+
         holes = []
         size = grid_size
         spacing_x = size/4
         spacing_y = size/3
         hole_radius = size/40
-        
+
         for x in range(1, 4):
             for y in range(1, 3):
                 center = FreeCAD.Vector(x * spacing_x, y * spacing_y, 0)
                 holes.append(create_tie_hole(center, hole_radius))
-        
+
         return Part.makeCompound(holes)
 
     elif patternType == "ConcreteSandblastPattern":
         def create_erosion_mark(center, size):
             points = []
             num_points = random.randint(8, 12)
-            
+
             for i in range(num_points + 1):
                 angle = 2 * math.pi * i / num_points
                 radius = size * (1 + random.uniform(-0.5, 0.5))
@@ -1868,14 +1867,14 @@ def generateBuiltInPatternShape(patternType):
                     0
                 ))
                 points.append(point)
-                
+
             return Part.makePolygon(points)
-        
+
         marks = []
         size = grid_size
         num_marks = 200
         mark_size = size/60
-        
+
         for _ in range(num_marks):
             center = FreeCAD.Vector(
                 random.uniform(0, size),
@@ -1883,7 +1882,7 @@ def generateBuiltInPatternShape(patternType):
                 0
             )
             marks.append(create_erosion_mark(center, mark_size))
-        
+
         # Add some larger eroded areas
         for _ in range(20):
             center = FreeCAD.Vector(
@@ -1892,7 +1891,7 @@ def generateBuiltInPatternShape(patternType):
                 0
             )
             marks.append(create_erosion_mark(center, mark_size * 3))
-        
+
         return Part.makeCompound(marks)
 
     elif patternType == "ConcreteControlJoint":
@@ -1902,7 +1901,7 @@ def generateBuiltInPatternShape(patternType):
             length = direction.Length
             steps = int(length / (width * 2))
             points = []
-            
+
             # Create sawtooth pattern for tooled joint
             for i in range(steps):
                 t = i / steps
@@ -1911,31 +1910,31 @@ def generateBuiltInPatternShape(patternType):
                 points.append(mid.add(direction.multiply(1/(2*steps))))
                 points.append(mid.add(perp.multiply(-width/2)))
                 points.append(mid.add(direction.multiply(1/steps)))
-                
+
             return Part.makePolygon(points)
-        
+
         joints = []
         size = grid_size
         joint_width = size/50
-        
+
         # Create pattern of control joints
         for x in [size/3, 2*size/3]:
             start = FreeCAD.Vector(x, 0, 0)
             end = FreeCAD.Vector(x, size, 0)
             joints.append(create_tooled_joint(start, end, joint_width))
-            
+
         for y in [size/3, 2*size/3]:
             start = FreeCAD.Vector(0, y, 0)
             end = FreeCAD.Vector(size, y, 0)
             joints.append(create_tooled_joint(start, end, joint_width))
-        
+
         return Part.makeCompound(joints)
 
     elif patternType == "ConcreteGridPattern":
         def create_expansion_joint(start, end, width):
             direction = end.sub(start)
             perp = FreeCAD.Vector(-direction.y, direction.x, 0).normalize()
-            
+
             points = [
                 start.add(perp.multiply(width/2)),
                 end.add(perp.multiply(width/2)),
@@ -1944,36 +1943,36 @@ def generateBuiltInPatternShape(patternType):
                 start.add(perp.multiply(width/2))
             ]
             return Part.makePolygon(points)
-        
+
         joints = []
         size = grid_size
         spacing = size/4
         joint_width = size/50
-        
+
         # Horizontal joints
         for y in range(1, 4):
             start = FreeCAD.Vector(0, y * spacing, 0)
             end = FreeCAD.Vector(size, y * spacing, 0)
             joints.append(create_expansion_joint(start, end, joint_width))
-        
+
         # Vertical joints
         for x in range(1, 4):
             start = FreeCAD.Vector(x * spacing, 0, 0)
             end = FreeCAD.Vector(x * spacing, size, 0)
             joints.append(create_expansion_joint(start, end, joint_width))
-        
+
         return Part.makeCompound(joints)
 
     elif patternType == "WoodKnotPattern":
         def create_knot(center, radius):
             shapes = []
-            
+
             # Create concentric circles for knot
             for r in range(3, int(radius * 10), 2):
                 r = r/10
                 points = []
                 steps = int(2 * math.pi * r * 10)
-                
+
                 for i in range(steps + 1):
                     angle = 2 * math.pi * i / steps
                     # Add some irregularity to the circles
@@ -1984,15 +1983,15 @@ def generateBuiltInPatternShape(patternType):
                         0
                     ))
                     points.append(point)
-                
+
                 shapes.append(Part.makePolygon(points))
-            
+
             return shapes
-        
+
         knots = []
         size = grid_size
         num_knots = 3
-        
+
         # Generate random knots
         for _ in range(num_knots):
             center = FreeCAD.Vector(
@@ -2002,14 +2001,14 @@ def generateBuiltInPatternShape(patternType):
             )
             radius = random.uniform(size/15, size/10)
             knots.extend(create_knot(center, radius))
-        
+
         return Part.makeCompound(knots)
 
     elif patternType == "ConcreteAggregatePattern":
         def create_aggregate(center, size):
             num_points = random.randint(5, 8)
             points = []
-            
+
             for i in range(num_points + 1):
                 angle = 2 * math.pi * i / num_points
                 radius = size * (1 + random.uniform(-0.3, 0.3))
@@ -2019,13 +2018,13 @@ def generateBuiltInPatternShape(patternType):
                     0
                 ))
                 points.append(point)
-            
+
             return Part.makePolygon(points)
-        
+
         aggregates = []
         grid = grid_size
         num_aggregates = 50
-        
+
         for _ in range(num_aggregates):
             center = FreeCAD.Vector(
                 random.uniform(0, grid),
@@ -2034,7 +2033,7 @@ def generateBuiltInPatternShape(patternType):
             )
             size = random.uniform(grid/40, grid/20)
             aggregates.append(create_aggregate(center, size))
-        
+
         return Part.makeCompound(aggregates)
 
     elif patternType == "BrushedConcrete":
@@ -2054,7 +2053,7 @@ def generateBuiltInPatternShape(patternType):
         for _ in range(25):
             x = random.uniform(0, grid_size)
             y = random.uniform(0, grid_size)
-            comp.append(Part.makeCircle(random.uniform(0.2,0.5), 
+            comp.append(Part.makeCircle(random.uniform(0.2,0.5),
                 FreeCAD.Vector(x,y,0)))
         return Part.makeCompound(comp)
 
@@ -2069,7 +2068,7 @@ def generateBuiltInPatternShape(patternType):
             x2 = x1 + length*math.cos(angle)
             y2 = y1 + length*math.sin(angle)
             comp.append(Part.makeLine(FreeCAD.Vector(x1,y1,0), FreeCAD.Vector(x2,y2,0)))
-            
+
             # Small branches
             for _ in range(3):
                 branch_angle = angle + math.radians(random.uniform(-30,30))
@@ -2087,14 +2086,14 @@ def generateBuiltInPatternShape(patternType):
             y1 = random.uniform(0, grid_size)
             comp.append(Part.makeLine(
                 FreeCAD.Vector(x1,y1,0),
-                FreeCAD.Vector(x1 + random.uniform(-1,1), 
+                FreeCAD.Vector(x1 + random.uniform(-1,1),
                             y1 + random.uniform(-1,1),0)
             ))
         # Aggregate stones
         for _ in range(20):
             x = random.uniform(0, grid_size)
             y = random.uniform(0, grid_size)
-            comp.append(Part.makeCircle(random.uniform(0.2,0.5), 
+            comp.append(Part.makeCircle(random.uniform(0.2,0.5),
                                     FreeCAD.Vector(x,y,0)))
         return Part.makeCompound(comp)
 
@@ -2159,11 +2158,11 @@ def generateBuiltInPatternShape(patternType):
         return baseRect
 
 # ================================
-# Other Utilities 
+# Other Utilities
 # ================================
 def getBaseShapeFromSketchOrFeature(obj):
     """
-    If 'obj' is a Sketch, or a Draft object with MakeFace=False, 
+    If 'obj' is a Sketch, or a Draft object with MakeFace=False,
     we try to build faces for any closed wires. Otherwise just return obj.Shape.
     """
     if not obj or not hasattr(obj, "Shape"):
@@ -2243,13 +2242,13 @@ class CustomHatchFeature:
         # Base
         obj.addProperty("App::PropertyLink", "BaseObject", "Hatch", "Object with the base shape.")
         # === We also have "BaseObjects" here: multiple base shapes
-        obj.addProperty("App::PropertyLinkList", "BaseObjects", "Hatch", 
+        obj.addProperty("App::PropertyLinkList", "BaseObjects", "Hatch",
                         "Optional list of multiple base objects.")
 
         # Pattern
         obj.addProperty("App::PropertyLink", "PatternObject", "Hatch", "Object with the pattern shape.")
         # === PatternObjects for multiple patterns
-        obj.addProperty("App::PropertyLinkList", "PatternObjects", "Hatch", 
+        obj.addProperty("App::PropertyLinkList", "PatternObjects", "Hatch",
                         "Optional list of multiple pattern objects (fused).")
 
         # Base Tile
@@ -2373,7 +2372,7 @@ class CustomHatchFeature:
         obj.PatternType = "CustomObject"
 
         # Scale / Rotation / Spacing
-        obj.addProperty("App::PropertyBool", "AutoScaleToFitBase", "Scaling", 
+        obj.addProperty("App::PropertyBool", "AutoScaleToFitBase", "Scaling",
                         "If true, automatically compute scale.")
         obj.AutoScaleToFitBase = False
         obj.addProperty("App::PropertyFloat", "PatternScale", "Scaling", "Manual scale factor.")
@@ -2383,7 +2382,7 @@ class CustomHatchFeature:
         obj.addProperty("App::PropertyFloat", "BaseSpacing", "Hatch", "Base spacing (mm or %).")
         obj.BaseSpacing = 10.0
         # Unit system properties
-        obj.addProperty("App::PropertyBool", "UseUnits", "Hatch", 
+        obj.addProperty("App::PropertyBool", "UseUnits", "Hatch",
                         "If true, interpret BaseSpacing with a chosen unit system.")
         obj.UseUnits = False
         obj.addProperty("App::PropertyEnumeration", "SelectedUnitSystem", "Hatch",
@@ -2396,15 +2395,15 @@ class CustomHatchFeature:
         obj.RepetitionsY = 5
 
         # Pattern offset
-        obj.addProperty("App::PropertyFloat", "PatternOffsetX", "Hatch", 
+        obj.addProperty("App::PropertyFloat", "PatternOffsetX", "Hatch",
                         "Offset the pattern in X direction.")
         obj.PatternOffsetX = 0.0
-        obj.addProperty("App::PropertyFloat", "PatternOffsetY", "Hatch", 
+        obj.addProperty("App::PropertyFloat", "PatternOffsetY", "Hatch",
                         "Offset the pattern in Y direction.")
         obj.PatternOffsetY = 0.0
 
         # Scale Mode
-        obj.addProperty("App::PropertyEnumeration", "ScaleMode", "Scaling", 
+        obj.addProperty("App::PropertyEnumeration", "ScaleMode", "Scaling",
                         "How PatternScale is interpreted.")
         obj.ScaleMode = ["Absolute", "FitWidth", "FitHeight", "FitMinDim", "FitMaxDim"]
         obj.ScaleMode = "Absolute"
@@ -2413,10 +2412,10 @@ class CustomHatchFeature:
         obj.addProperty("App::PropertyBool", "RandomizePlacement", "Random",
                         "Apply random transforms?")
         obj.RandomizePlacement = False
-        obj.addProperty("App::PropertyFloat", "RandomOffsetRange", "Random", 
+        obj.addProperty("App::PropertyFloat", "RandomOffsetRange", "Random",
                         "Max random offset ± mm.")
         obj.RandomOffsetRange = 0.0
-        obj.addProperty("App::PropertyFloat", "RandomRotationRange", "Random", 
+        obj.addProperty("App::PropertyFloat", "RandomRotationRange", "Random",
                         "Max random rotation ± deg.")
         obj.RandomRotationRange = 0.0
         obj.addProperty("App::PropertyFloat", "RandomScaleMin", "Random",
@@ -2452,7 +2451,7 @@ class CustomHatchFeature:
         obj.addProperty("App::PropertyEnumeration", "PatternPlacementMode", "Hatch",
                         "Positioning of the pattern within each tile.")
         obj.PatternPlacementMode = [
-            "Origin", "Center", 
+            "Origin", "Center",
             "TopLeft", "TopRight", "BottomLeft", "BottomRight",
             "TopCenter", "BottomCenter", "LeftCenter", "RightCenter",
             "Custom"
@@ -2524,7 +2523,7 @@ class CustomHatchFeature:
                     FreeCADGui.Selection.addSelection(fp.BaseTileObject)
             self.safe_delayed_execute(fp, 100)
         if prop == "PatternPlacementMode":
-            self.safe_delayed_execute(fp, 100) 
+            self.safe_delayed_execute(fp, 100)
         if prop == "DistributionMode":
             props = fp.PropertiesList
             def setModeIfExists(pn, mv):
@@ -2547,11 +2546,11 @@ class CustomHatchFeature:
         """Safely schedule execute() with object existence check"""
         if not fp or not fp.Document:
             return
-        
+
         # Capture object IDENTIFIERS instead of object references
         doc_name = fp.Document.Name
         obj_name = fp.Name
-        
+
         def callback():
             # Check if document/object still exist
             doc = FreeCAD.getDocument(doc_name)
@@ -2560,7 +2559,7 @@ class CustomHatchFeature:
             obj = doc.getObject(obj_name)
             if obj and obj.Proxy == self:
                 self.execute(obj)
-        
+
         QtCore.QTimer.singleShot(delay, callback)
 
     def clampPlacementInsideBaseBounding(self, fp):
@@ -2596,7 +2595,7 @@ class CustomHatchFeature:
         baseShapes = []
 
         # Gather BaseObject
-        # Force a best-effort conversion of closed wires to faces, 
+        # Force a best-effort conversion of closed wires to faces,
         # but if that fails or it's partially open, keep edges.
         if fp.BaseObject:
             temp_shape = getClosedWiresAsFaces(fp.BaseObject)
@@ -3420,7 +3419,7 @@ def makeCustomHatch(name="CustomHatchFP"):
 # ================================
 class HatchGeneratorDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
-        super(HatchGeneratorDialog, self).__init__(parent)
+        super().__init__(parent)
         # Non‑modal dialog flag
         self.setWindowFlags(self.windowFlags() | QtCore.Qt.Window)
         if getattr(QtWidgets, 'QApplication', None):
@@ -3717,7 +3716,7 @@ class HatchGeneratorDialog(QtWidgets.QDialog):
         self.createBtn = QtWidgets.QPushButton("Create Parametric Hatch")
         self.closeBtn = QtWidgets.QPushButton("Close")
 
-    
+
     def pickBaseShape(self):
         """Set the base shape combo to the first selected object."""
         from FreeCADGui import Selection
@@ -3734,7 +3733,7 @@ class HatchGeneratorDialog(QtWidgets.QDialog):
         self.baseCombo.setCurrentIndex(idx)
 
 
-    
+
 
     def pickCustomPattern(self):
         """Set the custom-pattern combo to the first selected object and switch Pattern Source to 'Custom'."""
