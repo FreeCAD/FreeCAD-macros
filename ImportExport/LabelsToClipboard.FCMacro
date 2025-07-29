@@ -1,0 +1,42 @@
+# Copy the labels of selected objects to the clipboard.
+
+__Name__ = 'Labels to Clipboard'
+__Comment__ = 'Copy the labels of selected objects to the clipboard'
+__Author__ = 'Gaël Écorchard'
+__Version__ = '1.0.0'
+__Date__ = '2025-06-17'
+__License__ = 'LGPL-2.0-or-later'
+__Web__ = ''
+__Wiki__ = ''
+__Icon__ = 'LabelsToClipboard.svg'
+__Help__ = 'Select objects you want to copy the labels from, then run this macro. The labels will be copied to the clipboard as plain text, separated by newlines.'
+__Status__ = 'Production'
+__Requires__ = 'FreeCAD 1.0'
+__Communication__ = 'https://github.com/FreeCAD/FreeCAD-macros/issues/'
+__Files__ = 'LabelsToClipboard.svg,LabelsToClipboard.svg.md'
+
+import FreeCAD as app
+
+import FreeCADGui as gui
+
+from PySide import QtGui  # FreeCAD's PySide, which may be PySide2!
+
+
+def labels_to_clipboard():
+    """Copy labels of selected objects to clipboard."""
+    selection = gui.Selection.getSelection()
+    if not selection:
+        return
+    try:
+        labels = [obj.Label for obj in selection]
+    except AttributeError:
+        app.Console.PrintMessage('No labels found in the selected objects.')
+        return
+    text = '\n'.join(labels)
+    # Copy to clipboard
+    clipboard = QtGui.QClipboard()
+    clipboard.setText(text)
+
+
+if __name__ == '__main__':
+    labels_to_clipboard()
