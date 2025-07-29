@@ -6,8 +6,8 @@ This repository hosts FreeCAD macros that volunteers have vetted and added for u
 
 ## How to submit a macro
 
-- The best way to submit a macro is to post it to the [FreeCAD Python Scripting and Macros subforum](https://forum.freecadweb.org/viewforum.php?f=22) for review. After a green light is given then:
-
+- The best way to submit a macro is to post it to the [FreeCAD Python Scripting and Macros subforum](https://forum.freecadweb.org/viewforum.php?f=22) for review.
+  After a green light is given then:
 - Fork this repository
 - Clone your fork locally `git clone https://github.com/your-gh-username/FreeCAD-macros`
 - Go to the newly-created local repository `cd FreeCAD-macros`
@@ -18,19 +18,37 @@ This repository hosts FreeCAD macros that volunteers have vetted and added for u
 - Create a PR (pull request) against upstream
 - Achieve global fame once PR is merged
 
+### Ways to submit a macro for other FreeCAD users
+
+To include a macro into the macro listing of FreeCAD's Addon Manager you have three mutually-exclusive options:
+
+- Submit the macro and its auxiliary files to this repo, this is what is described here.
+  Do not include a `package.xml` file, this is for macros or workbenches in repositories other that this one.
+  You must list your auxiliary files in the `__Files__` global at the top of your macro so that the Addon Manager can install them together with your macro.
+- Add your macro to the [FreeCAD wiki](https://wiki.freecad.org/Macros_recipes).
+- Host the macro in your own git repo, with a [`package.xml` file](https://wiki.freecad.org/Package_Metadata).
+
 ## Guidelines for submitting a macro
 
 ### Macro description
+
 Please add a complete description how to use the macro near the top of your macro as normal Python comments.
-Ideally write a Wiki page explaining what your macro does and how to use it by following the instructions on the [Wiki](https://wiki.freecadweb.org/Macro_documentation). It's a good habit to write a changelog, especially when bringing API breaking changes, from latest to oldest.
+Ideally write a Wiki page explaining what your macro does and how to use it by following the instructions on the [Wiki](https://wiki.freecadweb.org/Macro_documentation).
+It's a good habit to write a changelog, especially when bringing API breaking changes, from latest to oldest.
 
 ### CamelCase macro name
-Please follow the `CamelCase.FCMacro` convention for the macro name (other associated files except the macro icon don't need to follow this convention). Please don't start your macro name with `Macro` or `FC` or similar (we already know it's a macro for FreeCAD).
+
+Please follow the `CamelCase.FCMacro` convention for the macro name (other associated files except the macro icon don't need to follow this convention).
+Please do not start your macro name with `Macro` or `FC` or similar (we already know it's a macro for FreeCAD).
+Use one of the predefined categories (directories) for your macro, or create a new one if needed.
 
 ### Macro name specifics
+
 Also, if possible, start the macro name with the type of object it's working on, e.g. use `ViewRotation` instead of `RotateView`, so that all macros related to `View` will be together when sorting alphabetically.
+You can use `__Name__` to set a nice name for your macro, which will be used by the Addon Manager.
 
 ### Macro metadata
+
 Please add the following metadata in your macro after the Macro description (mentioned above).
 
 #### Macro metadata
@@ -55,7 +73,10 @@ Please add the following metadata in your macro after the Macro description (men
 
 #### Explanation of metadata
 
-NOTE: All metadata elements are simple strings, and *may not contain code to evaluate*. The FreeCAD Addon Manager parses these strings by searching for an equals sign followed by something inside quotes (single or double), all on a single line. Lines may not wrap. For example:
+NOTE: All metadata elements are simple strings, and *may not contain code to evaluate*.
+The FreeCAD Addon Manager parses these strings by searching for an equals sign followed by something inside quotes (single or double), all on a single line.
+Lines may not wrap.
+For example:
 ```
 # Good, valid
 __Comment__ = "When run, this macro reads your mind and creates the thing your are imagining."
@@ -102,8 +123,8 @@ static char * XFACE[] = {
 * `__Help__` - A short explanation how to use the macro, e.g. what to select before launching
 * `__Status__` - Stable|Alpha|Beta
 * `__Requires__` - e.g. FreeCAD >= v0.17, there is no programmatic use of this for now
-* `__Communication__` - e.g. https://github.com/FreeCAD/FreeCAD-macros/issues/ if on the github
-* `__Files__` - comma-separated list of files that should be installed together with this file, use paths relative to this file, do not include this file, and do not wrap the line, all files must be listed in the same single-line quoted string.
+* `__Communication__` - e.g. https://github.com/FreeCAD/FreeCAD-macros/issues/
+* `__Files__` - comma-separated list of files that should be installed together with this file, use paths relative to this file, do not include this file, and do not wrap the line, all files must be listed in the same single-line quoted string. I you have the impression that the list is too long, please consider submitting your macro in a [separate repository](https://wiki.freecad.org/Package_Metadata).
 
 #### Locally checking against coding standards
 
