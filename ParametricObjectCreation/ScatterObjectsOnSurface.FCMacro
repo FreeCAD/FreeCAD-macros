@@ -1,0 +1,221 @@
+# ScatterObjectsOnSurface.FCMacro
+#
+# Description:
+# This macro allows the user to scatter a selected object (scatter object) across the
+# surfaces of another object (base object) or any selected faces. It supports random
+# rotation (about local Z axis), minimum spacing to prevent overlaps, and ensures objects remain on the
+# actual face geometry, avoiding holes or floating placements (I hope!).
+#
+# Usage:
+# 1. Select the base object or specific faces in the 3D view.
+# 2. Select the scatter object (the object to distribute).
+# 3. Run the macro via the Macro manager or Python console.
+# 4. Configure as required (see below for options)
+# 
+# The scattered objects will be combined into a single compound named 'ScatteredCompound'
+#
+# GUI and CLI Parameters:
+#
+# | Parameter                 | Type        | Description                                                                                  | Default |
+# |----------------------------|------------|----------------------------------------------------------------------------------------------|---------|
+# | density                    | float      | Approximate number of points per mm² on the surface                                          | 0.05    |
+# | min_spacing                | float      | Minimum distance between scatter objects in mm (0 = auto based on bounding box)              | 0.0     |
+# | random_rotation            | bool       | Apply random rotation around the surface normal                                              | True    |
+# | cross_side_spacing         | bool       | Prevent overlaps across opposite-facing surfaces                                             | False   |
+# | seed                       | int/None   | Optional random seed for reproducible scatter patterns                                       | None    |
+# | faces                      | list       | List of Part.Face objects to scatter on (CLI) or selected in GUI                             | All faces if not provided |
+# | base_shape                 | Part.Shape | Shape of the base object for collision checks                                                | Required|
+
+__Name__ = "Scatter Objects on Surface"
+__Comment__ = "Distribute objects randomly over surfaces of another object with spacing and rotation options."
+__Author__ = "Sam Hutchinson (flightmansam)"
+__Date__ = "2025-08-15"
+__Version__ = "1.0.0"
+__License__ = "MIT"
+__Web__ = "https://github.com/FreeCAD/FreeCAD-macros"
+__Wiki__ = "https://wiki.freecad.org/ScatterObjectsOnSurface"
+__Icon__ = "ScatterObjectsOnSurface.png" 
+__Help__ = "Select base object (or faces) first, then scatter object, and run the macro."
+__Status__ = "Beta"
+__Requires__ = "FreeCAD >= 1.0"
+__Communication__ = "https://github.com/FreeCAD/FreeCAD-macros/issues/"
+__Files__ = "ScatterObjectsOnSurface.png"
+
+
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+import random
+import math
+from PySide import QtWidgets
+
+def _too_close(pt, normal, placed_samples, min_spacing, cross_side_spacing):
+    for p, n in placed_samples:
+        if pt.distanceToPoint(p) < min_spacing:
+            if not cross_side_spacing:
+                if n.getAngle(normal) > math.pi / 2:
+                    continue
+            return True
+    return False
+
+def scatter_on_faces(
+    faces,
+    scatter_shape,
+    density=0.01,
+    min_spacing=None,
+    random_rotation=True,
+    seed=None,
+    cross_side_spacing=False,
+    base_shape=None
+):
+    if seed is not None:
+        random.seed(seed)
+
+    doc = App.ActiveDocument
+    scattered_shapes = []
+
+    if not min_spacing or min_spacing <= 0:
+        bbox = scatter_shape.BoundBox
+        min_spacing = bbox.DiagonalLength * 1.1
+
+    placed_samples = []
+
+    for face in faces:
+        target = max(1, int(face.Area * density))
+        tries = 0
+        placed_on_face = 0
+        max_tries = max(200, target * 40)
+        u_min, u_max, v_min, v_max = face.ParameterRange
+
+        while placed_on_face < target and tries < max_tries:
+            tries += 1
+            u = random.uniform(u_min, u_max)
+            v = random.uniform(v_min, v_max)
+            pt = face.valueAt(u, v)
+            n = face.normalAt(u, v)
+				  
+            if not face.isInside(pt, 1e-6, True):
+                continue
+				
+            if n.Length == 0:
+                continue
+            n = n.normalize()
+
+            if _too_close(pt, n, placed_samples, min_spacing, cross_side_spacing):
+                continue
+
+            placement = App.Placement()
+            placement.Base = pt
+            z_axis = App.Vector(0, 0, 1)
+            rot_axis = z_axis.cross(n)
+            if rot_axis.Length > 1e-6:
+                angle = math.degrees(z_axis.getAngle(n))
+                placement.Rotation = App.Rotation(rot_axis, angle)
+            else:
+                placement.Rotation = App.Rotation()
+
+            if random_rotation:
+                extra = App.Rotation(n, random.uniform(0, 360))
+                placement.Rotation = extra.multiply(placement.Rotation)
+
+            inst = scatter_shape.copy()
+            inst.Placement = placement
+
+            # Collision check: only keep if not buried in unselected geometry
+            if base_shape:
+                test_pt = pt + n.multiply(0.1)  # 0.1 mm above surface
+                if base_shape.isInside(test_pt, 1e-6, True):
+                    continue
+
+            scattered_shapes.append(inst)
+            placed_samples.append((pt, n))
+            placed_on_face += 1
+
+    if not scattered_shapes:
+        App.Console.PrintMessage("No shapes generated.\n")
+        return None
+
+    compound = Part.makeCompound(scattered_shapes)
+    obj = doc.addObject("Part::Feature", "ScatteredCompound")
+    obj.Shape = compound
+    doc.recompute()
+    return obj
+
+def run_scatter_dialog():
+    sel = Gui.Selection.getSelectionEx()
+    if len(sel) < 2:
+        App.Console.PrintError("Select base object (or faces) first, then scatter object.\n")
+        return
+
+    base_sel = sel[0]
+    scatter_obj = sel[1].Object
+    scatter_shape = scatter_obj.Shape
+
+    faces = [sub for sub in base_sel.SubObjects if isinstance(sub, Part.Face)]
+    base_shape = base_sel.Object.Shape
+
+    if not faces:
+        try:
+            faces = base_shape.Faces
+        except Exception:
+            App.Console.PrintError("First selection must be a Part/Body with faces (or select faces directly).\n")
+            return
+
+    dlg = QtWidgets.QDialog()
+    dlg.setWindowTitle("Scatter Objects on Surface")
+    layout = QtWidgets.QFormLayout(dlg)
+
+    density_spin = QtWidgets.QDoubleSpinBox()
+    density_spin.setRange(0.0001, 100.0)
+    density_spin.setValue(0.05)
+    density_spin.setDecimals(4)
+    layout.addRow("Density (points per mm²):", density_spin)
+
+    spacing_spin = QtWidgets.QDoubleSpinBox()
+    spacing_spin.setRange(0.0, 1000.0)
+    spacing_spin.setValue(0.0)
+    spacing_spin.setDecimals(3)
+    layout.addRow("Min spacing (mm):", spacing_spin)
+
+    randrot_chk = QtWidgets.QCheckBox()
+    randrot_chk.setChecked(True)
+    layout.addRow("Random rotation:", randrot_chk)
+
+    crossside_chk = QtWidgets.QCheckBox()
+    crossside_chk.setChecked(False)
+    layout.addRow("Spacing across opposite sides:", crossside_chk)
+
+    seed_spin = QtWidgets.QSpinBox()
+    seed_spin.setRange(0, 999999)
+    seed_spin.setValue(0)
+    layout.addRow("Random seed (0 = none):", seed_spin)
+
+    btns = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+    layout.addRow(btns)
+
+    def on_accept():
+        density = density_spin.value()
+        spacing = spacing_spin.value()
+        random_rotation = randrot_chk.isChecked()
+        cross_side_spacing = crossside_chk.isChecked()
+        seed = seed_spin.value() if seed_spin.value() != 0 else None
+
+        scatter_on_faces(
+            faces=faces,
+            scatter_shape=scatter_shape,
+            density=density,
+            min_spacing=spacing,
+            random_rotation=random_rotation,
+            seed=seed,
+            cross_side_spacing=cross_side_spacing,
+            base_shape=base_shape
+        )
+        dlg.accept()
+
+    btns.accepted.connect(on_accept)
+    btns.rejected.connect(dlg.reject)
+
+    dlg.exec()
+
+# Run from active FreeCAD document
+run_scatter_dialog()
