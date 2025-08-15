@@ -11,7 +11,7 @@
 # 2. Select the scatter object (the object to distribute).
 # 3. Run the macro via the Macro manager or Python console.
 # 4. Configure as required (see below for options)
-# 
+#
 # The scattered objects will be combined into a single compound named 'ScatteredCompound'
 #
 # GUI and CLI Parameters:
@@ -34,7 +34,7 @@ __Version__ = "1.0.0"
 __License__ = "LGPL-2.0-or-later"
 __Web__ = "https://github.com/FreeCAD/FreeCAD-macros"
 __Wiki__ = "https://wiki.freecad.org/ScatterObjectsOnSurface"
-__Icon__ = "ScatterObjectsOnSurface.png" 
+__Icon__ = "ScatterObjectsOnSurface.png"
 __Help__ = "Select base object (or faces) first, then scatter object, and run the macro."
 __Status__ = "Beta"
 __Requires__ = "FreeCAD >= 1.0"
@@ -93,10 +93,10 @@ def scatter_on_faces(
             v = random.uniform(v_min, v_max)
             pt = face.valueAt(u, v)
             n = face.normalAt(u, v)
-				  
+
             if not face.isInside(pt, 1e-6, True):
                 continue
-				
+
             if n.Length == 0:
                 continue
             n = n.normalize()
