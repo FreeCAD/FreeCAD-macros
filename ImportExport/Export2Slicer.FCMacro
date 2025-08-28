@@ -3,8 +3,8 @@
 
 __Title__ = '3D Print / Slice'
 __Author__ = 'Damian Łoziński'
-__Version__ = '0.4.1'
-__Date__ = '2024-08-28'
+__Version__ = '0.4.2'
+__Date__ = '2025-08-28'
 __Comment__ = 'Export selected objects to amf/stl files and open them in slicing program'
 __Web__ = 'https://github.com/dlozinski/FreeCAD-macros/blob/doc/ImportExport/ExportToSlicer.md'
 __Wiki__ = ''
@@ -29,6 +29,7 @@ import MeshPart
 MACRO_PARAMS = app.ParamGet('User parameter:BaseApp/Preferences/Macros/Export2Slicer')
 DEFAULT_SLICER_CMD = '"/Applications/Original Prusa Drivers/PrusaSlicer.app/Contents/MacOS/PrusaSlicer" --single-instance "{file}"'
 DEFAULT_OUTPUT_FORMAT = 'amf'
+DEFAULT_OUTPUT_FOLDER = ''
 DEFAULT_ANGULAR_DEFLECTION = 0.07
 
 
@@ -50,6 +51,7 @@ def get_float_param(name, default):
 
 slicer_cmd = get_string_param('SlicerCommand', DEFAULT_SLICER_CMD)
 output_format = get_string_param('OutputFormat', DEFAULT_OUTPUT_FORMAT)
+output_folder = get_string_param('OutputFolder', DEFAULT_OUTPUT_FOLDER)
 angular_deflection = get_float_param('AngularDeflection', DEFAULT_ANGULAR_DEFLECTION)
 
 
@@ -60,7 +62,7 @@ def escape(text):
 def get_mesh_filename(doc_filename, mesh_names):
     """Returns valid filename for temporary mesh file."""
     if doc_filename:
-        dirname = os.path.dirname(doc_filename)
+        dirname = output_folder if output_folder and os.path.isdir(output_folder) else os.path.dirname(doc_filename)
         filename = (
             os.path.basename(doc_filename).partition('.')[0]
             + '-'
