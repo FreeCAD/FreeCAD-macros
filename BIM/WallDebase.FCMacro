@@ -1,0 +1,280 @@
+# This macro converts selected Arch Wall objects from being dependent on a Base object (like a
+# Sketch or Draft Wire) to being parametrically driven by their own Length, Width, and Height
+# properties. The operation preserves the wall's exact size and global position, making it
+# independent of its original 2D construction geometry.
+#
+# It is designed to work *only* on walls based on a single, straight line (e.g., a Draft Line or a
+# Sketch containing only one line). After conversion, the wall remains fully parametric and its
+# Length can be edited directly.
+#
+# If you select multiple walls, including some based on curves, polylines, or other complex shapes,
+# the script will skip the unsupported walls and provide a notification in the Report View. Only the
+# valid, line-based walls will be processed.
+
+__Name__ = "Debase Walls"
+__Comment__ = (
+    "Converts line-based walls to be property-driven, skipping non-line-based walls."
+)
+__Author__ = "Furgo"
+__Version__ = "0.9.1"
+__Date__ = "2025-09-07"
+__License__ = "LGPL-2.1-or-later"
+__Wiki__ = "https://wiki.freecad.org/Arch_Wall"
+__Icon__ = ""
+__Help__ = (
+    "Select one or more Arch Wall objects and run this macro. It will make them independent "
+    "of their base geometry, preserving their current size and placement."
+)
+__Status__ = "Alpha"
+__Requires__ = "FreeCAD >= v1.0.0"
+__Files__ = ""
+
+
+import FreeCAD
+import FreeCADGui
+import Draft
+import Part
+from PySide import QtCore, QtGui
+from collections import namedtuple
+
+MACRO_TITLE = "Debase Walls"
+DebasedState = namedtuple(
+    "DebasedState", ["placement", "height", "length", "width", "original_base"]
+)
+
+
+def _analyze_wall(wall):
+    """
+    Analyzes a single wall. If it's a valid candidate, it calculates and returns
+    a DebasedState object. Otherwise, it prints a warning and returns None.
+    """
+    if not wall.Base or not hasattr(wall.Base, "Shape"):
+        return None
+
+    # Validate the base object before processing ---
+    base_shape = wall.Base.Shape
+    if not base_shape.Edges:
+        FreeCAD.Console.PrintWarning(f"Skipping '{wall.Label}': Base object has no edges.\n")
+        return None
+
+    if len(base_shape.Edges) > 1:
+        FreeCAD.Console.PrintWarning(
+            f"Skipping '{wall.Label}': Base has multiple edges. Only single straight lines "
+            "are supported.\n"
+        )
+        return None
+
+    edge = base_shape.Edges[0]
+    if not isinstance(edge.Curve, (Part.Line, Part.LineSegment)):
+        curve_type = type(edge.Curve).__name__
+        FreeCAD.Console.PrintWarning(
+            f"Skipping '{wall.Label}': Base is not a straight line (it's a {curve_type}).\n"
+        )
+        return None
+
+    # A wall's final position and orientation are derived from its Base object and its own
+    # properties like Width and Align. To make the wall independent, this final state must be
+    # captured. A simple transfer of the Base object's Placement property is unreliable for two main
+    # reasons:
+    # - Ambiguity: A Draft.Line's direction is defined by its vertex coordinates, so a line at 45°
+    #   can have a 0° rotation in its Placement.
+    # - Coordinate Systems: A universal method is needed to handle both Draft objects (defined in
+    #   global coordinates) and Sketch objects (defined in a local coordinate system).
+    #
+    # The solution is to use the wall.Proxy.basewires internal attribute. It is non-persistent and
+    # populated on the fly by calling getExtrusionData(). It contains the baseline edge already
+    # transformed into the document's global coordinate system. From the vertex positions of this
+    # globally-aware edge, the new wall's final Placement is calculated.
+    extrusion_data = wall.Proxy.getExtrusionData(wall)
+    if (
+        not extrusion_data
+        or not hasattr(wall.Proxy, "basewires")
+        or not wall.Proxy.basewires
+        or not wall.Proxy.basewires[0]
+    ):
+        return None
+
+    # In addition to the baseline edge, getExtrusionData() also provides the extrusion vector,
+    # which is used to determine the wall's vertical orientation.
+    extrusion_vector = extrusion_data[1]
+    baseline_edge = wall.Proxy.basewires[0][0] # The first edge of the first cluster of edges
+
+    # Now determine the wall's rotation inferred from its local axes:
+    # - The local X axis is along the baseline edge (length).
+    # - The local Z axis is along the extrusion vector (height).
+    # - The local Y axis is the cross product of X and Z (width, perpendicular to both the above).
+    # Once the local axes are known, a FreeCAD.Rotation matrix can be constructed.
+    z_axis = extrusion_vector.normalize()
+    x_axis = (
+        baseline_edge.lastVertex().Point - baseline_edge.firstVertex().Point
+    ).normalize()
+    y_axis = x_axis.cross(z_axis).normalize()
+    final_rotation = FreeCAD.Rotation(x_axis, y_axis, z_axis)
+
+    # This will be the debased wall's local coordinate system origin (0, 0, 0).
+    # The wall's Align property (Left, Center, Right) determines how the wall's
+    # Width offsets the final position from the centerline.
+    centerline_position = baseline_edge.CenterOfMass
+    align_offset_distance = 0
+    if wall.Align == "Left":
+        align_offset_distance = wall.Width.Value / 2.0
+    elif wall.Align == "Right":
+        align_offset_distance = -wall.Width.Value / 2.0
+
+    # Convert the offset distance into a vector in the width direction (local Y axis).
+    align_offset_vector = y_axis * align_offset_distance
+    final_position = centerline_position + align_offset_vector
+
+    correct_placement = FreeCAD.Placement(final_position, final_rotation)
+
+    return DebasedState(
+        placement=correct_placement,
+        height=wall.Height.Value,
+        length=wall.Length.Value,
+        width=wall.Width.Value,
+        original_base=wall.Base,
+    )
+
+
+def analyze_selection(selection):
+    """
+    Filters the selection for Arch Walls and analyzes them, separating valid
+    candidates from ones that should be skipped.
+    """
+    walls_in_selection = [obj for obj in selection if Draft.getType(obj) == "Wall"]
+    final_states = {}
+    bases_to_cleanup = set()
+    skipped_walls = []
+
+    for wall in walls_in_selection:
+        state = _analyze_wall(wall)
+        if state:
+            final_states[wall.Name] = state
+            bases_to_cleanup.add(state.original_base)
+        else:
+            skipped_walls.append(wall)
+
+    # Also add non-wall objects to the skipped list for the final report.
+    non_walls = [obj for obj in selection if Draft.getType(obj) != "Wall"]
+    skipped_walls.extend(non_walls)
+
+    return final_states, bases_to_cleanup, skipped_walls
+
+
+def apply_changes(doc, final_states):
+    """
+    Applies the calculated debased state to the walls in a single transaction.
+    """
+    doc.openTransaction("Debase Wall(s)")
+    try:
+        for wall_name, state in final_states.items():
+            wall = doc.getObject(wall_name)
+
+            wall.Height = state.height
+            wall.Length = state.length
+            wall.Width = state.width
+            wall.Base = None # Effectively debases the wall
+
+            # Clear any internal references to the baseline edges to avoid dangling links. If this
+            # internal list is not cleared, any subsequent recompute (e.g., changing the wall's
+            # height) would cause the Length property to be incorrectly recalculated from the old
+            # baseline data, reverting any user changes.
+            if hasattr(wall.Proxy, "connectEdges"):
+                wall.Proxy.connectEdges = []
+
+            wall.Placement = state.placement
+    except Exception as e:
+        doc.abortTransaction()
+        FreeCAD.Console.PrintError(
+            f"An error occurred during the operation: {e}\nOperation cancelled.\n"
+        )
+        return False
+    finally:
+        doc.commitTransaction()
+        doc.recompute()
+    return True
+
+
+def prompt_for_cleanup(doc, bases_to_cleanup, processed_count):
+    """
+    Shows a GUI dialog to ask the user how to handle the original base objects.
+    """
+    msg_box = QtGui.QMessageBox()
+    msg_box.setWindowTitle("Cleanup Base Objects")
+    msg_box.setText(f"Successfully debased {processed_count} wall(s).")
+    msg_box.setInformativeText("What would you like to do with the original base objects?")
+
+    btn_delete = msg_box.addButton("Delete", QtGui.QMessageBox.DestructiveRole)
+    btn_hide = msg_box.addButton("Hide", QtGui.QMessageBox.ActionRole)
+    btn_keep = msg_box.addButton("Keep Visible", QtGui.QMessageBox.ActionRole)
+
+    msg_box.exec_()
+    clicked_button = msg_box.clickedButton()
+
+    doc.openTransaction("Cleanup Wall Bases")
+    try:
+        if clicked_button == btn_delete:
+            for base in bases_to_cleanup:
+                if doc.getObject(base.Name):
+                    doc.removeObject(base.Name)
+        elif clicked_button == btn_hide:
+            for base in bases_to_cleanup:
+                if hasattr(base, "ViewObject"):
+                    base.ViewObject.hide()
+    finally:
+        doc.commitTransaction()
+
+
+def print_summary(processed_states, skipped_walls):
+    """
+    Prints a consolidated summary of the operation to the Report View.
+    """
+    processed_count = len(processed_states)
+    skipped_count = len(skipped_walls)
+
+    FreeCAD.Console.PrintMessage("\n--- Debase Operation Summary ---\n")
+    if processed_count > 0:
+        processed_names = ", ".join(processed_states.keys())
+        FreeCAD.Console.PrintMessage(
+            f"Successfully processed {processed_count} wall(s): {processed_names}\n"
+        )
+    if skipped_count > 0:
+        skipped_names = ", ".join([w.Label for w in skipped_walls])
+        FreeCAD.Console.PrintWarning(
+            f"Skipped {skipped_count} object(s): {skipped_names}\n"
+        )
+    FreeCAD.Console.PrintMessage("--------------------------------\n")
+
+
+def run():
+    """
+    Main function to orchestrate the entire debasing process.
+    """
+    doc = FreeCAD.ActiveDocument
+    if not doc:
+        FreeCAD.Console.PrintError("No active document found.\n")
+        return
+
+    selection = FreeCADGui.Selection.getSelection()
+    if not selection:
+        QtGui.QMessageBox.information(
+            None, MACRO_TITLE, "Please select one or more Arch Wall objects to debase."
+        )
+        return
+
+    final_states, bases_to_cleanup, skipped_walls = analyze_selection(selection)
+
+    if not final_states:
+        FreeCAD.Console.PrintWarning("No valid line-based walls were found to process.\n")
+        # Print summary even if only invalid objects were selected
+        print_summary(final_states, skipped_walls)
+        return
+
+    if apply_changes(doc, final_states):
+        print_summary(final_states, skipped_walls)
+        if bases_to_cleanup:
+            prompt_for_cleanup(doc, bases_to_cleanup, len(final_states))
+
+
+if __name__ == "__main__":
+    run()
