@@ -30,7 +30,7 @@ __Name__ = "Scatter Objects on Surface"
 __Comment__ = "Distribute objects randomly over surfaces of another object with spacing and rotation options."
 __Author__ = "Sam Hutchinson (flightmansam)"
 __Date__ = "2025-08-15"
-__Version__ = "1.1"  # grid + Halton speedup + saved prefs
+__Version__ = "1.1"
 __License__ = "LGPL-2.0-or-later"
 __Web__ = "https://github.com/FreeCAD/FreeCAD-macros"
 __Wiki__ = "https://wiki.freecad.org/ScatterObjectsOnSurface"
@@ -41,6 +41,8 @@ __Requires__ = "FreeCAD >= 1.0"
 __Communication__ = "https://github.com/FreeCAD/FreeCAD-macros/issues/"
 __Files__ = "ScatterObjectsOnSurface.png"
 
+from typing import Dict, Iterable, List, Optional, Tuple
+
 import FreeCAD as App
 import FreeCADGui as Gui
 import Part
@@ -49,21 +51,35 @@ import math
 from PySide import QtWidgets
 
 
-# Spatial hashing
+CellKey = Tuple[int, int, int]
+VecPair = Tuple[App.Vector, App.Vector]
+GridMap = Dict[CellKey, List[VecPair]]
 
-def _grid_key(p: App.Vector, cell: float):
-    return (int(math.floor(p.x / cell)),
-            int(math.floor(p.y / cell)),
-            int(math.floor(p.z / cell)))
 
-def _neighbor_keys(k):
+def _grid_key(p: App.Vector, cell: float) -> CellKey:
+    return (
+        int(math.floor(p.x / cell)),
+        int(math.floor(p.y / cell)),
+        int(math.floor(p.z / cell)),
+    )
+
+
+def _neighbor_keys(k: CellKey) -> Iterable[CellKey]:
     x, y, z = k
     for dx in (-1, 0, 1):
         for dy in (-1, 0, 1):
             for dz in (-1, 0, 1):
                 yield (x + dx, y + dy, z + dz)
 
-def _too_close_grid(candidate_pt, candidate_n, grid, cell, min_spacing, cross_side_spacing):
+
+def _too_close_grid(
+    candidate_pt: App.Vector,
+    candidate_n: App.Vector,
+    grid: GridMap,
+    cell: float,
+    min_spacing: float,
+    cross_side_spacing: bool,
+) -> bool:
     """Check only local neighbourhood cells; grid maps cell_key -> list[(pt, n)]."""
     key = _grid_key(candidate_pt, cell)
     for nk in _neighbor_keys(key):
@@ -74,7 +90,8 @@ def _too_close_grid(candidate_pt, candidate_n, grid, cell, min_spacing, cross_si
                 return True
     return False
 
-def _halton(i, b):
+
+def _halton(i: int, b: int) -> float:
     f, r = 1.0, 0.0
     while i > 0:
         f /= b
@@ -82,21 +99,33 @@ def _halton(i, b):
         i //= b
     return r
 
+
+# --------------------------------
+# Main scatter logic
+# --------------------------------
+
 def scatter_on_faces(
-    faces,
-    scatter_shape,
-    density=0.01,
-    min_spacing=None,
-    random_rotation=True,
-    seed=None,
-    cross_side_spacing=False,
-    base_shape=None
-):
+    faces: List[Part.Face],
+    scatter_shape: Part.Shape,
+    density: float = 0.01,
+    min_spacing: Optional[float] = None,
+    random_rotation: bool = True,
+    seed: Optional[int] = None,
+    cross_side_spacing: bool = False,
+    base_shape: Optional[Part.Shape] = None,
+) -> Optional[object]:
+    """
+    Scatter copies of scatter_shape over the given faces.
+
+    Returns:
+        The created document object (Part::Feature) containing the compound,
+        or None if nothing was generated.
+    """
     if seed is not None:
         random.seed(seed)
 
-    doc = App.ActiveDocument
-    scattered_shapes = []
+    doc: App.Document = App.ActiveDocument
+    scattered_shapes: List[Part.Shape] = []
 
     # Auto spacing from scatter object's size if none given
     if not min_spacing or min_spacing <= 0:
@@ -104,43 +133,44 @@ def scatter_on_faces(
         min_spacing = bbox.DiagonalLength * 1.1
 
     # Spatial hash grid for very fast spacing checks
-    grid = {}
-    cell = max(min_spacing*5, 1e-6)
+    grid: GridMap = {}
+    cell: float = max(min_spacing * 5, 1e-6)
 
     for face in faces:
-        target = max(1, int(face.Area * density))
-        tries = 0
-        placed_on_face = 0
-        max_tries = max(200, target * 40)
+        target: int = max(1, int(face.Area * density))
+        tries: int = 0
+        placed_on_face: int = 0
+        max_tries: int = max(200, target * 40)
 
         # parameter ranges
         u_min, u_max, v_min, v_max = face.ParameterRange
 
         # Halton sequence index (per face)
-        idx = 0
+        idx: int = 0
 
         while placed_on_face < target and tries < max_tries:
             tries += 1
             idx += 1
 
-            hu = _halton(idx, 2)
-            hv = _halton(idx, 3)
-            u = u_min + hu * (u_max - u_min)
-            v = v_min + hv * (v_max - v_max) if False else v_min + hv * (v_max - v_min)  # keep explicit
+            hu: float = _halton(idx, 2)
+            hv: float = _halton(idx, 3)
+            u: float = u_min + hu * (u_max - u_min)
+            # explicit form kept
+            v: float = v_min + hv * (v_max - v_min)
 
-            pt = face.valueAt(u, v)
+            pt: App.Vector = face.valueAt(u, v)
 
             # Must lie on the actual face area (excludes holes / outside UV)
             if not face.isInside(pt, 1e-2, False):
                 continue
 
-            n = face.normalAt(u, v)
+            n: App.Vector = face.normalAt(u, v)
             if n.Length == 0:
                 continue
             n = n.normalize()
 
             # Spacing check via spatial grid
-            if _too_close_grid(pt, n, grid, cell, min_spacing, cross_side_spacing):
+            if _too_close_grid(pt, n, grid, cell, float(min_spacing), cross_side_spacing):
                 continue
 
             # Align +Z to the surface normal (handles 180° case)
@@ -150,21 +180,23 @@ def scatter_on_faces(
 
             # Optional random spin around the (now aligned) local Z / surface normal
             if random_rotation:
-                placement.Rotation = App.Rotation(n, random.uniform(0, 360)).multiply(placement.Rotation)
+                placement.Rotation = App.Rotation(n, random.uniform(0, 360)).multiply(
+                    placement.Rotation
+                )
 
-            inst = scatter_shape.copy()
+            inst: Part.Shape = scatter_shape.copy()
             inst.Placement = placement
 
             # Collision check: only keep if not buried in unselected geometry
             if base_shape:
-                test_pt = pt + n.multiply(0.1)  # 0.1 mm above surface
+                test_pt: App.Vector = pt + n.multiply(0.1)  # 0.1 mm above surface
                 if base_shape.isInside(test_pt, 1e-6, True):
                     continue
 
             scattered_shapes.append(inst)
 
             # Insert into spatial grid
-            k = _grid_key(pt, cell)
+            k: CellKey = _grid_key(pt, cell)
             grid.setdefault(k, []).append((pt, n))
 
             placed_on_face += 1
@@ -173,19 +205,20 @@ def scatter_on_faces(
         App.Console.PrintMessage("No shapes generated.\n")
         return None
 
-    compound = Part.makeCompound(scattered_shapes)
+    compound: Part.Shape = Part.makeCompound(scattered_shapes)
     obj = doc.addObject("Part::Feature", "ScatteredCompound")
     obj.Shape = compound
     doc.recompute()
     return obj
 
+
 # ---------------------------
 # GUI
 # ---------------------------
 
-def run_scatter_dialog():
+def run_scatter_dialog() -> None:
     # preferences bucket for this macro
-    prefs = App.ParamGet("User parameter:BaseApp/Preferences/Macros/ScatterObjectsOnSurface")
+    prefs: App.ParamGet = App.ParamGet("User parameter:BaseApp/Preferences/Macros/ScatterObjectsOnSurface")
 
     sel = Gui.Selection.getSelectionEx()
     if len(sel) < 2:
@@ -194,10 +227,10 @@ def run_scatter_dialog():
 
     base_sel = sel[0]
     scatter_obj = sel[1].Object
-    scatter_shape = scatter_obj.Shape
+    scatter_shape: Part.Shape = scatter_obj.Shape
 
-    faces = [sub for sub in base_sel.SubObjects if isinstance(sub, Part.Face)]
-    base_shape = base_sel.Object.Shape
+    faces: List[Part.Face] = [sub for sub in base_sel.SubObjects if isinstance(sub, Part.Face)]
+    base_shape: Part.Shape = base_sel.Object.Shape
 
     if not faces:
         try:
@@ -211,11 +244,11 @@ def run_scatter_dialog():
     layout = QtWidgets.QFormLayout(dlg)
 
     # Load last-used values (with sensible defaults)
-    last_density = prefs.GetFloat("density", 0.05)
-    last_spacing = prefs.GetFloat("min_spacing", 0.0)
-    last_randrot = prefs.GetBool("random_rotation", True)
-    last_crossside = prefs.GetBool("cross_side_spacing", False)
-    last_seed = prefs.GetInt("seed", 0)
+    last_density: float = prefs.GetFloat("density", 0.05)
+    last_spacing: float = prefs.GetFloat("min_spacing", 0.0)
+    last_randrot: bool = prefs.GetBool("random_rotation", True)
+    last_crossside: bool = prefs.GetBool("cross_side_spacing", False)
+    last_seed: int = prefs.GetInt("seed", 0)
 
     density_spin = QtWidgets.QDoubleSpinBox()
     density_spin.setRange(0.0001, 100.0)
@@ -245,21 +278,22 @@ def run_scatter_dialog():
     btns = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
     layout.addRow(btns)
 
-    def on_accept():
-        density = density_spin.value()
-        spacing = spacing_spin.value()
-        random_rotation = randrot_chk.isChecked()
-        cross_side_spacing = crossside_chk.isChecked()
-        seed = seed_spin.value() if seed_spin.value() != 0 else None
+    def on_accept() -> None:
+        density: float = density_spin.value()
+        spacing: float = spacing_spin.value()
+        random_rotation: bool = randrot_chk.isChecked()
+        cross_side_spacing: bool = crossside_chk.isChecked()
+        seed_val: int = seed_spin.value()
+        seed: Optional[int] = seed_val if seed_val != 0 else None
 
         # Save choices for next time
         prefs.SetFloat("density", float(density))
         prefs.SetFloat("min_spacing", float(spacing))
         prefs.SetBool("random_rotation", bool(random_rotation))
         prefs.SetBool("cross_side_spacing", bool(cross_side_spacing))
-        prefs.SetInt("seed", int(seed_spin.value() if seed is not None else 0))
+        prefs.SetInt("seed", int(seed_val if seed is not None else 0))
 
-        doc = App.ActiveDocument
+        doc: App.Document = App.ActiveDocument
         doc.openTransaction("ScatterObjectsOnSurface")
         try:
             scatter_on_faces(
@@ -270,7 +304,7 @@ def run_scatter_dialog():
                 random_rotation=random_rotation,
                 seed=seed,
                 cross_side_spacing=cross_side_spacing,
-                base_shape=base_shape
+                base_shape=base_shape,
             )
         except Exception:
             doc.abortTransaction()
