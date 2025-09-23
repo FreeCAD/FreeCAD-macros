@@ -41,22 +41,21 @@ __Requires__ = "FreeCAD >= 1.0"
 __Communication__ = "https://github.com/FreeCAD/FreeCAD-macros/issues/"
 __Files__ = "ScatterObjectsOnSurface.png"
 
-from typing import Dict, Iterable, List, Optional, Tuple
-
-import FreeCAD as App
-import FreeCADGui as Gui
-import Part
-import random
 import math
-from PySide import QtWidgets
+import random
+from typing import Iterable
+
+import FreeCAD as app
+import FreeCADGui as gui
+import Part  # FreeCAD.
+from PySide import QtWidgets  # ! FreeCAD's PySide, can be PySide2 or PySide6 depending on version.
+
+CellKey = tuple[int, int, int]
+VecPair = tuple[app.Vector, app.Vector]
+GridMap = dict[CellKey, list[VecPair]]
 
 
-CellKey = Tuple[int, int, int]
-VecPair = Tuple[App.Vector, App.Vector]
-GridMap = Dict[CellKey, List[VecPair]]
-
-
-def _grid_key(p: App.Vector, cell: float) -> CellKey:
+def _grid_key(p: app.Vector, cell: float) -> CellKey:
     return (
         int(math.floor(p.x / cell)),
         int(math.floor(p.y / cell)),
@@ -73,8 +72,8 @@ def _neighbor_keys(k: CellKey) -> Iterable[CellKey]:
 
 
 def _too_close_grid(
-    candidate_pt: App.Vector,
-    candidate_n: App.Vector,
+    candidate_pt: app.Vector,
+    candidate_n: app.Vector,
     grid: GridMap,
     cell: float,
     min_spacing: float,
@@ -105,15 +104,15 @@ def _halton(i: int, b: int) -> float:
 # --------------------------------
 
 def scatter_on_faces(
-    faces: List[Part.Face],
+    faces: list[Part.Face],
     scatter_shape: Part.Shape,
     density: float = 0.01,
-    min_spacing: Optional[float] = None,
+    min_spacing: float | None = None,
     random_rotation: bool = True,
-    seed: Optional[int] = None,
+    seed: int | None = None,
     cross_side_spacing: bool = False,
-    base_shape: Optional[Part.Shape] = None,
-) -> Optional[object]:
+    base_shape: Part.Shape | None = None,
+) -> app.DocumentObject | None:
     """
     Scatter copies of scatter_shape over the given faces.
 
@@ -124,8 +123,8 @@ def scatter_on_faces(
     if seed is not None:
         random.seed(seed)
 
-    doc: App.Document = App.ActiveDocument
-    scattered_shapes: List[Part.Shape] = []
+    doc: app.Document = app.ActiveDocument
+    scattered_shapes: list[Part.Shape] = []
 
     # Auto spacing from scatter object's size if none given
     if not min_spacing or min_spacing <= 0:
@@ -158,13 +157,13 @@ def scatter_on_faces(
             # explicit form kept
             v: float = v_min + hv * (v_max - v_min)
 
-            pt: App.Vector = face.valueAt(u, v)
+            pt: app.Vector = face.valueAt(u, v)
 
             # Must lie on the actual face area (excludes holes / outside UV)
             if not face.isInside(pt, 1e-2, False):
                 continue
 
-            n: App.Vector = face.normalAt(u, v)
+            n: app.Vector = face.normalAt(u, v)
             if n.Length == 0:
                 continue
             n = n.normalize()
@@ -174,13 +173,13 @@ def scatter_on_faces(
                 continue
 
             # Align +Z to the surface normal (handles 180° case)
-            placement = App.Placement()
+            placement = app.Placement()
             placement.Base = pt
-            placement.Rotation = App.Rotation(App.Vector(0, 0, 1), n)
+            placement.Rotation = app.Rotation(app.Vector(0, 0, 1), n)
 
             # Optional random spin around the (now aligned) local Z / surface normal
             if random_rotation:
-                placement.Rotation = App.Rotation(n, random.uniform(0, 360)).multiply(
+                placement.Rotation = app.Rotation(n, random.uniform(0, 360)).multiply(
                     placement.Rotation
                 )
 
@@ -189,7 +188,7 @@ def scatter_on_faces(
 
             # Collision check: only keep if not buried in unselected geometry
             if base_shape:
-                test_pt: App.Vector = pt + n.multiply(0.1)  # 0.1 mm above surface
+                test_pt: app.Vector = pt + n.multiply(0.1)  # 0.1 mm above surface
                 if base_shape.isInside(test_pt, 1e-6, True):
                     continue
 
@@ -202,7 +201,7 @@ def scatter_on_faces(
             placed_on_face += 1
 
     if not scattered_shapes:
-        App.Console.PrintMessage("No shapes generated.\n")
+        app.Console.PrintMessage("No shapes generated.\n")
         return None
 
     compound: Part.Shape = Part.makeCompound(scattered_shapes)
@@ -218,25 +217,25 @@ def scatter_on_faces(
 
 def run_scatter_dialog() -> None:
     # preferences bucket for this macro
-    prefs: App.ParamGet = App.ParamGet("User parameter:BaseApp/Preferences/Macros/ScatterObjectsOnSurface")
+    prefs: app.ParamGet = app.ParamGet("User parameter:BaseApp/Preferences/Macros/ScatterObjectsOnSurface")
 
-    sel = Gui.Selection.getSelectionEx()
+    sel = gui.Selection.getSelectionEx()
     if len(sel) < 2:
-        App.Console.PrintError("Select base object (or faces) first, then scatter object.\n")
+        app.Console.PrintError("Select base object (or faces) first, then scatter object.\n")
         return
 
     base_sel = sel[0]
     scatter_obj = sel[1].Object
     scatter_shape: Part.Shape = scatter_obj.Shape
 
-    faces: List[Part.Face] = [sub for sub in base_sel.SubObjects if isinstance(sub, Part.Face)]
+    faces: list[Part.Face] = [sub for sub in base_sel.SubObjects if isinstance(sub, Part.Face)]
     base_shape: Part.Shape = base_sel.Object.Shape
 
     if not faces:
         try:
             faces = base_shape.Faces
         except Exception:
-            App.Console.PrintError("First selection must be a Part/Body with faces (or select faces directly).\n")
+            app.Console.PrintError("First selection must be a Part/Body with faces (or select faces directly).\n")
             return
 
     dlg = QtWidgets.QDialog()
@@ -284,7 +283,7 @@ def run_scatter_dialog() -> None:
         random_rotation: bool = randrot_chk.isChecked()
         cross_side_spacing: bool = crossside_chk.isChecked()
         seed_val: int = seed_spin.value()
-        seed: Optional[int] = seed_val if seed_val != 0 else None
+        seed: int | None = seed_val if seed_val != 0 else None
 
         # Save choices for next time
         prefs.SetFloat("density", float(density))
