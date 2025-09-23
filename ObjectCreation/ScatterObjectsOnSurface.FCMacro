@@ -16,15 +16,16 @@
 #
 # GUI and CLI Parameters:
 #
-# | Parameter                 | Type        | Description                                                                                  | Default |
-# |---------------------------|-------------|----------------------------------------------------------------------------------------------|---------|
-# | density                   | float       | Approximate number of points per mm² on the surface                                          | 0.05    |
-# | min_spacing               | float       | Minimum distance between scatter objects in mm (0 = auto based on bounding box)              | 0.0     |
-# | random_rotation           | bool        | Apply random rotation around the surface normal                                              | True    |
-# | cross_side_spacing        | bool        | Prevent overlaps across opposite-facing surfaces                                             | False   |
-# | seed                      | int/None    | Optional random seed for reproducible scatter patterns                                       | None    |
-# | faces                     | list        | List of Part.Face objects to scatter on (CLI) or selected in GUI                             | All faces if not provided |
-# | base_shape                | Part.Shape  | Shape of the base object for collision checks                                                | Required|
+# | Parameter                   | Type             | Description                                                                                    | Default                   |
+# | --------------------------- | ---------------- | ---------------------------------------------------------------------------------------------- | ---------                 |
+# | doc                         | FreeCAD.Document | The document to which add the generated compound (only CLI parameter)                          | -                         |
+# | density                     | float            | Approximate number of points per mm² on the surface                                            | 0.05                      |
+# | min_spacing                 | float            | Minimum distance between scatter objects in mm (0 = auto based on bounding box)                | 0.0                       |
+# | random_rotation             | bool             | Apply random rotation around the surface normal                                                | True                      |
+# | cross_side_spacing          | bool             | Prevent overlaps across opposite-facing surfaces                                               | False                     |
+# | seed                        | int/None         | Optional random seed for reproducible scatter patterns                                         | None                      |
+# | faces                       | list             | List of Part.Face objects to scatter on (CLI) or selected in GUI                               | All faces if not provided |
+# | base_shape                  | Part.Shape       | Shape of the base object for collision checks                                                  | Required                  |
 
 __Name__ = "Scatter Objects on Surface"
 __Comment__ = "Distribute objects randomly over surfaces of another object with spacing and rotation options."
@@ -104,6 +105,7 @@ def _halton(i: int, b: int) -> float:
 # --------------------------------
 
 def scatter_on_faces(
+    doc: app.Document,
     faces: list[Part.Face],
     scatter_shape: Part.Shape,
     density: float = 0.01,
@@ -123,7 +125,6 @@ def scatter_on_faces(
     if seed is not None:
         random.seed(seed)
 
-    doc: app.Document = app.ActiveDocument
     scattered_shapes: list[Part.Shape] = []
 
     # Auto spacing from scatter object's size if none given
@@ -292,10 +293,11 @@ def run_scatter_dialog() -> None:
         prefs.SetBool("cross_side_spacing", bool(cross_side_spacing))
         prefs.SetInt("seed", int(seed_val if seed is not None else 0))
 
-        doc: App.Document = App.ActiveDocument
+        doc: app.Document = app.activeDocument()
         doc.openTransaction("ScatterObjectsOnSurface")
         try:
             scatter_on_faces(
+                doc=doc,
                 faces=faces,
                 scatter_shape=scatter_shape,
                 density=density,
