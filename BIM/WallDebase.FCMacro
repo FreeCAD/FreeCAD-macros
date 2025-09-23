@@ -12,30 +12,26 @@
 # valid, line-based walls will be processed.
 
 __Name__ = "Debase Walls"
-__Comment__ = (
-    "Converts line-based walls to be property-driven, skipping non-line-based walls."
-)
+__Comment__ = "Converts line-based walls to be property-driven, skipping non-line-based walls."
 __Author__ = "Furgo"
-__Version__ = "0.9.1"
-__Date__ = "2025-09-07"
+__Version__ = "0.9.2"
+__Date__ = "2025-09-23"
 __License__ = "LGPL-2.1-or-later"
 __Wiki__ = "https://wiki.freecad.org/Arch_Wall"
 __Icon__ = ""
-__Help__ = (
-    "Select one or more Arch Wall objects and run this macro. It will make them independent "
-    "of their base geometry, preserving their current size and placement."
-)
+__Help__ = "Select one or more Arch Wall objects and run this macro. It will make them independent of their base geometry, preserving their current size and placement."
 __Status__ = "Alpha"
 __Requires__ = "FreeCAD >= v1.0.0"
 __Files__ = ""
 
 
-import FreeCAD
-import FreeCADGui
-import Draft
-import Part
-from PySide import QtCore, QtGui
 from collections import namedtuple
+
+import Draft  # FreeCAD
+import FreeCAD as app
+import FreeCADGui as gui
+import Part  # FreeCAD
+from PySide import QtGui  # ! FreeCAD's PySide, can be PySide2 or PySide6.
 
 MACRO_TITLE = "Debase Walls"
 DebasedState = namedtuple(
@@ -54,11 +50,11 @@ def _analyze_wall(wall):
     # Validate the base object before processing ---
     base_shape = wall.Base.Shape
     if not base_shape.Edges:
-        FreeCAD.Console.PrintWarning(f"Skipping '{wall.Label}': Base object has no edges.\n")
+        app.Console.PrintWarning(f"Skipping '{wall.Label}': Base object has no edges.\n")
         return None
 
     if len(base_shape.Edges) > 1:
-        FreeCAD.Console.PrintWarning(
+        app.Console.PrintWarning(
             f"Skipping '{wall.Label}': Base has multiple edges. Only single straight lines "
             "are supported.\n"
         )
@@ -67,7 +63,7 @@ def _analyze_wall(wall):
     edge = base_shape.Edges[0]
     if not isinstance(edge.Curve, (Part.Line, Part.LineSegment)):
         curve_type = type(edge.Curve).__name__
-        FreeCAD.Console.PrintWarning(
+        app.Console.PrintWarning(
             f"Skipping '{wall.Label}': Base is not a straight line (it's a {curve_type}).\n"
         )
         return None
@@ -109,7 +105,7 @@ def _analyze_wall(wall):
         baseline_edge.lastVertex().Point - baseline_edge.firstVertex().Point
     ).normalize()
     y_axis = x_axis.cross(z_axis).normalize()
-    final_rotation = FreeCAD.Rotation(x_axis, y_axis, z_axis)
+    final_rotation = app.Rotation(x_axis, y_axis, z_axis)
 
     # This will be the debased wall's local coordinate system origin (0, 0, 0).
     # The wall's Align property (Left, Center, Right) determines how the wall's
@@ -125,7 +121,7 @@ def _analyze_wall(wall):
     align_offset_vector = y_axis * align_offset_distance
     final_position = centerline_position + align_offset_vector
 
-    correct_placement = FreeCAD.Placement(final_position, final_rotation)
+    correct_placement = app.Placement(final_position, final_rotation)
 
     return DebasedState(
         placement=correct_placement,
@@ -185,7 +181,7 @@ def apply_changes(doc, final_states):
             wall.Placement = state.placement
     except Exception as e:
         doc.abortTransaction()
-        FreeCAD.Console.PrintError(
+        app.Console.PrintError(
             f"An error occurred during the operation: {e}\nOperation cancelled.\n"
         )
         return False
@@ -232,30 +228,28 @@ def print_summary(processed_states, skipped_walls):
     processed_count = len(processed_states)
     skipped_count = len(skipped_walls)
 
-    FreeCAD.Console.PrintMessage("\n--- Debase Operation Summary ---\n")
+    app.Console.PrintMessage("\n--- Debase Operation Summary ---\n")
     if processed_count > 0:
         processed_names = ", ".join(processed_states.keys())
-        FreeCAD.Console.PrintMessage(
+        app.Console.PrintMessage(
             f"Successfully processed {processed_count} wall(s): {processed_names}\n"
         )
     if skipped_count > 0:
         skipped_names = ", ".join([w.Label for w in skipped_walls])
-        FreeCAD.Console.PrintWarning(
+        app.Console.PrintWarning(
             f"Skipped {skipped_count} object(s): {skipped_names}\n"
         )
-    FreeCAD.Console.PrintMessage("--------------------------------\n")
+    app.Console.PrintMessage("--------------------------------\n")
 
 
 def run():
-    """
-    Main function to orchestrate the entire debasing process.
-    """
-    doc = FreeCAD.ActiveDocument
+    """Main function to orchestrate the entire debasing process."""
+    doc = app.activeDocument()
     if not doc:
-        FreeCAD.Console.PrintError("No active document found.\n")
+        app.Console.PrintError("No active document found.\n")
         return
 
-    selection = FreeCADGui.Selection.getSelection()
+    selection = gui.Selection.getSelection()
     if not selection:
         QtGui.QMessageBox.information(
             None, MACRO_TITLE, "Please select one or more Arch Wall objects to debase."
@@ -265,7 +259,7 @@ def run():
     final_states, bases_to_cleanup, skipped_walls = analyze_selection(selection)
 
     if not final_states:
-        FreeCAD.Console.PrintWarning("No valid line-based walls were found to process.\n")
+        app.Console.PrintWarning("No valid line-based walls were found to process.\n")
         # Print summary even if only invalid objects were selected
         print_summary(final_states, skipped_walls)
         return
