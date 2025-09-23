@@ -322,4 +322,5 @@ def run_scatter_dialog() -> None:
 
 
 # Run from active FreeCAD document
-run_scatter_dialog()
+if __name__ == "__main__":
+    run_scatter_dialog()
