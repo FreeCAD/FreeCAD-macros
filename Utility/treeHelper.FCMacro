@@ -8,7 +8,7 @@ __Date__ = "2022-09-04"
 __License__ = "MIT"
 __Web__ = "https://github.com/iinjdpa/TreeHelper"
 __Wiki__ = ""
-__Icon__ = "/treeHelper/treeHelper.svg"
+__Icon__ = "treeHelper/treeHelper.svg"
 __Help__ = "Select a folder, part or body where helper tree must grow. Drag object from main tree to helper tree"
 __Status__ = "Alpha"
 __Requires__ = "Freecad >= v0.19"
@@ -335,4 +335,5 @@ if __name__ == '__main__':
     mform=Treehelper(mw)
     mform.loadtree()
     mform.show()
+
     mw.addDockWidget(QtCore.Qt.RightDockWidgetArea,mform)
