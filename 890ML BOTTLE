@@ -1,0 +1,72 @@
+import FreeCAD as App
+import Part
+import Draft
+import math
+
+doc = App.newDocument("Honeycomb_Bottle")
+
+# ------------------------
+# PARAMETERS
+# ------------------------
+height = 260       # bottle height (mm)
+body_radius = 38   # body radius (mm)
+neck_radius = 21.5 # 43mm neck outer diameter
+neck_height = 28   # neck height
+hex_radius = 6     # honeycomb cell size
+wall_thickness = 2
+
+# ------------------------
+# BOTTLE BASE SHAPE
+# ------------------------
+body = Part.makeCylinder(body_radius, height)
+
+# ------------------------
+# NECK
+# ------------------------
+neck = Part.makeCylinder(neck_radius, neck_height)
+neck.translate(App.Vector(0,0,height))
+
+bottle = body.fuse(neck)
+
+# ------------------------
+# WALL HOLLOWING
+# ------------------------
+inner_body = Part.makeCylinder(body_radius - wall_thickness, height)
+inner_neck = Part.makeCylinder(neck_radius - wall_thickness, neck_height)
+inner_neck.translate(App.Vector(0,0,height))
+inner = inner_body.fuse(inner_neck)
+
+bottle_hollow = bottle.cut(inner)
+
+# ------------------------
+# HONEYCOMB TEXTURE (HEX PATTERN)
+# ------------------------
+hex_height = height - 40        # avoid neck area
+rows = int(hex_height / (hex_radius * 1.7))
+cols = int(2 * math.pi * body_radius / (hex_radius * 2))
+
+hex_cutouts = []
+
+for i in range(rows):
+    for j in range(cols):
+        angle = (j / cols) * 2*math.pi
+        x = (body_radius - 1) * math.cos(angle)
+        y = (body_radius - 1) * math.sin(angle)
+        z = 20 + i * (hex_radius * 1.7)
+
+        hexagon = Part.makeCylinder(hex_radius, 1, App.Vector(x,y,z))
+        hex_cutouts.append(hexagon)
+
+pattern_cut = Part.makeCompound(hex_cutouts)
+
+# Apply pattern
+bottle_textured = bottle_hollow.cut(pattern_cut)
+
+# ------------------------
+# FINAL OBJECT
+# ------------------------
+part_obj = doc.addObject("Part::Feature", "Bottle_890ml")
+part_obj.Shape = bottle_textured
+
+doc.recompute()
+print("Bottle Model Created Successfully!")
