@@ -462,7 +462,7 @@ class TimingGearWindow(object):
 
         sketch_gear = gear.newObject('Sketcher::SketchObject', 'SketchGear')
         sketch_gear.ViewObject.hide()
-        sketch_gear.Support = (gear.Origin.OriginFeatures[3], [''])  # The XY Plane.
+        sketch_gear.AttachmentSupport = (gear.Origin.OriginFeatures[3], [''])  # The XY Plane.
         sketch_gear.MapMode = 'FlatFace'
         sketch_gear.AttachmentOffset = app.Placement(
             app.Vector(0, 0, 0),
@@ -498,7 +498,7 @@ class TimingGearWindow(object):
         if self.with_base:
             sketch_base = gear.newObject('Sketcher::SketchObject', 'SketchBase')
             sketch_base.ViewObject.hide()
-            sketch_base.Support = (gear.Origin.OriginFeatures[3], [''])  # The XY Plane.
+            sketch_base.AttachmentSupport = (gear.Origin.OriginFeatures[3], [''])  # The XY Plane.
             sketch_base.MapMode = 'FlatFace'
             sketch_base.AttachmentOffset = app.Placement(
                 app.Vector(0, 0, -self.base_height),
@@ -534,7 +534,7 @@ class TimingGearWindow(object):
         # Add Top to the Gear
         if self.with_top:
             sketch_top = gear.newObject('Sketcher::SketchObject', 'SketchTop')
-            sketch_top.Support = (gear.Origin.OriginFeatures[3], [''])  # The XY Plane.
+            sketch_top.AttachmentSupport = (gear.Origin.OriginFeatures[3], [''])  # The XY Plane.
             sketch_top.MapMode = 'FlatFace'
             sketch_top.AttachmentOffset = app.Placement(
                 app.Vector(0, 0, self.gear_height),
