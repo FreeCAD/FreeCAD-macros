@@ -27,6 +27,9 @@
 #
 # Changelog
 # ---------
+# - v 1.6:
+#   - Fix Attachment support porting code for edwilliams16 version fix from:
+#     https://forum.freecad.org/viewtopic.php?p=812083#p812083
 # - v 1.5:
 #   - Fix position of base.
 # - v 1.4:
@@ -39,9 +42,9 @@
 
 __Name__ = 'GT2/GT3/GT5 Timing Gear Creator'
 __Comment__ = 'GT2/GT3/GT5 Gear Creator Macro (any gear size from 5 to 360 teeth)'
-__Author__ = 'eaguirre,galou'
-__Version__ = '1.5.0'
-__Date__ = '2019-12-29'
+__Author__ = 'eaguirre,galou,edwiliams16'
+__Version__ = '1.6.0'
+__Date__ = '2025-12-04'
 __License__ = 'LGPL-2.0-or-later'
 __Web__ = 'http://www.emilioaguirre.com'
 __Wiki__ = 'https://wiki.freecad.org/Macro_TimingGear'
