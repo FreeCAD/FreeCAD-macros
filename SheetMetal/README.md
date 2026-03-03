@@ -1,6 +1,6 @@
 # SheetMetal StitchCut Macro
 
-The SheetMetalStitchCut macro creates evenly spaced stitch cuts along a selected line in a sketch,  
+The SheetMetalStitchCut macro creates evenly spaced stitch cuts along a selected line in a sketch,
 primarily for sheet metal flat patterns to allow easier hand folding.
 
 ## Features
@@ -21,8 +21,8 @@ primarily for sheet metal flat patterns to allow easier hand folding.
    - Start & End Offset
    - Gap between cuts
    - Number of cuts
-   - **Cut Width**  
-     - `0` → single cut line  
+   - **Cut Width**
+     - `0` → single cut line
      - `>0` → rectangular slot of specified width
 5. The original line is replaced with stitch cuts.
 
@@ -33,7 +33,7 @@ John Hyslop
 Tested on FreeCAD 1.0.2 and later.
 
 ## License
-Free for personal, educational, and commercial use.  
+Free for personal, educational, and commercial use.
 Please credit the author by including this README in your project or linking to the repository.
 
 ## Changelog
