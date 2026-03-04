@@ -2,36 +2,29 @@ import FreeCAD as app
 import FreeCADGui as gui
 import Part
 
-# -------------------------------------------------
-# Qt Compatibility (PySide2 / PySide6)
-# -------------------------------------------------
-try:
-    from PySide6.QtWidgets import (
-        QDialog, QDoubleSpinBox, QSpinBox,
-        QFormLayout, QLabel, QDialogButtonBox, QMessageBox
-    )
-except ImportError:
-    from PySide2.QtWidgets import (
-        QDialog, QDoubleSpinBox, QSpinBox,
-        QFormLayout, QLabel, QDialogButtonBox, QMessageBox
-    )
+# Import FreeCAD's PySide that points to the appropriate version.
+from PySide.QtWidgets import (
+    QDialog, QDoubleSpinBox, QSpinBox,
+    QFormLayout, QLabel, QDialogButtonBox, QMessageBox
+)
 
 """
 SheetMetalStitchCut.FCMacro
 
 Author: John Hyslop
 Description:
-    This FreeCAD macro allows you to create evenly spaced "stitch cuts" along a selected
-    straight line in a sketch. The user can specify the start & end offsets, gap between cuts,
-    and number of cuts. The macro will calculate the cut lengths and insert them directly into the sketch.
+    This FreeCAD macro allows you to create evenly spaced "stitch cuts" along
+    a selected straight line in a sketch. The user can specify the start & end
+    offsets, gap between cuts, and number of cuts. The macro will calculate the
+    cut lengths and insert them directly into the sketch.
 """
 
 # --- Macro Metadata ---
 __Name__ = "StitchCut"
 __Comment__ = "Creates evenly spaced stitch cuts along a selected line in a sketch, for hand-folding sheet metal."
 __Author__ = "John Hyslop"
-__Date__ = "2025-12-15"
-__Version__ = "1.2"
+__Date__ = "2026-03-04"
+__Version__ = "1.2.1"
 __License__ = "Free for personal, educational, and commercial use. Please credit the author."
 __Web__ = "https://github.com/JohnHyslop/MyFreeCADMacros/StitchCut"
 __Wiki__ = "https://wiki.freecad.org/SheetMetal/StitchCut"
@@ -41,7 +34,7 @@ __Help__ = "Select a line in a sketch, run macro, and define offsets, gap, and n
 __Status__ = "Stable"
 __Requires__ = "FreeCAD >= 1.0.2"
 __Communication__ = "https://github.com/JohnHyslop/MyFreeCADMacros/issues"
-__Files__ = "SheetMetal/StitchCut.FCMacro"
+__Files__ = "SheetMetalStitchCut.svg,SheetMetalStitchCut-README.md"
 # --- End of Metadata ---
 
 
@@ -51,9 +44,9 @@ __Files__ = "SheetMetal/StitchCut.FCMacro"
 class StitchCutDialog(QDialog):
     """
     Dialog for user input to define stitch cuts along a line in the sketch.
-    It allows the user to define offsets, gap, number of cuts, and width of the cuts.
-    The settings are saved to FreeCAD's persistent configuration system to remember
-    the user's preferences between runs.
+    It allows the user to define offsets, gap, number of cuts, and width of the
+    cuts. The settings are saved to FreeCAD's persistent configuration system
+    to remember the user's preferences between runs.
     """
 
     def __init__(self, line_length: float, parent=None):
@@ -161,7 +154,7 @@ class StitchCutDialog(QDialog):
 # -------------------------------------------------
 # Selection Handling
 # -------------------------------------------------
-def get_selected_line():
+def get_selected_line() -> tuple[app.DocumentObject | None, int | None]:
     """Retrieves selected line in sketch."""
     sel = gui.Selection.getSelectionEx()
 
@@ -194,7 +187,7 @@ def get_selected_line():
 # -------------------------------------------------
 # Main Function
 # -------------------------------------------------
-def stitch_cut():
+def stitch_cut() -> None:
     """Main function to apply stitch cuts."""
     sk, idx = get_selected_line()
     if not sk:
@@ -280,4 +273,5 @@ def stitch_cut():
 # -------------------------------------------------
 # Run the macro
 # -------------------------------------------------
-stitch_cut()
+if __name__ == "__main__":
+    stitch_cut()
