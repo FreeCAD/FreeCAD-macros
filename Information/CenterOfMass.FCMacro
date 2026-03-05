@@ -20,14 +20,15 @@
 # Credits:
 # 2018 - 2022: schupin
 # 2022 - 2024: SyProLei project (Saarland University)
-# 2025: farahats9, s-quirin (former SyProLei project)
+# 2025: farahats9
+# 2025 - 2026: s-quirin (former SyProLei project)
 #
 
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin, farahats9'
-__Version__ = '0.8.4'
-__Date__ = '2025-05-23'
+__Version__ = '0.8.5'
+__Date__ = '2026-03-04'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecad.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://wiki.freecad.org/Macro_CenterOfMass'
@@ -144,12 +145,19 @@ class SolidsWidget():
         self.sol = sol
         if hasattr(solid.ViewObject, 'ShapeColor'):
             color = solid.ViewObject.ShapeColor
+        elif hasattr(solid.ViewObject, 'ShapeMaterial'):
+            # FreeCAD 1.1
+            color = solid.ViewObject.ShapeMaterial.DiffuseColor
         elif hasattr(solid.ViewObject, 'ShapeAppearance'):
             # App::Link in FreeCAD 0.22
             color = solid.ViewObject.ShapeAppearance[0].DiffuseColor
         self.orgColorFC = color
         self.orgColorQT = QtGui.QColor.fromRgbF(*color)
-        self.orgTransparency = solid.ViewObject.Transparency
+        if hasattr(solid.ViewObject, 'Transparency'):
+            self.orgTransparency = solid.ViewObject.Transparency
+        elif hasattr(solid.ViewObject, 'ShapeMaterial'):
+            # FreeCAD 1.1
+            self.orgTransparency = solid.ViewObject.ShapeMaterial.Transparency
         self.labelC = QtGui.QLabel(' ', parent)
         self.label = QtGui.QLabel(solid.Label, parent)
         self.combo = QtGui.QComboBox(parent)
@@ -179,8 +187,9 @@ class SolidsWidget():
         if hasattr(g_sel[sol], 'Material'):
             if hasattr(g_sel[sol].Material, 'Material'):
                 # overwrite if Arch Material set
-                mat_name = g_sel[sol].Material.Material['CardName']
-                mat_density = g_sel[sol].Material.Material['Density']    # class 'str'
+                if 'Density' in g_sel[sol].Material.Material:
+                    mat_density = g_sel[sol].Material.Material['Density']    # class 'str'
+                    mat_name = g_sel[sol].Material.Material['CardName']
         self.combo.setCurrentText(mat_name)    # not found: stays 0=custom
         self.combo.currentIndexChanged.connect(self.on_comboMaterial_changed)
         self.init_spinDensity(self.spinDens, Units.Quantity(mat_density), parent.unitForD)
@@ -757,6 +766,9 @@ class CenterofmassWidget(QtGui.QWidget):
                             o_.Placement = o_.Placement.multiply(it.Placement)
                 elif 0.22 <= FREECAD_VERSION < 1.0:
                     o_.Placement = UtilsAssembly.getGlobalPlacement(s_)
+                elif FREECAD_VERSION >= 1.1:
+                    rootObj = s_.Parents[0][0] if s_.Parents else s_
+                    o_.Placement = app.GeoFeature.getGlobalPlacementOf(s_, rootObj, s_.Name)
                 elif s_.TypeId != 'Assembly::JointGroup' or s_.TypeId == 'App::Link':
                     if s_.InList:
                         for it in s_.InListRecursive:
@@ -1161,10 +1173,18 @@ class CenterofmassWidget(QtGui.QWidget):
     def set_objects_transparent(self, transparent):
         if transparent:
             for sol in range(self.solid_count):
-                g_sel[sol].ViewObject.Transparency = 25
+                if hasattr(g_sel[sol].ViewObject, 'Transparency'):
+                    g_sel[sol].ViewObject.Transparency = 25
+                elif hasattr(g_sel[sol].ViewObject, 'ShapeMaterial'):
+                    # FreeCAD 1.1
+                    g_sel[sol].ViewObject.ShapeMaterial.Transparency = 25
         else:
             for sol in range(self.solid_count):
-                g_sel[sol].ViewObject.Transparency = self.solids[sol].orgTransparency
+                if hasattr(g_sel[sol].ViewObject, 'Transparency'):
+                    g_sel[sol].ViewObject.Transparency = self.solids[sol].orgTransparency
+                elif hasattr(g_sel[sol].ViewObject, 'ShapeMaterial'):
+                    # FreeCAD 1.1
+                    g_sel[sol].ViewObject.ShapeMaterial.Transparency = self.solids[sol].orgTransparency
 
     def document_is_open(self):
         """Checks if the document associated with the selected solids is open."""
@@ -1226,8 +1246,11 @@ class CenterofmassWidget(QtGui.QWidget):
         obj = self.doc.getObject(name)
         if hasattr(obj.ViewObject, 'ShapeColor'):
             obj.ViewObject.ShapeColor = color
+        elif hasattr(obj.ViewObject, 'ShapeMaterial'):
+            # FreeCAD 1.1
+            obj.ViewObject.ShapeMaterial.DiffuseColor = color
         elif hasattr(obj.ViewObject, 'ShapeAppearance'):
-            # App::Link in FreeCAD 0.22
+            # App::Link in FreeCAD 0.22 and (deprecated?) in FreeCAD 1.1
             material = obj.ViewObject.ShapeAppearance[0]
             material.DiffuseColor = color
             obj.ViewObject.ShapeAppearance = (material, )    # overwrite tuple
