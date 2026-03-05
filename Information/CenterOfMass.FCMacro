@@ -27,8 +27,8 @@
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin, farahats9'
-__Version__ = '0.8.5'
-__Date__ = '2026-03-04'
+__Version__ = '0.8.6'
+__Date__ = '2026-03-05'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecad.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://wiki.freecad.org/Macro_CenterOfMass'
@@ -1017,6 +1017,7 @@ class CenterofmassWidget(QtGui.QWidget):
         self.areaTot = 0.
         self.TotalCoM = app.Vector(0, 0, 0)
         self.TotalMoI = np.zeros((3, 3))
+        solidsWithoutMoI = []
         for sol in range(self.solid_count):
             if not isinstance(self.solids[sol], SolidsWidget):
                 return
@@ -1028,20 +1029,23 @@ class CenterofmassWidget(QtGui.QWidget):
             self.massTot += self.masses[sol]
             self.volTot += volumeInUnit
             self.areaTot += areaInUnit
-
         if self.massTot == 0:
             error_message('All masses were set to zero. Last one reset to default.')
             self.solids[-1].combo.setCurrentText('default')
             return
+
         for sol in range(self.solid_count):
-            self.TotalCoM += 1 / self.massTot * self.masses[sol] * self.CoMs[sol]
             if hasattr(g_sel[sol], 'MatrixOfInertia'):
                 self.MoIs[sol] = self.get_MoI(g_sel[sol].MatrixOfInertia, self.solids[sol].spinDens.value())
             elif hasattr(g_sel[sol],'Shape') and hasattr(g_sel[sol].Shape, 'MatrixOfInertia'):
                 self.MoIs[sol] = self.get_MoI(g_sel[sol].Shape.MatrixOfInertia, self.solids[sol].spinDens.value())
             else:
-                app.Console.PrintWarning(f'Solid {self.solids[sol].label.text()} has no "MatrixOfInertia" \n')
+                solidsWithoutMoI.append(self.solids[sol].label.text())
+        if solidsWithoutMoI:
+            app.Console.PrintWarning(f'Solids {solidsWithoutMoI} have no "MatrixOfInertia".\n')
+
         for sol in range(self.solid_count):
+            self.TotalCoM += 1 / self.massTot * self.masses[sol] * self.CoMs[sol]
             self.TotalMoI += self.compute_momentOfInertia(self.MoIs[sol], self.masses[sol], self.CoMs[sol])
 
         # output
