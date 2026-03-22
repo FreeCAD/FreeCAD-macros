@@ -69,7 +69,7 @@ class LasercutterTechdrawExportItem:
                 fp.Normal = face.normalAt(0, 0)
             else:
                 fp.Normal = self.getNormal(outline)
-            
+
         fp.Shape = Part.Compound(outline.Wires)
         fp.Label = fp.Part.Label + ' offset'
         fp.Placement = outline.Placement
@@ -79,7 +79,7 @@ class LasercutterTechdrawExportItem:
 
         if fp.Method != 'normal':
             fp.Normal = self.getNormal(fp)
-            
+
         if fp.Normal.z < 0:
             fp.Normal = fp.Normal * -1
 
