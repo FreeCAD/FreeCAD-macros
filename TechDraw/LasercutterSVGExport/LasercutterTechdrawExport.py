@@ -32,37 +32,45 @@ class LasercutterTechdrawExportItem:
         if fp.Part and fp.Normal and (not self.updating):
             self.make_outline(fp)
 
-    def onChanged(self, fp, prop):
-        '''Do something when a property has changed'''
-        props = ['Part', 'BeamWidth', 'Normal', 'Method']
-        if prop in props:
-            self.execute(fp)
-
     def make_outline(self, fp):
         self.updating = True
+        outline = None
 
-        if fp.Method == 'normal':
-            outline = fp.Part.Shape.makeOffsetShape(fp.BeamWidth / 2, 1e-7)
-        elif fp.Method == '2D':
+        if fp.Method == '2D':
             outline = fp.Part.Shape.makeOffset2D(fp.BeamWidth / 2)
-            fp.Normal = self.getNormal(fp.Part)
         elif fp.Method == '3D':
-            outline = fp.Part.Shape.makeOffsetShape(fp.BeamWidth / 2, 1e-7)
-            fp.Normal = self.getNormal(fp.Part)
-        else:
-            face = self.get_biggest_face(fp.Part)
+            outline = fp.Part.Shape.makeOffsetShape(fp.BeamWidth / 2, 1e-7, join=2)
+        elif fp.Method == 'face':
+            face = self.get_biggest_face(fp.Part.Shape)
             if face:
                 outline = face.makeOffset2D(fp.BeamWidth / 2)
-                fp.Normal = face.normalAt(0, 0)
-            elif fp.Method == 'auto':
+        else: # auto
+            try:
+                outline = fp.Part.Shape.makeOffset2D(fp.BeamWidth / 2)
+            except Exception as ex:
                 try:
-                    outline = fp.Part.Shape.makeOffset2D(fp.BeamWidth / 2)
+                    outline = fp.Part.Shape.makeOffsetShape(fp.BeamWidth / 2, 1e-7, join=2)
                 except Exception as ex:
-                    outline = fp.Part.Shape.makeOffsetShape(fp.BeamWidth / 2, 1e-7)
+                    face = self.get_biggest_face(fp.Part.Shape)
+                    if face:
+                        try:
+                            outline = face.makeOffset2D(fp.BeamWidth / 2)
+                        except Exception as ex:
+                            print(ex)
 
-                fp.Normal = self.getNormal(fp.Part)
+        if not outline: return
 
-        fp.Shape = Part.Compound(outline.Wires);
+        face = self.get_biggest_face(outline)
+        if face:
+            outline = face
+
+        if fp.Method != 'normal':
+            if face:
+                fp.Normal = face.normalAt(0, 0)
+            else:
+                fp.Normal = self.getNormal(outline)
+
+        fp.Shape = Part.Compound(outline.Wires)
         fp.Label = fp.Part.Label + ' offset'
         fp.Placement = outline.Placement
 
@@ -70,27 +78,28 @@ class LasercutterTechdrawExportItem:
             fp.Placement.Rotation.Axis = fp.Placement.Rotation.Axis * -1
 
         if fp.Method != 'normal':
-            if fp.Normal.z < 0:
-                fp.Normal = fp.Normal * -1
+            fp.Normal = self.getNormal(fp)
 
-            rotation_to_apply = Rotation(fp.Normal, Vector(0, 0, 1))
-            new_rotation = rotation_to_apply.multiply(fp.Placement.Rotation)
-            fp.Placement.Rotation = new_rotation
+        if fp.Normal.z < 0:
+            fp.Normal = fp.Normal * -1
 
-            self.rotate_biggest_side_up(fp)
+        rotation_to_apply = Rotation(fp.Normal, Vector(0, 0, 1))
+        new_rotation = rotation_to_apply.multiply(fp.Placement.Rotation)
+        fp.Placement.Rotation = new_rotation
+
+        self.rotate_biggest_side_up(fp)
 
         self.updating = False
 
-    def get_biggest_face(self, part):
+    def get_biggest_face(self, shape):
         max_area = 0
         max_face = None
-        for face in part.Shape.Faces:
+        for face in shape.Faces:
             if face and face.Area > max_area:
                 max_area = face.Area
                 max_face = face
 
-        if max_face:
-            return max_face
+        return max_face
 
     def rotate_biggest_side_up(self, fp):
         bbox = fp.Shape.optimalBoundingBox()
