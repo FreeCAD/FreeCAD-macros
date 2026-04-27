@@ -28,14 +28,14 @@ __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin, farahats9'
 __Version__ = '0.8.7'
-__Date__ = '2026-04-21'
+__Date__ = '2026-04-27'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecad.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://wiki.freecad.org/Macro_CenterOfMass'
 __Icon__ = 'https://wiki.freecad.org/images/a/a6/Macro_CenterOfMass.svg'
 __Help__ = 'Select one or more bodies and launch'
 __Status__ = 'Alpha'
-__Requires__ = 'FreeCAD >= 0.20'
+__Requires__ = 'FreeCAD >= 0.21'
 __Communication__ = 'https://forum.freecad.org/viewtopic.php?f=24&t=31883'
 __Files__ = ''
 
@@ -510,9 +510,9 @@ class CenterofmassWidget(QtGui.QWidget):
         self.com_clipboard.setFlat(True)
         self.com_clipboard.clicked.connect(self.on_pushButton_copyToClipboardCdG)
 
-        axis_labels = [{'label': 'X', 'style': 'color:rgb(255, 0, 0)'},
-                       {'label': 'Y', 'style': 'color:rgb(0, 255, 0)'},
-                       {'label': 'Z', 'style': 'color:rgb(0, 0, 255)'}]
+        axis_labels = [{'label': 'X', 'style': 'color:rgb(204, 51, 51); font-weight:600;'},
+                       {'label': 'Y', 'style': 'color:rgb(51, 204, 51); font-weight:600;'},
+                       {'label': 'Z', 'style': 'color:rgb(51, 51, 204); font-weight:600;'}]
         cdgLayout = QtGui.QHBoxLayout()
         for index, axis in enumerate(axis_labels):
             label_CdG = QtGui.QLabel(axis['label'])
@@ -1238,6 +1238,12 @@ class CenterofmassWidget(QtGui.QWidget):
             state = QtCore.Qt.CheckState(state)
         if state == QtCore.Qt.Checked:
             self.coloring()
+            if FREECAD_VERSION >= 1.0:
+                for s_ in g_sel:
+                    if getattr(s_.ViewObject, 'OverrideMaterial', None) == False:
+                        msg = 'Check "OverrideMaterial" in the Property View to color Link objects.'
+                        app.Console.PrintWarning(msg + '\n')
+                        break
         else:
             for sol, selfsol in enumerate(self.solids):
                 self.set_object_color(g_sel[sol].Name, selfsol.orgColorFC)
