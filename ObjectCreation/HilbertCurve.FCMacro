@@ -24,8 +24,8 @@
 __Name__ = 'HilbertCurve'
 __Comment__ = 'This macro creates an Hilbert curve wire in 2 or 3 dimensions with many iterations.'
 __Author__  = 'Simone Bignetti'
-__Version__ = '1.2.0'
-__Date__    = '2020-12-29'
+__Version__ = '1.3.0'
+__Date__    = '2026-05-10'
 __License__ = 'LGPL-2.1-or-later'
 __Web__ = 'https://wiki.freecad.org/Macro_HilbertCurve'
 __Wiki__ = 'https://wiki.freecad.org/Macro_HilbertCurve'
@@ -169,7 +169,6 @@ class Hilbert_Dialog(QtGui.QDialog):
         titleLabel = QtGui.QLabel("Create an Hilbert curve in two or three dimensions")  # Title and subtitle
         titleFont = QtGui.QFont()
         titleFont.setBold(True)
-        titleFont.setWeight(75)
         titleLabel.setFont(titleFont)
         subtitleLabel = QtGui.QLabel("This macro creates a wire in the draft workbench\nwith the shape of an Hilbert curve in two or three dimensions.\nFor example, you can use this wire as a sweep path.\nIt's recommended to apply a radius at the wire,\nin order to obtain a correct sweep generation.")
         titleBox = QtGui.QVBoxLayout()
@@ -252,5 +251,21 @@ class Hilbert_Dialog(QtGui.QDialog):
         self.close()
 
 
-hilbert_dialog = Hilbert_Dialog()
-hilbert_dialog.exec()
+if app.Gui.activeWorkbench().name() != "DraftWorkbench":
+    msg1 = QtGui.QMessageBox()
+    msg1.setWindowTitle("Macro HilbertCurve")
+    msg1.setText("This macro works in Draft Workbench")
+    msg1.setIcon(QtGui.QMessageBox.Information)
+    msg1.exec()
+    print("This macro works in Draft Workbench.")
+else:
+    if app.ActiveDocument:
+        hilbert_dialog = Hilbert_Dialog()
+        hilbert_dialog.exec()
+    else:
+        msg2 = QtGui.QMessageBox()
+        msg2.setWindowTitle("Macro HilbertCurve")
+        msg2.setText("No active document.\nCreate a new document in Draft Workbench.")
+        msg2.setIcon(QtGui.QMessageBox.Information)
+        msg2.exec()
+        print("No active document.\nCreate a new document in Draft Workbench.")
