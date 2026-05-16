@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="64"
+   height="64"
+   viewBox="0 0 64 64"
+   version="1.1"
+   id="svg2"
+   sodipodi:docname="HatchGenerator_Icon.svg"
+   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview2"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="8.1484375"
+     inkscape:cx="14.113135"
+     inkscape:cy="35.160115"
+     inkscape:window-width="2400"
+     inkscape:window-height="1261"
+     inkscape:window-x="2391"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg2" />
+  <defs
+     id="defs1">
+    <style
+       id="style1">
+      .bg { fill: #f0f0f0; }
+      .fg { fill: #333333; }
+      .highlight { fill: #5294e2; }
+    </style>
+    <pattern
+       patternUnits="userSpaceOnUse"
+       width="59"
+       height="59"
+       patternTransform="translate(2.5,2.5)"
+       preserveAspectRatio="xMidYMid"
+       id="pattern2">
+      <rect
+         class="highlight"
+         x="1.5"
+         y="1.5"
+         width="56"
+         height="56"
+         rx="6"
+         fill="none"
+         stroke="#5294e2"
+         stroke-width="3"
+         id="rect2" />
+    </pattern>
+  </defs>
+  <rect
+     class="bg"
+     width="64"
+     height="64"
+     rx="8"
+     id="rect1" />
+  <path
+     class="fg"
+     d="M 10,10 L 54,10 M 10,21 L 54,21 M 10,32 L 54,32 M 10,43 L 54,43 M 10,54 L 54,54"
+     id="path1" />
+  <rect
+     style="stroke:none;fill:url(#pattern2)"
+     width="59"
+     height="59"
+     x="2.5"
+     y="2.5"
+     id="rect3" />
+  <circle
+     style="fill:#1a1a1a;stroke-width:0.0377953;stroke-opacity:0.6"
+     id="path3"
+     cx="14.172579"
+     cy="14.172579"
+     r="4.1725793" />
+  <circle
+     style="fill:#1a1a1a;stroke-width:0.0377953;stroke-opacity:0.6"
+     id="circle3"
+     cx="49.827419"
+     cy="14.172579"
+     r="4.1725793" />
+  <circle
+     style="fill:#1a1a1a;stroke-width:0.0377953;stroke-opacity:0.6"
+     id="circle4"
+     cx="32.462128"
+     cy="14.172579"
+     r="4.1725793" />
+  <circle
+     style="fill:#1a1a1a;stroke-width:0.0377953;stroke-opacity:0.6"
+     id="circle5"
+     cx="14.172579"
+     cy="49.827419"
+     r="4.1725793" />
+  <circle
+     style="fill:#1a1a1a;stroke-width:0.0377953;stroke-opacity:0.6"
+     id="circle6"
+     cx="49.827419"
+     cy="49.827419"
+     r="4.1725793" />
+  <circle
+     style="fill:#1a1a1a;stroke-width:0.0377953;stroke-opacity:0.6"
+     id="circle7"
+     cx="32.462128"
+     cy="49.827419"
+     r="4.1725793" />
+  <circle
+     style="fill:#1a1a1a;stroke-width:0.0377953;stroke-opacity:0.6"
+     id="circle10"
+     cx="21.364414"
+     cy="22.627417"
+     r="4.1725793"
+     transform="rotate(15)" />
+  <circle
+     style="fill:#1a1a1a;stroke-width:0.0377953;stroke-opacity:0.6"
+     id="circle11"
+     cx="57.019257"
+     cy="22.627417"
+     r="4.1725793"
+     transform="rotate(15)" />
+  <circle
+     style="fill:#1a1a1a;stroke-width:0.0377953;stroke-opacity:0.6"
+     id="circle12"
+     cx="39.653965"
+     cy="22.627417"
+     r="4.1725793"
+     transform="rotate(15)" />
+</svg>
