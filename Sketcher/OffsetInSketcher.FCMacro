@@ -1,0 +1,327 @@
+# -*- coding: utf-8 -*-
+# OffsetInSketcher.FCMacro
+__Name__    = "Sketcher Offset"
+__Comment__ = "Creates an offset of selected edges in the Sketcher. Supports lines, arcs, BSplines and external geometry. Choose between sharp or rounded corners."
+__Author__  = "gbulleryahen"
+__Version__ = "2.0"
+__Date__    = "2026-05-27"
+__License__ = "LGPL-2.0-or-later"
+__Web__     = ""
+__Wiki__    = ""
+__Icon__    = ""
+__Help__    = "In Sketcher edit mode, select connected edges (normal or external), run the macro, set offset value and corner style, click OK."
+__Status__  = "Stable"
+__Requires__ = "FreeCAD >= 0.19"
+__Communication__ = ""
+__Files__   = "OffsetInSketcher.FCMacro"
+
+# =============================================================================
+# ENGLISH
+# -------
+# Creates an offset of selected edges directly inside the FreeCAD Sketcher.
+# Supports lines, arcs, BSpline curves, and external geometry (ExternalEdge).
+#
+# Usage:
+#   1. Open a Sketch and enter edit mode.
+#   2. Select one or more connected edges (normal or external geometry).
+#   3. Run the macro.
+#   4. Enter the offset distance (positive = outward, negative = inward).
+#   5. Choose the corner style:
+#        - Sharp corner (Miter) : edges extended to their intersection.
+#        - Rounded (Arc)        : a tangent arc added at each corner.
+#   6. Click OK. The offset geometry is added to the sketch as new edges.
+#
+# Notes:
+#   - Works with geometry projected from external bodies (ExternalEdge).
+#   - BSpline offset computed via the Part API (makeOffset2D).
+#   - Requires FreeCAD 0.19 or later.
+#
+# -----------------------------------------------------------------------------
+# FRANCAIS
+# --------
+# Cree un decalage (offset) des aretes selectionnees dans le Sketcher FreeCAD.
+# Supporte les lignes, arcs, courbes BSpline et la geometrie externe.
+#
+# Utilisation :
+#   1. Ouvrir un Sketch et entrer en mode edition.
+#   2. Selectionner une ou plusieurs aretes connectees (normales ou externes).
+#   3. Lancer la macro.
+#   4. Saisir la valeur du decalage (positif = exterieur, negatif = interieur).
+#   5. Choisir le style des angles :
+#        - Angle vif (Miter) : aretes prolongees jusqu'a leur intersection.
+#        - Arrondi (Arc)     : arc tangent ajoute a chaque angle.
+#   6. Cliquer sur OK. La geometrie decalee est ajoutee au sketch.
+#
+# Notes :
+#   - Fonctionne avec la geometrie externe (ExternalEdge).
+#   - Offset des BSplines via l'API Part (makeOffset2D).
+#   - Necessite FreeCAD 0.19 ou superieur.
+#
+# Changelog:
+#   2.0 (2026-05-27) - BSpline support, external geometry support,
+#                      corner style choice (sharp/rounded)
+#   1.0              - Original OffsetInSketcher (lines and arcs only)
+# =============================================================================
+
+from PySide import QtGui, QtCore
+import re, math
+
+class OffsetDialog(QtGui.QDialog):
+
+	def __init__(self):
+		super(OffsetDialog, self).__init__()
+		self.setWindowTitle("Offset in Sketcher")
+		self.setMinimumWidth(300)
+
+		layout = QtGui.QVBoxLayout()
+
+		# -- Valeur d'offset --
+		rowOffset = QtGui.QHBoxLayout()
+		rowOffset.addWidget(QtGui.QLabel("Valeur d'offset :"))
+		self.editBox = QtGui.QLineEdit("10")
+		self.editBox.setFixedWidth(80)
+		rowOffset.addWidget(self.editBox)
+		rowOffset.addStretch()
+		layout.addLayout(rowOffset)
+
+		# -- Type de jointure --
+		rowJoin = QtGui.QHBoxLayout()
+		rowJoin.addWidget(QtGui.QLabel("Angles :"))
+		self.joinCombo = QtGui.QComboBox()
+		self.joinCombo.addItem("Angle vif (Miter)", 1)
+		self.joinCombo.addItem("Arrondi (Arc)",     0)
+		rowJoin.addWidget(self.joinCombo)
+		rowJoin.addStretch()
+		layout.addLayout(rowJoin)
+
+		# -- Boutons --
+		buttons = QtGui.QDialogButtonBox(
+			QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel)
+		buttons.accepted.connect(self.calculate)
+		buttons.rejected.connect(self.reject)
+		layout.addWidget(buttons)
+
+		self.setLayout(layout)
+		self.show()
+
+	def calculate(self):
+
+		def isBSpline(geo):
+			return hasattr(geo, 'getPoles')
+
+		def isArc(geo):
+			return hasattr(geo, 'Radius')
+
+		def isLine(geo):
+			return hasattr(geo, 'StartPoint') and not isArc(geo) and not isBSpline(geo)
+
+		sketchPlacement = ActiveSketch.getGlobalPlacement()
+		toLocal = sketchPlacement.inverse()
+
+		def buildExternalEdgeMap():
+			edgeMap = {}
+			try:
+				extGeo = ActiveSketch.ExternalGeometry
+			except Exception:
+				return edgeMap
+			idx = 1
+			for (obj, subNames) in extGeo:
+				for subName in subNames:
+					key = 'ExternalEdge' + str(idx)
+					try:
+						edge = obj.Shape.getElement(subName)
+						edgeMap[key] = edge
+					except Exception as ex:
+						App.Console.PrintWarning("buildExternalEdgeMap " + key + ": " + str(ex) + "\n")
+					idx += 1
+			return edgeMap
+
+		def edgeToGeoLocal(edge):
+			localEdge = edge.copy()
+			localEdge = localEdge.transformGeometry(toLocal.toMatrix())
+			curve = localEdge.Curve
+			u1    = localEdge.FirstParameter
+			u2    = localEdge.LastParameter
+			cname = curve.__class__.__name__
+			if cname == 'Circle':
+				return Part.ArcOfCircle(curve, u1, u2)
+			elif cname == 'Line':
+				p1 = App.Vector(localEdge.Vertexes[0].X, localEdge.Vertexes[0].Y, 0)
+				p2 = App.Vector(localEdge.Vertexes[-1].X, localEdge.Vertexes[-1].Y, 0)
+				return Part.LineSegment(p1, p2)
+			elif cname == 'BSplineCurve':
+				try:    return curve.trim(u1, u2)
+				except: return curve
+			elif cname == 'BezierCurve':
+				return curve.toBSpline()
+			else:
+				try:    return curve.toBSpline(u1, u2)
+				except: return curve
+
+		def linesArcsAndBSplines():
+			selObjs = Gui.Selection.getSelectionEx()
+			if not selObjs:
+				QtGui.QMessageBox.warning(None, "Offset", "Rien de sélectionné.")
+				return []
+			SelEx  = list(selObjs[0].SubElementNames)
+			AllGeo = ActiveSketch.Geometry
+			extMap = buildExternalEdgeMap()
+			Sel = []
+			for El in SelEx:
+				nums = re.findall(r'\d+', El)
+				if not nums: continue
+				idx = int(nums[0])
+				if El.startswith('ExternalEdge'):
+					if El in extMap:
+						try:
+							Sel.append(edgeToGeoLocal(extMap[El]))
+						except Exception as ex:
+							App.Console.PrintWarning("edgeToGeoLocal " + El + ": " + str(ex) + "\n")
+					else:
+						App.Console.PrintWarning("Offset: " + El + " absent de la map\n")
+				elif El.startswith('Edge'):
+					try:
+						Sel.append(AllGeo[idx - 1])
+					except:
+						pass
+			if not Sel:
+				QtGui.QMessageBox.warning(None, "Offset",
+					"Aucune géométrie récupérée.\nSous-éléments : " + str(SelEx)
+					+ "\nMap externe : " + str(list(extMap.keys())))
+			return Sel
+
+		def areEqual(V1, V2):
+			return (V1 - V2).Length < 0.001
+
+		def interlinkedEdges(UnsortedEdges):
+			def startPt(geo): return geo.StartPoint
+			def endPt(geo):   return geo.EndPoint
+
+			def getBackwardElem(Element, UnsortedEdges):
+				if not UnsortedEdges: return
+				StartPt = startPt(Element)
+				for Num in range(len(UnsortedEdges)):
+					El = UnsortedEdges[Num]
+					if areEqual(startPt(El), StartPt) or areEqual(endPt(El), StartPt):
+						if areEqual(startPt(El), StartPt): El.reverse()
+						SortedEdges.append(El)
+						UnsortedEdges.pop(Num)
+						getBackwardElem(El, UnsortedEdges)
+						break
+
+			def getForwardElem(Element, UnsortedEdges):
+				if not UnsortedEdges: return
+				EndPt = endPt(Element)
+				for Num in range(len(UnsortedEdges)):
+					El = UnsortedEdges[Num]
+					if areEqual(startPt(El), EndPt) or areEqual(endPt(El), EndPt):
+						if areEqual(endPt(El), EndPt): El.reverse()
+						SortedEdges.append(El)
+						UnsortedEdges.pop(Num)
+						getForwardElem(El, UnsortedEdges)
+						break
+
+			SortedEdges = []
+			SortedEdges.append(UnsortedEdges.pop(0))
+			getBackwardElem(SortedEdges[0], UnsortedEdges)
+			SortedEdges.reverse()
+			getForwardElem(SortedEdges[-1], UnsortedEdges)
+			if UnsortedEdges:
+				QtGui.QMessageBox.warning(None, "Offset", "Les arêtes ne sont pas toutes connectées.")
+			return SortedEdges
+
+		def offsetAll(SortedEdges, OffsetValue, JoinType):
+			#
+			# Chemin unique via makeOffset2D sur le Wire directement (pas via Face)
+			# C'est la seule façon que le paramètre join soit bien pris en compte
+			#
+			partEdges = []
+			for geo in SortedEdges:
+				try:
+					partEdges.append(geo.toShape())
+				except Exception as ex:
+					App.Console.PrintWarning("toShape() échoué: " + str(ex) + "\n")
+
+			if not partEdges:
+				QtGui.QMessageBox.warning(None, "Offset", "Impossible de convertir les arêtes.")
+				return
+
+			# Construire le wire
+			try:
+				sorted_groups = Part.sortEdges(partEdges)
+				wire = Part.Wire(sorted_groups[0])
+			except Exception:
+				try:
+					wire = Part.Wire(partEdges)
+				except Exception as ex:
+					QtGui.QMessageBox.warning(None, "Offset", "Wire impossible : " + str(ex))
+					return
+
+			isClosed = wire.isClosed()
+
+			# makeOffset2D directement sur le wire
+			# join : 0=miter(vif), 1=round(arrondi), 2=intersect(bevel)
+			# fill=False pour ne pas remplir la surface
+			try:
+				if isClosed:
+					# Pour un contour fermé, on utilise fill=True pour obtenir la face
+					# puis on reprend le wire extérieur
+					# MAIS on passe join sur le wire directement pour que ça marche
+					offsetShape = wire.makeOffset2D(OffsetValue, join=JoinType, fill=False)
+					# offsetShape est un wire
+					offsetWire = offsetShape if offsetShape.ShapeType == 'Wire' else Part.Wire(offsetShape.Edges)
+				else:
+					offsetShape = wire.makeOffset2D(OffsetValue, join=JoinType, openResult=True, fill=False)
+					offsetWire = offsetShape if offsetShape.ShapeType == 'Wire' else Part.Wire(offsetShape.Edges)
+			except Exception as ex:
+				QtGui.QMessageBox.warning(None, "Offset error", "makeOffset2D échoué : " + str(ex))
+				return
+
+			geoList = []
+			for edge in offsetWire.Edges:
+				curve = edge.Curve
+				cname = curve.__class__.__name__
+				try:
+					if cname == 'Circle':
+						geoList.append(Part.ArcOfCircle(curve, edge.FirstParameter, edge.LastParameter))
+					elif cname == 'BSplineCurve':
+						try:    geoList.append(curve.trim(edge.FirstParameter, edge.LastParameter))
+						except: geoList.append(curve)
+					elif cname in ('Line', 'LineSegment'):
+						p1 = App.Vector(edge.Vertexes[0].X, edge.Vertexes[0].Y, 0)
+						p2 = App.Vector(edge.Vertexes[-1].X, edge.Vertexes[-1].Y, 0)
+						geoList.append(Part.LineSegment(p1, p2))
+					else:
+						geoList.append(curve.toBSpline(edge.FirstParameter, edge.LastParameter))
+				except Exception as ex:
+					App.Console.PrintWarning("Conversion (" + cname + "): " + str(ex) + "\n")
+
+			if geoList:
+				ActiveSketch.addGeometry(geoList, False)
+			else:
+				QtGui.QMessageBox.warning(None, "Offset", "Aucune géométrie offset générée.")
+
+		# ---- Point d'entrée ----
+		try:
+			OffsetValue = float(self.editBox.text().replace(',', '.'))
+		except ValueError:
+			QtGui.QMessageBox.warning(None, "Offset", "Valeur d'offset invalide.")
+			return
+
+		JoinType = self.joinCombo.itemData(self.joinCombo.currentIndex())
+
+		AllEdges = linesArcsAndBSplines()
+		if not AllEdges:
+			return
+
+		SortedEdges = interlinkedEdges(AllEdges)
+		if not SortedEdges:
+			return
+
+		# Chemin unique pour tous les cas
+		offsetAll(SortedEdges, OffsetValue, JoinType)
+
+		App.ActiveDocument.recompute()
+		self.accept()
+
+execute = OffsetDialog()
