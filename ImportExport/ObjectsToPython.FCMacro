@@ -34,15 +34,6 @@ def exportObjectsToPython(doc=None):
     add_script_line('import Part')
     add_script_line('import FreeCAD as app')
     objectlist = []
-    skip_objects = [
-        ('App::Line', 'X_Axis'),
-        ('App::Line', 'Y_Axis'),
-        ('App::Line', 'Z_Axis'),
-        ('App::Plane', 'XY_Plane'),
-        ('App::Plane', 'XZ_Plane'),
-        ('App::Plane', 'YZ_Plane'),
-        ('App::Origin', 'Origin'),
-    ]
 
     selection = gui.Selection.getSelection()
     if not selection:
@@ -69,28 +60,45 @@ def exportObjectsToPython(doc=None):
         add_body_line('doc = app.activeDocument()')
 
     for obj in selection:
-        if (obj.TypeId, obj.Label) not in skip_objects:
+        if type(obj) is not app.GeoFeature:
             add_script_line('')
             if obj.TypeId == 'Sketcher::SketchObject':
                 add_body_line(f'{varname(obj)} = createSketch_{varname(obj)}(doc)')
             else:
                 addObject(doc, obj, objectlist)
+                if obj.TypeId == 'PartDesign::Body':
+                    add_body_line(f'Origin = {varname(obj)}.Origin')
 
     for obj in selection:
         if obj.TypeId == 'PartDesign::Body':
             add_script_line('')
-            add_body_line(f'{varname(obj)}.Group = {varname(obj)}_Group')
             if obj.Tip:
                 add_body_line(f'{varname(obj)}.Tip = {varname(obj.Tip)}')
+            if obj.Group:
+                add_body_line(f'{varname(obj)}.Group = {varname(obj.Group)}')
 
     add_body_line('')
     add_body_line('doc.recompute()')
-    add_script_line('')
+    add_body_line('FreeCADGui.SendMsgToActiveView("ViewFit")')
     add_script_line('')
     add_script_line(f'make_{doc.Name}()')
 
 
 def varname(obj):
+    if not obj:
+        return ""
+    
+    if type(obj) is list:
+        str = "[ "
+        first = True
+        for l in obj:
+            if not first: str += ", "
+            str += varname(l)
+            first = False
+            
+        str += " ]"
+        return str
+
     forbidden = [' ', '.', ',', '%', '+', '-', '*',
                  '/', '(', ')', '[', ']', '=', '"', "'"]
     l = obj.Label
@@ -100,7 +108,6 @@ def varname(obj):
     if l[0].isdigit():
         l = '_' + l
     return l
-
 
 def add_script_line(line, indent=0):
     spaces = ' ' * 4 * indent
@@ -153,6 +160,7 @@ def addProperties(obj, objname, refobj, objectlist):
         ('Sketcher::SketchObject', 'Constraints'),
         ('PartDesign::Body', 'Origin'),
         ('PartDesign::Body', 'Tip'),
+        ('PartDesign::Body', 'Group'),
     ]
 
     # Cf. https://github.com/FreeCAD/FreeCAD/blob/278ce803907ef72548d7ac761613038ac435c481/src/App/Property.h#L60
@@ -195,23 +203,20 @@ def addProperties(obj, objname, refobj, objectlist):
                 val = val.replace('XZ_Plane', 'doc.XZ_Plane')
                 val = val.replace('YZ_Plane', 'doc.YZ_Plane')
 
+            if propname == 'AttachmentSupport':
+                val = val.replace('[(', '[(doc.')
+
             if propname == 'ExpressionEngine':
                 for expression in prop:
                     add_body_line(objname + '.setExpression' +
                                   str(expression).replace('<', '').replace('>', ''))
 
-            elif propname == '_Body':
-                add_body_line(f'{val}_Group.append({objname})')
-
-            elif (obj.TypeId, propname) == ('PartDesign::Body', 'Group'):
-                add_body_line(f'{objname}_Group = []')
-
-            elif (obj.TypeId, propname) == ('App::Part', 'Group'):
+            elif obj.TypeId != 'PartDesign::Body' and (obj.TypeId, propname) == ('App::Part', 'Group'):
                 proplist = []
                 for pn in prop:
                     proplist.append(varname(pn))
 
-                add_body_line(objname + '.Group = ' + str(proplist))
+                add_body_line(objname + '.Group = ' + varname(proplist))
 
             elif objectToText(prop, objectlist) is not None:
                 if val != defaultval:
