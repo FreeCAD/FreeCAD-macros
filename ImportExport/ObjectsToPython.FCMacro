@@ -146,7 +146,7 @@ def addProperties(obj, objname, refobj, objectlist):
     skipProperties = ['Label', 'Shape', 'Proxy',
                       'AddSubShape', 'FullyConstrained', 'VisualLayerList',
                      'InternalShape', 'ShapeMaterial', 'ShapeAppearance', 'MaterialName',
-                     'SuppressedShape']
+                     'SuppressedShape', 'PreviewShape']
 
     skipObjProp = [
         ('Sketcher::SketchObject', 'Geometry'),
@@ -514,6 +514,7 @@ class O2PDialog(QDialog):
         self.form.pushButtonClose.pressed.connect(self.close_callback)
         self.form.pushButtonClear.pressed.connect(self.clear)
         self.form.pushButtonSave.pressed.connect(self.save2file)
+        self.form.pushButtonExecute.pressed.connect(self.execute)
         self.form.pushButtonGenerate.pressed.connect(exportObjectsToPython)
         self.form.show()
 
@@ -534,6 +535,11 @@ class O2PDialog(QDialog):
         if file_path:
             with open(file_path, "w", encoding="utf-8") as sfile:
                 sfile.write(self.form.textEdit.toPlainText())
+
+    def execute(self):
+        app.newDocument("PythonToObjects")
+        exec(self.form.textEdit.toPlainText())
+
 
 dialog = O2PDialog()
 exportObjectsToPython()
