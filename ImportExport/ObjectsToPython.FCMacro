@@ -22,6 +22,7 @@ import FreeCAD as app
 import FreeCADGui as gui
 import Part
 from FreeCAD import Vector, Placement
+from PyQt6.QtWidgets import QDialog, QFileDialog
 
 
 def exportObjectsToPython(doc=None):
@@ -501,20 +502,38 @@ def vecstr(v):
     return f'Vector({floatstr(v.x)}, {floatstr(v.y)}, {floatstr(v.z)})'
 
 
-class O2PDialog:
+class O2PDialog(QDialog):
     """Show a dialog for ObjectsToPython"""
 
     def __init__(self):
+        super().__init__()
         macro_dir = app.getUserMacroDir(True)
         self.ui_file = os.path.join(
             macro_dir, 'ObjectsToPython/ObjectsToPython.ui')
         self.form = gui.PySideUic.loadUi(self.ui_file)
         self.form.pushButtonClose.pressed.connect(self.close_callback)
+        self.form.pushButtonClear.pressed.connect(self.clear)
+        self.form.pushButtonSave.pressed.connect(self.save2file)
+        self.form.pushButtonGenerate.pressed.connect(exportObjectsToPython)
         self.form.show()
 
     def close_callback(self):
         self.form.close()
 
+    def clear(self):
+        self.form.textEdit.clear()
+
+    def save2file(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save to file",
+            "",  # Startverzeichnis (leer = aktuelles Verzeichnis)
+            "Python files (*.py);;All Files (*)"
+        )
+
+        if file_path:
+            with open(file_path, "w", encoding="utf-8") as sfile:
+                sfile.write(self.form.textEdit.toPlainText())
 
 dialog = O2PDialog()
 exportObjectsToPython()
