@@ -87,7 +87,7 @@ def exportObjectsToPython(doc=None):
 def varname(obj):
     if not obj:
         return ""
-    
+
     if type(obj) is list:
         str = "[ "
         first = True
@@ -95,7 +95,7 @@ def varname(obj):
             if not first: str += ", "
             str += varname(l)
             first = False
-            
+
         str += " ]"
         return str
 
