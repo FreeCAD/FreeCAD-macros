@@ -1,20 +1,23 @@
-# -*- coding: utf-8 -*-
 # Opens current visible objects in Slic3r. One can use different slicing software
+# Select objects and run to export. After the first run in each FreeCAD session,
+# configure the macro under Edit > Preferences > Import-Export > Export2Slicer.
+# Settings are saved in BaseApp/Preferences/Macros/Export2Slicer.
 
 __Title__ = '3D Print / Slice'
 __Author__ = 'Damian Łoziński'
-__Version__ = '0.4.2'
-__Date__ = '2025-08-28'
-__Comment__ = 'Export selected objects to amf/stl files and open them in slicing program'
+__Version__ = '0.5.0'
+__Date__ = '2026-10-24'
+__Comment__ = 'Export selected objects to mesh files and open them in a slicing program'
 __Web__ = 'https://github.com/dlozinski/FreeCAD-macros/blob/doc/ImportExport/ExportToSlicer.md'
 __Wiki__ = ''
 __Icon__ = 'Export2Slicer.png'
-__Help__ = 'You may need to change slicer path. To do so open Tools > Edit parameters > BaseApp/Preferences/Macros/Export2Slicer'
+__Help__ = 'Run once per session to register Edit > Preferences > Import-Export > Export2Slicer. Parameters are also available in Tools > Edit parameters > BaseApp/Preferences/Macros/Export2Slicer'
 __Status__ = 'Stable'
 __Requires__ = 'freecad 0.17+'
 __Communication__ = 'lozinski dot d at gmail dot com'
 __Files__ = 'Export2Slicer.png'
 
+import math
 import os
 import re
 from subprocess import Popen
@@ -24,6 +27,7 @@ import FreeCAD as app
 import FreeCADGui as gui
 import Mesh
 import MeshPart
+from PySide import QtGui
 
 
 MACRO_PARAMS = app.ParamGet('User parameter:BaseApp/Preferences/Macros/Export2Slicer')
@@ -31,9 +35,11 @@ DEFAULT_SLICER_CMD = '"/Applications/Original Prusa Drivers/PrusaSlicer.app/Cont
 DEFAULT_OUTPUT_FORMAT = 'amf'
 DEFAULT_OUTPUT_FOLDER = ''
 DEFAULT_ANGULAR_DEFLECTION = 0.07
+DEFAULT_LINEAR_DEFLECTION = 0.1
 
 
 def get_string_param(name, default):
+    """Read a string setting, initializing an empty value with its default."""
     value = MACRO_PARAMS.GetString(name)
     if not value:
         MACRO_PARAMS.SetString(name, default)
@@ -42,6 +48,7 @@ def get_string_param(name, default):
 
 
 def get_float_param(name, default):
+    """Read a float setting, initializing an unset value with its default."""
     value = MACRO_PARAMS.GetFloat(name)
     if not value:
         MACRO_PARAMS.SetFloat(name, default)
@@ -49,13 +56,112 @@ def get_float_param(name, default):
     return value
 
 
-slicer_cmd = get_string_param('SlicerCommand', DEFAULT_SLICER_CMD)
+open_slicer = MACRO_PARAMS.GetBool('OpenSlicer', True)
+slicer_cmd = (get_string_param('SlicerCommand', DEFAULT_SLICER_CMD) if open_slicer
+              else MACRO_PARAMS.GetString('SlicerCommand', DEFAULT_SLICER_CMD))
 output_format = get_string_param('OutputFormat', DEFAULT_OUTPUT_FORMAT)
 output_folder = get_string_param('OutputFolder', DEFAULT_OUTPUT_FOLDER)
 angular_deflection = get_float_param('AngularDeflection', DEFAULT_ANGULAR_DEFLECTION)
+linear_deflection = get_float_param('LinearDeflection', DEFAULT_LINEAR_DEFLECTION)
+include_object_names = MACRO_PARAMS.GetBool('IncludeObjectNames', True)
+
+
+class Export2SlicerPreferences:
+    """Preferences page registered by the existing macro, once per session."""
+
+    def __init__(self) -> None:
+        """Build the native preferences form without changing saved settings."""
+        self.form = QtGui.QWidget()
+        self.form.setWindowTitle('Export2Slicer')
+        form = QtGui.QFormLayout(self.form)
+
+        self.file_format = QtGui.QComboBox()
+        self.file_format.setEditable(True)
+        self.file_format.addItems(['3mf', 'stl', 'amf'])
+        self.file_format.setToolTip('Choose or enter a format supported by the FreeCAD mesh exporter.')
+        form.addRow('Export format:', self.file_format)
+
+        self.filename = QtGui.QComboBox()
+        self.filename.addItems(['Document and selected objects', 'Document only'])
+        form.addRow('Filename:', self.filename)
+
+        self.folder = QtGui.QLineEdit()
+        self.folder.setPlaceholderText('Beside the saved FreeCAD document')
+        browse = QtGui.QPushButton('Browse…')
+        browse.clicked.connect(self.browse_folder)
+        folder_row = QtGui.QHBoxLayout()
+        folder_row.addWidget(self.folder)
+        folder_row.addWidget(browse)
+        form.addRow('Output folder:', folder_row)
+
+        self.launch = QtGui.QCheckBox('Open slicer after export')
+        form.addRow(self.launch)
+        self.command = QtGui.QLineEdit()
+        self.command.setToolTip('Use "{file}" for the exported filename, including quotes for paths with spaces.')
+        form.addRow('Slicer command:', self.command)
+
+        self.linear = QtGui.QLineEdit()
+        self.linear.setToolTip('Maximum distance between the shape and mesh. Smaller values give a finer mesh.')
+        form.addRow('Linear deflection (mm):', self.linear)
+        self.angular = QtGui.QLineEdit()
+        self.angular.setToolTip('Smaller values give a finer mesh around curves.')
+        form.addRow('Angular deflection (radians):', self.angular)
+        for widget, key in [
+                (self.file_format, 'OutputFormat'), (self.filename, 'IncludeObjectNames'),
+                (self.folder, 'OutputFolder'), (self.launch, 'OpenSlicer'),
+                (self.command, 'SlicerCommand'), (self.linear, 'LinearDeflection'),
+                (self.angular, 'AngularDeflection')]:
+            widget.setProperty('prefPath', 'Macros/Export2Slicer')
+            widget.setProperty('prefEntry', key)
+
+    def browse_folder(self) -> None:
+        """Choose an export directory while keeping Cancel non-destructive."""
+        path = QtGui.QFileDialog.getExistingDirectory(self.form, 'Export folder', self.folder.text())
+        if path:
+            self.folder.setText(path)
+
+    def loadSettings(self) -> None:
+        """Load current parameters, preserving the precision of mesh tolerances."""
+        self.file_format.setEditText(MACRO_PARAMS.GetString('OutputFormat', DEFAULT_OUTPUT_FORMAT))
+        self.filename.setCurrentIndex(0 if MACRO_PARAMS.GetBool('IncludeObjectNames', True) else 1)
+        self.folder.setText(MACRO_PARAMS.GetString('OutputFolder', DEFAULT_OUTPUT_FOLDER))
+        self.launch.setChecked(MACRO_PARAMS.GetBool('OpenSlicer', True))
+        self.command.setText(MACRO_PARAMS.GetString('SlicerCommand', DEFAULT_SLICER_CMD))
+        for widget, key, default in [
+                (self.linear, 'LinearDeflection', DEFAULT_LINEAR_DEFLECTION),
+                (self.angular, 'AngularDeflection', DEFAULT_ANGULAR_DEFLECTION)]:
+            widget.setText(str(MACRO_PARAMS.GetFloat(key, default)))
+
+    def saveSettings(self) -> None:
+        """Validate the form before writing any export preferences."""
+        export_format = self.file_format.currentText().strip().lstrip('.')
+        export_folder = os.path.expanduser(self.folder.text().strip())
+        slicer_command = self.command.text().strip()
+        try:
+            linear = float(self.linear.text())
+            angular = float(self.angular.text())
+            if not all(math.isfinite(value) and value > 0 for value in (linear, angular)):
+                raise ValueError('Mesh deflections must be positive, finite numbers.')
+            if not re.fullmatch(r'[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)*', export_format):
+                raise ValueError('Enter a mesh format extension, for example 3mf, stl or amf.')
+            if export_folder and not os.path.isdir(export_folder):
+                raise ValueError('Choose an existing output folder or leave it empty.')
+            if self.launch.isChecked() and not shlex.split(slicer_command.format(file='model.3mf')):
+                raise ValueError('Enter a slicer command or disable opening the slicer.')
+        except (ValueError, KeyError, IndexError) as error:
+            QtGui.QMessageBox.warning(self.form, 'Export2Slicer settings were not saved', str(error))
+            return
+        MACRO_PARAMS.SetString('OutputFormat', export_format)
+        MACRO_PARAMS.SetString('OutputFolder', export_folder)
+        MACRO_PARAMS.SetString('SlicerCommand', slicer_command)
+        MACRO_PARAMS.SetBool('IncludeObjectNames', self.filename.currentIndex() == 0)
+        MACRO_PARAMS.SetBool('OpenSlicer', self.launch.isChecked())
+        MACRO_PARAMS.SetFloat('LinearDeflection', linear)
+        MACRO_PARAMS.SetFloat('AngularDeflection', angular)
 
 
 def escape(text):
+    """Replace characters unsuitable for the selected-object filename suffix."""
     return re.sub(r'\W', '_', text)
 
 
@@ -69,6 +175,8 @@ def get_mesh_filename(doc_filename, mesh_names):
             + escape('_'.join(mesh_names))
             + '.'
             + output_format)
+        if not include_object_names:
+            filename = os.path.splitext(os.path.basename(doc_filename))[0] + '.' + output_format
         file_path = os.path.join(dirname, filename)
     else:
         file_path = 'meshes-export.' + output_format
@@ -76,6 +184,7 @@ def get_mesh_filename(doc_filename, mesh_names):
 
 
 def main():
+    """Export selected objects or the active object, then optionally launch the slicer."""
     doc = app.activeDocument()
     if not doc:
         raise RuntimeError('Export2Slicer: No active document')
@@ -92,7 +201,7 @@ def main():
                 meshes.append(o)
             else:
                 mesh = tmp_doc.addObject('Mesh::Feature', f'{doc.Label}_{o.Label}')
-                mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=0.1, AngularDeflection=angular_deflection, Relative=False)
+                mesh.Mesh = MeshPart.meshFromShape(o.Shape, LinearDeflection=linear_deflection, AngularDeflection=angular_deflection, Relative=False)
                 meshes.append(mesh)
                 mesh_names.append(o.Label)
         if meshes:
@@ -106,11 +215,15 @@ def main():
             gui.Selection.addSelection(doc.Name, x.ObjectName)
 
     # Launch Slicer with meshes
-    Popen(shlex.split(slicer_cmd.format(file=mesh_path)))
+    if open_slicer:
+        Popen(shlex.split(slicer_cmd.format(file=mesh_path)))
     app.Console.PrintMessage(f'Export2Slicer: Objects exported into: {mesh_path}\n')
 
 
 try:
+    if not getattr(gui, '_Export2SlicerPreferencesRegistered', False):
+        gui.addPreferencePage(Export2SlicerPreferences, 'Import-Export')
+        gui._Export2SlicerPreferencesRegistered = True
     main()
 except Exception as e:
-    app.Console.PrintError('Export2Slicer: ERROR: {}\n'.format(e))
+    app.Console.PrintError(f'Export2Slicer: ERROR: {e}\n')
