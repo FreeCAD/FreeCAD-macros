@@ -36,7 +36,7 @@ repos:
       - id: trailing-whitespace
         exclude: '(\.ui|\.svg)$'
   -   repo: https://github.com/asottile/pyupgrade
-      rev: v3.19.1
+      rev: v3.21.1
       hooks:
       -   id: pyupgrade
           args: [--py38-plus]
