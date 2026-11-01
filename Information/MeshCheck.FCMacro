@@ -1,0 +1,315 @@
+# Mesh Check
+#
+# Reports why a mesh is not a solid, instead of only saying that it is not.
+#
+# Usage:
+# 1. Select one or more mesh objects in the tree or the 3D view. Part solids are
+#    not meshes; mesh one first with Part > Create mesh from shape.
+# 2. Run the macro.
+# 3. Read the report in the Report view (View > Panels > Report view).
+#
+# For each mesh it prints the triangle, vertex and shell counts, the number of
+# boundary edges and how many separate loops they form, the number of
+# non-manifold edges, whether the winding is consistent, whether facets
+# self-intersect (skipped above 100,000 triangles, and reported as not checked),
+# the bounding box, the volume and the surface area.
+#
+# Nothing is uploaded. The analysis runs locally against FreeCAD's own mesh data
+# and the macro makes no network calls. After the report it shows a dialog that
+# can open a ConverterFlow web page in your browser, only if you click the
+# button that says so. Disclosure: the author runs converterflow.io.
+#
+# Mesh Design > Analyze > Evaluate and repair mesh is more thorough and can fix
+# what this only reports. This macro gives one summary over a whole selection.
+#
+# Implementation note: almost everything is derived from mesh.Topology rather
+# than from Mesh convenience methods. The convenience API has moved between 0.19
+# and 1.x, and on 0.19 dir() on a Mesh object segfaults. Topology (a points list
+# and a facets list of index triples) has been stable throughout.
+#
+# Changelog (latest first):
+# 1.1.0 2026-11-01 Header and metadata for FreeCAD-macros. QMessageBox.exec()
+#                  is used where it exists, for PySide6.
+# 1.0.0 2026-09-04 First release.
+
+__Name__ = 'Mesh Check'
+__Comment__ = 'Reports why a mesh is not a solid: holes, non-manifold edges, loose shells, flipped facets. Runs locally, uploads nothing.'
+__Author__ = 'Muhammad Usman (ConverterFlow)'
+__Version__ = '1.1.0'
+__Date__ = '2026-11-01'
+__License__ = 'MIT'
+__Web__ = 'https://github.com/converterflow/freecad-mesh-check'
+__Wiki__ = 'https://wiki.freecad.org/Macro_Mesh_Check'
+__Icon__ = 'MeshCheck.svg'
+__Help__ = 'Select one or more meshes, run the macro, read the report in the Report view.'
+__Status__ = 'Stable'
+__Requires__ = 'FreeCAD >= 0.19'
+__Communication__ = 'https://forum.freecad.org/viewtopic.php?t=107350'
+__Files__ = 'MeshCheck.svg'
+
+import webbrowser
+
+import FreeCAD
+
+TOOLS_URL = 'https://converterflow.io/tools/stl-repair'
+STEP_URL = 'https://converterflow.io/tools/stl-to-step'
+
+# hasSelfIntersections() is roughly quadratic on FreeCAD 0.19 and will hang the
+# UI on a scan-sized mesh. Above this it is reported as "not checked" rather
+# than silently skipped, because a blank in a report reads as a pass.
+SELF_INTERSECTION_FACET_LIMIT = 100000
+
+
+def _edge_key(a, b):
+    """An undirected edge, so the two facets sharing it agree on the key."""
+    return (a, b) if a < b else (b, a)
+
+
+def analyse_topology(points, facets):
+    """Everything derivable from the raw topology, with no Mesh API calls.
+
+    `points` is a sequence of 3D points; `facets` a sequence of index triples.
+    Returned counts are plain ints so this is testable without FreeCAD.
+    """
+    edge_facets = {}          # undirected edge -> how many facets touch it
+    directed = set()          # directed edges, for the winding check
+    winding_consistent = True
+
+    for facet in facets:
+        a, b, c = facet[0], facet[1], facet[2]
+        for u, v in ((a, b), (b, c), (c, a)):
+            key = _edge_key(u, v)
+            edge_facets[key] = edge_facets.get(key, 0) + 1
+            # In a consistently wound surface each interior edge is traversed
+            # once in each direction. Seeing the same direction twice means one
+            # of the two facets is flipped.
+            if (u, v) in directed:
+                winding_consistent = False
+            directed.add((u, v))
+
+    boundary = [e for e, n in edge_facets.items() if n == 1]
+    non_manifold = sum(1 for n in edge_facets.values() if n > 2)
+
+    return {
+        'points': len(points),
+        'facets': len(facets),
+        'edges': len(edge_facets),
+        'boundary_edges': len(boundary),
+        'boundary_loops': _count_components(boundary),
+        'non_manifold_edges': non_manifold,
+        'shells': _count_shells(facets),
+        'winding_consistent': winding_consistent,
+        'watertight': len(boundary) == 0 and non_manifold == 0,
+    }
+
+
+class _DisjointSet(object):
+    """Union-find. Iterative find, because a scan mesh will blow the recursion
+    limit long before it blows anything else."""
+
+    def __init__(self):
+        self.parent = {}
+
+    def find(self, x):
+        root = x
+        while self.parent.get(root, root) != root:
+            root = self.parent[root]
+        while self.parent.get(x, x) != root:   # path compression
+            self.parent[x], x = root, self.parent[x]
+        return root
+
+    def union(self, x, y):
+        self.parent.setdefault(x, x)
+        self.parent.setdefault(y, y)
+        rx, ry = self.find(x), self.find(y)
+        if rx != ry:
+            self.parent[rx] = ry
+
+    def count(self):
+        return len({self.find(x) for x in self.parent})
+
+
+def _count_components(edges):
+    """Connected components of an edge list.
+
+    For boundary edges this is the number of separate holes, with one honest
+    caveat: two holes that meet at a single shared vertex form one connected
+    boundary and are counted once. That is a pinch point rather than two loops,
+    and reporting it as one is the accurate answer, but it does mean "loops" is
+    shorthand for "connected boundary components". test_analysis.py pins both
+    cases so the behaviour stays deliberate.
+    """
+    if not edges:
+        return 0
+    ds = _DisjointSet()
+    for u, v in edges:
+        ds.union(u, v)
+    return ds.count()
+
+
+def _count_shells(facets):
+    """Disconnected pieces of the mesh, by vertex connectivity."""
+    if not facets:
+        return 0
+    ds = _DisjointSet()
+    for facet in facets:
+        a, b, c = facet[0], facet[1], facet[2]
+        ds.union(a, b)
+        ds.union(b, c)
+    return ds.count()
+
+
+def analyse_mesh(mesh):
+    """Topology analysis plus the measurements only FreeCAD can give us."""
+    points, facets = mesh.Topology[0], mesh.Topology[1]
+    stats = analyse_topology(points, facets)
+
+    box = mesh.BoundBox
+    stats['bbox'] = (box.XLength, box.YLength, box.ZLength)
+    stats['volume'] = mesh.Volume
+    stats['area'] = mesh.Area
+
+    if stats['facets'] <= SELF_INTERSECTION_FACET_LIMIT:
+        try:
+            stats['self_intersecting'] = bool(mesh.hasSelfIntersections())
+        except Exception:
+            stats['self_intersecting'] = None
+    else:
+        stats['self_intersecting'] = None   # not checked, too large
+
+    return stats
+
+
+def format_report(name, stats):
+    """The report, as plain text. Kept free of Qt so it works in a console
+    FreeCAD and in the Report view alike."""
+    tick, cross, dash = 'OK  ', 'BAD ', '--  '
+    lines = []
+    lines.append('%s: %s triangles, %s vertices, %d shell%s'
+                 % (name, format(stats['facets'], ','), format(stats['points'], ','),
+                    stats['shells'], '' if stats['shells'] == 1 else 's'))
+
+    if stats['boundary_edges'] == 0:
+        lines.append('  %sclosed surface, no holes' % tick)
+    else:
+        lines.append('  %snot watertight: %d boundary edge%s in %d loop%s'
+                     % (cross, stats['boundary_edges'],
+                        '' if stats['boundary_edges'] == 1 else 's',
+                        stats['boundary_loops'],
+                        '' if stats['boundary_loops'] == 1 else 's'))
+
+    if stats['non_manifold_edges'] == 0:
+        lines.append('  %sno non-manifold edges' % tick)
+    else:
+        lines.append('  %s%d non-manifold edge%s (an edge shared by more than two facets)'
+                     % (cross, stats['non_manifold_edges'],
+                        '' if stats['non_manifold_edges'] == 1 else 's'))
+
+    lines.append('  %s%s' % (tick if stats['winding_consistent'] else cross,
+                            'consistent winding' if stats['winding_consistent']
+                            else 'inconsistent winding: some facets face inwards'))
+
+    if stats['self_intersecting'] is None:
+        lines.append('  %sself-intersection not checked (mesh too large; the check '
+                     'is quadratic and would hang the UI)' % dash)
+    elif stats['self_intersecting']:
+        lines.append('  %sself-intersecting facets' % cross)
+    else:
+        lines.append('  %sno self-intersections' % tick)
+
+    x, y, z = stats['bbox']
+    lines.append('  bounding box %.2f x %.2f x %.2f' % (x, y, z))
+    lines.append('  volume %.2f, surface area %.2f' % (stats['volume'], stats['area']))
+
+    if stats['watertight']:
+        lines.append('')
+        lines.append('  This mesh is closed. It will slice, and it is a reasonable')
+        lines.append('  candidate for conversion to a STEP solid.')
+    else:
+        lines.append('')
+        lines.append('  Fix the items marked BAD before slicing or converting.')
+        lines.append('  FreeCAD can do some of it: Mesh Design has Fill holes,')
+        lines.append('  Harmonize normals and Remove components.')
+
+    return '\n'.join(lines)
+
+
+def _selected_meshes():
+    """Meshes in the current selection. Empty list when run headless."""
+    try:
+        import FreeCADGui
+    except ImportError:
+        return []
+    found = []
+    for obj in FreeCADGui.Selection.getSelection():
+        if hasattr(obj, 'Mesh') and obj.Mesh is not None:
+            found.append((obj.Label, obj.Mesh))
+    return found
+
+
+def _log(text):
+    FreeCAD.Console.PrintMessage(text + '\n')
+
+
+def _offer_hosted_tools(all_watertight):
+    """Only ever shown after a report, never on its own, and it opens nothing
+    unless the user picks a button."""
+    try:
+        from PySide import QtGui       # FreeCAD's own shim: PySide2 or PySide6
+    except ImportError:
+        _log('Repair or convert online: %s' % TOOLS_URL)
+        return
+
+    box = QtGui.QMessageBox()
+    box.setWindowTitle('ConverterFlow Mesh Check')
+    box.setText('Report printed to the Report view.')
+    if all_watertight:
+        box.setInformativeText(
+            'The mesh is closed. If you need an editable CAD solid rather than a '
+            'mesh, the STL to STEP converter attempts to rebuild real planes and '
+            'cylinders, and tells you when the shape is too organic for that to '
+            'work.\n\nNothing is uploaded unless you choose to.')
+        open_button = box.addButton('Convert to STEP', QtGui.QMessageBox.AcceptRole)
+        target = STEP_URL
+    else:
+        box.setInformativeText(
+            'Some checks failed. FreeCAD\'s Mesh Design workbench can fix part of '
+            'it locally. The hosted repair tool diagnoses and repairs in one pass '
+            'and reports what it changed.\n\nNothing is uploaded unless you '
+            'choose to.')
+        open_button = box.addButton('Open repair tool', QtGui.QMessageBox.AcceptRole)
+        target = TOOLS_URL
+    box.addButton('Close', QtGui.QMessageBox.RejectRole)
+    # exec_() is deprecated in PySide6, and PySide2 only has exec_().
+    if hasattr(box, 'exec'):
+        box.exec()
+    else:
+        box.exec_()
+    if box.clickedButton() is open_button:
+        webbrowser.open(target)
+
+
+def run():
+    meshes = _selected_meshes()
+    if not meshes:
+        _log('ConverterFlow Mesh Check: select a mesh object first, then run the '
+             'macro again. (Part solids are not meshes; mesh one with Part > '
+             'Create mesh from shape.)')
+        return
+
+    _log('')
+    all_watertight = True
+    for label, mesh in meshes:
+        stats = analyse_mesh(mesh)
+        all_watertight = all_watertight and stats['watertight']
+        _log(format_report(label, stats))
+        _log('')
+
+    _offer_hosted_tools(all_watertight)
+
+
+# Importable for tests without running anything. FreeCAD sets __name__ to
+# '__main__' when it executes a macro, but that is not contractual across
+# versions, so the test sets this flag explicitly instead of relying on it.
+if not globals().get('CONVERTERFLOW_IMPORT_ONLY'):
+    run()
