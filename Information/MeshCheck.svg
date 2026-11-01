@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>ConverterFlow Mesh Check</title>
+  <!-- A triangulated shell with one triangle missing: the defect the macro
+       exists to find. Flat colours only, so it stays legible at 16px in the
+       Addon Manager list. -->
+  <polygon points="32,6 58,20 58,44 32,58 6,44 6,20" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M32 6 L32 32 L58 20 M32 32 L58 44 M32 32 L32 58 M32 32 L6 44" fill="none" stroke="#4f46e5" stroke-width="1.6" opacity="0.55"/>
+  <!-- the hole -->
+  <polygon points="32,32 6,20 6,44" fill="#ffffff" stroke="#dc2626" stroke-width="2.5" stroke-linejoin="round" stroke-dasharray="4 3"/>
+</svg>
