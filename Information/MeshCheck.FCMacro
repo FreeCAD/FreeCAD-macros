@@ -182,41 +182,45 @@ def format_report(name, stats):
     FreeCAD and in the Report view alike."""
     tick, cross, dash = 'OK  ', 'BAD ', '--  '
     lines = []
-    lines.append('%s: %s triangles, %s vertices, %d shell%s'
-                 % (name, format(stats['facets'], ','), format(stats['points'], ','),
-                    stats['shells'], '' if stats['shells'] == 1 else 's'))
+    lines.append(
+        f"{name}: {stats['facets']:,} triangles, "
+        f"{stats['points']:,} vertices, "
+        f"{stats['shells']} shell{'' if stats['shells'] == 1 else 's'}"
+    )
 
     if stats['boundary_edges'] == 0:
-        lines.append('  %sclosed surface, no holes' % tick)
+        lines.append(f'  {tick}closed surface, no holes')
     else:
-        lines.append('  %snot watertight: %d boundary edge%s in %d loop%s'
-                     % (cross, stats['boundary_edges'],
-                        '' if stats['boundary_edges'] == 1 else 's',
-                        stats['boundary_loops'],
-                        '' if stats['boundary_loops'] == 1 else 's'))
+        lines.append(f'  {cross}not watertight: {stats["boundary_edges"]} '
+                     f'boundary edge{"" if stats["boundary_edges"] == 1 else "s"} '
+                     f'in {stats["boundary_loops"]} loop'
+                     f'{"" if stats["boundary_loops"] == 1 else "s"}')
 
     if stats['non_manifold_edges'] == 0:
-        lines.append('  %sno non-manifold edges' % tick)
+        lines.append(f'  {tick}no non-manifold edges')
     else:
-        lines.append('  %s%d non-manifold edge%s (an edge shared by more than two facets)'
-                     % (cross, stats['non_manifold_edges'],
-                        '' if stats['non_manifold_edges'] == 1 else 's'))
+        lines.append(f'  {cross}{stats["non_manifold_edges"]} non-manifold '
+                     f'edge{"" if stats["non_manifold_edges"] == 1 else "s"} '
+                     '(an edge shared by more than two facets)')
 
-    lines.append('  %s%s' % (tick if stats['winding_consistent'] else cross,
-                            'consistent winding' if stats['winding_consistent']
-                            else 'inconsistent winding: some facets face inwards'))
+    winding = ('consistent winding' if stats['winding_consistent']
+               else 'inconsistent winding: some facets face inwards')
+    lines.append(f'  {tick if stats["winding_consistent"] else cross}{winding}')
 
     if stats['self_intersecting'] is None:
-        lines.append('  %sself-intersection not checked (mesh too large; the check '
-                     'is quadratic and would hang the UI)' % dash)
+        lines.append(f'  {dash}self-intersection not checked (mesh too large; '
+                     'the check is quadratic and would hang the UI)')
     elif stats['self_intersecting']:
-        lines.append('  %sself-intersecting facets' % cross)
+        lines.append(f'  {cross}self-intersecting facets')
     else:
-        lines.append('  %sno self-intersections' % tick)
+        lines.append(f'  {tick}no self-intersections')
 
     x, y, z = stats['bbox']
-    lines.append('  bounding box %.2f x %.2f x %.2f' % (x, y, z))
-    lines.append('  volume %.2f, surface area %.2f' % (stats['volume'], stats['area']))
+    lines.append(f'  bounding box {x:.2f} x {y:.2f} x {z:.2f}')
+    lines.append(
+        f'  volume {stats["volume"]:.2f}, '
+        f'surface area {stats["area"]:.2f}'
+    )
 
     if stats['watertight']:
         lines.append('')
