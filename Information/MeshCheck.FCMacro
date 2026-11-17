@@ -49,7 +49,7 @@ __Requires__ = 'FreeCAD >= 0.19'
 __Communication__ = 'https://forum.freecad.org/viewtopic.php?t=107350'
 __Files__ = 'MeshCheck.svg'
 
-import FreeCAD
+import FreeCAD as app
 
 # hasSelfIntersections() is roughly quadratic on FreeCAD 0.19 and will hang the
 # UI on a scan-sized mesh. Above this it is reported as "not checked" rather
@@ -63,7 +63,8 @@ def _edge_key(a, b):
 
 
 def analyse_topology(points, facets):
-    """Everything derivable from the raw topology, with no Mesh API calls.
+    """
+    Everything derivable from the raw topology, with no Mesh API calls.
 
     `points` is a sequence of 3D points; `facets` a sequence of index triples.
     Returned counts are plain ints so this is testable without FreeCAD.
@@ -127,7 +128,8 @@ class _DisjointSet(object):
 
 
 def _count_components(edges):
-    """Connected components of an edge list.
+    """
+    Connected components of an edge list.
 
     For boundary edges this is the number of separate holes, with one honest
     caveat: two holes that meet at a single shared vertex form one connected
@@ -178,8 +180,12 @@ def analyse_mesh(mesh):
 
 
 def format_report(name, stats):
-    """The report, as plain text. Kept free of Qt so it works in a console
-    FreeCAD and in the Report view alike."""
+    """
+    The report, as plain text.
+
+    The report, as plain text. Kept free of Qt so it works in a console
+    FreeCAD and in the Report view alike.
+    """
     tick, cross, dash = 'OK  ', 'BAD ', '--  '
     lines = []
     lines.append(
@@ -249,7 +255,7 @@ def _selected_meshes():
 
 
 def _log(text):
-    FreeCAD.Console.PrintMessage(text + '\n')
+    app.Console.PrintMessage(text + '\n')
 
 
 def run():
