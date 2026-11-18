@@ -27,8 +27,8 @@
 __Name__ = 'CenterOfMass'
 __Comment__ = 'Compute and show the center of mass for multiple solids'
 __Author__ = 'chupins, s-quirin, farahats9'
-__Version__ = '0.8.9'
-__Date__ = '2026-11-16'
+__Version__ = '0.9.0'
+__Date__ = '2026-11-17'
 __License__ = 'LGPL-3.0-or-later'
 __Web__ = 'https://forum.freecad.org/viewtopic.php?f=24&t=31883'
 __Wiki__ = 'https://wiki.freecad.org/Macro_CenterOfMass'
@@ -64,6 +64,7 @@ MACRO_SETTINGS = 'User parameter:BaseApp/Preferences/Macros/' + __Name__
 DEFAULT_DENSITY = app.ParamGet(MACRO_SETTINGS).GetString('Default density', '2500 kg/m^3')
 DOCKED_WINDOW = app.ParamGet(MACRO_SETTINGS).GetBool('Docked window', True)    # False: floating
 SORT_SELECTION = app.ParamGet(MACRO_SETTINGS).GetBool('Sort selection', False)
+CALCULATE_INERTIA = app.ParamGet(MACRO_SETTINGS).GetBool('Calculate Inertia', True)
 COLOR_SPHERES = app.ParamGet(MACRO_SETTINGS).GetBool('Color spheres', False)
 COLOR_SATURAT = app.ParamGet(MACRO_SETTINGS).GetUnsigned('Color saturation', 80)
 COLORMAP_USER = app.ParamGet(MACRO_SETTINGS).GetString('Matplotlib colormap', 'Spectral_r')
@@ -91,6 +92,7 @@ if FREECAD_VERSION < 0.21:
 app.ParamGet(MACRO_SETTINGS).SetString('Default density', DEFAULT_DENSITY)
 app.ParamGet(MACRO_SETTINGS).SetBool('Docked window', DOCKED_WINDOW)
 app.ParamGet(MACRO_SETTINGS).SetBool('Sort selection', SORT_SELECTION)
+app.ParamGet(MACRO_SETTINGS).SetBool('Calculate Inertia', CALCULATE_INERTIA)
 app.ParamGet(MACRO_SETTINGS).SetBool('Color spheres', COLOR_SPHERES)
 app.ParamGet(MACRO_SETTINGS).SetUnsigned('Color saturation', COLOR_SATURAT)
 app.ParamGet(MACRO_SETTINGS).SetString('Matplotlib colormap', COLORMAP_USER)
@@ -573,6 +575,7 @@ class CenterofmassWidget(QtGui.QWidget):
         totalGroupBox.setLayout(totalLayout)
         layout.addWidget(totalGroupBox)
 
+        # inertiaGroupBox
         self.resultMoI = []
         inertiaLayout = QtGui.QGridLayout()
         inertiaLayout.setVerticalSpacing(0)    # reduce vertical window size
@@ -595,17 +598,21 @@ class CenterofmassWidget(QtGui.QWidget):
                 self.resultMoI[i].append(line_edit)
                 line_edit.setAlignment(QtCore.Qt.AlignCenter)
                 inertiaLayout.addWidget(line_edit, j+1, i+1)
-        inertiaGroupBox = QtGui.QGroupBox('Moments of Inertia')
-        inertiaGroupBox.setToolTip('Taken at the center of mass and aligned with global coordinates')
-        inertiaGroupBox.setLayout(inertiaLayout)
-        layout.addWidget(inertiaGroupBox)
-        layout.addStretch()    # minimize all groupboxes to their necessary vertical size
 
         self.inertia_clipboard = QtGui.QPushButton(QtGui.QIcon(':/icons/edit-copy.svg'), '')
         self.inertia_clipboard.setToolTip(f'Copy to clipboard ({self.unitForI})')
         self.inertia_clipboard.setFlat(True)
         self.inertia_clipboard.clicked.connect(self.on_pushButton_copyToClipboardInertia)
         inertiaLayout.addWidget(self.inertia_clipboard, 2, 4)
+
+        inertiaGroupBox = QtGui.QGroupBox('Moments of Inertia')
+        inertiaGroupBox.setToolTip('Taken at the center of mass and aligned with global coordinates')
+        inertiaGroupBox.setLayout(inertiaLayout)
+        if not CALCULATE_INERTIA:
+            inertiaGroupBox.setVisible(False)
+        layout.addWidget(inertiaGroupBox)
+
+        layout.addStretch()    # minimize all groupboxes to their necessary vertical size
 
         qApp = QtGui.QApplication.instance()
         qApp.focusChanged.connect(self.on_focusChanged)    # emits on each focus change in FreeCAD
@@ -1013,6 +1020,26 @@ class CenterofmassWidget(QtGui.QWidget):
         I = icm + parallel_axis_term_kg_mm2
         return I
 
+    def momentOfInertia(self):
+        solidsWithoutMoI = []
+        for sol in range(self.solid_count):
+            if hasattr(g_sel[sol], 'MatrixOfInertia'):
+                self.MoIs[sol] = self.get_MoI(g_sel[sol].MatrixOfInertia, self.solids[sol].spinDens.value())
+            elif hasattr(g_sel[sol],'Shape') and hasattr(g_sel[sol].Shape, 'MatrixOfInertia'):
+                self.MoIs[sol] = self.get_MoI(g_sel[sol].Shape.MatrixOfInertia, self.solids[sol].spinDens.value())
+            else:
+                solidsWithoutMoI.append(self.solids[sol].label.text())
+        if solidsWithoutMoI:
+            app.Console.PrintWarning(f'Solids {solidsWithoutMoI} have no "MatrixOfInertia".\n')
+        for sol in range(self.solid_count):
+            self.TotalMoI += self.compute_momentOfInertia(self.MoIs[sol], self.masses[sol], self.CoMs[sol])
+        # output
+        axis = ('x', 'y', 'z')
+        for i in range(3):
+            for j in range(3):
+                self.resultMoI[i][j].setText(f'{self.convert_inertia(self.TotalMoI[i, j]):.6}')
+                self.resultMoI[i][j].setToolTip(f'L{axis[i]}{axis[j]} (in {self.unitForI})')
+
     def compute_centerOfMass(self, enabled=None):
         """Compute joint center of mass from all objects if enabled. Block by setting to False."""
         if enabled is not None:
@@ -1024,7 +1051,6 @@ class CenterofmassWidget(QtGui.QWidget):
         self.areaTot = 0.
         self.TotalCoM = app.Vector(0, 0, 0)
         self.TotalMoI = np.zeros((3, 3))
-        solidsWithoutMoI = []
         for sol in range(self.solid_count):
             if not isinstance(self.solids[sol], SolidsWidget):
                 return
@@ -1042,18 +1068,7 @@ class CenterofmassWidget(QtGui.QWidget):
             return
 
         for sol in range(self.solid_count):
-            if hasattr(g_sel[sol], 'MatrixOfInertia'):
-                self.MoIs[sol] = self.get_MoI(g_sel[sol].MatrixOfInertia, self.solids[sol].spinDens.value())
-            elif hasattr(g_sel[sol],'Shape') and hasattr(g_sel[sol].Shape, 'MatrixOfInertia'):
-                self.MoIs[sol] = self.get_MoI(g_sel[sol].Shape.MatrixOfInertia, self.solids[sol].spinDens.value())
-            else:
-                solidsWithoutMoI.append(self.solids[sol].label.text())
-        if solidsWithoutMoI:
-            app.Console.PrintWarning(f'Solids {solidsWithoutMoI} have no "MatrixOfInertia".\n')
-
-        for sol in range(self.solid_count):
             self.TotalCoM += 1 / self.massTot * self.masses[sol] * self.CoMs[sol]
-            self.TotalMoI += self.compute_momentOfInertia(self.MoIs[sol], self.masses[sol], self.CoMs[sol])
 
         # output
         for sol, selfsol in enumerate(self.solids):
@@ -1072,11 +1087,10 @@ class CenterofmassWidget(QtGui.QWidget):
         self.resultMass.setToolTip(f'total weight (in {self.unitForM})')
         self.resultDensity.setText(f'{self.massTot/self.volTot:.6}')
         self.resultDensity.setToolTip(f'total density (in {self.unitForD_text})')
-        axis = ['x', 'y', 'z']
-        for i in range(3):
-            for j in range(3):
-                self.resultMoI[i][j].setText(f'{self.convert_inertia(self.TotalMoI[i, j]):.6}')
-                self.resultMoI[i][j].setToolTip(f'L{axis[i]}{axis[j]} (in {self.unitForI})')
+
+        if CALCULATE_INERTIA:
+            self.momentOfInertia()
+
         if self.changeRadius.isEnabled():
             self.draw_centerOfMass()
         if self.checkColorify.isChecked():
