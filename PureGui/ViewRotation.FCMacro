@@ -12,8 +12,8 @@
 __Name__ = 'View Rotation'
 __Comment__ = 'This GUI allows the view to be rotated precisely'
 __Author__ = 'Joe Dowsett'
-__Version__ = '1.0.1'
-__Date__ = '2024-11-22'
+__Version__ = '1.0.2'
+__Date__ = '2026-11-18'
 __License__ = 'CC-BY-3.0'
 __Web__ = 'https://www.freecad.org/wiki/Macro_View_Rotation'
 __Wiki__ = 'https://www.freecad.org/wiki/Macro_View_Rotation'
@@ -130,11 +130,14 @@ class RotateGui(QtGui.QWidget):
 
         self.setLayout(vbox)
 
-        qapp = QtCore.QCoreApplication.instance()
-        screen_number = QtGui.QDesktopWidget().screenNumber(self)
-        right = qapp.screens()[screen_number].geometry().width()
+        screen_geometry = self.screen().availableGeometry()
 
-        self.setGeometry(right - 300, 0, 300, 150)
+        self.setGeometry(
+            screen_geometry.x() + screen_geometry.width() - 300,
+            screen_geometry.y(),
+            300,
+            150,
+        )
         self.setWindowTitle('Rotate view')
         self.show()
 
