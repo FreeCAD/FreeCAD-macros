@@ -1,0 +1,49 @@
+# -*- coding: utf-8 -*-
+#***************************************************************************
+#*                                                                         *
+#*   Copyright (c) 2023 Regis Nde Tene                                     *
+#*                                                                         *
+#*   This program is free software; you can redistribute it and/or modify  *
+#*   it under the terms of the GNU Lesser General Public License (LGPL)    *
+#*   as published by the Free Software Foundation; either version 2 of     *
+#*   the License, or (at your option) any later version.                   *
+#*   for detail see the LICENCE text file.                                 *
+#*                                                                         *
+#*   This program is distributed in the hope that it will be useful,       *
+#*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+#*   GNU Library General Public License for more details.                  *
+#*                                                                         *
+#*   You should have received a copy of the GNU Library General Public     *
+#*   License along with this program; if not, write to the Free Software   *
+#*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
+#*   USA                                                                   *
+#*                                                                         *
+#***************************************************************************
+
+__Name__ = 'HatchGenerator'
+__Comment__ = 'A powerful parametric hatch generator with a large pattern library and variation controls.'
+__Author__ = 'Regis Nde Tene'
+__Version__ = '1.0.0'
+__Date__ = '2023-10-27'
+__License__ = 'LGPL-2.1+'
+__Web__ = 'https://github.com/chopinregis/FreeCAD-Parametric-Hatch-Generator'
+__Wiki__ = 'https://github.com/chopinregis/FreeCAD-Parametric-Hatch-Generator/wiki'
+__Icon__ = 'HatchGenerator_Icon.svg'
+__Help__ = 'Run the macro to open the Hatch Generator dialog.'
+__Status__ = 'stable'
+__Requires__ = 'FreeCAD >= 0.20'
+__Communication__ = 'https://forum.freecad.org/viewtopic.php?p=806176#p806176'
+# The __Files__ tag in the main macro is not strictly needed when using package.xml,
+# but it's good practice to list dependencies.
+__Files__ = 'Freecad_Hatch_Generator.py;HatchGenerator_Icon.svg;package.xml'
+
+"""
+This is the entry point for the Hatch Generator macro.
+It imports the main logic from the library file and launches the GUI.
+"""
+
+# The name of the module to import MUST match the library filename.
+import Freecad_Hatch_Generator
+
+Freecad_Hatch_Generator.runHatchGeneratorDialog()
