@@ -12,8 +12,8 @@
 __Name__ = 'View Rotation'
 __Comment__ = 'This GUI allows the view to be rotated precisely'
 __Author__ = 'Joe Dowsett'
-__Version__ = '1.0.1'
-__Date__ = '2024-11-22'
+__Version__ = '1.0.3'
+__Date__ = '2026-11-18'
 __License__ = 'CC-BY-3.0'
 __Web__ = 'https://www.freecad.org/wiki/Macro_View_Rotation'
 __Wiki__ = 'https://www.freecad.org/wiki/Macro_View_Rotation'
@@ -68,9 +68,32 @@ def find_centre():
     return app.Vector((xmax + xmin) / 2, (ymax + ymin) / 2, (zmax + zmin) / 2)
 
 
+def get_3d_view():
+    """Return a 3D view of the active document, if there is one."""
+    doc = gui.activeDocument()
+    if doc is None:
+        return None
+
+    view = doc.ActiveView
+    if view is not None and hasattr(view, 'getCameraNode'):
+        return view
+
+    views = doc.mdiViewsOfType('Gui::View3DInventor')
+    return views[0] if views else None
+
+
 class RotateGui(QtGui.QWidget):
     def __init__(self):
         super().__init__()
+        self.view3d = get_3d_view()
+        if self.view3d is None:
+            QtGui.QMessageBox.warning(
+                None,
+                'Rotate view',
+                'Open a document with a 3D view before running this macro.',
+            )
+            self.close()
+            return
         self.init_ui()
         self.init_rotate()
 
@@ -142,7 +165,7 @@ class RotateGui(QtGui.QWidget):
         # Index in [right, up, out]
         self._current_axis = 0
 
-        self.cam = gui.activeDocument().ActiveView.getCameraNode()
+        self.cam = self.view3d.getCameraNode()
         self.centre = coin.SbVec3f(find_centre())
         self.view = self.cam.orientation.getValue()
         self.pos = self.cam.position.getValue()
